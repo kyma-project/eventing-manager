@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- operator.kyma-project.io_v1alpha1_eventing.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

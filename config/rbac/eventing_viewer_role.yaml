@@ -1,0 +1,27 @@
+# permissions for end users to view eventings.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: eventing-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: eventing-manager
+    app.kubernetes.io/part-of: eventing-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: eventing-viewer-role
+rules:
+- apiGroups:
+  - operator.kyma-project.io.kyma-project.io
+  resources:
+  - eventings
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.kyma-project.io.kyma-project.io
+  resources:
+  - eventings/status
+  verbs:
+  - get
