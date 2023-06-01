@@ -18,6 +18,7 @@ package eventing
 
 import (
 	"context"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime"

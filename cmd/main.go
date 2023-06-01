@@ -18,10 +18,11 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
