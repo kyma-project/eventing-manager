@@ -18,7 +18,9 @@ package main
 
 import (
 	"flag"
-	"github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -30,7 +32,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	k8szap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
@@ -48,30 +50,51 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func main() {
+const defaultMetricsPort = 9443
+
+func main() { //nolint:funlen // main function needs to initialize many object
 	var metricsAddr string
-	var enableLeaderElection bool
 	var probeAddr string
+	var enableLeaderElection bool
+	var leaderElectionID string
+	var metricsPort int
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	opts := zap.Options{
+	flag.StringVar(&leaderElectionID, "leaderElectionID", "26479083.kyma-project.io",
+		"ID for the controller leader election.")
+	flag.IntVar(&metricsPort, "metricsPort", defaultMetricsPort, "Port number for metrics endpoint.")
+
+	// setup logger
+	opts := k8szap.Options{
 		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	// @TODO: Re-check logger setup and init
+	ctrl.SetLogger(k8szap.New(k8szap.UseFlagOptions(&opts)))
+	loggerConfig := zap.NewDevelopmentConfig()
+	loggerConfig.EncoderConfig.TimeKey = "timestamp"
+	loggerConfig.Encoding = "json"
+	loggerConfig.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("Jan 02 15:04:05.000000000")
+	logger, err := loggerConfig.Build()
+	if err != nil {
+		setupLog.Error(err, "unable to setup logger")
+		os.Exit(1)
+	}
+	sugaredLogger := logger.Sugar()
 
+	// setup ctrl manager
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Port:                   metricsPort,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "19ecf2bf.kyma-project.io",
+		LeaderElectionID:       leaderElectionID,
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -89,11 +112,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&eventing.Reconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Eventing")
+	// create NATS reconciler instance
+	natsReconciler := eventingcontroller.NewReconciler(
+		mgr.GetClient(),
+		mgr.GetScheme(),
+		sugaredLogger,
+		mgr.GetEventRecorderFor("nats-manager"),
+	)
+
+	if err = (natsReconciler).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "NATS")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
