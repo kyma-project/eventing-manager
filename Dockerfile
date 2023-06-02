@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.19 as builder
+FROM eu.gcr.io/kyma-project/external/golang:1.20.1-alpine3.17 as builder
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -26,8 +26,10 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
+LABEL source = git@github.com:kyma-project/eventing-manager.git
+
 WORKDIR /
 COPY --from=builder /workspace/manager .
-USER 65532:65532
+USER nonroot:nonroot
 
 ENTRYPOINT ["/manager"]
