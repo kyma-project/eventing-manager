@@ -8,5 +8,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: eventing-manager
   name: eventing-sample
+  namespace: eventing-manager
 spec:
-  # TODO(user): Add fields here
+  backends:
+    - type: "NATS"

@@ -1,5 +1,5 @@
 # Eventing Manager
-// TODO(user): Add simple overview of use/purpose
+Manages the lifecycle of Eventing resources.
 
 ## Description
 It is a standard Kubernetes operator which observes the state of Eventing resources and reconciles its state according to desired state.
