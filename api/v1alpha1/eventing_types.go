@@ -52,10 +52,9 @@ type EventingStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-
 // Eventing is the Schema for the eventing API.
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type Eventing struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -64,9 +63,8 @@ type Eventing struct {
 	Status EventingStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
 // EventingList contains a list of Eventing
+// +kubebuilder:object:root=true
 type EventingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

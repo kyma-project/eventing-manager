@@ -18,7 +18,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Eventing is the Schema for the eventings API
+        description: Eventing is the Schema for the eventing API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
