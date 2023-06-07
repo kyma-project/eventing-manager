@@ -22,7 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // EventingSpec defines the desired state of Eventing
@@ -56,7 +55,7 @@ type EventingStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Eventing is the Schema for the eventings API
+// Eventing is the Schema for the eventing API.
 type Eventing struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
