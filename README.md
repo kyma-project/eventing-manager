@@ -2,7 +2,7 @@
 Manages the lifecycle of Eventing resources.
 
 ## Description
-It is a standard Kubernetes operator which observes the state of Eventing resources and reconciles its state according to desired state.
+It is a standard Kubernetes operator which observes the state of Eventing resources and reconciles its state according to the desired state.
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
@@ -145,20 +145,20 @@ kyma alpha deploy
 
 2. Prepare OCI container registry:
 
-It can be Github, DockerHub, GCP or local registry.
-The following resources worth having a look to set up a container registry unless you have one:
+Supported registries are Github, DockerHub, GCP or local registry.
+If you do not have a registry available, here are some useful resources to guide you through the set-up:
 * Lifecycle manager [provision-cluster-and-registry](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer/provision-cluster-and-registry.md) documentation
 * [Github container registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry). Change the visibility of a GH package to public if you don't provide a registry secret.
 
-3. Generate module template and push container image by running the following command in the project root director:
+3. Generate a module template and push the container image by running the following command in the project root director:
 ```sh
 kyma alpha create module -n kyma-project.io/module/eventing --version 0.0.1 --registry ghcr.io/{GH_USERNAME}/eventing-manager -c {REGISTRY_USER_NAME}:{REGISTRY_AUTH_TOKEN} -w
 ```
-In the command GH container registry sample is used. Replace GH_USERNAME=REGISTRY_USER_NAME and REGISTRY_AUTH_TOKEN with the GH username and token/password respectively.
+In the command the GH container registry sample is used. Replace GH_USERNAME=REGISTRY_USER_NAME and REGISTRY_AUTH_TOKEN with the GH username and token/password respectively.
 
 The command generates a ModuleTemplate `template.yaml` file in the project folder.
 
-**NOTE:** Change `template.yaml` content with `spec.target=remote` to `spec.target=control-plane` for **single-cluster** mode as it follows:
+**NOTE:** Change `template.yaml` content with `spec.target=remote` to `spec.target=control-plane` for **single-cluster** mode as follows:
 
 ```yaml
 spec:
@@ -172,7 +172,7 @@ spec:
 kubectl apply -f template.yaml
 ```
 
-5. Deploy the `eventing` module by adding it to `kyma` custom resource `spec.modules`:
+5. Deploy the `eventing` module by adding it to the `kyma` custom resource `spec.modules`:
 
 ```sh
 kubectl edit -n kyma-system kyma default-kyma
@@ -193,11 +193,11 @@ Check eventing resource if it has ready state:
 kubectl get -n kyma-system eventing
 ```
 
-Check Kyma resource if it has ready state:
+Check if the Kyma resource has the ready state:
 ```shell
 kubectl get -n kyma-system kyma
 ```
-If they don't have ready state, one can troubleshoot it by checking the pods under `eventing-manager-system` namespace where the module is installed:
+If it doesn't have the ready state, one can troubleshoot it by checking the pods under `eventing-manager-system` namespace where the module is installed:
 ```shell
 kubectl get pods -n eventing-manager-system
 ```
@@ -206,7 +206,7 @@ kubectl get pods -n eventing-manager-system
 
 1. Delete eventing from `kyma` resource `spec.modules` `kubectl edit -n kyma-system kyma default-kyma`:
 
-2. Check `eventing` resource and module namespace whether they are deleted
+2. Check whether the `eventing` resource and module namespace were deleted:
 
 ```shell
 kubectl get -n kyma-system eventing
