@@ -72,52 +72,49 @@ spec:
                 type: object
               backends:
                 description: Backends defines the list of eventing backends to provision.
-                items:
-                  description: Backend defines eventing backend.
-                  properties:
-                    config:
-                      description: Config defines configuration for eventing backend.
-                      properties:
-                        eventMeshSecret:
-                          description: EventMeshSecret defines the namespaced name
-                            of K8s Secret containing EventMesh credentials. The format
-                            of name is "namespace/name".
-                          type: string
-                        natsMaxMsgsPerTopic:
-                          description: NatsMaxMsgsPerTopic limits how many messages
-                            in the NATS stream to retain per subject.
-                          type: integer
-                        natsMaxStreamSize:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          description: NatsMaxStreamSize defines the maximum storage
-                            size for stream data.
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                        natsStreamReplicas:
-                          description: NatsStreamReplicas defines the number of replicas
-                            for stream.
-                          type: integer
-                        natsStreamStorageType:
-                          description: NatsStorageType defines the storage type for
-                            stream data.
-                          enum:
-                          - File
-                          - Memory
-                          type: string
-                      type: object
-                    type:
-                      description: Type defines which backend to use. The value is
-                        either `EventMesh`, or `NATS`.
-                      enum:
-                      - EventMesh
-                      - NATS
-                      type: string
-                  required:
-                  - type
-                  type: object
-                type: array
+                properties:
+                  config:
+                    description: Config defines configuration for eventing backend.
+                    properties:
+                      eventMeshSecret:
+                        description: EventMeshSecret defines the namespaced name of
+                          K8s Secret containing EventMesh credentials. The format
+                          of name is "namespace/name".
+                        type: string
+                      natsMaxMsgsPerTopic:
+                        description: NatsMaxMsgsPerTopic limits how many messages
+                          in the NATS stream to retain per subject.
+                        type: integer
+                      natsMaxStreamSize:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: NatsMaxStreamSize defines the maximum storage
+                          size for stream data.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      natsStreamReplicas:
+                        description: NatsStreamReplicas defines the number of replicas
+                          for stream.
+                        type: integer
+                      natsStreamStorageType:
+                        description: NatsStorageType defines the storage type for
+                          stream data.
+                        enum:
+                        - File
+                        - Memory
+                        type: string
+                    type: object
+                  type:
+                    description: Type defines which backend to use. The value is either
+                      `EventMesh`, or `NATS`.
+                    enum:
+                    - EventMesh
+                    - NATS
+                    type: string
+                required:
+                - type
+                type: object
               labels:
                 additionalProperties:
                   type: string

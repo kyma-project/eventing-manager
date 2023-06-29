@@ -50,7 +50,7 @@ type EventingStatus struct {
 // EventingSpec defines the desired state of Eventing
 type EventingSpec struct {
 	// Backends defines the list of eventing backends to provision.
-	Backends []Backend `json:"backends"`
+	Backends Backend `json:"backends"`
 
 	// Publisher defines the configurations for eventing-publisher-proxy.
 	// +optional
