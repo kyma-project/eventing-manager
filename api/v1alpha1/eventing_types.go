@@ -36,7 +36,7 @@ type Eventing struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// +kubebuilder:default:={backends:{type:"nats", config:{natsStreamStorageType:"file",natsStreamReplicas:3,natsMaxStreamSize:"700Mi",natsMaxMsgsPerTopic:1000000}}, publisher:{replicas:{min:2,max:2}}, resources:{limits:{cpu:"500m",memory:"512Mi"},requests:{cpu:"10m",memory:"256Mi"}}, logging:{loglevel:"info"}}
+	// +kubebuilder:default:={backends:{type:"NATS", config:{natsStreamStorageType:"File",natsStreamReplicas:3,natsMaxStreamSize:"700Mi",natsMaxMsgsPerTopic:1000000}}, publisher:{replicas:{min:2,max:2}}, resources:{limits:{cpu:"500m",memory:"512Mi"},requests:{cpu:"10m",memory:"256Mi"}}, logging:{loglevel:"info"}}
 	Spec   EventingSpec   `json:"spec,omitempty"`
 	Status EventingStatus `json:"status,omitempty"`
 }

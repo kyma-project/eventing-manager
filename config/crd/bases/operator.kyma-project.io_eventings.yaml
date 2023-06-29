@@ -48,8 +48,8 @@ spec:
                   natsMaxMsgsPerTopic: 1000000
                   natsMaxStreamSize: 700Mi
                   natsStreamReplicas: 3
-                  natsStreamStorageType: file
-                type: nats
+                  natsStreamStorageType: File
+                type: NATS
               logging:
                 loglevel: info
               publisher:
