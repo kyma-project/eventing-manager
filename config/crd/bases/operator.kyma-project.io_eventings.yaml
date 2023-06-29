@@ -15,7 +15,16 @@ spec:
     singular: eventing
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: State of Eventing
+      jsonPath: .status.state
+      name: State
+      type: string
+    - description: Age of the resource
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Eventing is the Schema for the eventing API.

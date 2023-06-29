@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// +kubebuilder:validation:Optional // This sets 'required' as the default behaviour.
+//
+//nolint:lll //this is annotation
 package v1alpha1
 
 import (
@@ -23,6 +26,25 @@ import (
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// Eventing is the Schema for the eventing API.
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.state",description="State of Eventing"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Age of the resource"
+type Eventing struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   EventingSpec   `json:"spec,omitempty"`
+	Status EventingStatus `json:"status,omitempty"`
+}
+
+// EventingStatus defines the observed state of Eventing
+type EventingStatus struct {
+	State      string             `json:"state"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
 
 // EventingSpec defines the desired state of Eventing
 type EventingSpec struct {
@@ -44,23 +66,6 @@ type EventingSpec struct {
 	// Labels allows to add Labels to resources.
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
-}
-
-// EventingStatus defines the observed state of Eventing
-type EventingStatus struct {
-	State      string             `json:"state"`
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-// Eventing is the Schema for the eventing API.
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-type Eventing struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   EventingSpec   `json:"spec,omitempty"`
-	Status EventingStatus `json:"status,omitempty"`
 }
 
 // EventingList contains a list of Eventing
