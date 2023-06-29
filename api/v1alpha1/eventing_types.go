@@ -36,6 +36,7 @@ type Eventing struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// +kubebuilder:default:={backends:{type:"nats", config:{natsStreamStorageType:"file",natsStreamReplicas:3,natsMaxStreamSize:"700Mi",natsMaxMsgsPerTopic:1000000}}, publisher:{replicas:{min:2,max:2}}, resources:{limits:{cpu:"500m",memory:"512Mi"},requests:{cpu:"10m",memory:"256Mi"}}, logging:{loglevel:"info"}}
 	Spec   EventingSpec   `json:"spec,omitempty"`
 	Status EventingStatus `json:"status,omitempty"`
 }
@@ -92,31 +93,23 @@ type BackendConfig struct {
 	// NatsStorageType defines the storage type for stream data.
 	// +optional
 	// +kubebuilder:validation:Enum=File;Memory
-	NATSStorageType string `json:"natsStorageType"`
-
-	// NatsStorageSize defines the storage size for stream data.
-	// +optional
-	NATSStorageSize resource.Quantity `json:"natsStorageSize"`
+	NATSStreamStorageType string `json:"natsStreamStorageType"`
 
 	// NatsStreamReplicas defines the number of replicas for stream.
 	// +optional
 	NATSStreamReplicas int `json:"natsStreamReplicas"`
 
-	// MaxStreamSize defines the maximum storage size for stream data.
+	// NatsMaxStreamSize defines the maximum storage size for stream data.
 	// +optional
-	MaxStreamSize resource.Quantity `json:"maxStreamSize"`
+	NATSMaxStreamSize resource.Quantity `json:"natsMaxStreamSize"`
 
-	// MaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject.
+	// NatsMaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject.
 	// +optional
-	MaxMsgsPerTopic int `json:"maxMsgsPerTopic"`
+	NATSMaxMsgsPerTopic int `json:"natsMaxMsgsPerTopic"`
 
 	// EventMeshSecret defines the namespaced name of K8s Secret containing EventMesh credentials. The format of name is "namespace/name".
 	// +optional
 	EventMeshSecret string `json:"eventMeshSecret"`
-
-	// WebhookAuthSecret defines the namespaced name of K8s Secret containing Webhook auth credentials. The format of name is "namespace/name".
-	// +optional
-	WebhookAuthSecret string `json:"webhookAuthSecret"`
 }
 
 // Publisher defines the configurations for eventing-publisher-proxy.

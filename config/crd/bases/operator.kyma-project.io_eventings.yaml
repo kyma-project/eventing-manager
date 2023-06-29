@@ -42,6 +42,27 @@ spec:
           metadata:
             type: object
           spec:
+            default:
+              backends:
+                config:
+                  natsMaxMsgsPerTopic: 1000000
+                  natsMaxStreamSize: 700Mi
+                  natsStreamReplicas: 3
+                  natsStreamStorageType: file
+                type: nats
+              logging:
+                loglevel: info
+              publisher:
+                replicas:
+                  max: 2
+                  min: 2
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+                requests:
+                  cpu: 10m
+                  memory: 256Mi
             description: EventingSpec defines the desired state of Eventing
             properties:
               annotations:
@@ -62,41 +83,28 @@ spec:
                             of K8s Secret containing EventMesh credentials. The format
                             of name is "namespace/name".
                           type: string
-                        maxMsgsPerTopic:
-                          description: MaxMsgsPerTopic limits how many messages in
-                            the NATS stream to retain per subject.
+                        natsMaxMsgsPerTopic:
+                          description: NatsMaxMsgsPerTopic limits how many messages
+                            in the NATS stream to retain per subject.
                           type: integer
-                        maxStreamSize:
+                        natsMaxStreamSize:
                           anyOf:
                           - type: integer
                           - type: string
-                          description: MaxStreamSize defines the maximum storage size
-                            for stream data.
+                          description: NatsMaxStreamSize defines the maximum storage
+                            size for stream data.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        natsStorageSize:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          description: NatsStorageSize defines the storage size for
-                            stream data.
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                        natsStorageType:
+                        natsStreamReplicas:
+                          description: NatsStreamReplicas defines the number of replicas
+                            for stream.
+                          type: integer
+                        natsStreamStorageType:
                           description: NatsStorageType defines the storage type for
                             stream data.
                           enum:
                           - File
                           - Memory
-                          type: string
-                        natsStreamReplicas:
-                          description: NatsStreamReplicas defines the number of replicas
-                            for stream.
-                          type: integer
-                        webhookAuthSecret:
-                          description: WebhookAuthSecret defines the namespaced name
-                            of K8s Secret containing Webhook auth credentials. The
-                            format of name is "namespace/name".
                           type: string
                       type: object
                     type:
