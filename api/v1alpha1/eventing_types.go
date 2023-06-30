@@ -54,7 +54,7 @@ type EventingSpec struct {
 	Backends Backend `json:"backends"`
 
 	// Publisher defines the configurations for eventing-publisher-proxy.
-	// +optional
+	// +kubebuilder:default:={replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}}
 	Publisher `json:"publisher,omitempty"`
 
 	// Logging defines the log level for eventing-manager.
