@@ -45,6 +45,10 @@ spec:
             default:
               backends:
                 type: NATS
+              publisher:
+                replicas:
+                  max: 2
+                  min: 2
             description: EventingSpec defines the desired state of Eventing
             properties:
               annotations:
