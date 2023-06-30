@@ -81,6 +81,11 @@ spec:
                 description: Backends defines the list of eventing backends to provision.
                 properties:
                   config:
+                    default:
+                      natsMaxMsgsPerTopic: 1000000
+                      natsStreamMaxSize: 700Mi
+                      natsStreamReplicas: 3
+                      natsStreamStorageType: File
                     description: Config defines configuration for eventing backend.
                     properties:
                       eventMeshSecret:
@@ -113,6 +118,7 @@ spec:
                         type: string
                     type: object
                   type:
+                    default: NATS
                     description: Type defines which backend to use. The value is either
                       `EventMesh`, or `NATS`.
                     enum:
@@ -120,6 +126,7 @@ spec:
                     - NATS
                     type: string
                 required:
+                - config
                 - type
                 type: object
               labels:

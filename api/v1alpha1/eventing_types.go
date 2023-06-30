@@ -69,7 +69,6 @@ type EventingSpec struct {
 }
 
 // EventingList contains a list of Eventing
-// +kubebuilder:object:root=true
 type EventingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -79,11 +78,12 @@ type EventingList struct {
 // Backend defines eventing backend.
 type Backend struct {
 	// Type defines which backend to use. The value is either `EventMesh`, or `NATS`.
+	// +kubebuilder:default:="NATS"
 	// +kubebuilder:validation:Enum=EventMesh;NATS
 	Type string `json:"type"`
 
 	// Config defines configuration for eventing backend.
-	// +optional
+	// +kubebuilder:default:={natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}
 	Config BackendConfig `json:"config"`
 }
 
