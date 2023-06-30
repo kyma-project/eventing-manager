@@ -45,9 +45,12 @@ spec:
             default:
               backends:
                 type: NATS
+              config:
+                natsMaxMsgsPerTopic: 1000000
+                natsStreamMaxSize: 700Mi
+                natsStreamReplicas: 3
+                natsStreamStorageType: File
               publisher:
-                logging:
-                  logLevel: Info
                 replicas:
                   max: 2
                   min: 2
@@ -80,7 +83,7 @@ spec:
                         description: NatsMaxMsgsPerTopic limits how many messages
                           in the NATS stream to retain per subject.
                         type: integer
-                      natsMaxStreamSize:
+                      natsStreamMaxSize:
                         anyOf:
                         - type: integer
                         - type: string

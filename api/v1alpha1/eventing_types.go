@@ -36,7 +36,7 @@ type Eventing struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// +kubebuilder:default:={backends:{type:"NATS"}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}, logging:{logLevel:"Info"}}}
+	// +kubebuilder:default:={backends:{type:"NATS"}, config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}}}
 	Spec   EventingSpec   `json:"spec,omitempty"`
 	Status EventingStatus `json:"status,omitempty"`
 }
@@ -101,7 +101,7 @@ type BackendConfig struct {
 
 	// NatsMaxStreamSize defines the maximum storage size for stream data.
 	// +optional
-	NATSMaxStreamSize resource.Quantity `json:"natsMaxStreamSize"`
+	NATSStreamMaxSize resource.Quantity `json:"natsStreamMaxSize"`
 
 	// NatsMaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject.
 	// +optional
