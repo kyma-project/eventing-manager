@@ -58,15 +58,13 @@ type EventingSpec struct {
 	Publisher `json:"publisher,omitempty"`
 
 	// Logging defines the log level for eventing-manager.
-	// +optional
+	// +kubebuilder:default:={logLevel:debug}
 	Logging `json:"logging,omitempty"`
 
 	// Annotations allows to add annotations to resources.
-	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// Labels allows to add Labels to resources.
-	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
