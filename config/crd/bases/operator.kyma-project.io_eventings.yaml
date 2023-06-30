@@ -49,6 +49,10 @@ spec:
                 replicas:
                   max: 2
                   min: 2
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 512Mi
             description: EventingSpec defines the desired state of Eventing
             properties:
               annotations:
