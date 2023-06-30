@@ -16,7 +16,7 @@ limitations under the License.
 
 // +kubebuilder:validation:Optional // This sets 'required' as the default behaviour.
 //
-//nolint:lll //this is annotation
+// nolint:lll //this is annotation
 package v1alpha1
 
 import (
@@ -50,6 +50,7 @@ type EventingStatus struct {
 // EventingSpec defines the desired state of Eventing
 type EventingSpec struct {
 	// Backends defines the list of eventing backends to provision.
+	// +kubebuilder:default:={type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}
 	Backends Backend `json:"backends"`
 
 	// Publisher defines the configurations for eventing-publisher-proxy.

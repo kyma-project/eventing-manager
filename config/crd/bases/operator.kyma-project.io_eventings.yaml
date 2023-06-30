@@ -71,6 +71,13 @@ spec:
                 description: Annotations allows to add annotations to resources.
                 type: object
               backends:
+                default:
+                  config:
+                    natsMaxMsgsPerTopic: 1000000
+                    natsStreamMaxSize: 700Mi
+                    natsStreamReplicas: 3
+                    natsStreamStorageType: File
+                  type: NATS
                 description: Backends defines the list of eventing backends to provision.
                 properties:
                   config:
