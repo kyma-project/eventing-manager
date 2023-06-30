@@ -46,6 +46,8 @@ spec:
               backends:
                 type: NATS
               publisher:
+                logging:
+                  logLevel: Info
                 replicas:
                   max: 2
                   min: 2
