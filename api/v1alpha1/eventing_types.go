@@ -90,20 +90,20 @@ type Backend struct {
 // BackendConfig defines configuration for eventing backend.
 type BackendConfig struct {
 	// NatsStorageType defines the storage type for stream data.
-	// +optional
+	// +kubebuilder:default:="File"
 	// +kubebuilder:validation:Enum=File;Memory
 	NATSStreamStorageType string `json:"natsStreamStorageType"`
 
 	// NatsStreamReplicas defines the number of replicas for stream.
-	// +optional
+	// +kubebuilder:default:=3
 	NATSStreamReplicas int `json:"natsStreamReplicas"`
 
 	// NatsMaxStreamSize defines the maximum storage size for stream data.
-	// +optional
+	// +kubebuilder:default:="700Mi"
 	NATSStreamMaxSize resource.Quantity `json:"natsStreamMaxSize"`
 
 	// NatsMaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject.
-	// +optional
+	// +kubebuilder:default:=1000000
 	NATSMaxMsgsPerTopic int `json:"natsMaxMsgsPerTopic"`
 
 	// EventMeshSecret defines the namespaced name of K8s Secret containing EventMesh credentials. The format of name is "namespace/name".
@@ -114,7 +114,7 @@ type BackendConfig struct {
 // Publisher defines the configurations for eventing-publisher-proxy.
 type Publisher struct {
 	// Replicas defines the scaling min/max for eventing-publisher-proxy.
-	// +optional
+	// +kubebuilder:default:={min:2,max:2}
 	Replicas `json:"replicas,omitempty"`
 
 	// Resources defines resources for eventing-publisher-proxy.

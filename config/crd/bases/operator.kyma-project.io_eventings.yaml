@@ -94,6 +94,7 @@ spec:
                           of name is "namespace/name".
                         type: string
                       natsMaxMsgsPerTopic:
+                        default: 1000000
                         description: NatsMaxMsgsPerTopic limits how many messages
                           in the NATS stream to retain per subject.
                         type: integer
@@ -101,21 +102,29 @@ spec:
                         anyOf:
                         - type: integer
                         - type: string
+                        default: 700Mi
                         description: NatsMaxStreamSize defines the maximum storage
                           size for stream data.
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
                       natsStreamReplicas:
+                        default: 3
                         description: NatsStreamReplicas defines the number of replicas
                           for stream.
                         type: integer
                       natsStreamStorageType:
+                        default: File
                         description: NatsStorageType defines the storage type for
                           stream data.
                         enum:
                         - File
                         - Memory
                         type: string
+                    required:
+                    - natsMaxMsgsPerTopic
+                    - natsStreamMaxSize
+                    - natsStreamReplicas
+                    - natsStreamStorageType
                     type: object
                   type:
                     default: NATS
@@ -163,6 +172,9 @@ spec:
                 description: Publisher defines the configurations for eventing-publisher-proxy.
                 properties:
                   replicas:
+                    default:
+                      max: 2
+                      min: 2
                     description: Replicas defines the scaling min/max for eventing-publisher-proxy.
                     properties:
                       max:
