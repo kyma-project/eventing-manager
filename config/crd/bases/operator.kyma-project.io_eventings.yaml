@@ -51,7 +51,7 @@ spec:
                   natsStreamStorageType: File
                 type: NATS
               logging:
-                logLevel: debug
+                logLevel: Info
               publisher:
                 replicas:
                   max: 2
@@ -145,11 +145,11 @@ spec:
                 type: object
               logging:
                 default:
-                  logLevel: debug
+                  logLevel: Info
                 description: Logging defines the log level for eventing-manager.
                 properties:
                   logLevel:
-                    default: debug
+                    default: Info
                     description: LogLevel defines the log level.
                     enum:
                     - Info

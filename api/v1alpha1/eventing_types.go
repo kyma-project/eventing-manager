@@ -36,7 +36,7 @@ type Eventing struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// +kubebuilder:default:={backends:{type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}, logging:{logLevel:debug}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}}}
+	// +kubebuilder:default:={backends:{type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}, logging:{logLevel:Info}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}}}
 	Spec   EventingSpec   `json:"spec,omitempty"`
 	Status EventingStatus `json:"status,omitempty"`
 }
@@ -58,7 +58,7 @@ type EventingSpec struct {
 	Publisher `json:"publisher,omitempty"`
 
 	// Logging defines the log level for eventing-manager.
-	// +kubebuilder:default:={logLevel:debug}
+	// +kubebuilder:default:={logLevel:Info}
 	Logging `json:"logging,omitempty"`
 
 	// Annotations allows to add annotations to resources.
@@ -135,7 +135,7 @@ type Replicas struct {
 
 type Logging struct {
 	// LogLevel defines the log level.
-	// +kubebuilder:default:=debug
+	// +kubebuilder:default:=Info
 	// +kubebuilder:validation:Enum=Info;Warn;Error;debug
 	LogLevel string `json:"logLevel,omitempty"`
 }
