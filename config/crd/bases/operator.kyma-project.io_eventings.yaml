@@ -149,6 +149,7 @@ spec:
                 description: Logging defines the log level for eventing-manager.
                 properties:
                   logLevel:
+                    default: debug
                     description: LogLevel defines the log level.
                     enum:
                     - Info
@@ -178,13 +179,22 @@ spec:
                     description: Replicas defines the scaling min/max for eventing-publisher-proxy.
                     properties:
                       max:
+                        default: 2
                         description: Max defines maximum number of replicas.
                         type: integer
                       min:
+                        default: 2
                         description: Min defines minimum number of replicas.
                         type: integer
                     type: object
                   resources:
+                    default:
+                      limits:
+                        cpu: 500m
+                        memory: 512Mi
+                      requests:
+                        cpu: 10m
+                        memory: 256Mi
                     description: Resources defines resources for eventing-publisher-proxy.
                     properties:
                       claims:

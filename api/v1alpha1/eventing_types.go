@@ -118,24 +118,24 @@ type Publisher struct {
 	Replicas `json:"replicas,omitempty"`
 
 	// Resources defines resources for eventing-publisher-proxy.
-	// +optional
+	// +kubebuilder:default:={limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // Replicas defines min/max replicas for a resource.
 type Replicas struct {
 	// Min defines minimum number of replicas.
-	// +optional
+	// +kubebuilder:default:=2
 	Min int `json:"min,omitempty"`
 
 	// Max defines maximum number of replicas.
-	// +optional
+	// +kubebuilder:default:=2
 	Max int `json:"max,omitempty"`
 }
 
 type Logging struct {
 	// LogLevel defines the log level.
-	// +optional
+	// +kubebuilder:default:=debug
 	// +kubebuilder:validation:Enum=Info;Warn;Error;debug
 	LogLevel string `json:"logLevel,omitempty"`
 }
