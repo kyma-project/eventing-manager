@@ -44,18 +44,7 @@ spec:
           spec:
             default:
               backends:
-                config:
-                  natsMaxMsgsPerTopic: 1000000
-                  natsMaxStreamSize: 700Mi
-                  natsStreamReplicas: 3
-                  natsStreamStorageType: File
                 type: NATS
-              logging:
-                loglevel: info
-              publisher:
-                replicas:
-                  max: 2
-                  min: 2
             description: EventingSpec defines the desired state of Eventing
             properties:
               annotations:
