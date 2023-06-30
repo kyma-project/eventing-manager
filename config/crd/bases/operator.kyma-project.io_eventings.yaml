@@ -44,12 +44,12 @@ spec:
           spec:
             default:
               backends:
+                config:
+                  natsMaxMsgsPerTopic: 1000000
+                  natsStreamMaxSize: 700Mi
+                  natsStreamReplicas: 3
+                  natsStreamStorageType: File
                 type: NATS
-              config:
-                natsMaxMsgsPerTopic: 1000000
-                natsStreamMaxSize: 700Mi
-                natsStreamReplicas: 3
-                natsStreamStorageType: File
               publisher:
                 replicas:
                   max: 2
