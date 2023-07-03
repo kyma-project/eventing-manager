@@ -37,7 +37,7 @@ type Eventing struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:default:={backends:{type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}, logging:{logLevel:Info}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}}}
-	// +kubebuilder:validation:XValidation:rule="(self.backends.type == 'NATS') && (self.backends.config.eventMeshSecret != ' ')", message="secret cannot be empty if EventMesh backend is used"
+	// +kubebuilder:validation:XValidation:rule="(self.backends.config.natsStreamStorageType == ' ') && (self.backends.config.eventMeshSecret != ' ')", message="secret cannot be empty if EventMesh backend is used"
 	Spec   EventingSpec   `json:"spec,omitempty"`
 	Status EventingStatus `json:"status,omitempty"`
 }
