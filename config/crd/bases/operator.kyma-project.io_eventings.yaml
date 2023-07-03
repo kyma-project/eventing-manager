@@ -140,7 +140,7 @@ spec:
                 type: object
                 x-kubernetes-validations:
                 - message: secret cannot be empty if EventMesh backend is used
-                  rule: (self.type.name == 'EventMesh') && (has(self.config.eventMeshSecret))
+                  rule: (self.type == 'EventMesh') && (has(self.config.eventMeshSecret))
               labels:
                 additionalProperties:
                   type: string
