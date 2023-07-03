@@ -36,7 +36,7 @@ type Eventing struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// +kubebuilder:default:={backends:{type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}, logging:{logLevel:Info}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}}}
+	// +kubebuilder:default:={backends:{type:"EventMesh", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}, logging:{logLevel:Info}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}}}
 	Spec   EventingSpec   `json:"spec,omitempty"`
 	Status EventingStatus `json:"status,omitempty"`
 }
@@ -50,7 +50,7 @@ type EventingStatus struct {
 // EventingSpec defines the desired state of Eventing
 type EventingSpec struct {
 	// Backends defines the list of eventing backends to provision.
-	// +kubebuilder:default:={type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}
+	// +kubebuilder:default:={type:"EventMesh", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}
 	// +kubebuilder:validation:XValidation:rule="matches(self.type, 'EventMesh') && !has(self.config.eventMeshSecret)", message="can not be empty if EventMesh backend is used"
 	Backends Backend `json:"backends"`
 
@@ -79,7 +79,7 @@ type EventingList struct {
 // Backend defines eventing backend.
 type Backend struct {
 	// Type defines which backend to use. The value is either `EventMesh`, or `NATS`.
-	// +kubebuilder:default:="NATS"
+	// +kubebuilder:default:="EventMesh"
 	// +kubebuilder:validation:Enum=EventMesh;NATS
 	Type string `json:"type"`
 
