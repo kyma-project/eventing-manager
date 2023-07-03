@@ -246,7 +246,7 @@ spec:
             type: object
             x-kubernetes-validations:
             - message: secret cannot be empty if EventMesh backend is used
-              rule: (self.backends.type == 'EventMesh') && (self.backends.config.eventMeshSecret
+              rule: (self.backends.type == 'NATS') && (self.backends.config.eventMeshSecret
                 != ' ')
           status:
             description: EventingStatus defines the observed state of Eventing
