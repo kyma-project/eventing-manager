@@ -142,9 +142,6 @@ spec:
                 - config
                 - type
                 type: object
-                x-kubernetes-validations:
-                - message: can only be enabled if size is not 0
-                  rule: self.type==EventMesh && has(self.config.eventMeshSecret)
               labels:
                 additionalProperties:
                   type: string
