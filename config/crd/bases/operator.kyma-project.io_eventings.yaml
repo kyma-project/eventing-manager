@@ -79,6 +79,9 @@ spec:
                     natsStreamStorageType: File
                   type: NATS
                 description: Backends defines the list of eventing backends to provision.
+                enum:
+                - NATS
+                - EventMesh
                 properties:
                   config:
                     default:
@@ -121,6 +124,7 @@ spec:
                         - Memory
                         type: string
                     required:
+                    - eventMeshSecret
                     - natsMaxMsgsPerTopic
                     - natsStreamMaxSize
                     - natsStreamReplicas
@@ -138,6 +142,9 @@ spec:
                 - config
                 - type
                 type: object
+                x-kubernetes-validations:
+                - message: can only be enabled if size is not 0
+                  rule: self.type==EventMesh && has(self.config.eventMeshSecret)
               labels:
                 additionalProperties:
                   type: string
