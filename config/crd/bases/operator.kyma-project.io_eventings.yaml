@@ -190,7 +190,7 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: min value must be smaller than the max value
-                      rule: self.Min <= self.Max
+                      rule: self.min <= self.max
                   resources:
                     default:
                       limits:
