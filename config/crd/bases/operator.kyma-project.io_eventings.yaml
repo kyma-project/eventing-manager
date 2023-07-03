@@ -185,8 +185,12 @@ spec:
                       min:
                         default: 2
                         description: Min defines minimum number of replicas.
+                        minimum: 0
                         type: integer
                     type: object
+                    x-kubernetes-validations:
+                    - message: min value must be smaller than the max value
+                      rule: self.Min <= self.Max
                   resources:
                     default:
                       limits:

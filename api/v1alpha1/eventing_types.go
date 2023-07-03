@@ -115,6 +115,7 @@ type BackendConfig struct {
 type Publisher struct {
 	// Replicas defines the scaling min/max for eventing-publisher-proxy.
 	// +kubebuilder:default:={min:2,max:2}
+	// +kubebuilder:validation:XValidation:rule="self.Min <= self.Max", message="min value must be smaller than the max value"
 	Replicas `json:"replicas,omitempty"`
 
 	// Resources defines resources for eventing-publisher-proxy.
@@ -126,6 +127,7 @@ type Publisher struct {
 type Replicas struct {
 	// Min defines minimum number of replicas.
 	// +kubebuilder:default:=2
+	// +kubebuilder:validation:Minimum:=0
 	Min int `json:"min,omitempty"`
 
 	// Max defines maximum number of replicas.
