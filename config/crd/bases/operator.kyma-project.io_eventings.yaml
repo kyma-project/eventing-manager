@@ -121,6 +121,7 @@ spec:
                         - Memory
                         type: string
                     required:
+                    - eventMeshSecret
                     - natsMaxMsgsPerTopic
                     - natsStreamMaxSize
                     - natsStreamReplicas
@@ -134,13 +135,13 @@ spec:
                     - EventMesh
                     - NATS
                     type: string
-                    x-kubernetes-validations:
-                    - message: secret cannot be empty if EventMesh backend is used
-                      rule: (self == 'EventMesh') && (has(config.eventMeshSecret))
                 required:
                 - config
                 - type
                 type: object
+                x-kubernetes-validations:
+                - message: secret cannot be empty if EventMesh backend is used
+                  rule: (self.type == 'EventMesh') && (has(self.config.eventMeshSecret))
               labels:
                 additionalProperties:
                   type: string

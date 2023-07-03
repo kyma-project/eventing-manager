@@ -51,6 +51,7 @@ type EventingStatus struct {
 type EventingSpec struct {
 	// Backends defines the list of eventing backends to provision.
 	// +kubebuilder:default:={type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}
+	// +kubebuilder:validation:XValidation:rule="(self.type == 'EventMesh') && (has(self.config.eventMeshSecret))", message="secret cannot be empty if EventMesh backend is used"
 	Backends Backend `json:"backends"`
 
 	// Publisher defines the configurations for eventing-publisher-proxy.
@@ -80,7 +81,6 @@ type Backend struct {
 	// Type defines which backend to use. The value is either `EventMesh`, or `NATS`.
 	// +kubebuilder:default:="NATS"
 	// +kubebuilder:validation:Enum=EventMesh;NATS
-	// +kubebuilder:validation:XValidation:rule="(self == 'EventMesh') && (has(config.eventMeshSecret))", message="secret cannot be empty if EventMesh backend is used"
 	Type string `json:"type"`
 
 	// Config defines configuration for eventing backend.
@@ -108,7 +108,6 @@ type BackendConfig struct {
 	NATSMaxMsgsPerTopic int `json:"natsMaxMsgsPerTopic"`
 
 	// EventMeshSecret defines the namespaced name of K8s Secret containing EventMesh credentials. The format of name is "namespace/name".
-	// +optional
 	EventMeshSecret string `json:"eventMeshSecret"`
 }
 
