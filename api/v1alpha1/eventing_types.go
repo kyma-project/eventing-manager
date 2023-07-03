@@ -107,6 +107,7 @@ type BackendConfig struct {
 	NATSMaxMsgsPerTopic int `json:"natsMaxMsgsPerTopic"`
 
 	// EventMeshSecret defines the namespaced name of K8s Secret containing EventMesh credentials. The format of name is "namespace/name".
+	// +optional
 	EventMeshSecret string `json:"eventMeshSecret"`
 }
 

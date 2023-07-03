@@ -121,7 +121,6 @@ spec:
                         - Memory
                         type: string
                     required:
-                    - eventMeshSecret
                     - natsMaxMsgsPerTopic
                     - natsStreamMaxSize
                     - natsStreamReplicas
