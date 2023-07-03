@@ -89,6 +89,7 @@ spec:
                     description: Config defines configuration for eventing backend.
                     properties:
                       eventMeshSecret:
+                        default: namespace/name
                         description: EventMeshSecret defines the namespaced name of
                           K8s Secret containing EventMesh credentials. The format
                           of name is "namespace/name".
@@ -121,6 +122,7 @@ spec:
                         - Memory
                         type: string
                     required:
+                    - eventMeshSecret
                     - natsMaxMsgsPerTopic
                     - natsStreamMaxSize
                     - natsStreamReplicas
