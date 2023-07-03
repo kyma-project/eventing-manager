@@ -120,12 +120,6 @@ spec:
                         - File
                         - Memory
                         type: string
-                    required:
-                    - eventMeshSecret
-                    - natsMaxMsgsPerTopic
-                    - natsStreamMaxSize
-                    - natsStreamReplicas
-                    - natsStreamStorageType
                     type: object
                   type:
                     default: NATS
