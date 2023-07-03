@@ -45,7 +45,6 @@ spec:
             default:
               backends:
                 config:
-                  eventMeshSecret: test/test
                   natsMaxMsgsPerTopic: 1000000
                   natsStreamMaxSize: 700Mi
                   natsStreamReplicas: 3
@@ -74,7 +73,6 @@ spec:
               backends:
                 default:
                   config:
-                    eventMeshSecret: test/test
                     natsMaxMsgsPerTopic: 1000000
                     natsStreamMaxSize: 700Mi
                     natsStreamReplicas: 3
@@ -84,7 +82,6 @@ spec:
                 properties:
                   config:
                     default:
-                      eventMeshSecret: test/test
                       natsMaxMsgsPerTopic: 1000000
                       natsStreamMaxSize: 700Mi
                       natsStreamReplicas: 3
@@ -92,7 +89,6 @@ spec:
                     description: Config defines configuration for eventing backend.
                     properties:
                       eventMeshSecret:
-                        default: test/test
                         description: EventMeshSecret defines the namespaced name of
                           K8s Secret containing EventMesh credentials. The format
                           of name is "namespace/name".
@@ -137,10 +133,6 @@ spec:
                 - config
                 - type
                 type: object
-                x-kubernetes-validations:
-                - message: secret cannot be empty if EventMesh backend is used
-                  rule: (self.type == 'EventMesh') && (self.config.eventMeshSecret
-                    != '')
               labels:
                 additionalProperties:
                   type: string
@@ -252,6 +244,10 @@ spec:
             required:
             - backends
             type: object
+            x-kubernetes-validations:
+            - message: secret cannot be empty if EventMesh backend is used
+              rule: (self.backend.type == 'EventMesh') && (self.backend.config.eventMeshSecret
+                != ' ')
           status:
             description: EventingStatus defines the observed state of Eventing
             properties:
