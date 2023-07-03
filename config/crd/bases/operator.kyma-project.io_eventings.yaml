@@ -79,9 +79,6 @@ spec:
                     natsStreamStorageType: File
                   type: NATS
                 description: Backends defines the list of eventing backends to provision.
-                enum:
-                - NATS
-                - EventMesh
                 properties:
                   config:
                     default:
