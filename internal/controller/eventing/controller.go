@@ -18,10 +18,22 @@ package eventing
 
 import (
 	"context"
+	"fmt"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/kyma/components/eventing-controller/options"
+	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
+	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	"github.com/kyma-project/kyma/components/eventing-controller/pkg/object"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,6 +47,14 @@ const (
 	ManagedByLabelValue = ControllerName
 )
 
+var (
+	// allowedAnnotations are the publisher proxy deployment spec template annotations
+	// which should be preserved during reconciliation.
+	allowedAnnotations = map[string]string{
+		"kubectl.kubernetes.io/restartedAt": "",
+	}
+)
+
 // Reconciler reconciles a Eventing object
 type Reconciler struct {
 	client.Client
@@ -43,6 +63,7 @@ type Reconciler struct {
 	recorder    record.EventRecorder
 	logger      *zap.SugaredLogger
 	ctrlManager ctrl.Manager
+	backendType eventingv1alpha1.BackendType
 }
 
 func NewReconciler(
@@ -116,12 +137,144 @@ func (r *Reconciler) handleEventingDeletion(_ context.Context, _ *eventingv1alph
 }
 
 func (r *Reconciler) handleEventingReconcile(ctx context.Context,
-	_ *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+	eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
 	log.Info("handling Eventing reconciliation...")
-	// TODO: Implement me.
+	// TODO: Implement EventMesh reconciliation.
 
 	// just to use the variables.
 	log.Info(FinalizerName, ManagedByLabelKey, ManagedByLabelValue)
 
+	return r.reconcileNATSBackend(ctx, eventing)
+}
+
+func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing) (ctrl.Result, error) {
+
+	// TODO: check nats CR if it exists and is in ready state
+
+	// create or install Eventing Publisher Proxy
+	// TODO: change to support multiple backends in the future
+	backendType := eventing.Spec.Backends[0].Type
+	r.CreateOrUpdatePublisherProxy(ctx, backendType)
+
 	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) CreateOrUpdatePublisherProxy(ctx context.Context, backendType eventingv1alpha1.BackendType) (*appsv1.Deployment, error) {
+	var desiredPublisher *appsv1.Deployment
+	switch backendType {
+	case eventingv1alpha1.NatsBackendType:
+		// new env.NATSConfig
+		opts := options.New()
+		if err := opts.Parse(); err != nil {
+			r.logger.Fatalf("Failed to parse options, error: %v", err)
+		}
+		natsConfig, err := env.GetNATSConfig(opts.MaxReconnects, opts.ReconnectWait)
+		if err != nil {
+			r.logger.Fatalw("Failed to load configuration", "error", err)
+		}
+		cfg := env.GetBackendConfig()
+		desiredPublisher = deployment.NewNATSPublisherDeployment(natsConfig, cfg.PublisherConfig)
+	case eventingv1alpha1.EventMeshBackendType:
+		// TODO: create EventMesh publisher deployment
+	default:
+		return nil, fmt.Errorf("unknown EventingBackend type %q", backendType)
+	}
+
+	if err := r.setAsOwnerReference(ctx, desiredPublisher); err != nil {
+		return nil, fmt.Errorf("set owner reference for Event Publisher failed: %w", err)
+	}
+
+	currentPublisher, err := r.getEPPDeployment(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get Event Publisher deployment")
+	}
+
+	if currentPublisher == nil { // no deployment found
+		// delete the publisher proxy with invalid backend type if it still exists
+		if err := r.deletePublisherProxy(ctx); err != nil {
+			return nil, err
+		}
+		// Create
+		r.logger.Debug("Creating Event Publisher deployment")
+		return desiredPublisher, r.Create(ctx, desiredPublisher)
+	}
+
+	desiredPublisher.ResourceVersion = currentPublisher.ResourceVersion
+
+	// preserve only allowed annotations
+	desiredPublisher.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
+	for k, v := range currentPublisher.Spec.Template.ObjectMeta.Annotations {
+		if _, ok := allowedAnnotations[k]; ok {
+			desiredPublisher.Spec.Template.ObjectMeta.Annotations[k] = v
+		}
+	}
+
+	if object.Semantic.DeepEqual(currentPublisher, desiredPublisher) {
+		return currentPublisher, nil
+	}
+
+	// Update publisher proxy deployment
+	if err := r.Update(ctx, desiredPublisher); err != nil {
+		return nil, errors.Wrapf(err, "update Event Publisher deployment failed")
+	}
+
+	return desiredPublisher, nil
+}
+
+// getEPPDeployment fetches the event publisher by the current active backend type.
+func (r *Reconciler) getEPPDeployment(ctx context.Context) (*appsv1.Deployment, error) {
+	var list appsv1.DeploymentList
+	if err := r.List(ctx, &list, client.MatchingLabels{
+		deployment.AppLabelKey:       deployment.PublisherName,
+		deployment.InstanceLabelKey:  deployment.InstanceLabelValue,
+		deployment.DashboardLabelKey: deployment.DashboardLabelValue,
+		deployment.BackendLabelKey:   fmt.Sprint(r.backendType),
+	}); err != nil {
+		return nil, err
+	}
+
+	if len(list.Items) == 0 { // no deployment found
+		return nil, nil
+	}
+	return &list.Items[0], nil
+}
+
+// deletePublisherProxy removes the existing publisher proxy.
+func (r *Reconciler) deletePublisherProxy(ctx context.Context) error {
+	publisherNamespacedName := types.NamespacedName{
+		Namespace: deployment.PublisherNamespace,
+		Name:      deployment.PublisherName,
+	}
+	publisher := new(appsv1.Deployment)
+	err := r.Get(ctx, publisherNamespacedName, publisher)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	r.logger.Debug("Event Publisher with invalid backend type found, deleting it")
+	err = r.Delete(ctx, publisher)
+	return err
+}
+
+func (r *Reconciler) setAsOwnerReference(ctx context.Context, obj metav1.Object) error {
+	controllerNamespacedName := types.NamespacedName{
+		Namespace: deployment.ControllerNamespace,
+		Name:      deployment.ControllerName,
+	}
+	var deploymentController appsv1.Deployment
+	if err := r.Get(ctx, controllerNamespacedName, &deploymentController); err != nil {
+		r.logger.Errorw("get controller NamespacedName failed", "error", err)
+		return err
+	}
+	references := []metav1.OwnerReference{
+		*metav1.NewControllerRef(&deploymentController, schema.GroupVersionKind{
+			Group:   appsv1.SchemeGroupVersion.Group,
+			Version: appsv1.SchemeGroupVersion.Version,
+			Kind:    "Deployment",
+		}),
+	}
+	obj.SetOwnerReferences(references)
+	return nil
 }

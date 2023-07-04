@@ -25,6 +25,8 @@ Dockerfile.cross
 *.swo
 *~
 .DS_Store
+# vscode
+*.code-workspace
 
 # Binaries
 bin/*

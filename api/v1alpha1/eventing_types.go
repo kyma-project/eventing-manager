@@ -71,11 +71,18 @@ type EventingList struct {
 	Items           []Eventing `json:"items"`
 }
 
+type BackendType string
+
+const (
+	EventMeshBackendType BackendType = "EventMesh"
+	NatsBackendType      BackendType = "NATS"
+)
+
 // Backend defines eventing backend.
 type Backend struct {
 	// Type defines which backend to use. The value is either `EventMesh`, or `NATS`.
 	// +kubebuilder:validation:Enum=EventMesh;NATS
-	Type string `json:"type"`
+	Type BackendType `json:"type"`
 
 	// Config defines configuration for eventing backend.
 	// +optional
