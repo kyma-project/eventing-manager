@@ -90,23 +90,23 @@ type Backend struct {
 
 // BackendConfig defines configuration for eventing backend.
 type BackendConfig struct {
-	// NatsStorageType defines the storage type for stream data.
+	// NATSStreamStorageType defines the storage type for stream data.
 	// +kubebuilder:default:="File"
 	// +kubebuilder:validation:Enum=File;Memory
 	// +optional
 	NATSStreamStorageType string `json:"natsStreamStorageType"`
 
-	// NatsStreamReplicas defines the number of replicas for stream.
+	// NATSStreamReplicas defines the number of replicas for stream.
 	// +kubebuilder:default:=3
 	// +optional
 	NATSStreamReplicas int `json:"natsStreamReplicas"`
 
-	// NatsMaxStreamSize defines the maximum storage size for stream data.
+	// NATSStreamMaxSize defines the maximum storage size for stream data.
 	// +kubebuilder:default:="700Mi"
 	// +optional
 	NATSStreamMaxSize resource.Quantity `json:"natsStreamMaxSize"`
 
-	// NatsMaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject.
+	// NATSMaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject.
 	// +kubebuilder:default:=1000000
 	// +optional
 	NATSMaxMsgsPerTopic int `json:"natsMaxMsgsPerTopic"`
