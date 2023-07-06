@@ -17,12 +17,16 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
+	"log"
 	"os"
 
+	"github.com/go-logr/zapr"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"github.com/kyma-project/kyma/components/eventing-controller/logger"
+	"github.com/kyma-project/kyma/components/eventing-controller/options"
+	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -33,7 +37,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	k8szap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
@@ -54,13 +57,9 @@ func init() {
 const defaultMetricsPort = 9443
 
 func main() { //nolint:funlen // main function needs to initialize many object
-	var metricsAddr string
-	var probeAddr string
 	var enableLeaderElection bool
 	var leaderElectionID string
 	var metricsPort int
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -68,57 +67,56 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		"ID for the controller leader election.")
 	flag.IntVar(&metricsPort, "metricsPort", defaultMetricsPort, "Port number for metrics endpoint.")
 
-	// setup logger
-	opts := k8szap.Options{
-		Development: true,
+	opts := options.New()
+	if err := opts.Parse(); err != nil {
+		log.Fatalf("Failed to parse options, error: %v", err)
 	}
-	opts.BindFlags(flag.CommandLine)
-	flag.Parse()
 
-	// @TODO: Re-check logger setup and init
-	ctrl.SetLogger(k8szap.New(k8szap.UseFlagOptions(&opts)))
-	loggerConfig := zap.NewDevelopmentConfig()
-	loggerConfig.EncoderConfig.TimeKey = "timestamp"
-	loggerConfig.Encoding = "json"
-	loggerConfig.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("Jan 02 15:04:05.000000000")
-	logger, err := loggerConfig.Build()
+	ctrLogger, err := logger.New(opts.LogFormat, opts.LogLevel)
 	if err != nil {
-		setupLog.Error(err, "unable to setup logger")
-		os.Exit(1)
+		log.Fatalf("Failed to initialize logger, error: %v", err)
 	}
-	sugaredLogger := logger.Sugar()
+	defer func() {
+		if err = ctrLogger.WithContext().Sync(); err != nil {
+			log.Printf("Failed to flush logger, error: %v", err)
+		}
+	}()
+
+	// Set controller core logger.
+	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
+
+	// prepare the setup logger
+	setupLogger := ctrLogger.WithContext().Named("setup")
 
 	// setup ctrl manager
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   metricsPort,
-		HealthProbeBindAddress: probeAddr,
+		MetricsBindAddress:     opts.MetricsAddr,
+		Port:                   9443,
+		HealthProbeBindAddress: opts.ProbeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       leaderElectionID,
-		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
-		// when the Manager ends. This requires the binary to immediately end when the
-		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
-		// speeds up voluntary leader transitions as the new leader don't have to wait
-		// LeaseDuration time first.
-		//
-		// In the default scaffold provided, the program ends immediately after
-		// the manager stops, so would be fine to enable this option. However,
-		// if you are doing or is intended to do any operation such as perform cleanups
-		// after the manager stops then its usage might be unsafe.
-		// LeaderElectionReleaseOnCancel: true,
+		SyncPeriod:             &opts.ReconcilePeriod,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
+	natsConfig, err := env.GetNATSConfig(opts.MaxReconnects, opts.ReconnectWait)
+	if err != nil {
+		setupLogger.Fatalw("Failed to load configuration", "error", err)
+	}
+
 	// create NATS reconciler instance
+	ctx := context.Background()
 	natsReconciler := eventingcontroller.NewReconciler(
+		ctx,
+		natsConfig,
 		mgr.GetClient(),
 		mgr.GetScheme(),
-		sugaredLogger,
-		mgr.GetEventRecorderFor("nats-manager"),
+		ctrLogger,
+		mgr.GetEventRecorderFor("eventing-manager"),
 	)
 
 	if err = (natsReconciler).SetupWithManager(mgr); err != nil {
