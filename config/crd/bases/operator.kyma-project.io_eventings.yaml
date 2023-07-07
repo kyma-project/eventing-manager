@@ -116,19 +116,19 @@ spec:
                         default: File
                         description: NATSStreamStorageType defines the storage type
                           for stream data.
-                        enum:
-                        - File
-                        - Memory
                         type: string
+                        x-kubernetes-validations:
+                        - message: storage type can only be set to File or Memory
+                          rule: self=='File' || self=='Memory'
                     type: object
                   type:
                     default: NATS
                     description: Type defines which backend to use. The value is either
                       `EventMesh`, or `NATS`.
-                    enum:
-                    - EventMesh
-                    - NATS
                     type: string
+                    x-kubernetes-validations:
+                    - message: storage type can only be set to NATS or EventMesh
+                      rule: self=='NATS' || self=='EventMesh'
                 required:
                 - config
                 - type
@@ -204,7 +204,8 @@ spec:
                         description: "Claims lists the names of resources, defined
                           in spec.resourceClaims, that are used by this container.
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
-                          feature gate. \n This field is immutable."
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
                         items:
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:
@@ -241,7 +242,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                 type: object

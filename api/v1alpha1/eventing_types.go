@@ -80,7 +80,7 @@ type EventingList struct {
 type Backend struct {
 	// Type defines which backend to use. The value is either `EventMesh`, or `NATS`.
 	// +kubebuilder:default:="NATS"
-	// +kubebuilder:validation:Enum=EventMesh;NATS
+	// +kubebuilder:validation:XValidation:rule="self=='NATS' || self=='EventMesh'", message="storage type can only be set to NATS or EventMesh"
 	Type string `json:"type"`
 
 	// Config defines configuration for eventing backend.
@@ -92,7 +92,7 @@ type Backend struct {
 type BackendConfig struct {
 	// NATSStreamStorageType defines the storage type for stream data.
 	// +kubebuilder:default:="File"
-	// +kubebuilder:validation:Enum=File;Memory
+	// +kubebuilder:validation:XValidation:rule="self=='File' || self=='Memory'", message="storage type can only be set to File or Memory"
 	// +optional
 	NATSStreamStorageType string `json:"natsStreamStorageType"`
 
