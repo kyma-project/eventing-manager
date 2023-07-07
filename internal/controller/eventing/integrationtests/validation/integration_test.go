@@ -27,7 +27,6 @@ const (
 	backendType           = "type"
 	typeEventMesh         = "EventMesh"
 	typeNats              = "NATS"
-	typeGibberish         = "Gibberish"
 	config                = "config"
 	natsStreamStorageType = "natsStreamStorageType"
 	storageTypeFile       = "File"
@@ -38,12 +37,13 @@ const (
 	replicas              = "replicas"
 	max                   = "max"
 	min                   = "min"
-	resources             = "resources"
 	logging               = "logging"
+	logLevel              = "logLevel"
 	logLevelInfo          = "Info"
 	logLevelWarn          = "Warn"
 	logLevelError         = "Error"
 	logLevelDebug         = "Debug"
+	gibberish             = "Gibberish"
 )
 
 var testEnvironment *integration.TestEnvironment
@@ -193,7 +193,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					},
 					spec: map[string]any{
 						backends: map[string]any{
-							backendType: typeGibberish,
+							backendType: gibberish,
 						},
 					},
 				},
@@ -234,6 +234,161 @@ func Test_Validate_CreateEventing(t *testing.T) {
 							config: map[string]any{
 								eventMeshSecret: someSecret,
 							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.backends.config.natsStreamStorageType fails for values other than File or Memory`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backends: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								natsStreamStorageType: gibberish,
+							},
+						},
+					},
+				},
+			},
+			wantErrMsg: "storage type can only be set to File or Memory",
+		},
+		{
+			name: `validation of spec.backends.config.natsStreamStorageType passes for value = File`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backends: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								natsStreamStorageType: storageTypeFile,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.backends.config.natsStreamStorageType passes for value = Memory`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backends: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								natsStreamStorageType: storageTypeMemory,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.logging fails for values other than Debug, Info, Warn or Error`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						logging: map[string]any{
+							logLevel: gibberish,
+						},
+					},
+				},
+			},
+			wantErrMsg: "logLevel can only be set to Debug, Info, Warn or Error",
+		},
+		{
+			name: `validation of spec.logging passes for value = Debug`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						logging: map[string]any{
+							logLevel: logLevelDebug,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.logging passes for value = Info`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						logging: map[string]any{
+							logLevel: logLevelInfo,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.logging passes for value = Warn`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						logging: map[string]any{
+							logLevel: logLevelWarn,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.logging passes for value = Error`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						logging: map[string]any{
+							logLevel: logLevelError,
 						},
 					},
 				},

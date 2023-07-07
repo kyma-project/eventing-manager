@@ -150,12 +150,10 @@ spec:
                   logLevel:
                     default: Info
                     description: LogLevel defines the log level.
-                    enum:
-                    - Info
-                    - Warn
-                    - Error
-                    - debug
                     type: string
+                    x-kubernetes-validations:
+                    - message: logLevel can only be set to Debug, Info, Warn or Error
+                      rule: self=='Info' || self=='Warn' || self=='Error' || self=='Debug'
                 type: object
               publisher:
                 default:
