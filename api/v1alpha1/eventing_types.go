@@ -110,7 +110,7 @@ type BackendConfig struct {
 
 	// MaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject.
 	// +optional
-	MaxMsgsPerTopic int `json:"maxMsgsPerTopic"`
+	MaxMsgsPerTopic int64 `json:"maxMsgsPerTopic"`
 
 	// EventMeshSecret defines the namespaced name of K8s Secret containing EventMesh credentials. The format of name is "namespace/name".
 	// +optional

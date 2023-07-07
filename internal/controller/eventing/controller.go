@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eceventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	ecbackend "github.com/kyma-project/kyma/components/eventing-controller/controllers/backend"
@@ -32,6 +33,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	v1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -78,7 +85,7 @@ func NewReconciler(
 		recorder:   recorder,
 		logger:     logger,
 		controller: nil,
-		ecReconciler: ecbackend.NewReconciler(ctx, nil, natsConfig, env.GetConfig(), nil,
+		ecReconciler: ecbackend.NewReconciler(ctx, nil, natsConfig, env.GetConfig(), env.GetBackendConfig(), nil,
 			client, logger, recorder),
 	}
 }
@@ -159,8 +166,32 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 		return ctrl.Result{}, err
 	}
 
+	updateNatsConfig(&r.natsConfig, eventing)
+
+	backendConfig := env.GetBackendConfig()
+	updatePublisherConfig(&backendConfig, eventing)
+
+	// create an instance of ecbackend Reconciler
+	r.ecReconciler = ecbackend.NewReconciler(
+		ctx,
+		nil,
+		r.natsConfig,
+		env.GetConfig(),
+		backendConfig,
+		nil,
+		r.Client,
+		r.logger,
+		r.recorder,
+	)
+
 	// CreateOrUpdate deployment for publisher proxy
-	_, err = r.ecReconciler.CreateOrUpdatePublisherProxy(ctx, ecBackendType)
+	deployment, err := r.ecReconciler.CreateOrUpdatePublisherProxy(ctx, ecBackendType)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// CreateOrUpdate HPA for publisher proxy deployment
+	err = r.createOrUpdateHPA(ctx, deployment, eventing, 50)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -172,6 +203,58 @@ func (r *Reconciler) namedLogger() *zap.SugaredLogger {
 	return r.logger.WithContext().Named(ControllerName)
 }
 
+// createOrUpdateHorizontalPodAutoscaler creates or updates the HPA for the given deployment.
+func (r *Reconciler) createOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing, cpuUtilization int32) error {
+	// try to get the existing horizontal pod autoscaler object
+	hpa := &autoscalingv1.HorizontalPodAutoscaler{}
+	err := r.Client.Get(ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, hpa)
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to get horizontal pod autoscaler: %v", err)
+	}
+	min := int32(eventing.Spec.Publisher.Min)
+	max := int32(eventing.Spec.Publisher.Max)
+	// if the horizontal pod autoscaler object does not exist, create it
+	if errors.IsNotFound(err) {
+		// create a new horizontal pod autoscaler object
+		hpa = createHorizontalPodAutoscaler(deployment, min, max, cpuUtilization)
+		err = r.Client.Create(ctx, hpa)
+		if err != nil {
+			return fmt.Errorf("failed to create horizontal pod autoscaler: %v", err)
+		}
+		return nil
+	}
+
+	// if the horizontal pod autoscaler object exists, update it
+	hpa.Spec.MinReplicas = &min
+	hpa.Spec.MaxReplicas = max
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		err = r.Client.Update(ctx, hpa)
+		if err != nil {
+			return fmt.Errorf("failed to update horizontal pod autoscaler: %v", err)
+		}
+		return nil
+	})
+	if retryErr != nil {
+		return fmt.Errorf("failed to update horizontal pod autoscaler: %v", retryErr)
+	}
+
+	return nil
+}
+
+func updateNatsConfig(natsConfig *env.NATSConfig, eventing *v1alpha1.Eventing) {
+	natsConfig.JSStreamStorageType = eventing.Spec.Backends[0].Config.NATSStorageType
+	natsConfig.JSStreamReplicas = eventing.Spec.Backends[0].Config.NATSStreamReplicas
+	natsConfig.JSStreamMaxBytes = string(eventing.Spec.Backends[0].Config.MaxStreamSize.Value() * 1024 * 1024 * 1024)
+	natsConfig.JSStreamMaxMsgsPerTopic = eventing.Spec.Backends[0].Config.MaxMsgsPerTopic
+}
+
+func updatePublisherConfig(backendConfig *env.BackendConfig, eventing *v1alpha1.Eventing) {
+	backendConfig.PublisherConfig.RequestsCPU = eventing.Spec.Publisher.Resources.Requests.Cpu().String()
+	backendConfig.PublisherConfig.RequestsMemory = eventing.Spec.Publisher.Resources.Requests.Memory().String()
+	backendConfig.PublisherConfig.LimitsCPU = eventing.Spec.Publisher.Resources.Limits.Cpu().String()
+	backendConfig.PublisherConfig.LimitsMemory = eventing.Spec.Publisher.Resources.Limits.Memory().String()
+}
+
 func convertECBackendType(backendType eventingv1alpha1.BackendType) (eceventingv1alpha1.BackendType, error) {
 	switch backendType {
 	case eventingv1alpha1.EventMeshBackendType:
@@ -180,5 +263,24 @@ func convertECBackendType(backendType eventingv1alpha1.BackendType) (eceventingv
 		return eceventingv1alpha1.NatsBackendType, nil
 	default:
 		return "", fmt.Errorf("unknown backend type: %s", backendType)
+	}
+}
+
+func createHorizontalPodAutoscaler(deployment *v1.Deployment, min int32, max int32, cpuUtilization int32) *autoscalingv1.HorizontalPodAutoscaler {
+	return &autoscalingv1.HorizontalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deployment.Name,
+			Namespace: deployment.Namespace,
+		},
+		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
+				Kind:       "Deployment",
+				Name:       deployment.Name,
+				APIVersion: "apps/v1",
+			},
+			MinReplicas:                    &min,
+			MaxReplicas:                    max,
+			TargetCPUUtilizationPercentage: &cpuUtilization,
+		},
 	}
 }
