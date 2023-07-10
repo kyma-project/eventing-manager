@@ -84,10 +84,11 @@ require (
 
 replace (
 	github.com/kyma-incubator/api-gateway => github.com/kyma-project/api-gateway v0.0.0-20220819093753-296e6704d413
+	github.com/kyma-project/kyma/components/eventing-controller => ../kyma/components/eventing-controller
 	github.com/kyma-project/nats-manager => ../nats-manager
-	k8s.io/api v0.27.2 => k8s.io/api v0.26.1
-	k8s.io/apiextensions-apiserver v0.27.2 => k8s.io/apiextensions-apiserver v0.26.1
-	k8s.io/apimachinery v0.27.2 => k8s.io/apimachinery v0.26.1
-	k8s.io/client-go v0.27.2 => k8s.io/client-go v0.26.1
-	sigs.k8s.io/controller-runtime v0.15.0 => sigs.k8s.io/controller-runtime v0.14.4
+	k8s.io/api => k8s.io/api v0.26.1
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.26.1
+	k8s.io/apimachinery => k8s.io/apimachinery v0.26.1
+	k8s.io/client-go => k8s.io/client-go v0.26.1
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.14.4
 )

@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	v1 "k8s.io/api/apps/v1"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
@@ -198,7 +198,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	}
 
 	// CreateOrUpdate HPA for publisher proxy deployment
-	err = r.createOrUpdateHPA(ctx, deployment, eventing, 50)
+	err = r.createOrUpdateHPA(ctx, deployment, eventing, 60, 60)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -211,19 +211,19 @@ func (r *Reconciler) namedLogger() *zap.SugaredLogger {
 }
 
 // createOrUpdateHorizontalPodAutoscaler creates or updates the HPA for the given deployment.
-func (r *Reconciler) createOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing, cpuUtilization int32) error {
+func (r *Reconciler) createOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error {
 	// try to get the existing horizontal pod autoscaler object
-	hpa := &autoscalingv1.HorizontalPodAutoscaler{}
+	hpa := &autoscalingv2.HorizontalPodAutoscaler{}
 	err := r.Client.Get(ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, hpa)
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to get horizontal pod autoscaler: %v", err)
 	}
 	min := int32(eventing.Spec.Publisher.Min)
 	max := int32(eventing.Spec.Publisher.Max)
+	hpa = createHorizontalPodAutoscaler(deployment, min, max, cpuUtilization, memoryUtilization)
 	// if the horizontal pod autoscaler object does not exist, create it
 	if errors.IsNotFound(err) {
 		// create a new horizontal pod autoscaler object
-		hpa = createHorizontalPodAutoscaler(deployment, min, max, cpuUtilization)
 		err = r.Client.Create(ctx, hpa)
 		if err != nil {
 			return fmt.Errorf("failed to create horizontal pod autoscaler: %v", err)
@@ -232,8 +232,6 @@ func (r *Reconciler) createOrUpdateHPA(ctx context.Context, deployment *v1.Deplo
 	}
 
 	// if the horizontal pod autoscaler object exists, update it
-	hpa.Spec.MinReplicas = &min
-	hpa.Spec.MaxReplicas = max
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		err = r.Client.Update(ctx, hpa)
 		if err != nil {
@@ -246,6 +244,22 @@ func (r *Reconciler) createOrUpdateHPA(ctx context.Context, deployment *v1.Deplo
 	}
 
 	return nil
+}
+
+// retrieves all NATS CRs in the given namespace and checks if any of them is in ready state.
+// Normally, there should be only one NATS CR in the namespace. More than is not supported.
+func (r *Reconciler) isNATSReady(ctx context.Context, namespace string) (bool, error) {
+	natsList := &natsv1alpha1.NATSList{}
+	err := r.List(ctx, natsList, &client.ListOptions{Namespace: namespace})
+	if err != nil {
+		return false, err
+	}
+	for _, nats := range natsList.Items {
+		if nats.Status.State == "Ready" {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func updateNatsConfig(natsConfig *env.NATSConfig, eventing *v1alpha1.Eventing) {
@@ -273,35 +287,42 @@ func convertECBackendType(backendType eventingv1alpha1.BackendType) (eceventingv
 	}
 }
 
-func createHorizontalPodAutoscaler(deployment *v1.Deployment, min int32, max int32, cpuUtilization int32) *autoscalingv1.HorizontalPodAutoscaler {
-	return &autoscalingv1.HorizontalPodAutoscaler{
+func createHorizontalPodAutoscaler(deployment *v1.Deployment, min int32, max int32, cpuUtilization, memoryUtilization int32) *autoscalingv2.HorizontalPodAutoscaler {
+	return &autoscalingv2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deployment.Name,
 			Namespace: deployment.Namespace,
 		},
-		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
+		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
 				Kind:       "Deployment",
 				Name:       deployment.Name,
 				APIVersion: "apps/v1",
 			},
-			MinReplicas:                    &min,
-			MaxReplicas:                    max,
-			TargetCPUUtilizationPercentage: &cpuUtilization,
+			MinReplicas: &min,
+			MaxReplicas: max,
+			Metrics: []autoscalingv2.MetricSpec{
+				{
+					Type: autoscalingv2.ResourceMetricSourceType,
+					Resource: &autoscalingv2.ResourceMetricSource{
+						Name: "cpu",
+						Target: autoscalingv2.MetricTarget{
+							Type:               autoscalingv2.UtilizationMetricType,
+							AverageUtilization: &cpuUtilization,
+						},
+					},
+				},
+				{
+					Type: autoscalingv2.ResourceMetricSourceType,
+					Resource: &autoscalingv2.ResourceMetricSource{
+						Name: "memory",
+						Target: autoscalingv2.MetricTarget{
+							Type:               autoscalingv2.UtilizationMetricType,
+							AverageUtilization: &memoryUtilization,
+						},
+					},
+				},
+			},
 		},
 	}
-}
-
-func (r *Reconciler) isNATSReady(ctx context.Context, namespace string) (bool, error) {
-	natsList := &natsv1alpha1.NATSList{}
-	err := r.List(ctx, natsList, &client.ListOptions{Namespace: namespace})
-	if err != nil {
-		return false, err
-	}
-	for _, nats := range natsList.Items {
-		if nats.Status.State == "Ready" {
-			return true, nil
-		}
-	}
-	return false, nil
 }
