@@ -8,10 +8,12 @@ import (
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/testutils"
+	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -30,6 +32,8 @@ const (
 	attachControlPlaneOutput = false
 	testEnvStartDelay        = time.Minute
 	testEnvStartAttempts     = 10
+	BigTimeOut               = 40 * time.Second
+	SmallPollingInterval     = 1 * time.Second
 )
 
 // TestEnvironment provides mocked resources for integration tests.
@@ -201,6 +205,28 @@ func StartEnvTest(projectRootDir string, celValidationEnabled bool) (*envtest.En
 	return testEnv, cfg, err
 }
 
+// GetEventingAssert fetches an Eventing from k8s and allows making assertions on it.
+func (env TestEnvironment) GetEventingAssert(g *gomega.GomegaWithT,
+	eventing *eventingv1alpha1.Eventing) gomega.AsyncAssertion {
+	return g.Eventually(func() *eventingv1alpha1.Eventing {
+		gotEventing, err := env.GetEventingFromK8s(eventing.Name, eventing.Namespace)
+		if err != nil {
+			log.Printf("fetch subscription %s/%s failed: %v", eventing.Name, eventing.Namespace, err)
+			return nil
+		}
+		return &gotEventing
+	}, BigTimeOut, SmallPollingInterval)
+}
+
+func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (eventingv1alpha1.Eventing, error) {
+	var eventing eventingv1alpha1.Eventing
+	err := env.k8sClient.Get(env.Context, k8stypes.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}, &eventing)
+	return eventing, err
+}
+
 func (env TestEnvironment) EnsureNamespaceCreation(t *testing.T, namespace string) {
 	if namespace == "default" {
 		return
@@ -212,4 +238,8 @@ func (env TestEnvironment) EnsureNamespaceCreation(t *testing.T, namespace strin
 
 func (env TestEnvironment) CreateUnstructuredK8sResource(obj *unstructured.Unstructured) error {
 	return env.k8sClient.Create(env.Context, obj)
+}
+
+func (env TestEnvironment) EnsureK8sUnStructResourceCreated(t *testing.T, obj *unstructured.Unstructured) {
+	require.NoError(t, env.k8sClient.Create(env.Context, obj))
 }

@@ -1,9 +1,16 @@
 package validation_test
 
 import (
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/testutils"
 	"github.com/kyma-project/eventing-manager/testutils/integration"
+	eventingMatchers "github.com/kyma-project/eventing-manager/testutils/matchers/eventing"
+	"github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"os"
 	"testing"
@@ -71,6 +78,8 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// Test_Validate_CreateEventing creates an eventing CR with correct and purposefully incorrect values, and compares
+// the error that was caused by this against a wantErrMsg to test the eventing CR validation rules.
 func Test_Validate_CreateEventing(t *testing.T) {
 	t.Parallel()
 
@@ -410,11 +419,11 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			// then
 			if tc.wantErrMsg == noError {
 				require.NoError(t, err, "Expected error message to be empty but got error instead."+
-					" Check the validation rule of the eventing CR where the above error is returned.")
+					" Check the validation rule of the eventing CR.")
 			} else {
 				if err != nil {
-					require.Contains(t, err.Error(), tc.wantErrMsg, "Expected a specific error message."+
-						" but message does not match. Check the validation rules of the eventing CR.")
+					require.Contains(t, err.Error(), tc.wantErrMsg, "Expected a specific error message"+
+						" but messages do not match. Check the validation rules of the eventing CR.")
 				} else {
 					require.Error(t, err, "Expected the following error message: \""+tc.wantErrMsg+
 						".\" but got no error. Check the validation rules of the eventing CR.")
@@ -423,4 +432,116 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Test_Validate_CreateEventing creates an eventing CR with correct and purposefully incorrect values, and compares
+// the error that was caused by this against a wantErrMsg to test the eventing CR validation rules.
+func Test_Validate_Defaulting(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name                      string
+		givenUnstructuredEventing unstructured.Unstructured
+		wantMatches               gomegatypes.GomegaMatcher
+	}{
+		{
+			name: "defaulting with bare minimum eventing",
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+				},
+			},
+			wantMatches: gomega.And(
+				eventingMatchers.HaveBackendTypeNats(defaultBackend()),
+				eventingMatchers.HavePublisher(defaultPublisher()),
+				eventingMatchers.HavePublisherResources(defaultPublisherResources()),
+				eventingMatchers.HaveLogging(defaultLogging()),
+			),
+		},
+		{
+			name: "defaulting with an empty spec",
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{},
+				},
+			},
+			wantMatches: gomega.And(
+				eventingMatchers.HaveBackendTypeNats(defaultBackend()),
+				eventingMatchers.HavePublisher(defaultPublisher()),
+				eventingMatchers.HavePublisherResources(defaultPublisherResources()),
+				eventingMatchers.HaveLogging(defaultLogging()),
+			),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			g := gomega.NewGomegaWithT(t)
+
+			// given
+			testEnvironment.EnsureNamespaceCreation(t, tc.givenUnstructuredEventing.GetNamespace())
+
+			// when
+			testEnvironment.EnsureK8sUnStructResourceCreated(t, &tc.givenUnstructuredEventing)
+
+			// then
+			testEnvironment.GetEventingAssert(g, &v1alpha1.Eventing{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      tc.givenUnstructuredEventing.GetName(),
+					Namespace: tc.givenUnstructuredEventing.GetNamespace(),
+				},
+			}).Should(tc.wantMatches)
+		})
+	}
+}
+
+func defaultBackend() v1alpha1.Backend {
+	return v1alpha1.Backend{
+		Type: typeNats,
+		Config: v1alpha1.BackendConfig{
+			NATSStreamStorageType: storageTypeFile,
+			NATSStreamReplicas:    3,
+			NATSStreamMaxSize:     resource.MustParse("700Mi"),
+			NATSMaxMsgsPerTopic:   1000000,
+		},
+	}
+}
+
+func defaultPublisher() v1alpha1.Publisher {
+	return v1alpha1.Publisher{
+		Replicas: v1alpha1.Replicas{
+			Min: 2,
+			Max: 2,
+		},
+	}
+}
+
+func defaultPublisherResources() corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"cpu":    resource.MustParse("500m"),
+			"memory": resource.MustParse("512Mi"),
+		},
+		Requests: corev1.ResourceList{
+			"cpu":    resource.MustParse("10m"),
+			"memory": resource.MustParse("256Mi"),
+		},
+	}
+}
+
+func defaultLogging() v1alpha1.Logging {
+	return v1alpha1.Logging{LogLevel: logLevelInfo}
 }
