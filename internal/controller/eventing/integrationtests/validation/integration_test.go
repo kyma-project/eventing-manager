@@ -38,12 +38,27 @@ const (
 	natsStreamStorageType = "natsStreamStorageType"
 	storageTypeFile       = "File"
 	storageTypeMemory     = "Memory"
+	natsStreamReplicas    = "natsStreamReplicas"
+	streamReplicas        = 3
+	natsStreamMaxSize     = "natsStreamMaxSize"
+	maxSize               = "700Mi"
+	natsMaxMsgsPerTopic   = "natsMaxMsgsPerTopic"
+	msgsPerTopic          = 1000000
 	eventMeshSecret       = "eventMeshSecret"
 	someSecret            = "namespace/name"
 	publisher             = "publisher"
 	replicas              = "replicas"
 	max                   = "max"
 	min                   = "min"
+	resources             = "resources"
+	limits                = "limits"
+	requests              = "requests"
+	cpu                   = "cpu"
+	memory                = "memory"
+	limitsCpuValue        = "500m"
+	limitsMemoryValue     = "512Mi"
+	requestsCpuValue      = "10m"
+	requestsMemoryValue   = "256Mi"
 	logging               = "logging"
 	logLevel              = "logLevel"
 	logLevelInfo          = "Info"
@@ -480,6 +495,129 @@ func Test_Validate_Defaulting(t *testing.T) {
 				eventingMatchers.HaveBackendTypeNats(defaultBackend()),
 				eventingMatchers.HavePublisher(defaultPublisher()),
 				eventingMatchers.HavePublisherResources(defaultPublisherResources()),
+				eventingMatchers.HaveLogging(defaultLogging()),
+			),
+		},
+		{
+			name: "defaulting with an empty spec.backends.config",
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backends: map[string]any{
+							backendType: typeNats,
+							config:      map[string]any{
+								// empty, to be filled by defaulting
+							},
+							publisher: map[string]any{
+								replicas: map[string]any{
+									min: 2,
+									max: 2,
+								},
+								resources: map[string]any{
+									limits: map[string]any{
+										cpu:    limitsCpuValue,
+										memory: limitsMemoryValue,
+									},
+									requests: map[string]any{
+										cpu:    requestsCpuValue,
+										memory: requestsMemoryValue,
+									},
+								},
+							},
+							logging: map[string]any{
+								logLevel: logLevelInfo,
+							},
+						},
+					},
+				},
+			},
+			wantMatches: gomega.And(
+				eventingMatchers.HaveBackendTypeNats(defaultBackend()),
+			),
+		},
+		{
+			name: "defaulting with an empty spec.publisher",
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backends: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								natsStreamStorageType: storageTypeFile,
+								natsStreamReplicas:    streamReplicas,
+								natsStreamMaxSize:     maxSize,
+								natsMaxMsgsPerTopic:   msgsPerTopic,
+							},
+							publisher: map[string]any{
+								// empty, to be filled by defaulting
+							},
+							logging: map[string]any{
+								logLevel: logLevelInfo,
+							},
+						},
+					},
+				},
+			},
+			wantMatches: gomega.And(
+				eventingMatchers.HavePublisher(defaultPublisher()),
+				eventingMatchers.HavePublisherResources(defaultPublisherResources()),
+			),
+		},
+		{
+			name: "defaulting with an empty spec.logging",
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      testutils.GetRandK8sName(7),
+						namespace: testutils.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backends: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								natsStreamStorageType: storageTypeFile,
+								natsStreamReplicas:    streamReplicas,
+								natsStreamMaxSize:     maxSize,
+								natsMaxMsgsPerTopic:   msgsPerTopic,
+							},
+							publisher: map[string]any{
+								replicas: map[string]any{
+									min: 2,
+									max: 2,
+								},
+								resources: map[string]any{
+									limits: map[string]any{
+										cpu:    limitsCpuValue,
+										memory: limitsMemoryValue,
+									},
+									requests: map[string]any{
+										cpu:    requestsCpuValue,
+										memory: requestsMemoryValue,
+									},
+								},
+							},
+							logging: map[string]any{
+								// empty, to be filled by defaulting
+							},
+						},
+					},
+				},
+			},
+			wantMatches: gomega.And(
 				eventingMatchers.HaveLogging(defaultLogging()),
 			),
 		},
