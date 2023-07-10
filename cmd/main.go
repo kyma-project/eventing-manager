@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -51,6 +52,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(natsv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

@@ -26,6 +26,7 @@ import (
 	ecbackend "github.com/kyma-project/kyma/components/eventing-controller/controllers/backend"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"go.uber.org/zap"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -157,8 +158,14 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 }
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing) (ctrl.Result, error) {
-
-	// TODO: check nats CR if it exists and is in ready state
+	// check nats CR if it exists and is in ready state
+	ready, err := r.isNATSReady(ctx, eventing.Namespace)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !ready {
+		return ctrl.Result{}, fmt.Errorf("NATS server is not ready in namespace %s", eventing.Namespace)
+	}
 
 	// TODO: change to support multiple backends in the future
 	ecBackendType, err := convertECBackendType(eventing.Spec.Backends[0].Type)
@@ -283,4 +290,18 @@ func createHorizontalPodAutoscaler(deployment *v1.Deployment, min int32, max int
 			TargetCPUUtilizationPercentage: &cpuUtilization,
 		},
 	}
+}
+
+func (r *Reconciler) isNATSReady(ctx context.Context, namespace string) (bool, error) {
+	natsList := &natsv1alpha1.NATSList{}
+	err := r.List(ctx, natsList, &client.ListOptions{Namespace: namespace})
+	if err != nil {
+		return false, err
+	}
+	for _, nats := range natsList.Items {
+		if nats.Status.State == "Ready" {
+			return true, nil
+		}
+	}
+	return false, nil
 }
