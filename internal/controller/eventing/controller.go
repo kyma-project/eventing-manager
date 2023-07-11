@@ -30,10 +30,12 @@ import (
 	"go.uber.org/zap"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -197,6 +199,13 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 		return ctrl.Result{}, err
 	}
 
+	// Overwrite owner reference for publisher proxy deployment as the EC sets its deployment as owner
+	// and we want the Eventing CR to be the owner.
+	err = r.setDeploymentOwnerReference(ctx, deployment, eventing)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// CreateOrUpdate HPA for publisher proxy deployment
 	err = r.createOrUpdateHPA(ctx, deployment, eventing, 60, 60)
 	if err != nil {
@@ -221,6 +230,9 @@ func (r *Reconciler) createOrUpdateHPA(ctx context.Context, deployment *v1.Deplo
 	min := int32(eventing.Spec.Publisher.Min)
 	max := int32(eventing.Spec.Publisher.Max)
 	hpa = createHorizontalPodAutoscaler(deployment, min, max, cpuUtilization, memoryUtilization)
+	if err := controllerutil.SetControllerReference(eventing, hpa, r.Scheme()); err != nil {
+		return err
+	}
 	// if the horizontal pod autoscaler object does not exist, create it
 	if errors.IsNotFound(err) {
 		// create a new horizontal pod autoscaler object
@@ -260,6 +272,30 @@ func (r *Reconciler) isNATSReady(ctx context.Context, namespace string) (bool, e
 		}
 	}
 	return false, nil
+}
+
+func (r *Reconciler) setDeploymentOwnerReference(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing) error {
+	// Update the deployment object
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, deployment)
+		if err != nil {
+			return err
+		}
+		// Set the controller reference to the parent object
+		if err := controllerutil.SetControllerReference(eventing, deployment, r.Scheme()); err != nil {
+			return fmt.Errorf("failed to set controller reference: %v", err)
+		}
+		err = r.Update(ctx, deployment)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if retryErr != nil {
+		return retryErr
+	}
+
+	return nil
 }
 
 func updateNatsConfig(natsConfig *env.NATSConfig, eventing *v1alpha1.Eventing) {
