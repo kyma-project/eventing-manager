@@ -22,11 +22,11 @@ import (
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	eceventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	ecbackend "github.com/kyma-project/kyma/components/eventing-controller/controllers/backend"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"go.uber.org/zap"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,9 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	v1 "k8s.io/api/apps/v1"
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -70,6 +67,7 @@ type Reconciler struct {
 	logger       *logger.Logger
 	ctrlManager  ctrl.Manager
 	ecReconciler *ecbackend.Reconciler
+	kubeClient   k8s.Client
 }
 
 func NewReconciler(
@@ -90,6 +88,7 @@ func NewReconciler(
 		controller: nil,
 		ecReconciler: ecbackend.NewReconciler(ctx, nil, natsConfig, env.GetConfig(), env.GetBackendConfig(), nil,
 			client, logger, recorder),
+		kubeClient: k8s.NewKubeClient(client),
 	}
 }
 
@@ -151,28 +150,54 @@ func (r *Reconciler) handleEventingDeletion(_ context.Context, _ *eventingv1alph
 func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
 	log.Info("handling Eventing reconciliation...")
-	// TODO: Implement EventMesh reconciliation.
+
+	// set state processing if not set yet
+	r.InitState(eventing)
 
 	// just to use the variables.
 	log.Info(FinalizerName, ManagedByLabelKey, ManagedByLabelValue)
 
-	return r.reconcileNATSBackend(ctx, eventing)
+	return r.reconcileNATSBackend(ctx, eventing, log)
 }
 
-func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing) (ctrl.Result, error) {
-	// check nats CR if it exists and is in ready state
-	ready, err := r.isNATSReady(ctx, eventing.Namespace)
+func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+	// check nats CR if it exists and is in natsAvailable state
+	natsAvailable, err := r.isNATSAvailable(ctx, eventing.Namespace)
 	if err != nil {
+		if syncErr := r.syncStatusWithNATSErr(ctx, eventing, err, log); syncErr != nil {
+			return ctrl.Result{}, syncErr
+		}
 		return ctrl.Result{}, err
 	}
-	if !ready {
-		return ctrl.Result{}, fmt.Errorf("NATS server is not ready in namespace %s", eventing.Namespace)
+	if !natsAvailable {
+		err := fmt.Errorf("NATS server is not yet ready in namespace %s", eventing.Namespace)
+		if syncErr := r.syncStatusWithNATSErr(ctx, eventing,
+			err, log); syncErr != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, err
 	}
+	// mark NATSAvailable condition to true
+	eventing.Status.SetNATSAvailableConditionToTrue()
+	r.syncEventingStatus(ctx, eventing, log)
 
 	// TODO: change to support multiple backends in the future
+	deployment, err := r.handlePublisherProxy(ctx, eventing, log)
+	if err != nil {
+		if syncErr := r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log); syncErr != nil {
+			return ctrl.Result{}, syncErr
+		}
+		return ctrl.Result{}, err
+	}
+
+	return r.handleEventingState(ctx, deployment, eventing, log)
+}
+
+func (r *Reconciler) handlePublisherProxy(ctx context.Context, eventing *eventingv1alpha1.Eventing,
+	log *zap.SugaredLogger) (*v1.Deployment, error) {
 	ecBackendType, err := convertECBackendType(eventing.Spec.Backends[0].Type)
 	if err != nil {
-		return ctrl.Result{}, err
+		return nil, fmt.Errorf("failed to convert eventing controller backend type: %s", err)
 	}
 
 	updateNatsConfig(&r.natsConfig, eventing)
@@ -196,82 +221,27 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	// CreateOrUpdate deployment for publisher proxy
 	deployment, err := r.ecReconciler.CreateOrUpdatePublisherProxy(ctx, ecBackendType)
 	if err != nil {
-		return ctrl.Result{}, err
+		return nil, err
 	}
 
 	// Overwrite owner reference for publisher proxy deployment as the EC sets its deployment as owner
 	// and we want the Eventing CR to be the owner.
 	err = r.setDeploymentOwnerReference(ctx, deployment, eventing)
 	if err != nil {
-		return ctrl.Result{}, err
+		return deployment, fmt.Errorf("failed to set owner reference for publisher proxy deployment: %s", err)
 	}
 
 	// CreateOrUpdate HPA for publisher proxy deployment
 	err = r.createOrUpdateHPA(ctx, deployment, eventing, 60, 60)
 	if err != nil {
-		return ctrl.Result{}, err
+		return deployment, fmt.Errorf("failed to create or update HPA for publisher proxy deployment: %s", err)
 	}
 
-	return ctrl.Result{}, nil
+	return deployment, nil
 }
 
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {
 	return r.logger.WithContext().Named(ControllerName)
-}
-
-// createOrUpdateHorizontalPodAutoscaler creates or updates the HPA for the given deployment.
-func (r *Reconciler) createOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error {
-	// try to get the existing horizontal pod autoscaler object
-	hpa := &autoscalingv2.HorizontalPodAutoscaler{}
-	err := r.Client.Get(ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, hpa)
-	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to get horizontal pod autoscaler: %v", err)
-	}
-	min := int32(eventing.Spec.Publisher.Min)
-	max := int32(eventing.Spec.Publisher.Max)
-	hpa = createHorizontalPodAutoscaler(deployment, min, max, cpuUtilization, memoryUtilization)
-	if err := controllerutil.SetControllerReference(eventing, hpa, r.Scheme()); err != nil {
-		return err
-	}
-	// if the horizontal pod autoscaler object does not exist, create it
-	if errors.IsNotFound(err) {
-		// create a new horizontal pod autoscaler object
-		err = r.Client.Create(ctx, hpa)
-		if err != nil {
-			return fmt.Errorf("failed to create horizontal pod autoscaler: %v", err)
-		}
-		return nil
-	}
-
-	// if the horizontal pod autoscaler object exists, update it
-	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err = r.Client.Update(ctx, hpa)
-		if err != nil {
-			return fmt.Errorf("failed to update horizontal pod autoscaler: %v", err)
-		}
-		return nil
-	})
-	if retryErr != nil {
-		return fmt.Errorf("failed to update horizontal pod autoscaler: %v", retryErr)
-	}
-
-	return nil
-}
-
-// retrieves all NATS CRs in the given namespace and checks if any of them is in ready state.
-// Normally, there should be only one NATS CR in the namespace. More than is not supported.
-func (r *Reconciler) isNATSReady(ctx context.Context, namespace string) (bool, error) {
-	natsList := &natsv1alpha1.NATSList{}
-	err := r.List(ctx, natsList, &client.ListOptions{Namespace: namespace})
-	if err != nil {
-		return false, err
-	}
-	for _, nats := range natsList.Items {
-		if nats.Status.State == "Ready" {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 func (r *Reconciler) setDeploymentOwnerReference(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing) error {
@@ -310,6 +280,7 @@ func updatePublisherConfig(backendConfig *env.BackendConfig, eventing *v1alpha1.
 	backendConfig.PublisherConfig.RequestsMemory = eventing.Spec.Publisher.Resources.Requests.Memory().String()
 	backendConfig.PublisherConfig.LimitsCPU = eventing.Spec.Publisher.Resources.Limits.Cpu().String()
 	backendConfig.PublisherConfig.LimitsMemory = eventing.Spec.Publisher.Resources.Limits.Memory().String()
+	backendConfig.PublisherConfig.Replicas = int32(eventing.Spec.Min)
 }
 
 func convertECBackendType(backendType eventingv1alpha1.BackendType) (eceventingv1alpha1.BackendType, error) {
@@ -320,45 +291,5 @@ func convertECBackendType(backendType eventingv1alpha1.BackendType) (eceventingv
 		return eceventingv1alpha1.NatsBackendType, nil
 	default:
 		return "", fmt.Errorf("unknown backend type: %s", backendType)
-	}
-}
-
-func createHorizontalPodAutoscaler(deployment *v1.Deployment, min int32, max int32, cpuUtilization, memoryUtilization int32) *autoscalingv2.HorizontalPodAutoscaler {
-	return &autoscalingv2.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      deployment.Name,
-			Namespace: deployment.Namespace,
-		},
-		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
-				Kind:       "Deployment",
-				Name:       deployment.Name,
-				APIVersion: "apps/v1",
-			},
-			MinReplicas: &min,
-			MaxReplicas: max,
-			Metrics: []autoscalingv2.MetricSpec{
-				{
-					Type: autoscalingv2.ResourceMetricSourceType,
-					Resource: &autoscalingv2.ResourceMetricSource{
-						Name: "cpu",
-						Target: autoscalingv2.MetricTarget{
-							Type:               autoscalingv2.UtilizationMetricType,
-							AverageUtilization: &cpuUtilization,
-						},
-					},
-				},
-				{
-					Type: autoscalingv2.ResourceMetricSourceType,
-					Resource: &autoscalingv2.ResourceMetricSource{
-						Name: "memory",
-						Target: autoscalingv2.MetricTarget{
-							Type:               autoscalingv2.UtilizationMetricType,
-							AverageUtilization: &memoryUtilization,
-						},
-					},
-				},
-			},
-		},
 	}
 }

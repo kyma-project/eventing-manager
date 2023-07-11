@@ -22,6 +22,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type ConditionReason string
+
+type ConditionType string
+
+const (
+	StateReady      string = "Ready"
+	StateError      string = "Error"
+	StateProcessing string = "Processing"
+
+	ConditionNATSAvailable       ConditionType = "NATSAvailable"
+	ConditionPublisherProxyReady ConditionType = "PublisherProxyReady"
+
+	ConditionReasonProcessing                 ConditionReason = "Processing"
+	ConditionReasonDeployed                   ConditionReason = "Deployed"
+	ConditionReasonDeployedFailed             ConditionReason = "DeployFailed"
+	ConditionReasonDeploymentStatusSyncFailed ConditionReason = "DeploymentStatusSyncFailed"
+	ConditionReasonNATSAvailable              ConditionReason = "Available"
+	ConditionReasonNATSNotAvailable           ConditionReason = "NotAvailable"
+)
+
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // EventingSpec defines the desired state of Eventing
