@@ -141,6 +141,24 @@ type BackendConfig struct {
 	WebhookAuthSecret string `json:"webhookAuthSecret"`
 }
 
+func (ev *Eventing) GetNATSBackend() *Backend {
+	for _, backend := range ev.Spec.Backends {
+		if backend.Type == NatsBackendType {
+			return &backend
+		}
+	}
+	return nil
+}
+
+func (ev *Eventing) GetEventMeshBackend() *Backend {
+	for _, backend := range ev.Spec.Backends {
+		if backend.Type == EventMeshBackendType {
+			return &backend
+		}
+	}
+	return nil
+}
+
 // Publisher defines the configurations for eventing-publisher-proxy.
 type Publisher struct {
 	// Replicas defines the scaling min/max for eventing-publisher-proxy.

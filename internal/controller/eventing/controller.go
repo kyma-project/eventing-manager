@@ -157,7 +157,18 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// just to use the variables.
 	log.Info(FinalizerName, ManagedByLabelKey, ManagedByLabelValue)
 
-	return r.reconcileNATSBackend(ctx, eventing, log)
+	for _, backend := range eventing.Spec.Backends {
+		switch backend.Type {
+		case eventingv1alpha1.NatsBackendType:
+			return r.reconcileNATSBackend(ctx, eventing, log)
+		case eventingv1alpha1.EventMeshBackendType:
+			return r.reconcileEventMeshBackend(ctx, eventing, log)
+		default:
+			return ctrl.Result{Requeue: false}, fmt.Errorf("not supported backend type %s", backend.Type)
+		}
+	}
+	// this should never happen, but if happens do nothing
+	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
@@ -181,7 +192,6 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	eventing.Status.SetNATSAvailableConditionToTrue()
 	r.syncEventingStatus(ctx, eventing, log)
 
-	// TODO: change to support multiple backends in the future
 	deployment, err := r.handlePublisherProxy(ctx, eventing, log)
 	if err != nil {
 		if syncErr := r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log); syncErr != nil {
@@ -193,9 +203,14 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	return r.handleEventingState(ctx, deployment, eventing, log)
 }
 
+func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+	// TODO: Implement me.
+	return ctrl.Result{}, nil
+}
+
 func (r *Reconciler) handlePublisherProxy(ctx context.Context, eventing *eventingv1alpha1.Eventing,
 	log *zap.SugaredLogger) (*v1.Deployment, error) {
-	ecBackendType, err := convertECBackendType(eventing.Spec.Backends[0].Type)
+	ecBackendType, err := convertECBackendType(eventing.GetNATSBackend().Type)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert eventing controller backend type: %s", err)
 	}
