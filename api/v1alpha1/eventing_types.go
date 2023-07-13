@@ -69,6 +69,8 @@ type EventingSpec struct {
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
+// +kubebuilder:object:root=true
+
 // EventingList contains a list of Eventing
 type EventingList struct {
 	metav1.TypeMeta `json:",inline"`
