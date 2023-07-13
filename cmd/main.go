@@ -113,7 +113,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		os.Exit(1)
 	}
 
-	// create NATS reconciler instance
+	// create NATS reconciler instance REMOVEME
 	natsReconciler := eventingcontroller.NewReconciler(
 		mgr.GetClient(),
 		mgr.GetScheme(),
