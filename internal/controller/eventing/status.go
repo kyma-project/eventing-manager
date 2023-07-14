@@ -2,6 +2,7 @@ package eventing
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
@@ -30,7 +31,7 @@ func (r *Reconciler) syncStatusWithNATSErr(ctx context.Context,
 	eventing.Status.UpdateConditionNATSAvailable(metav1.ConditionFalse, eventingv1alpha1.ConditionReasonNATSNotAvailable,
 		err.Error())
 
-	return r.syncEventingStatus(ctx, eventing, log)
+	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
 // syncEventingStatusWithErr syncs Eventing status and sets an error state.
@@ -42,7 +43,7 @@ func (r *Reconciler) syncStatusWithPublisherProxyErr(ctx context.Context,
 	eventing.Status.UpdateConditionPublisherProxyReady(metav1.ConditionFalse, eventingv1alpha1.ConditionReasonDeployedFailed,
 		err.Error())
 
-	return r.syncEventingStatus(ctx, eventing, log)
+	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
 // syncEventingStatus syncs Eventing status.
@@ -96,8 +97,7 @@ func (r *Reconciler) handleEventingState(ctx context.Context, deployment *v1.Dep
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
 
-	isPPReady := deployment.Status.AvailableReplicas == *deployment.Spec.Replicas
-	if !isPPReady {
+	if !IsDeploymentReady(deployment) {
 		eventing.Status.SetStateProcessing()
 		eventing.Status.UpdateConditionPublisherProxyReady(metav1.ConditionFalse,
 			eventingv1alpha1.ConditionReasonProcessing, "Eventing publisher proxy deployment is being deployed")
@@ -110,4 +110,9 @@ func (r *Reconciler) handleEventingState(ctx context.Context, deployment *v1.Dep
 	// @TODO: emit events for any change in conditions
 	log.Info("Reconciliation successful")
 	return ctrl.Result{}, r.syncEventingStatus(ctx, eventing, log)
+}
+
+// to be able to mock this function in tests
+var IsDeploymentReady = func(deployment *v1.Deployment) bool {
+	return deployment.Status.AvailableReplicas == *deployment.Spec.Replicas
 }

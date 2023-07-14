@@ -175,29 +175,21 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	// check nats CR if it exists and is in natsAvailable state
 	natsAvailable, err := r.isNATSAvailable(ctx, eventing.Namespace)
 	if err != nil {
-		if syncErr := r.syncStatusWithNATSErr(ctx, eventing, err, log); syncErr != nil {
-			return ctrl.Result{}, syncErr
-		}
-		return ctrl.Result{}, err
+		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 	if !natsAvailable {
-		err := fmt.Errorf("NATS server is not yet ready in namespace %s", eventing.Namespace)
-		if syncErr := r.syncStatusWithNATSErr(ctx, eventing,
-			err, log); syncErr != nil {
-			return ctrl.Result{}, err
-		}
+		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing,
+			fmt.Errorf("NATS server is not available in namespace %s", eventing.Namespace), log)
+	}
+	// set NATSAvailable condition to true and update status
+	eventing.Status.SetNATSAvailableConditionToTrue()
+	if err := r.syncEventingStatus(ctx, eventing, log); err != nil {
 		return ctrl.Result{}, err
 	}
-	// mark NATSAvailable condition to true
-	eventing.Status.SetNATSAvailableConditionToTrue()
-	r.syncEventingStatus(ctx, eventing, log)
 
 	deployment, err := r.handlePublisherProxy(ctx, eventing, log)
 	if err != nil {
-		if syncErr := r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log); syncErr != nil {
-			return ctrl.Result{}, syncErr
-		}
-		return ctrl.Result{}, err
+		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
 
 	return r.handleEventingState(ctx, deployment, eventing, log)
@@ -215,7 +207,9 @@ func (r *Reconciler) handlePublisherProxy(ctx context.Context, eventing *eventin
 		return nil, fmt.Errorf("failed to convert eventing controller backend type: %s", err)
 	}
 
-	updateNatsConfig(&r.natsConfig, eventing)
+	if err = r.updateNatsConfig(ctx, &r.natsConfig, eventing); err != nil {
+		return nil, err
+	}
 
 	backendConfig := env.GetBackendConfig()
 	updatePublisherConfig(&backendConfig, eventing)
@@ -283,11 +277,17 @@ func (r *Reconciler) setDeploymentOwnerReference(ctx context.Context, deployment
 	return nil
 }
 
-func updateNatsConfig(natsConfig *env.NATSConfig, eventing *v1alpha1.Eventing) {
+func (r *Reconciler) updateNatsConfig(ctx context.Context, natsConfig *env.NATSConfig, eventing *v1alpha1.Eventing) error {
+	natsUrl, err := r.GetNATSUrl(ctx, eventing.Namespace)
+	if err != nil {
+		return err
+	}
+	natsConfig.URL = natsUrl
 	natsConfig.JSStreamStorageType = eventing.Spec.Backends[0].Config.NATSStorageType
 	natsConfig.JSStreamReplicas = eventing.Spec.Backends[0].Config.NATSStreamReplicas
-	natsConfig.JSStreamMaxBytes = string(eventing.Spec.Backends[0].Config.MaxStreamSize.Value() * 1024 * 1024 * 1024)
+	natsConfig.JSStreamMaxBytes = eventing.Spec.Backends[0].Config.MaxStreamSize.String()
 	natsConfig.JSStreamMaxMsgsPerTopic = eventing.Spec.Backends[0].Config.MaxMsgsPerTopic
+	return nil
 }
 
 func updatePublisherConfig(backendConfig *env.BackendConfig, eventing *v1alpha1.Eventing) {
