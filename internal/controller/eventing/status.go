@@ -15,8 +15,8 @@ import (
 
 const RequeueTimeForStatusCheck = 10
 
-// InitState initializes the state of the EventingStatus if it is not set
-func (es *Reconciler) InitState(eventing *eventingv1alpha1.Eventing) {
+// InitStateProcessing initializes the state of the EventingStatus if it is not set
+func (es *Reconciler) InitStateProcessing(eventing *eventingv1alpha1.Eventing) {
 	if eventing.Status.State == "" {
 		eventing.Status.SetStateProcessing()
 	}
