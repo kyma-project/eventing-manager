@@ -152,6 +152,7 @@ func Test_CreateEventingCR(t *testing.T) {
 				testEnvironment.EnsureHPAExists(t, ecdeployment.PublisherName, givenNamespace)
 				testEnvironment.EnsureEventingSpecPublisherReflected(t, tc.givenEventing)
 				testEnvironment.EnsureEventingReplicasReflected(t, tc.givenEventing)
+				testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenEventing)
 				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 			// check NATS CR status.
@@ -230,6 +231,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 			// then
 			testEnvironment.EnsureEventingSpecPublisherReflected(t, newEventing)
 			testEnvironment.EnsureEventingReplicasReflected(t, newEventing)
+			testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenEventing)
 		})
 	}
 }

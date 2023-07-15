@@ -46,7 +46,7 @@ const (
 	namespacePrefixLength    = 5
 	TwoMinTimeOut            = 120 * time.Second
 	BigPollingInterval       = 3 * time.Second
-	BigTimeOut               = 40 * time.Second
+	BigTimeOut               = 30 * time.Second
 	SmallTimeOut             = 5 * time.Second
 	SmallPollingInterval     = 1 * time.Second
 	EventTypePrefix          = "prefix"
@@ -407,7 +407,7 @@ func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, ev
 			eventing.Spec.Publisher.Resources.Limits.Memory().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()) &&
 			eventing.Spec.Publisher.Resources.Requests.Cpu().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu()) &&
 			eventing.Spec.Publisher.Resources.Requests.Memory().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Memory())
-	}, BigTimeOut, BigPollingInterval, "failed to ensure Eventing spec publisher is reflected")
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing spec publisher is reflected")
 }
 
 func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventing *v1alpha1.Eventing) {
@@ -418,7 +418,20 @@ func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventin
 				"name", eventing.Name, "namespace", eventing.Namespace)
 		}
 		return *hpa.Spec.MinReplicas == int32(eventing.Spec.Publisher.Replicas.Min) && hpa.Spec.MaxReplicas == int32(eventing.Spec.Publisher.Replicas.Max)
-	}, BigTimeOut, BigPollingInterval, "failed to ensure Eventing spec replicas is reflected")
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing spec replicas is reflected")
+}
+
+func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, eventing *v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		deployment, err := env.GetDeploymentFromK8s(ecdeployment.PublisherName, eventing.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
+				"name", eventing.Name, "namespace", eventing.Namespace)
+		}
+		return len(deployment.OwnerReferences) > 0 && deployment.OwnerReferences[0].Name == eventing.Name &&
+			deployment.OwnerReferences[0].Kind == "Eventing" &&
+			deployment.OwnerReferences[0].UID == eventing.UID
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing owner reference is set")
 }
 
 func (env TestEnvironment) UpdateEventingStatus(eventing *v1alpha1.Eventing) error {

@@ -24,9 +24,9 @@ import (
 const natsClientPort = 4222
 
 type Manager interface {
+	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
 	CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*v1.Deployment, error)
 	CreateOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
-	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
 }
 
 type EventingManager struct {

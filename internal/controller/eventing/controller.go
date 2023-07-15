@@ -156,14 +156,11 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
 	// check nats CR if it exists and is in natsAvailable state
-	natsAvailable, err := r.eventingManager.IsNATSAvailable(ctx, eventing.Namespace)
+	err := r.checkNATSAvailability(ctx, eventing)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
-	if !natsAvailable {
-		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing,
-			fmt.Errorf("NATS server is not available in namespace %s", eventing.Namespace), log)
-	}
+
 	// set NATSAvailable condition to true and update status
 	eventing.Status.SetNATSAvailableConditionToTrue()
 	if err := r.syncEventingStatus(ctx, eventing, log); err != nil {
@@ -178,9 +175,15 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	return r.handleEventingState(ctx, deployment, eventing, log)
 }
 
-func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
-	// TODO: Implement me.
-	return ctrl.Result{}, nil
+func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *eventingv1alpha1.Eventing) error {
+	natsAvailable, err := r.eventingManager.IsNATSAvailable(ctx, eventing.Namespace)
+	if err != nil {
+		return err
+	}
+	if !natsAvailable {
+		return fmt.Errorf("NATS server is not available in namespace %s", eventing.Namespace)
+	}
+	return nil
 }
 
 func (r *Reconciler) handlePublisherProxy(ctx context.Context, eventing *eventingv1alpha1.Eventing,
@@ -208,8 +211,9 @@ func (r *Reconciler) handlePublisherProxy(ctx context.Context, eventing *eventin
 	return deployment, nil
 }
 
-func (r *Reconciler) namedLogger() *zap.SugaredLogger {
-	return r.logger.WithContext().Named(ControllerName)
+func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+	// TODO: Implement me.
+	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) setDeploymentOwnerReference(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing) error {
@@ -234,4 +238,8 @@ func (r *Reconciler) setDeploymentOwnerReference(ctx context.Context, deployment
 	}
 
 	return nil
+}
+
+func (r *Reconciler) namedLogger() *zap.SugaredLogger {
+	return r.logger.WithContext().Named(ControllerName)
 }
