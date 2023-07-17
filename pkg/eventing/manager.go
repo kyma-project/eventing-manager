@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	ecbackend "github.com/kyma-project/kyma/components/eventing-controller/controllers/backend"
@@ -26,16 +25,18 @@ const natsClientPort = 4222
 type Manager interface {
 	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
 	CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*v1.Deployment, error)
-	CreateOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
+	CreateOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
 }
 
 type EventingManager struct {
 	ctx context.Context
 	client.Client
-	natsConfig env.NATSConfig
-	kubeClient k8s.Client
-	logger     *logger.Logger
-	recorder   record.EventRecorder
+	natsConfig         env.NATSConfig
+	backendConfig      env.BackendConfig
+	kubeClient         k8s.Client
+	ecReconcilerClient ECReconcilerClient
+	logger             *logger.Logger
+	recorder           record.EventRecorder
 }
 
 func NewEventingManager(
@@ -45,59 +46,79 @@ func NewEventingManager(
 	logger *logger.Logger,
 	recorder record.EventRecorder,
 ) Manager {
-	return EventingManager{
-		ctx:        ctx,
-		Client:     client,
-		natsConfig: natsConfig,
-		kubeClient: k8s.NewKubeClient(client),
-		logger:     logger,
-		recorder:   recorder,
-	}
-}
-
-func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*v1.Deployment, error) {
-	ecBackendType, err := convertECBackendType(eventing.GetNATSBackend().Type)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert eventing controller backend type: %s", err)
-	}
-
-	if err = em.updateNatsConfig(ctx, &em.natsConfig, eventing); err != nil {
-		return nil, err
-	}
-
-	backendConfig := env.GetBackendConfig()
-	updatePublisherConfig(&backendConfig, eventing)
-
 	// create an instance of ecbackend Reconciler
+	backendConfig := env.GetBackendConfig()
 	ecReconciler := ecbackend.NewReconciler(
 		ctx,
 		nil,
-		em.natsConfig,
+		natsConfig,
 		env.GetConfig(),
 		backendConfig,
 		nil,
-		em.Client,
-		em.logger,
-		em.recorder,
+		client,
+		logger,
+		recorder,
 	)
+	return EventingManager{
+		ctx:                ctx,
+		Client:             client,
+		natsConfig:         natsConfig,
+		backendConfig:      backendConfig,
+		kubeClient:         k8s.NewKubeClient(client),
+		ecReconcilerClient: &ECReconcilerEventingClient{ecReconciler},
+		logger:             logger,
+		recorder:           recorder,
+	}
+}
 
-	deployment, err := ecReconciler.CreateOrUpdatePublisherProxy(ctx, ecBackendType)
+type ECReconcilerClient interface {
+	CreateOrUpdatePublisherProxy(
+		ctx context.Context,
+		backend ecv1alpha1.BackendType,
+		natsConfig env.NATSConfig,
+		backendConfig env.BackendConfig) (*v1.Deployment, error)
+}
+
+type ECReconcilerEventingClient struct {
+	ecReconciler *ecbackend.Reconciler
+}
+
+func (e *ECReconcilerEventingClient) CreateOrUpdatePublisherProxy(
+	ctx context.Context,
+	backendType ecv1alpha1.BackendType,
+	natsConfig env.NATSConfig,
+	backendConfig env.BackendConfig) (*v1.Deployment, error) {
+	e.ecReconciler.SetNatsConfig(natsConfig)
+	e.ecReconciler.SetBackendConfig(backendConfig)
+	return e.ecReconciler.CreateOrUpdatePublisherProxy(ctx, backendType)
+}
+
+func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*v1.Deployment, error) {
+	natsBackend := eventing.GetNATSBackend()
+	var ecBackendType ecv1alpha1.BackendType
+	if natsBackend == nil {
+		return nil, fmt.Errorf("NATs backend is not specified in the eventing CR")
+	}
+
+	ecBackendType, err := convertECBackendType(natsBackend.Type)
 	if err != nil {
 		return nil, err
 	}
 
-	// Overwrite owner reference for publisher proxy deployment as the EC sets its deployment as owner
-	// and we want the Eventing CR to be the owner.
-	err = em.setDeploymentOwnerReference(ctx, deployment, eventing)
-	if err != nil {
-		return deployment, fmt.Errorf("failed to set owner reference for publisher proxy deployment: %s", err)
+	// update EC reconciler NATS and public config from the data in the eventing CR
+	if err := em.updateNatsConfig(ctx, eventing); err != nil {
+		return nil, err
 	}
-
+	em.updatePublisherConfig(eventing)
+	deployment, err := em.ecReconcilerClient.CreateOrUpdatePublisherProxy(ctx, ecBackendType, em.natsConfig, em.backendConfig)
+	if err != nil {
+		return nil, err
+	}
 	return deployment, nil
 }
 
 // createOrUpdateHorizontalPodAutoscaler creates or updates the HPA for the given deployment.
-func (em EventingManager) CreateOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error {
+func (em EventingManager) CreateOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error {
 	// try to get the existing horizontal pod autoscaler object
 	hpa := &autoscalingv2.HorizontalPodAutoscaler{}
 	err := em.Client.Get(ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, hpa)
@@ -141,14 +162,14 @@ func (em EventingManager) IsNATSAvailable(ctx context.Context, namespace string)
 		return false, err
 	}
 	for _, nats := range natsList.Items {
-		if nats.Status.State == eventingv1alpha1.StateReady {
+		if nats.Status.State == v1alpha1.StateReady {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func (em *EventingManager) setDeploymentOwnerReference(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing) error {
+func (em *EventingManager) setDeploymentOwnerReference(ctx context.Context, deployment *v1.Deployment, eventing *v1alpha1.Eventing) error {
 	// Update the deployment object
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		err := em.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, deployment)
@@ -180,28 +201,32 @@ func (em *EventingManager) getNATSUrl(ctx context.Context, namespace string) (st
 	for _, nats := range natsList.Items {
 		return fmt.Sprintf("nats://%s.%s.svc.cluster.local:%d", nats.Name, nats.Namespace, natsClientPort), nil
 	}
-	return "", fmt.Errorf("no NATS CR found to build NATS server URL")
+	return "", fmt.Errorf("NATS CR is not found to build NATS server URL")
 }
 
-func (em *EventingManager) updateNatsConfig(ctx context.Context, natsConfig *env.NATSConfig, eventing *v1alpha1.Eventing) error {
+func (em *EventingManager) updateNatsConfig(ctx context.Context, eventing *v1alpha1.Eventing) error {
 	natsUrl, err := em.getNATSUrl(ctx, eventing.Namespace)
 	if err != nil {
 		return err
 	}
-	natsConfig.URL = natsUrl
-	natsConfig.JSStreamStorageType = eventing.Spec.Backends[0].Config.NATSStorageType
-	natsConfig.JSStreamReplicas = eventing.Spec.Backends[0].Config.NATSStreamReplicas
-	natsConfig.JSStreamMaxBytes = eventing.Spec.Backends[0].Config.MaxStreamSize.String()
-	natsConfig.JSStreamMaxMsgsPerTopic = eventing.Spec.Backends[0].Config.MaxMsgsPerTopic
+	em.natsConfig.URL = natsUrl
+	em.natsConfig.JSStreamStorageType = eventing.Spec.Backends[0].Config.NATSStorageType
+	em.natsConfig.JSStreamReplicas = eventing.Spec.Backends[0].Config.NATSStreamReplicas
+	em.natsConfig.JSStreamMaxBytes = eventing.Spec.Backends[0].Config.MaxStreamSize.String()
+	em.natsConfig.JSStreamMaxMsgsPerTopic = eventing.Spec.Backends[0].Config.MaxMsgsPerTopic
 	return nil
 }
 
-func updatePublisherConfig(backendConfig *env.BackendConfig, eventing *v1alpha1.Eventing) {
-	backendConfig.PublisherConfig.RequestsCPU = eventing.Spec.Publisher.Resources.Requests.Cpu().String()
-	backendConfig.PublisherConfig.RequestsMemory = eventing.Spec.Publisher.Resources.Requests.Memory().String()
-	backendConfig.PublisherConfig.LimitsCPU = eventing.Spec.Publisher.Resources.Limits.Cpu().String()
-	backendConfig.PublisherConfig.LimitsMemory = eventing.Spec.Publisher.Resources.Limits.Memory().String()
-	backendConfig.PublisherConfig.Replicas = int32(eventing.Spec.Min)
+func (em *EventingManager) updatePublisherConfig(eventing *v1alpha1.Eventing) {
+	em.backendConfig.PublisherConfig.RequestsCPU = eventing.Spec.Publisher.Resources.Requests.Cpu().String()
+	em.backendConfig.PublisherConfig.RequestsMemory = eventing.Spec.Publisher.Resources.Requests.Memory().String()
+	em.backendConfig.PublisherConfig.LimitsCPU = eventing.Spec.Publisher.Resources.Limits.Cpu().String()
+	em.backendConfig.PublisherConfig.LimitsMemory = eventing.Spec.Publisher.Resources.Limits.Memory().String()
+	em.backendConfig.PublisherConfig.Replicas = int32(eventing.Spec.Min)
+}
+
+func (em *EventingManager) GetBackendConfig() *env.BackendConfig {
+	return &em.backendConfig
 }
 
 func convertECBackendType(backendType v1alpha1.BackendType) (ecv1alpha1.BackendType, error) {
