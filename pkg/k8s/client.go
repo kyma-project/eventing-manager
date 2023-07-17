@@ -6,6 +6,9 @@ import (
 	k8sclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 )
 
+// Perform a compile time check.
+var _ Client = &KubeClient{}
+
 //go:generate mockery --name=Client --outpkg=mocks --case=underscore
 type Client interface{}
 

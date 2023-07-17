@@ -2,7 +2,7 @@
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.26.1
+ENVTEST_K8S_VERSION = 1.27.1
 
 # VERIFY_IGNORE is a grep pattern to exclude files and directories from verification
 VERIFY_IGNORE := /vendor\|/automock
