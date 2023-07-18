@@ -6,12 +6,10 @@ import (
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/testutils"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
@@ -42,7 +40,6 @@ type TestEnvironment struct {
 	EnvTestInstance  *envtest.Environment
 	k8sClient        client.Client
 	K8sDynamicClient *dynamic.DynamicClient
-	KubeClient       *k8s.Client
 	Reconciler       *eventing.Reconciler
 	Logger           *zap.SugaredLogger
 	Recorder         *record.EventRecorder
@@ -101,13 +98,6 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	}
 	recorder := ctrlMgr.GetEventRecorderFor("eventing-manager")
 
-	// init custom kube client wrapper
-	apiClientSet, err := apiclientset.NewForConfig(ctrlMgr.GetConfig())
-	if err != nil {
-		return nil, err
-	}
-	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), apiClientSet, "eventing-manager")
-
 	// setup reconciler
 	eventingReconciler := eventingcontroller.NewReconciler(
 		ctrlMgr.GetClient(),
@@ -134,7 +124,6 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 		Context:          ctx,
 		k8sClient:        k8sClient,
 		K8sDynamicClient: dynamicClient,
-		KubeClient:       &kubeClient,
 		Reconciler:       eventingReconciler,
 		Logger:           sugaredLogger,
 		Recorder:         &recorder,
