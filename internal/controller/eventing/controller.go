@@ -26,6 +26,7 @@ import (
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	"go.uber.org/zap"
 
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -112,6 +113,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.ctrlManager = mgr
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&eventingv1alpha1.Eventing{}).
+		Owns(&v1.Deployment{}).
+		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
 		Complete(r)
 }
 
