@@ -2,13 +2,13 @@
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
-  name: publisher-proxy-metrics
+  name: eventing-publisher-proxy-metrics
   namespace: system
   labels:
     control-plane: controller-manager
     app.kubernetes.io/name: peerauthentication
-    app.kubernetes.io/instance: publisher-proxy-metrics
-    app.kubernetes.io/component: publisher-proxy
+    app.kubernetes.io/instance: eventing-publisher-proxy-metrics
+    app.kubernetes.io/component: eventing-publisher-proxy
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize

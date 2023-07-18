@@ -90,7 +90,7 @@ func (e *ECReconcilerEventingClient) CreateOrUpdatePublisherProxy(
 	backendConfig env.BackendConfig) (*v1.Deployment, error) {
 	e.ecReconciler.SetNatsConfig(natsConfig)
 	e.ecReconciler.SetBackendConfig(backendConfig)
-	return e.ecReconciler.CreateOrUpdatePublisherProxy(ctx, backendType)
+	return e.ecReconciler.CreateOrUpdatePublisherProxyDeployment(ctx, backendType, false)
 }
 
 func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*v1.Deployment, error) {

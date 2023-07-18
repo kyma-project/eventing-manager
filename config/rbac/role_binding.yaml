@@ -8,12 +8,12 @@ metadata:
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
-  name: manager-rolebinding
+  name: eventing-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: manager-role
+  name: eventing-manager-role
 subjects:
 - kind: ServiceAccount
-  name: controller-manager
+  name: eventing-controller-manager
   namespace: system
