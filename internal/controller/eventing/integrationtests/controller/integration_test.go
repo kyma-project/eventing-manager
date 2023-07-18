@@ -8,7 +8,7 @@ import (
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
-	testutils "github.com/kyma-project/eventing-manager/test/utils"
+	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
@@ -62,7 +62,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
 				utils.WithEventingCRDefaults(),
-				utils.WithEventingStreamData("Memory", 1, "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			givenNATS: natstestutils.NewNATSCR(
@@ -80,7 +80,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
 				utils.WithEventingCRDefaults(),
-				utils.WithEventingStreamData("Memory", 1, "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 			),
 			givenNATS: natstestutils.NewNATSCR(
@@ -100,7 +100,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
 				utils.WithEventingCRDefaults(),
-				utils.WithEventingStreamData("Memory", 1, "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			givenNATS: natstestutils.NewNATSCR(
@@ -172,13 +172,13 @@ func Test_UpdateEventingCR(t *testing.T) {
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
 				utils.WithEventingCRDefaults(),
-				utils.WithEventingStreamData("Memory", 1, "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			givenUpdateEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
 				utils.WithEventingCRDefaults(),
-				utils.WithEventingStreamData("Memory", 2, "2M", 2, 2),
+				utils.WithEventingStreamData("Memory", "2M", "2M", 2, 2),
 				utils.WithEventingPublisherData(2, 2, "299m", "199Mi", "499m", "299Mi"),
 			),
 		},
@@ -247,7 +247,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
 				utils.WithEventingCRDefaults(),
-				utils.WithEventingStreamData("Memory", 1, "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 		},

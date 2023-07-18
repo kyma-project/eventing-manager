@@ -54,11 +54,11 @@ func WithEventingCRNamespace(namespace string) EventingOption {
 	}
 }
 
-func WithEventingStreamData(natsStorageType string, natsStorageSize int, maxStreamSize string, natsStreamReplicas, maxMsgsPerTopic int) EventingOption {
+func WithEventingStreamData(natsStorageType string, natsStorageSize string, maxStreamSize string, natsStreamReplicas, maxMsgsPerTopic int) EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
 		nats.Spec.Backends[0].Config = v1alpha1.BackendConfig{
 			NATSStorageType:    natsStorageType,
-			NATSStorageSize:    *resource.NewQuantity(int64(natsStorageSize), resource.DecimalSI),
+			NATSStorageSize:    resource.MustParse(natsStorageSize),
 			MaxStreamSize:      resource.MustParse(maxStreamSize),
 			NATSStreamReplicas: natsStreamReplicas,
 			MaxMsgsPerTopic:    int64(maxMsgsPerTopic),
@@ -83,6 +83,19 @@ func WithEventingPublisherData(minReplicas, maxReplicas int, requestCPU, request
 				Limits: corev1.ResourceList{
 					corev1.ResourceCPU:    resource.MustParse(limitCPU),    // "100m"
 					corev1.ResourceMemory: resource.MustParse(limitMemory), // "128Mi"
+				},
+			},
+		}
+		return nil
+	}
+}
+
+func WithEventingInvalidBackend() EventingOption {
+	return func(nats *v1alpha1.Eventing) error {
+		nats.Spec = v1alpha1.EventingSpec{
+			Backends: []v1alpha1.Backend{
+				{
+					Type: "invalid",
 				},
 			},
 		}

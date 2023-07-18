@@ -14,24 +14,21 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
-	// Define a list of test cases
-	var replicas *int32 = new(int32)
-	*replicas = 2
-
 	testCases := []struct {
 		name           string
 		eventing       *v1alpha1.Eventing
@@ -41,80 +38,36 @@ func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
 	}{
 		{
 			name: "CreateOrUpdatePublisherProxy success",
-			eventing: &v1alpha1.Eventing{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing",
-					Namespace: ecdeployment.PublisherNamespace,
-				},
-				Spec: v1alpha1.EventingSpec{
-					Backends: []v1alpha1.Backend{
-						{
-							Type: v1alpha1.NatsBackendType,
-						},
-					},
-					Publisher: v1alpha1.Publisher{
-						Replicas: v1alpha1.Replicas{
-							Min: 2,
-							Max: 4,
-						},
-						Resources: v1.ResourceRequirements{
-							Requests: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("100m"),
-								v1.ResourceMemory: resource.MustParse("256Mi"),
-							},
-							Limits: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("200m"),
-								v1.ResourceMemory: resource.MustParse("512Mi"),
-							},
-						},
-					},
-				},
-			},
+			eventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
+				testutils.WithEventingCRDefaults(),
+				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
+			),
 			givenNats: []natsv1alpha1.NATS{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-eventing",
-						Namespace: ecdeployment.PublisherNamespace,
-					},
-					Status: natsv1alpha1.NATSStatus{
-						State: natsv1alpha1.StateReady,
-					},
-				},
+				*natstestutils.NewNATSCR(
+					natstestutils.WithNATSCRName("test-eventing"),
+					natstestutils.WithNATSCRNamespace(ecdeployment.PublisherNamespace),
+					natstestutils.WithNATSStateReady(),
+				),
 			},
 			expectedResult: &appsv1.Deployment{},
 			expectedError:  nil,
 		},
 		{
 			name: "CreateOrUpdatePublisherProxy error",
-			eventing: &v1alpha1.Eventing{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing",
-					Namespace: "test-namespace",
-				},
-				Spec: v1alpha1.EventingSpec{
-					Backends: []v1alpha1.Backend{
-						{
-							Type: "invalid",
-						},
-					},
-					Publisher: v1alpha1.Publisher{
-						Replicas: v1alpha1.Replicas{
-							Min: 1,
-							Max: 5,
-						},
-					},
-				},
-			},
+			eventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
+				testutils.WithEventingInvalidBackend(),
+				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
+			),
 			givenNats: []natsv1alpha1.NATS{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-eventing",
-						Namespace: ecdeployment.PublisherNamespace,
-					},
-					Status: natsv1alpha1.NATSStatus{
-						State: natsv1alpha1.StateReady,
-					},
-				},
+				*natstestutils.NewNATSCR(
+					natstestutils.WithNATSCRName("test-eventing"),
+					natstestutils.WithNATSCRNamespace(ecdeployment.PublisherNamespace),
+					natstestutils.WithNATSStateReady(),
+				),
 			},
 			expectedResult: nil,
 			expectedError:  fmt.Errorf("NATs backend is not specified in the eventing CR"),
@@ -154,7 +107,7 @@ func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
 	}
 }
 
-func TestCreateOrUpdateHPA(t *testing.T) {
+func Test_CreateOrUpdateHPA(t *testing.T) {
 	// Define a list of test cases
 	testCases := []struct {
 		name              string
@@ -176,20 +129,12 @@ func TestCreateOrUpdateHPA(t *testing.T) {
 					Replicas: int32Ptr(2),
 				},
 			},
-			eventing: &v1alpha1.Eventing{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing",
-					Namespace: "test-namespace",
-				},
-				Spec: v1alpha1.EventingSpec{
-					Publisher: v1alpha1.Publisher{
-						Replicas: v1alpha1.Replicas{
-							Min: 1,
-							Max: 5,
-						},
-					},
-				},
-			},
+			eventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace("test-namespace"),
+				testutils.WithEventingInvalidBackend(),
+				testutils.WithEventingPublisherData(1, 5, "100m", "256Mi", "200m", "512Mi"),
+			),
 			cpuUtilization:    50,
 			memoryUtilization: 50,
 			givenGetErr:       apierrors.NewNotFound(autoscalingv2.Resource("HorizontalPodAutoscaler"), "eventing-publisher-proxy"),
@@ -206,20 +151,12 @@ func TestCreateOrUpdateHPA(t *testing.T) {
 					Replicas: int32Ptr(2),
 				},
 			},
-			eventing: &v1alpha1.Eventing{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing",
-					Namespace: "test-namespace",
-				},
-				Spec: v1alpha1.EventingSpec{
-					Publisher: v1alpha1.Publisher{
-						Replicas: v1alpha1.Replicas{
-							Min: 1,
-							Max: 5,
-						},
-					},
-				},
-			},
+			eventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace("test-namespace"),
+				testutils.WithEventingInvalidBackend(),
+				testutils.WithEventingPublisherData(1, 5, "100m", "256Mi", "200m", "512Mi"),
+			),
 			cpuUtilization:    50,
 			memoryUtilization: 50,
 			expectedError:     nil,
@@ -235,20 +172,12 @@ func TestCreateOrUpdateHPA(t *testing.T) {
 					Replicas: int32Ptr(2),
 				},
 			},
-			eventing: &v1alpha1.Eventing{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing",
-					Namespace: "test-namespace",
-				},
-				Spec: v1alpha1.EventingSpec{
-					Publisher: v1alpha1.Publisher{
-						Replicas: v1alpha1.Replicas{
-							Min: 1,
-							Max: 5,
-						},
-					},
-				},
-			},
+			eventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace("test-namespace"),
+				testutils.WithEventingInvalidBackend(),
+				testutils.WithEventingPublisherData(1, 5, "100m", "256Mi", "200m", "512Mi"),
+			),
 			cpuUtilization:    50,
 			memoryUtilization: 50,
 			givenGetErr:       errors.New("get HPA error"),
@@ -317,6 +246,8 @@ func TestCreateOrUpdateHPA(t *testing.T) {
 				hpaArg := mockClient.Calls[0].Arguments.Get(2).(*autoscalingv2.HorizontalPodAutoscaler)
 				require.Equal(t, int32(tc.eventing.Spec.Publisher.Min), *hpaArg.Spec.MinReplicas)
 				require.Equal(t, int32(tc.eventing.Spec.Publisher.Max), hpaArg.Spec.MaxReplicas)
+				require.Equal(t, int32(tc.cpuUtilization), *hpaArg.Spec.Metrics[0].Resource.Target.AverageUtilization)
+				require.Equal(t, int32(tc.memoryUtilization), *hpaArg.Spec.Metrics[1].Resource.Target.AverageUtilization)
 			}
 		})
 	}
@@ -335,11 +266,9 @@ func Test_IsNATSAvailable(t *testing.T) {
 		{
 			name: "NATS is available",
 			givenNATSResources: []natsv1alpha1.NATS{
-				{
-					Status: natsv1alpha1.NATSStatus{
-						State: natsv1alpha1.StateReady,
-					},
-				},
+				*natstestutils.NewNATSCR(
+					natstestutils.WithNATSStateReady(),
+				),
 			},
 			givenNamespace: "test-namespace",
 			wantAvailable:  true,
@@ -348,11 +277,9 @@ func Test_IsNATSAvailable(t *testing.T) {
 		{
 			name: "NATS is not available",
 			givenNATSResources: []natsv1alpha1.NATS{
-				{
-					Status: natsv1alpha1.NATSStatus{
-						State: natsv1alpha1.StateError,
-					},
-				},
+				*natstestutils.NewNATSCR(
+					natstestutils.WithNATSStateProcessing(),
+				),
 			},
 			givenNamespace: "test-namespace",
 			wantAvailable:  false,
@@ -409,12 +336,10 @@ func Test_getNATSUrl(t *testing.T) {
 		{
 			name: "NATS resource exists",
 			givenNatsResources: []natsv1alpha1.NATS{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-nats",
-						Namespace: "test-namespace",
-					},
-				},
+				*natstestutils.NewNATSCR(
+					natstestutils.WithNATSCRName("test-nats"),
+					natstestutils.WithNATSCRNamespace("test-namespace"),
+				),
 			},
 			givenNamespace: "test-namespace",
 			want:           "nats://test-nats.test-namespace.svc.cluster.local:4222",
@@ -455,8 +380,8 @@ func Test_getNATSUrl(t *testing.T) {
 			url, err := em.getNATSUrl(ctx, tc.givenNamespace)
 
 			// then
-			require.Equal(t, tc.want, url)
 			require.Equal(t, tc.wantErr, err)
+			require.Equal(t, tc.want, url)
 		})
 	}
 }
@@ -472,63 +397,35 @@ func Test_UpdateNatsConfig(t *testing.T) {
 	}{
 		{
 			name: "Update NATSConfig",
-			eventing: &v1alpha1.Eventing{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing",
-					Namespace: "test-namespace",
-				},
-				Spec: v1alpha1.EventingSpec{
-					Backends: []v1alpha1.Backend{
-						{
-							Type: v1alpha1.NatsBackendType,
-							Config: v1alpha1.BackendConfig{
-								NATSStorageType:    "file",
-								NATSStreamReplicas: 2,
-								MaxStreamSize:      resource.MustParse("1Gi"),
-								MaxMsgsPerTopic:    1000,
-							},
-						},
-					},
-				},
-			},
+			eventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace("test-namespace"),
+				testutils.WithEventingCRDefaults(),
+				testutils.WithEventingStreamData("File", "1Gi", "700Mi", 2, 1000),
+			),
 			givenNatsResources: []natsv1alpha1.NATS{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-nats",
-						Namespace: "test-namespace",
-					},
-				},
+				*natstestutils.NewNATSCR(
+					natstestutils.WithNATSCRName("test-nats"),
+					natstestutils.WithNATSCRNamespace("test-namespace"),
+				),
 			},
 			expectedConfig: env.NATSConfig{
 				URL:                     "nats://test-nats.test-namespace.svc.cluster.local:4222",
-				JSStreamStorageType:     "file",
+				JSStreamStorageType:     "File",
 				JSStreamReplicas:        2,
-				JSStreamMaxBytes:        "1Gi",
+				JSStreamMaxBytes:        "700Mi",
 				JSStreamMaxMsgsPerTopic: 1000,
 			},
 			expectedError: nil,
 		},
 		{
 			name: "Error getting NATS URL",
-			eventing: &v1alpha1.Eventing{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing",
-					Namespace: "test-namespace",
-				},
-				Spec: v1alpha1.EventingSpec{
-					Backends: []v1alpha1.Backend{
-						{
-							Type: v1alpha1.NatsBackendType,
-							Config: v1alpha1.BackendConfig{
-								NATSStorageType:    "file",
-								NATSStreamReplicas: 2,
-								MaxStreamSize:      resource.MustParse("1Gi"),
-								MaxMsgsPerTopic:    1000,
-							},
-						},
-					},
-				},
-			},
+			eventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace("test-namespace"),
+				testutils.WithEventingCRDefaults(),
+				testutils.WithEventingStreamData("Memory", "1Gi", "700Mi", 2, 1000),
+			),
 			expectedError: fmt.Errorf("failed to get NATS URL"),
 		},
 	}
@@ -536,7 +433,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 	// Iterate over the test cases and run sub-tests
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// when
+			// given
 			ctx := context.Background()
 			kubeClient := new(k8smocks.Client)
 			kubeClient.On("GetNATSResources", ctx, tc.eventing.Namespace).Return(&natsv1alpha1.NATSList{
@@ -566,36 +463,16 @@ func Test_UpdatePublisherConfig(t *testing.T) {
 	}{
 		{
 			name: "Update BackendConfig",
-			eventing: &v1alpha1.Eventing{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing",
-					Namespace: "test-namespace",
-				},
-				Spec: v1alpha1.EventingSpec{
-					Publisher: v1alpha1.Publisher{
-						Replicas: v1alpha1.Replicas{
-							Min: 2,
-							Max: 4,
-						},
-						Resources: v1.ResourceRequirements{
-							Requests: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("100m"),
-								v1.ResourceMemory: resource.MustParse("256Mi"),
-							},
-							Limits: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("200m"),
-								v1.ResourceMemory: resource.MustParse("512Mi"),
-							},
-						},
-					},
-				},
-			},
+			eventing: testutils.NewEventingCR(
+				testutils.WithEventingCRDefaults(),
+				testutils.WithEventingPublisherData(2, 2, "100m", "99Mi", "399m", "199Mi"),
+			),
 			expectedConfig: env.BackendConfig{
 				PublisherConfig: env.PublisherConfig{
 					RequestsCPU:    "100m",
-					RequestsMemory: "256Mi",
-					LimitsCPU:      "200m",
-					LimitsMemory:   "512Mi",
+					RequestsMemory: "99Mi",
+					LimitsCPU:      "399m",
+					LimitsMemory:   "199Mi",
 					Replicas:       2,
 				},
 			},
@@ -605,12 +482,13 @@ func Test_UpdatePublisherConfig(t *testing.T) {
 	// Iterate over the test cases and run sub-tests
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Create a fake BackendConfig object
+			// given
 			em := &EventingManager{}
 
+			// when
 			em.updatePublisherConfig(tc.eventing)
 
-			// Check that the BackendConfig object was updated correctly
+			// then
 			require.Equal(t, tc.expectedConfig, em.backendConfig)
 		})
 	}
