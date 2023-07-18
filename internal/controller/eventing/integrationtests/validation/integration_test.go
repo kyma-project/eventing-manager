@@ -3,9 +3,9 @@ package validation_test
 import (
 	"fmt"
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	"github.com/kyma-project/eventing-manager/testutils"
-	"github.com/kyma-project/eventing-manager/testutils/integration"
-	eventingMatchers "github.com/kyma-project/eventing-manager/testutils/matchers/eventing"
+	"github.com/kyma-project/eventing-manager/test"
+	"github.com/kyma-project/eventing-manager/test/integration"
+	eventingMatchers "github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
@@ -111,8 +111,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						publisher: map[string]any{
@@ -133,8 +133,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						publisher: map[string]any{
@@ -154,8 +154,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -174,8 +174,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -195,8 +195,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -213,8 +213,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -232,8 +232,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -250,8 +250,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -271,8 +271,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -293,8 +293,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -314,8 +314,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -335,8 +335,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						logging: map[string]any{
@@ -354,8 +354,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						logging: map[string]any{
@@ -372,8 +372,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						logging: map[string]any{
@@ -390,8 +390,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						logging: map[string]any{
@@ -408,8 +408,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						logging: map[string]any{
@@ -464,8 +464,8 @@ func Test_Validate_Defaulting(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 				},
 			},
@@ -483,8 +483,8 @@ func Test_Validate_Defaulting(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{},
 				},
@@ -503,8 +503,8 @@ func Test_Validate_Defaulting(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -546,8 +546,8 @@ func Test_Validate_Defaulting(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{
@@ -580,8 +580,8 @@ func Test_Validate_Defaulting(t *testing.T) {
 					kind:       kindEventing,
 					apiVersion: apiVersionEventing,
 					metadata: map[string]any{
-						name:      testutils.GetRandK8sName(7),
-						namespace: testutils.GetRandK8sName(7),
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
 						backends: map[string]any{

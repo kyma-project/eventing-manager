@@ -6,7 +6,7 @@ import (
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
-	"github.com/kyma-project/eventing-manager/testutils"
+	"github.com/kyma-project/eventing-manager/test"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -53,7 +53,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	ctx := context.Background()
 
 	// setup logger
-	sugaredLogger, err := testutils.NewSugaredLogger()
+	sugaredLogger, err := test.NewSugaredLogger()
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	}
 
 	// setup ctrl manager
-	metricsPort, err := testutils.GetFreePort()
+	metricsPort, err := test.GetFreePort()
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +220,7 @@ func (env TestEnvironment) EnsureNamespaceCreation(t *testing.T, namespace strin
 		return
 	}
 	// create namespace
-	ns := testutils.NewNamespace(namespace)
+	ns := test.NewNamespace(namespace)
 	require.NoError(t, client.IgnoreAlreadyExists(env.k8sClient.Create(env.Context, ns)))
 }
 

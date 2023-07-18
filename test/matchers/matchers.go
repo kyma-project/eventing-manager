@@ -1,4 +1,4 @@
-package eventing
+package matchers
 
 import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
