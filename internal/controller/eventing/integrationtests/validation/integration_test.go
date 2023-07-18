@@ -1,6 +1,7 @@
 package validation_test
 
 import (
+	"fmt"
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/testutils"
 	"github.com/kyma-project/eventing-manager/testutils/integration"
@@ -116,7 +117,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					spec: map[string]any{
 						publisher: map[string]any{
 							replicas: map[string]any{
-								min: 3,
+								min: 2,
 								max: 2,
 							},
 						},
@@ -436,14 +437,11 @@ func Test_Validate_CreateEventing(t *testing.T) {
 				require.NoError(t, err, "Expected error message to be empty but got error instead."+
 					" Check the validation rule of the eventing CR.")
 			} else {
-				if err != nil {
-					require.Contains(t, err.Error(), tc.wantErrMsg, "Expected a specific error message"+
-						" but messages do not match. Check the validation rules of the eventing CR.")
-				} else {
-					require.Error(t, err, "Expected the following error message: \""+tc.wantErrMsg+
-						".\" but got no error. Check the validation rules of the eventing CR.")
-				}
+				require.Error(t, err, fmt.Sprintf("Expected the following error message: \n \" %s \" \n"+
+					" but got no error. Check the validation rules of the eventing CR.", tc.wantErrMsg))
 
+				require.Contains(t, err.Error(), tc.wantErrMsg, "Expected a specific error message"+
+					" but messages do not match. Check the validation rules of the eventing CR.")
 			}
 		})
 	}
