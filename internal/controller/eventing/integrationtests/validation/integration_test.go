@@ -116,7 +116,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					spec: map[string]any{
 						publisher: map[string]any{
 							replicas: map[string]any{
-								min: 3,
+								min: 2,
 								max: 2,
 							},
 						},
