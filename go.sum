@@ -99,6 +99,8 @@ github.com/kyma-project/kyma/common/logging v0.0.0-20230616102347-ad6927dc28d5 h
 github.com/kyma-project/kyma/common/logging v0.0.0-20230616102347-ad6927dc28d5/go.mod h1:JGb5RBi8Uz+RZ/jf54+qA+RqY6uPQBJ8pO1w3KSwm1Q=
 github.com/kyma-project/kyma/components/application-operator v0.0.0-20230127165033-ec8e43477eca h1:7UpCIk6+sMCOhPfolAlppRugSln5M4T8/dHJm8x0erc=
 github.com/kyma-project/kyma/components/application-operator v0.0.0-20230127165033-ec8e43477eca/go.mod h1:Tog02gZ1VT7yvFmhSqmiuGZpDYt18zTF4kr6E0N9ttk=
+github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20230719123840-5a34a3624d03 h1:JeFDI71Zm2KQ7T7zkF4zRilfd3gwpShaglP0UTmEqnQ=
+github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20230719123840-5a34a3624d03/go.mod h1:fAptmRayLFox9CZjXmmtRoVh7M0C7aEJ1UP4v41Xigc=
 github.com/kyma-project/nats-manager v0.0.0-20230718133808-9241d3b926bd h1:oZboLZkGT/1wP/lNvuqeJPOwslHS+Oq0BGuiS0L0o2M=
 github.com/kyma-project/nats-manager v0.0.0-20230718133808-9241d3b926bd/go.mod h1:KCs/xWuIyxSQSckDuHUxH60xiDD67xgPtfqHujzfqbw=
 github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0=
@@ -115,8 +117,6 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/muralov/kyma/components/eventing-controller v0.0.0-20230718152921-8529ebc20bf4 h1:62cqWN+Jc7dHKGXqLQL3kq89UyeREon/ZvlxxV/MvLg=
-github.com/muralov/kyma/components/eventing-controller v0.0.0-20230718152921-8529ebc20bf4/go.mod h1:fAptmRayLFox9CZjXmmtRoVh7M0C7aEJ1UP4v41Xigc=
 github.com/nats-io/jwt/v2 v2.4.1 h1:Y35W1dgbbz2SQUYDPCaclXcuqleVmpbRa7646Jf2EX4=
 github.com/nats-io/nats-server/v2 v2.9.20 h1:bt1dW6xsL1hWWwv7Hovm+EJt5L6iplyqlgEFkoEUk0k=
 github.com/nats-io/nkeys v0.4.4 h1:xvBJ8d69TznjcQl9t6//Q5xXuVhyYiSos6RPtvQNTwA=
