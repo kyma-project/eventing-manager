@@ -5,7 +5,7 @@ metadata:
     control-plane: controller-manager
     app.kubernetes.io/name: namespace
     app.kubernetes.io/instance: system
-    app.kubernetes.io/component: manager
+    app.kubernetes.io/component: eventing-manager
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
@@ -20,7 +20,7 @@ metadata:
     control-plane: controller-manager
     app.kubernetes.io/name: deployment
     app.kubernetes.io/instance: controller-manager
-    app.kubernetes.io/component: manager
+    app.kubernetes.io/component: eventing-manager
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
