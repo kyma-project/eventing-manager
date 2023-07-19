@@ -5,8 +5,8 @@ go 1.20
 require (
 	github.com/avast/retry-go/v3 v3.1.1
 	github.com/go-logr/zapr v1.2.4
-	github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20230703155759-e34c2950e1b6
-	github.com/kyma-project/nats-manager v0.0.0-00010101000000-000000000000
+	github.com/kyma-project/kyma/components/eventing-controller v0.0.0-00010101000000-000000000000
+	github.com/kyma-project/nats-manager v0.0.0-20230718133808-9241d3b926bd
 	github.com/onsi/gomega v1.27.8
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.24.0
@@ -83,8 +83,7 @@ require (
 
 replace (
 	github.com/kyma-incubator/api-gateway => github.com/kyma-project/api-gateway v0.0.0-20220819093753-296e6704d413
-	github.com/kyma-project/kyma/components/eventing-controller => ../kyma/components/eventing-controller
-	github.com/kyma-project/nats-manager => ../nats-manager
+	github.com/kyma-project/kyma/components/eventing-controller => github.com/muralov/kyma/components/eventing-controller v0.0.0-20230718152921-8529ebc20bf4
 	k8s.io/api => k8s.io/api v0.26.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.26.1
 	k8s.io/apimachinery => k8s.io/apimachinery v0.26.1

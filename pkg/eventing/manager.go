@@ -13,7 +13,6 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -167,30 +166,6 @@ func (em EventingManager) IsNATSAvailable(ctx context.Context, namespace string)
 		}
 	}
 	return false, nil
-}
-
-func (em *EventingManager) setDeploymentOwnerReference(ctx context.Context, deployment *v1.Deployment, eventing *v1alpha1.Eventing) error {
-	// Update the deployment object
-	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err := em.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, deployment)
-		if err != nil {
-			return err
-		}
-		// Set the controller reference to the parent object
-		if err := controllerutil.SetControllerReference(eventing, deployment, em.Scheme()); err != nil {
-			return fmt.Errorf("failed to set controller reference: %v", err)
-		}
-		err = em.Update(ctx, deployment)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	if retryErr != nil {
-		return retryErr
-	}
-
-	return nil
 }
 
 func (em *EventingManager) getNATSUrl(ctx context.Context, namespace string) (string, error) {

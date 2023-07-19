@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	eventing "github.com/kyma-project/eventing-manager/pkg/eventing"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/util/retry"
 )
@@ -44,14 +44,6 @@ const (
 	ControllerName      = "eventing-manager-controller"
 	ManagedByLabelKey   = "app.kubernetes.io/managed-by"
 	ManagedByLabelValue = ControllerName
-)
-
-var (
-	// allowedAnnotations are the publisher proxy deployment spec template annotations
-	// which should be preserved during reconciliation.
-	allowedAnnotations = map[string]string{
-		"kubectl.kubernetes.io/restartedAt": "",
-	}
 )
 
 // Reconciler reconciles a Eventing object

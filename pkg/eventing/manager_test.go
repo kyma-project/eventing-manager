@@ -89,7 +89,7 @@ func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
 			mockECReconcileClient.On("CreateOrUpdatePublisherProxy",
 				mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&appsv1.Deployment{}, nil)
 
-			logger, err := logger.New("json", "info")
+			logger, _ := logger.New("json", "info")
 			em := EventingManager{
 				Client:             mockClient,
 				kubeClient:         kubeClient,
@@ -201,16 +201,12 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 
 			// Set up the mock client to return an error or a HorizontalPodAutoscaler object
 			var hpa *autoscalingv2.HorizontalPodAutoscaler
-			var err error
-			if tc.expectedError != nil {
-				err = tc.expectedError
-			} else {
+			if tc.expectedError == nil {
 				hpa = createNewHorizontalPodAutoscaler(
 					tc.deployment,
 					int32(tc.eventing.Spec.Publisher.Min), int32(tc.eventing.Spec.Publisher.Max),
 					tc.cpuUtilization, tc.memoryUtilization,
 				)
-				err = nil
 			}
 
 			mockClient.On("Scheme").Return(func() *runtime.Scheme {
@@ -231,7 +227,7 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 			mockClient.On("Update", mock.Anything, mock.Anything).Return(nil)
 
 			// when
-			err = em.CreateOrUpdateHPA(context.Background(), tc.deployment, tc.eventing, tc.cpuUtilization, tc.memoryUtilization)
+			err := em.CreateOrUpdateHPA(context.Background(), tc.deployment, tc.eventing, tc.cpuUtilization, tc.memoryUtilization)
 
 			// then
 
