@@ -496,7 +496,7 @@ func Test_Validate_Defaulting(t *testing.T) {
 				},
 			},
 			wantMatches: gomega.And(
-				eventingMatchers.HaveBackendTypeNats(defaultBackend()),
+				eventingMatchers.HaveBackendTypeNats(defaultBackendConfig()),
 				eventingMatchers.HavePublisher(defaultPublisher()),
 				eventingMatchers.HavePublisherResources(defaultPublisherResources()),
 				eventingMatchers.HaveLogging(defaultLogging()),
@@ -516,7 +516,7 @@ func Test_Validate_Defaulting(t *testing.T) {
 				},
 			},
 			wantMatches: gomega.And(
-				eventingMatchers.HaveBackendTypeNats(defaultBackend()),
+				eventingMatchers.HaveBackendTypeNats(defaultBackendConfig()),
 				eventingMatchers.HavePublisher(defaultPublisher()),
 				eventingMatchers.HavePublisherResources(defaultPublisherResources()),
 				eventingMatchers.HaveLogging(defaultLogging()),
@@ -562,7 +562,7 @@ func Test_Validate_Defaulting(t *testing.T) {
 				},
 			},
 			wantMatches: gomega.And(
-				eventingMatchers.HaveBackendTypeNats(defaultBackend()),
+				eventingMatchers.HaveBackendTypeNats(defaultBackendConfig()),
 			),
 		},
 		{
@@ -670,15 +670,12 @@ func Test_Validate_Defaulting(t *testing.T) {
 	}
 }
 
-func defaultBackend() v1alpha1.Backend {
-	return v1alpha1.Backend{
-		Type: typeNats,
-		Config: v1alpha1.BackendConfig{
-			NATSStreamStorageType: storageTypeFile,
-			NATSStreamReplicas:    3,
-			NATSStreamMaxSize:     resource.MustParse("700Mi"),
-			NATSMaxMsgsPerTopic:   1000000,
-		},
+func defaultBackendConfig() v1alpha1.BackendConfig {
+	return v1alpha1.BackendConfig{
+		NATSStreamStorageType: storageTypeFile,
+		NATSStreamReplicas:    3,
+		NATSStreamMaxSize:     resource.MustParse("700Mi"),
+		NATSMaxMsgsPerTopic:   1000000,
 	}
 }
 

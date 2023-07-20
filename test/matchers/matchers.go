@@ -8,28 +8,28 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func HaveBackendTypeNats(b v1alpha1.Backend) gomegatypes.GomegaMatcher {
+func HaveBackendTypeNats(bc v1alpha1.BackendConfig) gomegatypes.GomegaMatcher {
 	return gomega.And(
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
 				return e.Spec.Backends.Type
-			}, gomega.Equal(b.Type)),
+			}, gomega.Equal("NATS")),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
 				return e.Spec.Backends.Config.NATSStreamStorageType
-			}, gomega.Equal(b.Config.NATSStreamStorageType)),
+			}, gomega.Equal(bc.NATSStreamStorageType)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
 				return e.Spec.Backends.Config.NATSStreamReplicas
-			}, gomega.Equal(b.Config.NATSStreamReplicas)),
+			}, gomega.Equal(bc.NATSStreamReplicas)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) resource.Quantity {
 				return e.Spec.Backends.Config.NATSStreamMaxSize
-			}, gomega.Equal(b.Config.NATSStreamMaxSize)),
+			}, gomega.Equal(bc.NATSStreamMaxSize)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
 				return e.Spec.Backends.Config.NATSMaxMsgsPerTopic
-			}, gomega.Equal(b.Config.NATSMaxMsgsPerTopic)),
+			}, gomega.Equal(bc.NATSMaxMsgsPerTopic)),
 	)
 }
 
