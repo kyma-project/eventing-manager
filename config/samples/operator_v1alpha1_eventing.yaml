@@ -11,4 +11,4 @@ metadata:
   namespace: eventing-manager
 spec:
   backends:
-    - type: "NATS"
+    type: NATS

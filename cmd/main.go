@@ -113,15 +113,15 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		os.Exit(1)
 	}
 
-	// create NATS reconciler instance
-	natsReconciler := eventingcontroller.NewReconciler(
+	// create Eventing reconciler instance
+	eventingReconciler := eventingcontroller.NewReconciler(
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		sugaredLogger,
-		mgr.GetEventRecorderFor("nats-manager"),
+		mgr.GetEventRecorderFor("eventing-manager"),
 	)
 
-	if err = (natsReconciler).SetupWithManager(mgr); err != nil {
+	if err = (eventingReconciler).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NATS")
 		os.Exit(1)
 	}
