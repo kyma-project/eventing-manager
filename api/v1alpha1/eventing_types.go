@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// +kubebuilder:validation:Optional // This sets 'required' as the default behaviour.
-//
 // nolint:lll //this is annotation
 package v1alpha1
 
@@ -82,12 +80,12 @@ type EventingList struct {
 type Backend struct {
 	// Type defines which backend to use. The value is either `EventMesh`, or `NATS`.
 	// +kubebuilder:default:="NATS"
-	// +kubebuilder:validation:XValidation:rule="self=='NATS' || self=='EventMesh'", message="storage type can only be set to NATS or EventMesh"
+	// +kubebuilder:validation:XValidation:rule="self=='NATS' || self=='EventMesh'", message="backend type can only be set to NATS or EventMesh"
 	Type string `json:"type"`
 
 	// Config defines configuration for eventing backend.
 	// +kubebuilder:default:={natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}
-	Config BackendConfig `json:"config"`
+	Config BackendConfig `json:"config,omitempty"`
 }
 
 // BackendConfig defines configuration for eventing backend.
@@ -95,27 +93,23 @@ type BackendConfig struct {
 	// NATSStreamStorageType defines the storage type for stream data.
 	// +kubebuilder:default:="File"
 	// +kubebuilder:validation:XValidation:rule="self=='File' || self=='Memory'", message="storage type can only be set to File or Memory"
-	// +optional
-	NATSStreamStorageType string `json:"natsStreamStorageType"`
+	NATSStreamStorageType string `json:"natsStreamStorageType,omitempty"`
 
 	// NATSStreamReplicas defines the number of replicas for stream.
 	// +kubebuilder:default:=3
-	// +optional
-	NATSStreamReplicas int `json:"natsStreamReplicas"`
+	NATSStreamReplicas int `json:"natsStreamReplicas,omitempty"`
 
 	// NATSStreamMaxSize defines the maximum storage size for stream data.
 	// +kubebuilder:default:="700Mi"
-	// +optional
-	NATSStreamMaxSize resource.Quantity `json:"natsStreamMaxSize"`
+	NATSStreamMaxSize resource.Quantity `json:"natsStreamMaxSize,omitempty"`
 
 	// NATSMaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject.
 	// +kubebuilder:default:=1000000
-	// +optional
-	NATSMaxMsgsPerTopic int `json:"natsMaxMsgsPerTopic"`
+	NATSMaxMsgsPerTopic int `json:"natsMaxMsgsPerTopic,omitempty"`
 
 	// EventMeshSecret defines the namespaced name of K8s Secret containing EventMesh credentials. The format of name is "namespace/name".
-	// +optional
-	EventMeshSecret string `json:"eventMeshSecret"`
+	// +kubebuilder:validation:Pattern:="^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$"
+	EventMeshSecret string `json:"eventMeshSecret,omitempty"`
 }
 
 // Publisher defines the configurations for eventing-publisher-proxy.

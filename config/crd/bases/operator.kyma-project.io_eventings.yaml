@@ -92,6 +92,7 @@ spec:
                         description: EventMeshSecret defines the namespaced name of
                           K8s Secret containing EventMesh credentials. The format
                           of name is "namespace/name".
+                        pattern: ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$
                         type: string
                       natsMaxMsgsPerTopic:
                         default: 1000000
@@ -127,10 +128,9 @@ spec:
                       `EventMesh`, or `NATS`.
                     type: string
                     x-kubernetes-validations:
-                    - message: storage type can only be set to NATS or EventMesh
+                    - message: backend type can only be set to NATS or EventMesh
                       rule: self=='NATS' || self=='EventMesh'
                 required:
-                - config
                 - type
                 type: object
                 x-kubernetes-validations:

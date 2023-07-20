@@ -16,6 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
 	"log"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,7 +29,7 @@ import (
 const (
 	useExistingCluster       = false
 	attachControlPlaneOutput = false
-	testEnvStartDelay        = time.Minute
+	testEnvStartDelay        = 20 * time.Second
 	testEnvStartAttempts     = 10
 	BigTimeOut               = 40 * time.Second
 	SmallPollingInterval     = 1 * time.Second
@@ -58,7 +59,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 		return nil, err
 	}
 
-	testEnv, envTestKubeCfg, err := StartEnvTest(projectRootDir, celValidationEnabled)
+	testEnv, envTestKubeCfg, err := startEnvTest(projectRootDir, celValidationEnabled)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +139,7 @@ func (env TestEnvironment) TearDown() error {
 	}
 
 	// retry to stop the api-server
-	sleepTime := 1 * time.Second
+	sleepTime := 3 * time.Second
 	var err error
 	const retries = 20
 	for i := 0; i < retries; i++ {
@@ -150,16 +151,15 @@ func (env TestEnvironment) TearDown() error {
 	return err
 }
 
-func StartEnvTest(projectRootDir string, celValidationEnabled bool) (*envtest.Environment, *rest.Config, error) {
+func startEnvTest(projectRootDir string, celValidationEnabled bool) (*envtest.Environment, *rest.Config, error) {
 	// Reference: https://book.kubebuilder.io/reference/envtest.html
-	useExistingCluster := useExistingCluster
+	pointer.Bool(useExistingCluster)
 	testEnv := &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join(projectRootDir, "config", "crd", "bases"),
 		},
 		ErrorIfCRDPathMissing:    true,
 		AttachControlPlaneOutput: attachControlPlaneOutput,
-		UseExistingCluster:       &useExistingCluster,
 	}
 
 	args := testEnv.ControlPlane.GetAPIServer().Configure()

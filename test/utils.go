@@ -7,6 +7,7 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/rand"
+	"net"
 	"time"
 )
 
@@ -58,4 +59,23 @@ func GetRandString(length int) string {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+// GetFreePort determines a free port on the host. It does so by delegating the job to net.ListenTCP.
+// Then providing a port of 0 to net.ListenTCP, it will automatically choose a port for us.
+func GetFreePort() (int, error) {
+	a, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return -1, err
+	}
+
+	var l *net.TCPListener
+	l, err = net.ListenTCP("tcp", a)
+	if err != nil {
+		return -1, err
+	}
+
+	port := l.Addr().(*net.TCPAddr).Port
+	err = l.Close()
+	return port, err
 }

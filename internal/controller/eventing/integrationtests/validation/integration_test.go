@@ -47,6 +47,7 @@ const (
 	msgsPerTopic          = 1000000
 	eventMeshSecret       = "eventMeshSecret"
 	someSecret            = "namespace/name"
+	wrongSecret           = "gibberish"
 	publisher             = "publisher"
 	replicas              = "replicas"
 	max                   = "max"
@@ -127,7 +128,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			wantErrMsg: "min value must be smaller than the max value",
 		},
 		{
-			name: `validation of spec.publisher.replicas.min passes for values <= max`,
+			name: `validation of spec.publisher.replicas.min passes for values = max`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -140,6 +141,27 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						publisher: map[string]any{
 							replicas: map[string]any{
 								min: 2,
+								max: 2,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.publisher.replicas.min passes for values < max`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						publisher: map[string]any{
+							replicas: map[string]any{
+								min: 1,
 								max: 2,
 							},
 						},
@@ -168,7 +190,29 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			wantErrMsg: "secret cannot be empty if EventMesh backend is used",
 		},
 		{
-			name: `validation of spec.backends.config.eventMeshSecret passes when set if spec.type = EventMesh`,
+			name: `validation of spec.backends.config.eventMeshSecret fails if it does not match the format namespace/name`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backends: map[string]any{
+							backendType: typeEventMesh,
+							config: map[string]any{
+								eventMeshSecret: wrongSecret,
+							},
+						},
+					},
+				},
+			},
+			wantErrMsg: "spec.backends.config.eventMeshSecret in body should match '^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$'",
+		},
+		{
+			name: `validation of spec.backends.config.eventMeshSecret passes if it matches the format namespace/name`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -183,24 +227,6 @@ func Test_Validate_CreateEventing(t *testing.T) {
 							config: map[string]any{
 								eventMeshSecret: someSecret,
 							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: `validation of spec.backends.config.eventMeshSecret passes when empty if spec.type = NATS`,
-			givenUnstructuredEventing: unstructured.Unstructured{
-				Object: map[string]any{
-					kind:       kindEventing,
-					apiVersion: apiVersionEventing,
-					metadata: map[string]any{
-						name:      test.GetRandK8sName(7),
-						namespace: test.GetRandK8sName(7),
-					},
-					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeNats,
 						},
 					},
 				},
@@ -223,10 +249,10 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					},
 				},
 			},
-			wantErrMsg: "storage type can only be set to NATS or EventMesh",
+			wantErrMsg: "backend type can only be set to NATS or EventMesh",
 		},
 		{
-			name: `validation of spec.backends.type passes for value = NATS`,
+			name: `validation of spec.backends.type passes for value = NATS and spec.backends.config.eventMeshSecret passes when empty`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -244,7 +270,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			},
 		},
 		{
-			name: `validation of spec.backends.type passes for value = EventMesh`,
+			name: `validation of spec.backends.type and spec.backends.config.eventMeshSecret passes for value = EventMesh`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
