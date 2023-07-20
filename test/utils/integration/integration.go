@@ -13,6 +13,9 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
@@ -59,6 +62,7 @@ type TestEnvironment struct {
 	EnvTestInstance *envtest.Environment
 	k8sClient       client.Client
 	KubeClient      *k8s.Client
+	K8sDynamicClient *dynamic.DynamicClient
 	Reconciler      *eventing.Reconciler
 	Logger          *logger.Logger
 	Recorder        *record.EventRecorder
@@ -166,6 +170,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 		Context:         ctx,
 		k8sClient:       k8sClient,
 		KubeClient:      &kubeClient,
+		K8sDynamicClient: dynamicClient,
 		Reconciler:      eventingReconciler,
 		Logger:          ctrLogger,
 		Recorder:        &recorder,
@@ -496,9 +501,6 @@ func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*eventing
 		Name:      name,
 		Namespace: namespace,
 	}, eventing)
-	if err != nil {
-		return nil, err
-	}
 	return eventing, err
 }
 
@@ -524,4 +526,12 @@ func (env TestEnvironment) GetHPAFromK8s(name, namespace string) (*autoscalingv1
 		return nil, err
 	}
 	return result, nil
+}
+
+func (env TestEnvironment) CreateUnstructuredK8sResource(obj *unstructured.Unstructured) error {
+	return env.k8sClient.Create(env.Context, obj)
+}
+
+func (env TestEnvironment) EnsureK8sUnStructResourceCreated(t *testing.T, obj *unstructured.Unstructured) {
+	require.NoError(t, env.k8sClient.Create(env.Context, obj))
 }
