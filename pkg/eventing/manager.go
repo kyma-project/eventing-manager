@@ -116,7 +116,7 @@ func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, even
 	return deployment, nil
 }
 
-// createOrUpdateHorizontalPodAutoscaler creates or updates the HPA for the given deployment.
+// CreateOrUpdateHPA creates or updates the HPA for the given deployment.
 func (em EventingManager) CreateOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error {
 	// try to get the existing horizontal pod autoscaler object
 	hpa := &autoscalingv2.HorizontalPodAutoscaler{}

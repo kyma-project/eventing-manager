@@ -32,10 +32,6 @@ type EventingOption func(*v1alpha1.Eventing) error
 
 func NewNamespace(name string) *v1.Namespace {
 	namespace := v1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Namespace",
-			APIVersion: "v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -48,10 +44,6 @@ func NewEventingCR(opts ...EventingOption) *v1alpha1.Eventing {
 	namespace := fmt.Sprintf(NamespaceFormat, GetRandString(randomNameLen))
 
 	eventing := &v1alpha1.Eventing{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1alpha1",
-			Kind:       "Eventing",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,

@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func WithEventingCRDefaults() EventingOption {
+func WithEventingCRMinimal() EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
 		nats.Spec = v1alpha1.EventingSpec{
 			Backends: []v1alpha1.Backend{
@@ -67,7 +67,6 @@ func WithEventingStreamData(natsStorageType string, natsStorageSize string, maxS
 	}
 }
 
-// implement WithEventingPublisherData
 func WithEventingPublisherData(minReplicas, maxReplicas int, requestCPU, requestMemory, limitCPU, limitMemory string) EventingOption {
 	return func(eventing *v1alpha1.Eventing) error {
 		eventing.Spec.Publisher = v1alpha1.Publisher{

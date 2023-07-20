@@ -8,11 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	ConditionPublisherProxyReadyMessage = "Publisher proxy is deployed"
-	ConditionNATSAvailableMessage       = "NATS is available"
-)
-
 func (es *EventingStatus) UpdateConditionNATSAvailable(status metav1.ConditionStatus, reason ConditionReason,
 	message string) {
 	condition := metav1.Condition{

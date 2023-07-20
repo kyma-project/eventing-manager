@@ -40,6 +40,10 @@ const (
 	ConditionReasonDeploymentStatusSyncFailed ConditionReason = "DeploymentStatusSyncFailed"
 	ConditionReasonNATSAvailable              ConditionReason = "Available"
 	ConditionReasonNATSNotAvailable           ConditionReason = "NotAvailable"
+
+	ConditionPublisherProxyReadyMessage      = "Publisher proxy is deployed"
+	ConditionNATSAvailableMessage            = "NATS is available"
+	ConditionPublisherProxyProcessingMessage = "Eventing publisher proxy deployment is in progress"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.

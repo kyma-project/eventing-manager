@@ -1,7 +1,10 @@
 package matchers
 
 import (
+	"fmt"
+
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
 	gomegatypes "github.com/onsi/gomega/types"
@@ -56,7 +59,7 @@ func HavePublisherProxyReadyConditionProcessing() gomegatypes.GomegaMatcher {
 		Type:    string(v1alpha1.ConditionPublisherProxyReady),
 		Status:  metav1.ConditionFalse,
 		Reason:  string(v1alpha1.ConditionReasonProcessing),
-		Message: "Eventing publisher proxy deployment is being deployed",
+		Message: v1alpha1.ConditionPublisherProxyProcessingMessage,
 	})
 }
 
@@ -74,6 +77,6 @@ func HaveNATSAvailableConditionNotAvailable() gomegatypes.GomegaMatcher {
 		Type:    string(v1alpha1.ConditionNATSAvailable),
 		Status:  metav1.ConditionFalse,
 		Reason:  string(v1alpha1.ConditionReasonNATSNotAvailable),
-		Message: "NATS server is not available in namespace kyma-system",
+		Message: fmt.Sprintf(eventing.NatsServerNotAvailableMsg, "kyma-system"),
 	})
 }

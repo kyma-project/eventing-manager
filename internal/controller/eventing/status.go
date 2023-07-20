@@ -100,7 +100,7 @@ func (r *Reconciler) handleEventingState(ctx context.Context, deployment *v1.Dep
 	if !IsDeploymentReady(deployment) {
 		eventing.Status.SetStateProcessing()
 		eventing.Status.UpdateConditionPublisherProxyReady(metav1.ConditionFalse,
-			eventingv1alpha1.ConditionReasonProcessing, "Eventing publisher proxy deployment is being deployed")
+			eventingv1alpha1.ConditionReasonProcessing, eventingv1alpha1.ConditionPublisherProxyProcessingMessage)
 		log.Info("Reconciliation successful: waiting for publisher proxy to get ready...")
 		return ctrl.Result{RequeueAfter: RequeueTimeForStatusCheck * time.Second}, r.syncEventingStatus(ctx, eventing, log)
 	}

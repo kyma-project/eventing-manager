@@ -31,17 +31,17 @@ import (
 func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
 	testCases := []struct {
 		name           string
-		eventing       *v1alpha1.Eventing
+		givenEventing  *v1alpha1.Eventing
 		givenNats      []natsv1alpha1.NATS
 		expectedResult *appsv1.Deployment
 		expectedError  error
 	}{
 		{
 			name: "CreateOrUpdatePublisherProxy success",
-			eventing: testutils.NewEventingCR(
+			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
-				testutils.WithEventingCRDefaults(),
+				testutils.WithEventingCRMinimal(),
 				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
 			),
 			givenNats: []natsv1alpha1.NATS{
@@ -51,12 +51,17 @@ func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
 					natstestutils.WithNATSStateReady(),
 				),
 			},
-			expectedResult: &appsv1.Deployment{},
-			expectedError:  nil,
+			expectedResult: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-eventing-publisher-proxy",
+					Namespace: "test-namespace",
+				},
+			},
+			expectedError: nil,
 		},
 		{
 			name: "CreateOrUpdatePublisherProxy error",
-			eventing: testutils.NewEventingCR(
+			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
 				testutils.WithEventingInvalidBackend(),
@@ -83,11 +88,11 @@ func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
 			mockClient := new(mocks.Client)
 			kubeClient := new(k8smocks.Client)
 
-			kubeClient.On("GetNATSResources", ctx, tc.eventing.Namespace).Return(&natsv1alpha1.NATSList{
+			kubeClient.On("GetNATSResources", ctx, tc.givenEventing.Namespace).Return(&natsv1alpha1.NATSList{
 				Items: tc.givenNats,
 			}, nil)
 			mockECReconcileClient.On("CreateOrUpdatePublisherProxy",
-				mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&appsv1.Deployment{}, nil)
+				mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.expectedResult, nil)
 
 			logger, _ := logger.New("json", "info")
 			em := EventingManager{
@@ -98,7 +103,7 @@ func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
 			}
 
 			// when
-			result, err := em.CreateOrUpdatePublisherProxy(ctx, tc.eventing)
+			result, err := em.CreateOrUpdatePublisherProxy(ctx, tc.givenEventing)
 
 			// then
 			require.Equal(t, tc.expectedResult, result)
@@ -111,16 +116,16 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 	// Define a list of test cases
 	testCases := []struct {
 		name              string
-		deployment        *appsv1.Deployment
-		eventing          *v1alpha1.Eventing
+		givenDeployment   *appsv1.Deployment
+		givenEventing     *v1alpha1.Eventing
 		cpuUtilization    int32
 		memoryUtilization int32
-		givenGetErr       error
+		expectedGetHPAErr error
 		expectedError     error
 	}{
 		{
 			name: "Create new HPA",
-			deployment: &appsv1.Deployment{
+			givenDeployment: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-deployment",
 					Namespace: "test-namespace",
@@ -129,7 +134,7 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 					Replicas: int32Ptr(2),
 				},
 			},
-			eventing: testutils.NewEventingCR(
+			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace("test-namespace"),
 				testutils.WithEventingInvalidBackend(),
@@ -137,12 +142,12 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 			),
 			cpuUtilization:    50,
 			memoryUtilization: 50,
-			givenGetErr:       apierrors.NewNotFound(autoscalingv2.Resource("HorizontalPodAutoscaler"), "eventing-publisher-proxy"),
+			expectedGetHPAErr: apierrors.NewNotFound(autoscalingv2.Resource("HorizontalPodAutoscaler"), "eventing-publisher-proxy"),
 			expectedError:     nil,
 		},
 		{
 			name: "Update existing HPA",
-			deployment: &appsv1.Deployment{
+			givenDeployment: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-deployment",
 					Namespace: "test-namespace",
@@ -151,7 +156,7 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 					Replicas: int32Ptr(2),
 				},
 			},
-			eventing: testutils.NewEventingCR(
+			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace("test-namespace"),
 				testutils.WithEventingInvalidBackend(),
@@ -163,7 +168,7 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 		},
 		{
 			name: "Get HPA error",
-			deployment: &appsv1.Deployment{
+			givenDeployment: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-deployment",
 					Namespace: "test-namespace",
@@ -172,7 +177,7 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 					Replicas: int32Ptr(2),
 				},
 			},
-			eventing: testutils.NewEventingCR(
+			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace("test-namespace"),
 				testutils.WithEventingInvalidBackend(),
@@ -180,7 +185,7 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 			),
 			cpuUtilization:    50,
 			memoryUtilization: 50,
-			givenGetErr:       errors.New("get HPA error"),
+			expectedGetHPAErr: errors.New("get HPA error"),
 			expectedError: fmt.Errorf("failed to get horizontal pod autoscaler: %v",
 				errors.New("get HPA error")),
 		},
@@ -203,8 +208,8 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 			var hpa *autoscalingv2.HorizontalPodAutoscaler
 			if tc.expectedError == nil {
 				hpa = createNewHorizontalPodAutoscaler(
-					tc.deployment,
-					int32(tc.eventing.Spec.Publisher.Min), int32(tc.eventing.Spec.Publisher.Max),
+					tc.givenDeployment,
+					int32(tc.givenEventing.Spec.Publisher.Min), int32(tc.givenEventing.Spec.Publisher.Max),
 					tc.cpuUtilization, tc.memoryUtilization,
 				)
 			}
@@ -216,7 +221,7 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 				_ = autoscalingv2.AddToScheme(scheme)
 				return scheme
 			}())
-			mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(tc.givenGetErr).Run(
+			mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(tc.expectedGetHPAErr).Run(
 				func(args mock.Arguments) {
 					hpaArg := args.Get(2).(*autoscalingv2.HorizontalPodAutoscaler)
 					if hpa != nil {
@@ -227,21 +232,21 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 			mockClient.On("Update", mock.Anything, mock.Anything).Return(nil)
 
 			// when
-			err := em.CreateOrUpdateHPA(context.Background(), tc.deployment, tc.eventing, tc.cpuUtilization, tc.memoryUtilization)
+			err := em.CreateOrUpdateHPA(context.Background(), tc.givenDeployment, tc.givenEventing, tc.cpuUtilization, tc.memoryUtilization)
 
 			// then
 
 			require.Equal(t, tc.expectedError, err)
 			// create case
-			if tc.givenGetErr != nil && apierrors.IsNotFound(tc.givenGetErr) {
+			if tc.expectedGetHPAErr != nil && apierrors.IsNotFound(tc.expectedGetHPAErr) {
 				mockClient.AssertCalled(t, "Create", mock.Anything, mock.Anything)
 			}
 			// update case
-			if tc.expectedError == nil && tc.givenGetErr == nil {
+			if tc.expectedError == nil && tc.expectedGetHPAErr == nil {
 				mockClient.AssertCalled(t, "Update", mock.Anything, mock.Anything)
 				hpaArg := mockClient.Calls[0].Arguments.Get(2).(*autoscalingv2.HorizontalPodAutoscaler)
-				require.Equal(t, int32(tc.eventing.Spec.Publisher.Min), *hpaArg.Spec.MinReplicas)
-				require.Equal(t, int32(tc.eventing.Spec.Publisher.Max), hpaArg.Spec.MaxReplicas)
+				require.Equal(t, int32(tc.givenEventing.Spec.Publisher.Min), *hpaArg.Spec.MinReplicas)
+				require.Equal(t, int32(tc.givenEventing.Spec.Publisher.Max), hpaArg.Spec.MaxReplicas)
 				require.Equal(t, int32(tc.cpuUtilization), *hpaArg.Spec.Metrics[0].Resource.Target.AverageUtilization)
 				require.Equal(t, int32(tc.memoryUtilization), *hpaArg.Spec.Metrics[1].Resource.Target.AverageUtilization)
 			}
@@ -396,7 +401,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 			eventing: testutils.NewEventingCR(
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace("test-namespace"),
-				testutils.WithEventingCRDefaults(),
+				testutils.WithEventingCRMinimal(),
 				testutils.WithEventingStreamData("File", "1Gi", "700Mi", 2, 1000),
 			),
 			givenNatsResources: []natsv1alpha1.NATS{
@@ -419,10 +424,11 @@ func Test_UpdateNatsConfig(t *testing.T) {
 			eventing: testutils.NewEventingCR(
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace("test-namespace"),
-				testutils.WithEventingCRDefaults(),
+				testutils.WithEventingCRMinimal(),
 				testutils.WithEventingStreamData("Memory", "1Gi", "700Mi", 2, 1000),
 			),
-			expectedError: fmt.Errorf("failed to get NATS URL"),
+			givenNatsResources: nil,
+			expectedError:      fmt.Errorf("failed to get NATS URL"),
 		},
 	}
 
@@ -460,7 +466,7 @@ func Test_UpdatePublisherConfig(t *testing.T) {
 		{
 			name: "Update BackendConfig",
 			eventing: testutils.NewEventingCR(
-				testutils.WithEventingCRDefaults(),
+				testutils.WithEventingCRMinimal(),
 				testutils.WithEventingPublisherData(2, 2, "100m", "99Mi", "399m", "199Mi"),
 			),
 			expectedConfig: env.BackendConfig{

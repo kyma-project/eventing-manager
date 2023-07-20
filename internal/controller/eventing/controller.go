@@ -40,10 +40,11 @@ import (
 )
 
 const (
-	FinalizerName       = "eventing.operator.kyma-project.io/finalizer"
-	ControllerName      = "eventing-manager-controller"
-	ManagedByLabelKey   = "app.kubernetes.io/managed-by"
-	ManagedByLabelValue = ControllerName
+	FinalizerName             = "eventing.operator.kyma-project.io/finalizer"
+	ControllerName            = "eventing-manager-controller"
+	ManagedByLabelKey         = "app.kubernetes.io/managed-by"
+	ManagedByLabelValue       = ControllerName
+	NatsServerNotAvailableMsg = "NATS server is not available in namespace %s"
 )
 
 // Reconciler reconciles a Eventing object
@@ -179,7 +180,7 @@ func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *eventi
 		return err
 	}
 	if !natsAvailable {
-		return fmt.Errorf("NATS server is not available in namespace %s", eventing.Namespace)
+		return fmt.Errorf(NatsServerNotAvailableMsg, eventing.Namespace)
 	}
 	return nil
 }

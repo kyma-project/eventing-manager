@@ -58,10 +58,10 @@ func Test_CreateEventingCR(t *testing.T) {
 		wantMatches          gomegatypes.GomegaMatcher
 	}{
 		{
-			name: "Eventing CR should have processing due to NATS is not available",
+			name: "Eventing CR should error state due to NATS is unavailable",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
-				utils.WithEventingCRDefaults(),
+				utils.WithEventingCRMinimal(),
 				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
@@ -79,7 +79,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			name: "Eventing CR should have ready state when all deployment replicas are ready",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
-				utils.WithEventingCRDefaults(),
+				utils.WithEventingCRMinimal(),
 				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 			),
@@ -99,7 +99,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			name: "Eventing CR should have processing state deployment is not ready yet",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
-				utils.WithEventingCRDefaults(),
+				utils.WithEventingCRMinimal(),
 				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
@@ -163,21 +163,21 @@ func Test_CreateEventingCR(t *testing.T) {
 
 func Test_UpdateEventingCR(t *testing.T) {
 	testCases := []struct {
-		name                string
-		givenEventing       *eventingv1alpha1.Eventing
-		givenUpdateEventing *eventingv1alpha1.Eventing
+		name                      string
+		givenExistingEventing     *eventingv1alpha1.Eventing
+		givenNewEventingForUpdate *eventingv1alpha1.Eventing
 	}{
 		{
 			name: "Updating Eventing CR should be reflected",
-			givenEventing: utils.NewEventingCR(
+			givenExistingEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
-				utils.WithEventingCRDefaults(),
+				utils.WithEventingCRMinimal(),
 				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
-			givenUpdateEventing: utils.NewEventingCR(
+			givenNewEventingForUpdate: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
-				utils.WithEventingCRDefaults(),
+				utils.WithEventingCRMinimal(),
 				utils.WithEventingStreamData("Memory", "2M", "2M", 2, 2),
 				utils.WithEventingPublisherData(2, 2, "299m", "199Mi", "499m", "299Mi"),
 			),
@@ -193,12 +193,12 @@ func Test_UpdateEventingCR(t *testing.T) {
 				return true
 			}
 			// create unique namespace for this test run.
-			givenNamespace := tc.givenEventing.GetNamespace()
+			givenNamespace := tc.givenExistingEventing.GetNamespace()
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
 			// when
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+			testEnvironment.EnsureK8sResourceCreated(t, tc.givenExistingEventing)
 			nats := natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRNamespace(ecdeployment.PublisherNamespace),
 				natstestutils.WithNATSCRDefaults(),
@@ -211,7 +211,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 			testEnvironment.EnsureHPAExists(t, ecdeployment.PublisherName, givenNamespace)
 
 			defer func() {
-				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenExistingEventing.Name, givenNamespace)
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
 					testEnvironment.EnsureDeploymentDeletion(t, ecdeployment.PublisherName, givenNamespace)
 				}
@@ -219,19 +219,19 @@ func Test_UpdateEventingCR(t *testing.T) {
 			}()
 
 			// get Eventing CR.
-			eventing, err := testEnvironment.GetEventingFromK8s(tc.givenEventing.Name, givenNamespace)
+			eventing, err := testEnvironment.GetEventingFromK8s(tc.givenExistingEventing.Name, givenNamespace)
 			require.NoError(t, err)
 
 			// when
 			// update NATS CR.
 			newEventing := eventing.DeepCopy()
-			newEventing.Spec = tc.givenUpdateEventing.Spec
+			newEventing.Spec = tc.givenNewEventingForUpdate.Spec
 			testEnvironment.EnsureK8sResourceUpdated(t, newEventing)
 
 			// then
 			testEnvironment.EnsureEventingSpecPublisherReflected(t, newEventing)
 			testEnvironment.EnsureEventingReplicasReflected(t, newEventing)
-			testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenEventing)
+			testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenExistingEventing)
 		})
 	}
 }
@@ -246,7 +246,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			name: "Delete Eventing CR should delete the owned resources",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
-				utils.WithEventingCRDefaults(),
+				utils.WithEventingCRMinimal(),
 				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
