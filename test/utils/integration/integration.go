@@ -216,10 +216,6 @@ func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (eventingv
 }
 
 func (env TestEnvironment) EnsureNamespaceCreation(t *testing.T, namespace string) {
-	if namespace == "default" {
-		return
-	}
-	// create namespace
 	ns := test.NewNamespace(namespace)
 	require.NoError(t, client.IgnoreAlreadyExists(env.k8sClient.Create(env.Context, ns)))
 }
