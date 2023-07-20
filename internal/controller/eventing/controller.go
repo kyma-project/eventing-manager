@@ -149,7 +149,7 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 		}
 	}
 	// this should never happen, but if happens do nothing
-	return ctrl.Result{}, nil
+	return ctrl.Result{Requeue: false}, fmt.Errorf("no backend is provided in the spec")
 }
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
@@ -225,17 +225,9 @@ func (r *Reconciler) setDeploymentOwnerReference(ctx context.Context, deployment
 		if err := controllerutil.SetControllerReference(eventing, deployment, r.Scheme()); err != nil {
 			return fmt.Errorf("failed to set controller reference: %v", err)
 		}
-		err = r.Update(ctx, deployment)
-		if err != nil {
-			return err
-		}
-		return nil
+		return r.Update(ctx, deployment)
 	})
-	if retryErr != nil {
-		return retryErr
-	}
-
-	return nil
+	return retryErr
 }
 
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {

@@ -3,16 +3,16 @@ kind: RoleBinding
 metadata:
   labels:
     app.kubernetes.io/name: rolebinding
-    app.kubernetes.io/instance: eventing-leader-election-rolebinding
+    app.kubernetes.io/instance: eventing-leader-election
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
-  name: eventing-leader-election-rolebinding
+  name: eventing-leader-election
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: eventing-leader-election-role
+  name: eventing-leader-election
 subjects:
 - kind: ServiceAccount
   name: eventing-controller-manager

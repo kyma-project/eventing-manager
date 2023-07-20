@@ -3,16 +3,16 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     app.kubernetes.io/name: clusterrolebinding
-    app.kubernetes.io/instance: manager-rolebinding
+    app.kubernetes.io/instance: manager
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
-  name: eventing-manager-rolebinding
+  name: eventing-manager
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: eventing-manager-role
+  name: eventing-manager
 subjects:
 - kind: ServiceAccount
   name: eventing-controller-manager

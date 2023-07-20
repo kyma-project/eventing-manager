@@ -3,11 +3,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: eventing-publisher-proxy-clusterrole
+  name: eventing-publisher-proxy
   labels:
     control-plane: controller-manager
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: eventing-publisher-proxy-clusterrole
+    app.kubernetes.io/instance: eventing-publisher-proxy
     app.kubernetes.io/component: eventing-publisher-proxy
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
