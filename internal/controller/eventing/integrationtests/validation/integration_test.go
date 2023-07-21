@@ -213,7 +213,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 					},
 				},
 			},
-			wantErrMsg: "spec.backends.config.eventMeshSecret in body should match '^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$'",
+			wantErrMsg: "spec.backends[0].config.eventMeshSecret in body should match '^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$'",
 		},
 		{
 			name: `validation of spec.backends.config.eventMeshSecret passes if it matches the format namespace/name`,

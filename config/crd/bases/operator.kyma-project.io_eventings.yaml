@@ -138,6 +138,10 @@ spec:
                   - type
                   type: object
                 type: array
+                x-kubernetes-validations:
+                - message: secret cannot be empty if EventMesh backend is used
+                  rule: ' (self[0].type != ''EventMesh'') || ((self[0].type == ''EventMesh'')
+                    && (self[0].config.eventMeshSecret != ''''))'
               labels:
                 additionalProperties:
                   type: string

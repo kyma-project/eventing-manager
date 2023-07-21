@@ -73,6 +73,7 @@ type EventingStatus struct {
 type EventingSpec struct {
 	// Backends defines the list of eventing backends to provision.
 	// +kubebuilder:default:={{type:""},{type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}}
+	// +kubebuilder:validation:XValidation:rule=" (self[0].type != 'EventMesh') || ((self[0].type == 'EventMesh') && (self[0].config.eventMeshSecret != ''))", message="secret cannot be empty if EventMesh backend is used"
 	Backends []Backend `json:"backends"`
 
 	// Publisher defines the configurations for eventing-publisher-proxy.
