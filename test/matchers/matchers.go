@@ -8,9 +8,9 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
 	gomegatypes "github.com/onsi/gomega/types"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func HaveStatusReady() gomegatypes.GomegaMatcher {
@@ -87,23 +87,23 @@ func HaveBackendTypeNats(bc v1alpha1.BackendConfig) gomegatypes.GomegaMatcher {
 	return gomega.And(
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
-				return e.Spec.Backends.Type
+				return string(e.GetNATSBackend().Type)
 			}, gomega.Equal("NATS")),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
-				return e.Spec.Backends.Config.NATSStreamStorageType
+				return e.GetNATSBackend().Config.NATSStreamStorageType
 			}, gomega.Equal(bc.NATSStreamStorageType)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
-				return e.Spec.Backends.Config.NATSStreamReplicas
+				return e.GetNATSBackend().Config.NATSStreamReplicas
 			}, gomega.Equal(bc.NATSStreamReplicas)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) resource.Quantity {
-				return e.Spec.Backends.Config.NATSStreamMaxSize
+				return e.GetNATSBackend().Config.NATSStreamMaxSize
 			}, gomega.Equal(bc.NATSStreamMaxSize)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
-				return e.Spec.Backends.Config.NATSMaxMsgsPerTopic
+				return e.GetNATSBackend().Config.NATSMaxMsgsPerTopic
 			}, gomega.Equal(bc.NATSMaxMsgsPerTopic)),
 	)
 }
@@ -149,4 +149,3 @@ func HaveLogging(logging v1alpha1.Logging) gomegatypes.GomegaMatcher {
 			}, gomega.Equal(logging.LogLevel)),
 	)
 }
-

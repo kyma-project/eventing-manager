@@ -57,11 +57,10 @@ func WithEventingCRNamespace(namespace string) EventingOption {
 func WithEventingStreamData(natsStorageType string, natsStorageSize string, maxStreamSize string, natsStreamReplicas, maxMsgsPerTopic int) EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
 		nats.Spec.Backends[0].Config = v1alpha1.BackendConfig{
-			NATSStorageType:    natsStorageType,
-			NATSStorageSize:    resource.MustParse(natsStorageSize),
-			MaxStreamSize:      resource.MustParse(maxStreamSize),
-			NATSStreamReplicas: natsStreamReplicas,
-			MaxMsgsPerTopic:    int64(maxMsgsPerTopic),
+			NATSStreamStorageType: natsStorageType,
+			NATSStreamMaxSize:     resource.MustParse(maxStreamSize),
+			NATSStreamReplicas:    natsStreamReplicas,
+			NATSMaxMsgsPerTopic:   maxMsgsPerTopic,
 		}
 		return nil
 	}
