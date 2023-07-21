@@ -44,7 +44,8 @@ spec:
           spec:
             default:
               backends:
-                config:
+              - type: ""
+              - config:
                   natsMaxMsgsPerTopic: 1000000
                   natsStreamMaxSize: 700Mi
                   natsStreamReplicas: 3
@@ -71,6 +72,14 @@ spec:
                 description: Annotations allows to add annotations to resources.
                 type: object
               backends:
+                default:
+                - type: ""
+                - config:
+                    natsMaxMsgsPerTopic: 1000000
+                    natsStreamMaxSize: 700Mi
+                    natsStreamReplicas: 3
+                    natsStreamStorageType: File
+                  type: NATS
                 description: Backends defines the list of eventing backends to provision.
                 items:
                   description: Backend defines eventing backend.
@@ -124,7 +133,7 @@ spec:
                       type: string
                       x-kubernetes-validations:
                       - message: backend type can only be set to NATS or EventMesh
-                        rule: self=='NATS' || self=='EventMesh'
+                        rule: self=='NATS' || self=='EventMesh' || self==''
                   required:
                   - type
                   type: object
