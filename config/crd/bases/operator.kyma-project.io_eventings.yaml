@@ -15,7 +15,16 @@ spec:
     singular: eventing
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: State of Eventing
+      jsonPath: .status.state
+      name: State
+      type: string
+    - description: Age of the resource
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Eventing is the Schema for the eventing API.
@@ -33,6 +42,28 @@ spec:
           metadata:
             type: object
           spec:
+            default:
+              backends:
+              - type: ""
+              - config:
+                  natsMaxMsgsPerTopic: 1000000
+                  natsStreamMaxSize: 700Mi
+                  natsStreamReplicas: 3
+                  natsStreamStorageType: File
+                type: NATS
+              logging:
+                logLevel: Info
+              publisher:
+                replicas:
+                  max: 2
+                  min: 2
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 512Mi
+                  requests:
+                    cpu: 10m
+                    memory: 256Mi
             description: EventingSpec defines the desired state of Eventing
             properties:
               annotations:
@@ -41,98 +72,135 @@ spec:
                 description: Annotations allows to add annotations to resources.
                 type: object
               backends:
+                default:
+                - type: ""
+                - config:
+                    natsMaxMsgsPerTopic: 1000000
+                    natsStreamMaxSize: 700Mi
+                    natsStreamReplicas: 3
+                    natsStreamStorageType: File
+                  type: NATS
                 description: Backends defines the list of eventing backends to provision.
                 items:
                   description: Backend defines eventing backend.
                   properties:
                     config:
+                      default:
+                        natsMaxMsgsPerTopic: 1000000
+                        natsStreamMaxSize: 700Mi
+                        natsStreamReplicas: 3
+                        natsStreamStorageType: File
                       description: Config defines configuration for eventing backend.
                       properties:
                         eventMeshSecret:
                           description: EventMeshSecret defines the namespaced name
                             of K8s Secret containing EventMesh credentials. The format
                             of name is "namespace/name".
+                          pattern: ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$
                           type: string
-                        maxMsgsPerTopic:
-                          description: MaxMsgsPerTopic limits how many messages in
-                            the NATS stream to retain per subject.
-                          format: int64
+                        natsMaxMsgsPerTopic:
+                          default: 1000000
+                          description: NATSMaxMsgsPerTopic limits how many messages
+                            in the NATS stream to retain per subject.
                           type: integer
-                        maxStreamSize:
+                        natsStreamMaxSize:
                           anyOf:
                           - type: integer
                           - type: string
-                          description: MaxStreamSize defines the maximum storage size
-                            for stream data.
+                          default: 700Mi
+                          description: NATSStreamMaxSize defines the maximum storage
+                            size for stream data.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        natsStorageSize:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          description: NatsStorageSize defines the storage size for
-                            stream data.
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                        natsStorageType:
-                          description: NatsStorageType defines the storage type for
-                            stream data.
-                          enum:
-                          - File
-                          - Memory
-                          type: string
                         natsStreamReplicas:
-                          description: NatsStreamReplicas defines the number of replicas
+                          default: 3
+                          description: NATSStreamReplicas defines the number of replicas
                             for stream.
                           type: integer
-                        webhookAuthSecret:
-                          description: WebhookAuthSecret defines the namespaced name
-                            of K8s Secret containing Webhook auth credentials. The
-                            format of name is "namespace/name".
+                        natsStreamStorageType:
+                          default: File
+                          description: NATSStreamStorageType defines the storage type
+                            for stream data.
                           type: string
+                          x-kubernetes-validations:
+                          - message: storage type can only be set to File or Memory
+                            rule: self=='File' || self=='Memory'
                       type: object
                     type:
+                      default: NATS
                       description: Type defines which backend to use. The value is
                         either `EventMesh`, or `NATS`.
-                      enum:
-                      - EventMesh
-                      - NATS
                       type: string
+                      x-kubernetes-validations:
+                      - message: backend type can only be set to NATS or EventMesh
+                        rule: self=='NATS' || self=='EventMesh' || self==''
                   required:
                   - type
                   type: object
                 type: array
+                x-kubernetes-validations:
+                - message: secret cannot be empty if EventMesh backend is used
+                  rule: ' (self[0].type != ''EventMesh'') || ((self[0].type == ''EventMesh'')
+                    && (self[0].config.eventMeshSecret != ''''))'
               labels:
                 additionalProperties:
                   type: string
                 description: Labels allows to add Labels to resources.
                 type: object
               logging:
+                default:
+                  logLevel: Info
                 description: Logging defines the log level for eventing-manager.
                 properties:
                   logLevel:
+                    default: Info
                     description: LogLevel defines the log level.
-                    enum:
-                    - Info
-                    - Warn
-                    - Error
-                    - debug
                     type: string
+                    x-kubernetes-validations:
+                    - message: logLevel can only be set to Debug, Info, Warn or Error
+                      rule: self=='Info' || self=='Warn' || self=='Error' || self=='Debug'
                 type: object
               publisher:
+                default:
+                  replicas:
+                    max: 2
+                    min: 2
+                  resources:
+                    limits:
+                      cpu: 500m
+                      memory: 512Mi
+                    requests:
+                      cpu: 10m
+                      memory: 256Mi
                 description: Publisher defines the configurations for eventing-publisher-proxy.
                 properties:
                   replicas:
+                    default:
+                      max: 2
+                      min: 2
                     description: Replicas defines the scaling min/max for eventing-publisher-proxy.
                     properties:
                       max:
+                        default: 2
                         description: Max defines maximum number of replicas.
                         type: integer
                       min:
+                        default: 2
                         description: Min defines minimum number of replicas.
+                        minimum: 0
                         type: integer
                     type: object
+                    x-kubernetes-validations:
+                    - message: min value must be smaller than the max value
+                      rule: self.min <= self.max
                   resources:
+                    default:
+                      limits:
+                        cpu: 500m
+                        memory: 512Mi
+                      requests:
+                        cpu: 10m
+                        memory: 256Mi
                     description: Resources defines resources for eventing-publisher-proxy.
                     properties:
                       claims:

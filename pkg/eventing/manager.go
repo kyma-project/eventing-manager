@@ -185,10 +185,10 @@ func (em *EventingManager) updateNatsConfig(ctx context.Context, eventing *v1alp
 		return err
 	}
 	em.natsConfig.URL = natsUrl
-	em.natsConfig.JSStreamStorageType = eventing.Spec.Backends[0].Config.NATSStorageType
+	em.natsConfig.JSStreamStorageType = eventing.Spec.Backends[0].Config.NATSStreamStorageType
 	em.natsConfig.JSStreamReplicas = eventing.Spec.Backends[0].Config.NATSStreamReplicas
-	em.natsConfig.JSStreamMaxBytes = eventing.Spec.Backends[0].Config.MaxStreamSize.String()
-	em.natsConfig.JSStreamMaxMsgsPerTopic = eventing.Spec.Backends[0].Config.MaxMsgsPerTopic
+	em.natsConfig.JSStreamMaxBytes = eventing.Spec.Backends[0].Config.NATSStreamMaxSize.String()
+	em.natsConfig.JSStreamMaxMsgsPerTopic = int64(eventing.Spec.Backends[0].Config.NATSMaxMsgsPerTopic)
 	return nil
 }
 

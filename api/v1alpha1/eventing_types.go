@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// nolint:lll //this is annotation
 package v1alpha1
 
 import (
@@ -48,26 +49,18 @@ const (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// EventingSpec defines the desired state of Eventing
-type EventingSpec struct {
-	// Backends defines the list of eventing backends to provision.
-	Backends []Backend `json:"backends"`
+// Eventing is the Schema for the eventing API.
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.state",description="State of Eventing"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Age of the resource"
+type Eventing struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Publisher defines the configurations for eventing-publisher-proxy.
-	// +optional
-	Publisher `json:"publisher,omitempty"`
-
-	// Logging defines the log level for eventing-manager.
-	// +optional
-	Logging `json:"logging,omitempty"`
-
-	// Annotations allows to add annotations to resources.
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
-
-	// Labels allows to add Labels to resources.
-	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
+	// +kubebuilder:default:={backends:{{type:""},{type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}}, logging:{logLevel:Info}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}}}
+	Spec   EventingSpec   `json:"spec,omitempty"`
+	Status EventingStatus `json:"status,omitempty"`
 }
 
 // EventingStatus defines the observed state of Eventing
@@ -76,19 +69,31 @@ type EventingStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-// Eventing is the Schema for the eventing API.
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-type Eventing struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+// EventingSpec defines the desired state of Eventing
+type EventingSpec struct {
+	// Backends defines the list of eventing backends to provision.
+	// +kubebuilder:default:={{type:""},{type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}}
+	// +kubebuilder:validation:XValidation:rule=" (self[0].type != 'EventMesh') || ((self[0].type == 'EventMesh') && (self[0].config.eventMeshSecret != ''))", message="secret cannot be empty if EventMesh backend is used"
+	Backends []Backend `json:"backends"`
 
-	Spec   EventingSpec   `json:"spec,omitempty"`
-	Status EventingStatus `json:"status,omitempty"`
+	// Publisher defines the configurations for eventing-publisher-proxy.
+	// +kubebuilder:default:={replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}}
+	Publisher `json:"publisher,omitempty"`
+
+	// Logging defines the log level for eventing-manager.
+	// +kubebuilder:default:={logLevel:Info}
+	Logging `json:"logging,omitempty"`
+
+	// Annotations allows to add annotations to resources.
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// Labels allows to add Labels to resources.
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
-// EventingList contains a list of Eventing
 // +kubebuilder:object:root=true
+
+// EventingList contains a list of Eventing
 type EventingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -105,44 +110,37 @@ const (
 // Backend defines eventing backend.
 type Backend struct {
 	// Type defines which backend to use. The value is either `EventMesh`, or `NATS`.
-	// +kubebuilder:validation:Enum=EventMesh;NATS
+	// +kubebuilder:default:="NATS"
+	// +kubebuilder:validation:XValidation:rule="self=='NATS' || self=='EventMesh' || self==''", message="backend type can only be set to NATS or EventMesh"
 	Type BackendType `json:"type"`
 
 	// Config defines configuration for eventing backend.
-	// +optional
-	Config BackendConfig `json:"config"`
+	// +kubebuilder:default:={natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}
+	Config BackendConfig `json:"config,omitempty"`
 }
 
 // BackendConfig defines configuration for eventing backend.
 type BackendConfig struct {
-	// NatsStorageType defines the storage type for stream data.
-	// +optional
-	// +kubebuilder:validation:Enum=File;Memory
-	NATSStorageType string `json:"natsStorageType"`
+	// NATSStreamStorageType defines the storage type for stream data.
+	// +kubebuilder:default:="File"
+	// +kubebuilder:validation:XValidation:rule="self=='File' || self=='Memory'", message="storage type can only be set to File or Memory"
+	NATSStreamStorageType string `json:"natsStreamStorageType,omitempty"`
 
-	// NatsStorageSize defines the storage size for stream data.
-	// +optional
-	NATSStorageSize resource.Quantity `json:"natsStorageSize"`
+	// NATSStreamReplicas defines the number of replicas for stream.
+	// +kubebuilder:default:=3
+	NATSStreamReplicas int `json:"natsStreamReplicas,omitempty"`
 
-	// NatsStreamReplicas defines the number of replicas for stream.
-	// +optional
-	NATSStreamReplicas int `json:"natsStreamReplicas"`
+	// NATSStreamMaxSize defines the maximum storage size for stream data.
+	// +kubebuilder:default:="700Mi"
+	NATSStreamMaxSize resource.Quantity `json:"natsStreamMaxSize,omitempty"`
 
-	// MaxStreamSize defines the maximum storage size for stream data.
-	// +optional
-	MaxStreamSize resource.Quantity `json:"maxStreamSize"`
-
-	// MaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject.
-	// +optional
-	MaxMsgsPerTopic int64 `json:"maxMsgsPerTopic"`
+	// NATSMaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject.
+	// +kubebuilder:default:=1000000
+	NATSMaxMsgsPerTopic int `json:"natsMaxMsgsPerTopic,omitempty"`
 
 	// EventMeshSecret defines the namespaced name of K8s Secret containing EventMesh credentials. The format of name is "namespace/name".
-	// +optional
-	EventMeshSecret string `json:"eventMeshSecret"`
-
-	// WebhookAuthSecret defines the namespaced name of K8s Secret containing Webhook auth credentials. The format of name is "namespace/name".
-	// +optional
-	WebhookAuthSecret string `json:"webhookAuthSecret"`
+	// +kubebuilder:validation:Pattern:="^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$"
+	EventMeshSecret string `json:"eventMeshSecret,omitempty"`
 }
 
 func (ev *Eventing) GetNATSBackend() *Backend {
@@ -166,29 +164,31 @@ func (ev *Eventing) GetEventMeshBackend() *Backend {
 // Publisher defines the configurations for eventing-publisher-proxy.
 type Publisher struct {
 	// Replicas defines the scaling min/max for eventing-publisher-proxy.
-	// +optional
+	// +kubebuilder:default:={min:2,max:2}
+	// +kubebuilder:validation:XValidation:rule="self.min <= self.max", message="min value must be smaller than the max value"
 	Replicas `json:"replicas,omitempty"`
 
 	// Resources defines resources for eventing-publisher-proxy.
-	// +optional
+	// +kubebuilder:default:={limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"10m",memory:"256Mi"}}
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // Replicas defines min/max replicas for a resource.
 type Replicas struct {
 	// Min defines minimum number of replicas.
-	// +optional
+	// +kubebuilder:default:=2
+	// +kubebuilder:validation:Minimum:=0
 	Min int `json:"min,omitempty"`
 
 	// Max defines maximum number of replicas.
-	// +optional
+	// +kubebuilder:default:=2
 	Max int `json:"max,omitempty"`
 }
 
 type Logging struct {
 	// LogLevel defines the log level.
-	// +optional
-	// +kubebuilder:validation:Enum=Info;Warn;Error;debug
+	// +kubebuilder:default:=Info
+	// +kubebuilder:validation:XValidation:rule="self=='Info' || self=='Warn' || self=='Error' || self=='Debug'", message="logLevel can only be set to Debug, Info, Warn or Error"
 	LogLevel string `json:"logLevel,omitempty"`
 }
 

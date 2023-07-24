@@ -11,7 +11,7 @@ metadata:
   namespace: kyma-system
 spec:
   backends:
-  - type: "NATS"
+  - type: NATS
     config:
       natsStorageType: File
       natsStreamReplicas: 3

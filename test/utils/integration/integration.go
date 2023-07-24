@@ -13,6 +13,8 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
@@ -55,19 +57,19 @@ const (
 
 // TestEnvironment provides mocked resources for integration tests.
 type TestEnvironment struct {
-	Context         context.Context
-	EnvTestInstance *envtest.Environment
-	k8sClient       client.Client
-	KubeClient      *k8s.Client
-	Reconciler      *eventing.Reconciler
-	Logger          *logger.Logger
-	Recorder        *record.EventRecorder
-	TestCancelFn    context.CancelFunc
+	Context          context.Context
+	EnvTestInstance  *envtest.Environment
+	k8sClient        client.Client
+	KubeClient       *k8s.Client
+	K8sDynamicClient *dynamic.DynamicClient
+	Reconciler       *eventing.Reconciler
+	Logger           *logger.Logger
+	Recorder         *record.EventRecorder
+	TestCancelFn     context.CancelFunc
 }
 
 //nolint:funlen // Used in testing
-func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
-	allowedNATSCR *natsv1alpha1.NATS) (*TestEnvironment, error) {
+func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*TestEnvironment, error) {
 	var err error
 	// setup context
 	ctx := context.Background()
@@ -105,6 +107,11 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	// +kubebuilder:scaffold:scheme
 
 	k8sClient, err := client.New(envTestKubeCfg, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		return nil, err
+	}
+
+	dynamicClient, err := dynamic.NewForConfig(envTestKubeCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -163,14 +170,15 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	}()
 
 	return &TestEnvironment{
-		Context:         ctx,
-		k8sClient:       k8sClient,
-		KubeClient:      &kubeClient,
-		Reconciler:      eventingReconciler,
-		Logger:          ctrLogger,
-		Recorder:        &recorder,
-		EnvTestInstance: testEnv,
-		TestCancelFn:    cancelCtx,
+		Context:          ctx,
+		k8sClient:        k8sClient,
+		KubeClient:       &kubeClient,
+		K8sDynamicClient: dynamicClient,
+		Reconciler:       eventingReconciler,
+		Logger:           ctrLogger,
+		Recorder:         &recorder,
+		EnvTestInstance:  testEnv,
+		TestCancelFn:     cancelCtx,
 	}, nil
 }
 
@@ -496,9 +504,6 @@ func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*eventing
 		Name:      name,
 		Namespace: namespace,
 	}, eventing)
-	if err != nil {
-		return nil, err
-	}
 	return eventing, err
 }
 
@@ -524,4 +529,12 @@ func (env TestEnvironment) GetHPAFromK8s(name, namespace string) (*autoscalingv1
 		return nil, err
 	}
 	return result, nil
+}
+
+func (env TestEnvironment) CreateUnstructuredK8sResource(obj *unstructured.Unstructured) error {
+	return env.k8sClient.Create(env.Context, obj)
+}
+
+func (env TestEnvironment) EnsureK8sUnStructResourceCreated(t *testing.T, obj *unstructured.Unstructured) {
+	require.NoError(t, env.k8sClient.Create(env.Context, obj))
 }

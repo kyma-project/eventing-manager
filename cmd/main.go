@@ -110,9 +110,9 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		setupLogger.Fatalw("Failed to load configuration", "error", err)
 	}
 
-	// create NATS reconciler instance
+	// create Eventing reconciler instance
 	ctx := context.Background()
-	natsReconciler := eventingcontroller.NewReconciler(
+	eventingReconciler := eventingcontroller.NewReconciler(
 		ctx,
 		natsConfig,
 		mgr.GetClient(),
@@ -121,7 +121,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		mgr.GetEventRecorderFor("eventing-manager"),
 	)
 
-	if err = (natsReconciler).SetupWithManager(mgr); err != nil {
+	if err = (eventingReconciler).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NATS")
 		os.Exit(1)
 	}
