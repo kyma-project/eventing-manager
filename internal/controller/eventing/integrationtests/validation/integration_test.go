@@ -180,9 +180,11 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeEventMesh,
-							config:      map[string]any{},
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeEventMesh,
+								config:      map[string]any{},
+							},
 						},
 					},
 				},
@@ -200,16 +202,18 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeEventMesh,
-							config: map[string]any{
-								eventMeshSecret: wrongSecret,
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeEventMesh,
+								config: map[string]any{
+									eventMeshSecret: wrongSecret,
+								},
 							},
 						},
 					},
 				},
 			},
-			wantErrMsg: "spec.backends.config.eventMeshSecret in body should match '^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$'",
+			wantErrMsg: "spec.backends[0].config.eventMeshSecret in body should match '^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$'",
 		},
 		{
 			name: `validation of spec.backends.config.eventMeshSecret passes if it matches the format namespace/name`,
@@ -222,10 +226,12 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeEventMesh,
-							config: map[string]any{
-								eventMeshSecret: someSecret,
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeEventMesh,
+								config: map[string]any{
+									eventMeshSecret: someSecret,
+								},
 							},
 						},
 					},
@@ -243,8 +249,10 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: gibberish,
+						backends: []interface{}{
+							map[string]any{
+								backendType: gibberish,
+							},
 						},
 					},
 				},
@@ -262,8 +270,10 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeNats,
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeNats,
+							},
 						},
 					},
 				},
@@ -280,10 +290,12 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeEventMesh,
-							config: map[string]any{
-								eventMeshSecret: someSecret,
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeEventMesh,
+								config: map[string]any{
+									eventMeshSecret: someSecret,
+								},
 							},
 						},
 					},
@@ -301,10 +313,12 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeNats,
-							config: map[string]any{
-								natsStreamStorageType: gibberish,
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeNats,
+								config: map[string]any{
+									natsStreamStorageType: gibberish,
+								},
 							},
 						},
 					},
@@ -323,10 +337,12 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeNats,
-							config: map[string]any{
-								natsStreamStorageType: storageTypeFile,
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeNats,
+								config: map[string]any{
+									natsStreamStorageType: storageTypeFile,
+								},
 							},
 						},
 					},
@@ -344,10 +360,12 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeNats,
-							config: map[string]any{
-								natsStreamStorageType: storageTypeMemory,
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeNats,
+								config: map[string]any{
+									natsStreamStorageType: storageTypeMemory,
+								},
 							},
 						},
 					},
@@ -533,29 +551,31 @@ func Test_Validate_Defaulting(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeNats,
-							config:      map[string]any{
-								// empty, to be filled by defaulting
-							},
-							publisher: map[string]any{
-								replicas: map[string]any{
-									min: 2,
-									max: 2,
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeNats,
+								config:      map[string]any{
+									// empty, to be filled by defaulting
 								},
-								resources: map[string]any{
-									limits: map[string]any{
-										cpu:    limitsCpuValue,
-										memory: limitsMemoryValue,
+								publisher: map[string]any{
+									replicas: map[string]any{
+										min: 2,
+										max: 2,
 									},
-									requests: map[string]any{
-										cpu:    requestsCpuValue,
-										memory: requestsMemoryValue,
+									resources: map[string]any{
+										limits: map[string]any{
+											cpu:    limitsCpuValue,
+											memory: limitsMemoryValue,
+										},
+										requests: map[string]any{
+											cpu:    requestsCpuValue,
+											memory: requestsMemoryValue,
+										},
 									},
 								},
-							},
-							logging: map[string]any{
-								logLevel: logLevelInfo,
+								logging: map[string]any{
+									logLevel: logLevelInfo,
+								},
 							},
 						},
 					},
@@ -576,19 +596,21 @@ func Test_Validate_Defaulting(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeNats,
-							config: map[string]any{
-								natsStreamStorageType: storageTypeFile,
-								natsStreamReplicas:    streamReplicas,
-								natsStreamMaxSize:     maxSize,
-								natsMaxMsgsPerTopic:   msgsPerTopic,
-							},
-							publisher: map[string]any{
-								// empty, to be filled by defaulting
-							},
-							logging: map[string]any{
-								logLevel: logLevelInfo,
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeNats,
+								config: map[string]any{
+									natsStreamStorageType: storageTypeFile,
+									natsStreamReplicas:    streamReplicas,
+									natsStreamMaxSize:     maxSize,
+									natsMaxMsgsPerTopic:   msgsPerTopic,
+								},
+								publisher: map[string]any{
+									// empty, to be filled by defaulting
+								},
+								logging: map[string]any{
+									logLevel: logLevelInfo,
+								},
 							},
 						},
 					},
@@ -610,32 +632,34 @@ func Test_Validate_Defaulting(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: map[string]any{
-							backendType: typeNats,
-							config: map[string]any{
-								natsStreamStorageType: storageTypeFile,
-								natsStreamReplicas:    streamReplicas,
-								natsStreamMaxSize:     maxSize,
-								natsMaxMsgsPerTopic:   msgsPerTopic,
-							},
-							publisher: map[string]any{
-								replicas: map[string]any{
-									min: 2,
-									max: 2,
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeNats,
+								config: map[string]any{
+									natsStreamStorageType: storageTypeFile,
+									natsStreamReplicas:    streamReplicas,
+									natsStreamMaxSize:     maxSize,
+									natsMaxMsgsPerTopic:   msgsPerTopic,
 								},
-								resources: map[string]any{
-									limits: map[string]any{
-										cpu:    limitsCpuValue,
-										memory: limitsMemoryValue,
+								publisher: map[string]any{
+									replicas: map[string]any{
+										min: 2,
+										max: 2,
 									},
-									requests: map[string]any{
-										cpu:    requestsCpuValue,
-										memory: requestsMemoryValue,
+									resources: map[string]any{
+										limits: map[string]any{
+											cpu:    limitsCpuValue,
+											memory: limitsMemoryValue,
+										},
+										requests: map[string]any{
+											cpu:    requestsCpuValue,
+											memory: requestsMemoryValue,
+										},
 									},
 								},
-							},
-							logging: map[string]any{
-								// empty, to be filled by defaulting
+								logging: map[string]any{
+									// empty, to be filled by defaulting
+								},
 							},
 						},
 					},

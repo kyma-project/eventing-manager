@@ -133,13 +133,13 @@ make uninstall
 kyma alpha deploy
 ```
 
-**NOTE**: For single-cluster mode edit the lifecycle manager role to give access to all resources with `kubectl edit clusterrole lifecycle-manager-manager-role` and have the following under `rules`:
+**NOTE**: For single-cluster mode, edit the Lifecycle Manager role to give access to all resources. Run `kubectl edit clusterrole lifecycle-manager-manager-role` and have the following under `rules`:
 ```shell
-- apiGroups:                                                                                                                                                  
-  - "*"                                                                                                                                                       
-  resources:                                                                                                                                                  
-  - "*"                                                                                                                                                       
-  verbs:                                                                                                                                                      
+- apiGroups:
+  - "*"
+  resources:
+  - "*"
+  verbs:
   - "*"
 ```
 

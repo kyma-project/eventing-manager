@@ -4,12 +4,12 @@ kind: Role
 metadata:
   labels:
     app.kubernetes.io/name: role
-    app.kubernetes.io/instance: leader-election-role
+    app.kubernetes.io/instance: eventing-leader-election
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
-  name: leader-election-role
+  name: eventing-leader-election-role
 rules:
 - apiGroups:
   - ""

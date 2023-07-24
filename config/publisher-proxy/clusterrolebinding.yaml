@@ -1,0 +1,22 @@
+---
+# Source: publisher-proxy/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: eventing-publisher-proxy
+  labels:
+    control-plane: controller-manager
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/instance: eventing-publisher-proxy
+    app.kubernetes.io/component: eventing-publisher-proxy
+    app.kubernetes.io/created-by: eventing-manager
+    app.kubernetes.io/part-of: eventing-manager
+    app.kubernetes.io/managed-by: kustomize  
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: eventing-publisher-proxy
+subjects:
+  - kind: ServiceAccount
+    name: eventing-publisher-proxy
+    namespace: system

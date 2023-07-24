@@ -1,4 +1,6 @@
 ## Append samples of your project ##
+namespace: eventing-manager
+
 resources:
 - operator_v1alpha1_eventing.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

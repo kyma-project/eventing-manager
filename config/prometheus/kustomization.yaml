@@ -1,2 +1,4 @@
+namespace: eventing-manager
+
 resources:
 - monitor.yaml

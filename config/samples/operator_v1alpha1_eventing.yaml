@@ -8,7 +8,23 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: eventing-manager
   name: eventing-sample
-  namespace: eventing-manager
+  namespace: kyma-system
 spec:
   backends:
-    type: NATS
+  - type: NATS
+    config:
+      natsStorageType: File
+      natsStreamReplicas: 3
+      maxStreamSize: 700M
+      maxMsgsPerTopic: 1000000
+  publisher:
+    replicas:
+      min: 2
+      max: 2
+    resources:
+      limits:
+        cpu: 300m
+        memory: 312Mi
+      requests:
+        cpu: 100m
+        memory: 156Mi

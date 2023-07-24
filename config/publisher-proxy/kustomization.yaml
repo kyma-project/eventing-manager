@@ -1,0 +1,10 @@
+namespace: kyma-system
+
+resources:
+- clusterrole.yaml
+- clusterrolebinding.yaml
+- service.yaml
+- serviceaccount.yaml
+- configmap.yaml
+# - peerauthentication.yaml
+

@@ -5,7 +5,7 @@ metadata:
     control-plane: controller-manager
     app.kubernetes.io/name: namespace
     app.kubernetes.io/instance: system
-    app.kubernetes.io/component: manager
+    app.kubernetes.io/component: eventing-manager
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
@@ -14,13 +14,13 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: manager
+  name: eventing-manager
   namespace: system
   labels:
     control-plane: controller-manager
     app.kubernetes.io/name: deployment
     app.kubernetes.io/instance: controller-manager
-    app.kubernetes.io/component: manager
+    app.kubernetes.io/component: eventing-manager
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
@@ -73,6 +73,74 @@ spec:
       containers:
       - command:
         - /manager
+        env:
+          - name: NATS_URL
+            value: eventing-nats.kyma-system.svc.cluster.local
+          - name: EVENT_TYPE_PREFIX
+            valueFrom:
+              configMapKeyRef:
+                name: eventing
+                key: eventTypePrefix
+          - name: DOMAIN
+            value: kyma.example.com
+          - name: WEBHOOK_TOKEN_ENDPOINT
+            value: https://oauth2.kyma.example.com/oauth2/token
+          - name: PUBLISHER_REQUESTS_CPU
+            value: 10m
+          - name: PUBLISHER_REQUESTS_MEMORY
+            value: 64Mi
+          - name: PUBLISHER_LIMITS_CPU
+            value: 100m
+          - name: PUBLISHER_LIMITS_MEMORY
+            value: 128Mi
+          - name: PUBLISHER_IMAGE
+            value: "europe-docker.pkg.dev/kyma-project/dev/event-publisher-proxy:PR-17835"
+          - name: PUBLISHER_IMAGE_PULL_POLICY
+            value: "IfNotPresent"
+          - name: PUBLISHER_REPLICAS
+            value: "1"
+          - name: PUBLISHER_REQUEST_TIMEOUT
+            value: "10s"
+          - name: DEFAULT_MAX_IN_FLIGHT_MESSAGES
+            value: "10"
+          - name: DEFAULT_DISPATCHER_RETRY_PERIOD
+            value: "5m"
+          - name: DEFAULT_DISPATCHER_MAX_RETRIES
+            value: "10"
+          - name: APP_LOG_FORMAT
+            value: "json"
+          - name: APP_LOG_LEVEL
+            value: "info"
+          - name: JS_STREAM_NAME
+            value: "sap"
+          - name: JS_STREAM_SUBJECT_PREFIX
+            value: "kyma"
+          - name: JS_STREAM_STORAGE_TYPE
+            value: "file"
+          - name: JS_STREAM_REPLICAS
+            value: "1"
+          - name: JS_STREAM_DISCARD_POLICY
+            value: "new"
+          - name: JS_STREAM_RETENTION_POLICY
+            value: "interest"
+          - name: JS_CONSUMER_DELIVER_POLICY
+            value: "new"
+          - name: JS_STREAM_MAX_MSGS
+            value: "-1"
+          - name: JS_STREAM_MAX_BYTES
+            value: "700Mi"
+          - name: WEBHOOK_SECRET_NAME
+            value: "eventing-webhook-server-cert"
+          - name: MUTATING_WEBHOOK_NAME
+            value: "subscription-mutating-webhook-configuration"
+          - name: VALIDATING_WEBHOOK_NAME
+            value: "subscription-validating-webhook-configuration"
+          - name: EVENTING_WEBHOOK_AUTH_ENABLED
+            value: "false"
+          - name: EVENTING_WEBHOOK_AUTH_SECRET_NAME
+            value: "eventing-webhook-auth"
+          - name: EVENTING_WEBHOOK_AUTH_SECRET_NAMESPACE
+            value: "kyma-system"
         image: controller:latest
         imagePullPolicy: Always
         name: manager
@@ -102,5 +170,5 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-      serviceAccountName: controller-manager
+      serviceAccountName: eventing-controller-manager
       terminationGracePeriodSeconds: 10

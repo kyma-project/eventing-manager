@@ -3,17 +3,17 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     app.kubernetes.io/name: clusterrolebinding
-    app.kubernetes.io/instance: proxy-rolebinding
+    app.kubernetes.io/instance: eventing-proxy
     app.kubernetes.io/component: kube-rbac-proxy
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
-  name: proxy-rolebinding
+  name: eventing-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: proxy-role
+  name: eventing-proxy
 subjects:
 - kind: ServiceAccount
-  name: controller-manager
+  name: eventing-controller-manager
   namespace: system

@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  eventTypePrefix: sap.kyma.custom
+kind: ConfigMap
+metadata:
+  labels:
+    control-plane: controller-manager
+    app.kubernetes.io/name: configmap
+    app.kubernetes.io/instance: publisher-proxy
+    app.kubernetes.io/component: eventing-publisher-proxy
+    app.kubernetes.io/created-by: eventing-manager
+    app.kubernetes.io/part-of: eventing-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: eventing
+  namespace: system
