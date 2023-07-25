@@ -10,9 +10,10 @@ import (
 	ecbackend "github.com/kyma-project/kyma/components/eventing-controller/controllers/backend"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,8 +24,9 @@ const natsClientPort = 4222
 
 type Manager interface {
 	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
-	CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*v1.Deployment, error)
-	CreateOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
+	CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*appsv1.Deployment, error)
+	CreateOrUpdateHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
+	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment, *runtime.Scheme) error
 }
 
 type EventingManager struct {
@@ -41,6 +43,7 @@ type EventingManager struct {
 func NewEventingManager(
 	ctx context.Context,
 	client client.Client,
+	kubeClient k8s.Client,
 	natsConfig env.NATSConfig,
 	logger *logger.Logger,
 	recorder record.EventRecorder,
@@ -63,7 +66,7 @@ func NewEventingManager(
 		Client:             client,
 		natsConfig:         natsConfig,
 		backendConfig:      backendConfig,
-		kubeClient:         k8s.NewKubeClient(client),
+		kubeClient:         kubeClient,
 		ecReconcilerClient: &ECReconcilerEventingClient{ecReconciler},
 		logger:             logger,
 		recorder:           recorder,
@@ -75,7 +78,7 @@ type ECReconcilerClient interface {
 		ctx context.Context,
 		backend ecv1alpha1.BackendType,
 		natsConfig env.NATSConfig,
-		backendConfig env.BackendConfig) (*v1.Deployment, error)
+		backendConfig env.BackendConfig) (*appsv1.Deployment, error)
 }
 
 type ECReconcilerEventingClient struct {
@@ -86,13 +89,13 @@ func (e *ECReconcilerEventingClient) CreateOrUpdatePublisherProxy(
 	ctx context.Context,
 	backendType ecv1alpha1.BackendType,
 	natsConfig env.NATSConfig,
-	backendConfig env.BackendConfig) (*v1.Deployment, error) {
+	backendConfig env.BackendConfig) (*appsv1.Deployment, error) {
 	e.ecReconciler.SetNatsConfig(natsConfig)
 	e.ecReconciler.SetBackendConfig(backendConfig)
 	return e.ecReconciler.CreateOrUpdatePublisherProxyDeployment(ctx, backendType, false)
 }
 
-func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*v1.Deployment, error) {
+func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*appsv1.Deployment, error) {
 	natsBackend := eventing.GetNATSBackend()
 	var ecBackendType ecv1alpha1.BackendType
 	if natsBackend == nil {
@@ -117,7 +120,7 @@ func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, even
 }
 
 // CreateOrUpdateHPA creates or updates the HPA for the given deployment.
-func (em EventingManager) CreateOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error {
+func (em EventingManager) CreateOrUpdateHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error {
 	// try to get the existing horizontal pod autoscaler object
 	hpa := &autoscalingv2.HorizontalPodAutoscaler{}
 	err := em.Client.Get(ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, hpa)
@@ -126,7 +129,7 @@ func (em EventingManager) CreateOrUpdateHPA(ctx context.Context, deployment *v1.
 	}
 	min := int32(eventing.Spec.Publisher.Min)
 	max := int32(eventing.Spec.Publisher.Max)
-	hpa = createNewHorizontalPodAutoscaler(deployment, min, max, cpuUtilization, memoryUtilization)
+	hpa = newHorizontalPodAutoscaler(deployment, min, max, cpuUtilization, memoryUtilization)
 	if err := controllerutil.SetControllerReference(eventing, hpa, em.Scheme()); err != nil {
 		return err
 	}
@@ -202,6 +205,57 @@ func (em *EventingManager) updatePublisherConfig(eventing *v1alpha1.Eventing) {
 
 func (em *EventingManager) GetBackendConfig() *env.BackendConfig {
 	return &em.backendConfig
+}
+
+func (em EventingManager) DeployPublisherProxyResources(
+	ctx context.Context,
+	eventing *v1alpha1.Eventing,
+	eppDeployment *appsv1.Deployment,
+	scheme *runtime.Scheme) error {
+	// define list of resources to create for EPP.
+	resources := []client.Object{
+		// ServiceAccount
+		newPublisherProxyServiceAccount(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels),
+		// ClusterRole
+		newPublisherProxyClusterRole(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels),
+		// ClusterRoleBinding
+		newPublisherProxyClusterRoleBinding(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels),
+		// Service to expose event publishing endpoint of EPP.
+		newPublisherProxyService(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels,
+			eppDeployment.Spec.Template.Labels),
+		// Service to expose metrics endpoint of EPP.
+		newPublisherProxyMetricsService(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels,
+			eppDeployment.Spec.Template.Labels),
+		// Service to expose health endpoint of EPP.
+		newPublisherProxyHealthService(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels,
+			eppDeployment.Spec.Template.Labels),
+	}
+
+	// add PeerAuthentication for istio.
+	paExists, err := em.kubeClient.PeerAuthenticationCRDExists(ctx)
+	if err != nil {
+		return err
+	}
+	if paExists {
+		resources = append(resources, newPublisherProxyPeerAuthentication(eppDeployment.Name, eppDeployment.Namespace,
+			eppDeployment.Labels,
+			eppDeployment.Spec.Template.Labels),
+		)
+	}
+
+	//// create the resources on k8s.
+	for _, object := range resources {
+		// add owner reference.
+		if err = controllerutil.SetControllerReference(eventing, object, scheme); err != nil {
+			return err
+		}
+
+		// patch apply the object.
+		if err = em.kubeClient.PatchApply(ctx, object); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func convertECBackendType(backendType v1alpha1.BackendType) (ecv1alpha1.BackendType, error) {

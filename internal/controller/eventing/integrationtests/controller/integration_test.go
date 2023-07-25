@@ -132,11 +132,13 @@ func Test_CreateEventingCR(t *testing.T) {
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 			// when
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+			// create NATS.
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenNATS)
 			if tc.givenNATSReady {
 				testEnvironment.EnsureNATSResourceStateReady(t, tc.givenNATS)
 			}
+			// create Eventing CR.
+			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
 
 			defer func() {
 				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
@@ -147,6 +149,8 @@ func Test_CreateEventingCR(t *testing.T) {
 			}()
 
 			// then
+			// check NATS CR status.
+			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
 			if tc.givenDeploymentReady {
 				testEnvironment.EnsureDeploymentExists(t, ecdeployment.PublisherName, givenNamespace)
 				testEnvironment.EnsureHPAExists(t, ecdeployment.PublisherName, givenNamespace)
@@ -155,8 +159,6 @@ func Test_CreateEventingCR(t *testing.T) {
 				testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenEventing)
 				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
-			// check NATS CR status.
-			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
 		})
 	}
 }
@@ -198,7 +200,6 @@ func Test_UpdateEventingCR(t *testing.T) {
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
 			// when
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenExistingEventing)
 			nats := natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRNamespace(ecdeployment.PublisherNamespace),
 				natstestutils.WithNATSCRDefaults(),
@@ -206,6 +207,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 			)
 			testEnvironment.EnsureK8sResourceCreated(t, nats)
 			testEnvironment.EnsureNATSResourceStateReady(t, nats)
+			testEnvironment.EnsureK8sResourceCreated(t, tc.givenExistingEventing)
 
 			testEnvironment.EnsureDeploymentExists(t, ecdeployment.PublisherName, givenNamespace)
 			testEnvironment.EnsureHPAExists(t, ecdeployment.PublisherName, givenNamespace)
@@ -267,7 +269,6 @@ func Test_DeleteEventingCR(t *testing.T) {
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
 			// when
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
 			nats := natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRNamespace(ecdeployment.PublisherNamespace),
 				natstestutils.WithNATSCRDefaults(),
@@ -275,6 +276,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			)
 			testEnvironment.EnsureK8sResourceCreated(t, nats)
 			testEnvironment.EnsureNATSResourceStateReady(t, nats)
+			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
 
 			defer func() {
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {

@@ -22,6 +22,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
+
 	"github.com/go-logr/zapr"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
@@ -40,6 +43,7 @@ import (
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -110,15 +114,29 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		setupLogger.Fatalw("Failed to load configuration", "error", err)
 	}
 
-	// create Eventing reconciler instance
+	// init custom kube client wrapper
+	apiClientSet, err := apiclientset.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(err, "failed to create new k8s clientset")
+		os.Exit(1)
+	}
+
+	k8sClient := mgr.GetClient()
+	kubeClient := k8s.NewKubeClient(k8sClient, apiClientSet, "eventing-manager")
+	recorder := mgr.GetEventRecorderFor("eventing-manager")
 	ctx := context.Background()
+
+	// create eventing manager instance.
+	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, natsConfig, ctrLogger, recorder)
+
+	// create Eventing reconciler instance
 	eventingReconciler := eventingcontroller.NewReconciler(
-		ctx,
-		natsConfig,
-		mgr.GetClient(),
+		k8sClient,
+		kubeClient,
 		mgr.GetScheme(),
 		ctrLogger,
-		mgr.GetEventRecorderFor("eventing-manager"),
+		recorder,
+		eventingManager,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(mgr); err != nil {
