@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	ecdeployment "github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,7 +15,6 @@ import (
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
@@ -28,85 +26,103 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
+func Test_ApplyPublisherProxyDeployment(t *testing.T) {
+	// Define test cases
 	testCases := []struct {
-		name           string
-		givenEventing  *v1alpha1.Eventing
-		givenNats      []natsv1alpha1.NATS
-		expectedResult *appsv1.Deployment
-		expectedError  error
+		name             string
+		givenEventing    *v1alpha1.Eventing
+		givenBackendType v1alpha1.BackendType
+		givenDeployment  *appsv1.Deployment
+		patchApplyErr    error
+		wantedDeployment *appsv1.Deployment
+		wantErr          error
 	}{
 		{
-			name: "CreateOrUpdatePublisherProxy success",
+			name: "NATS backend, no current publisher",
 			givenEventing: testutils.NewEventingCR(
-				testutils.WithEventingCRName("test-eventing"),
-				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
 				testutils.WithEventingCRMinimal(),
-				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
 			),
-			givenNats: []natsv1alpha1.NATS{
-				*natstestutils.NewNATSCR(
-					natstestutils.WithNATSCRName("test-eventing"),
-					natstestutils.WithNATSCRNamespace(ecdeployment.PublisherNamespace),
-					natstestutils.WithNATSStateReady(),
-				),
-			},
-			expectedResult: &appsv1.Deployment{
+			givenBackendType: v1alpha1.NatsBackendType,
+			wantedDeployment: testutils.NewDeployment(
+				"test-eventing-nats-publisher",
+				"test-namespace", nil),
+		},
+		{
+			name: "NATS backend, preserve only allowed annotations",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRMinimal(),
+			),
+			givenBackendType: v1alpha1.NatsBackendType,
+			givenDeployment: testutils.NewDeployment(
+				"test-eventing-nats-publisher",
+				"test-namespace",
+				map[string]string{
+					"kubectl.kubernetes.io/restartedAt": "value1",
+					"annotation2":                       "value2",
+				}),
+			wantedDeployment: testutils.NewDeployment(
+				"test-eventing-nats-publisher",
+				"test-namespace",
+				map[string]string{
+					"kubectl.kubernetes.io/restartedAt": "value1",
+				}),
+		},
+		{
+			name: "Unknown backend",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRMinimal(),
+			),
+			givenBackendType: "unknown-backend",
+			wantErr:          fmt.Errorf("unknown EventingBackend type %q", "unknown-backend"),
+		},
+		{
+			name: "PatchApply failure",
+			givenEventing: &v1alpha1.Eventing{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing-publisher-proxy",
+					Name:      "test-eventing",
 					Namespace: "test-namespace",
 				},
 			},
-			expectedError: nil,
-		},
-		{
-			name: "CreateOrUpdatePublisherProxy error",
-			givenEventing: testutils.NewEventingCR(
-				testutils.WithEventingCRName("test-eventing"),
-				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
-				testutils.WithEventingInvalidBackend(),
-				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
-			),
-			givenNats: []natsv1alpha1.NATS{
-				*natstestutils.NewNATSCR(
-					natstestutils.WithNATSCRName("test-eventing"),
-					natstestutils.WithNATSCRNamespace(ecdeployment.PublisherNamespace),
-					natstestutils.WithNATSStateReady(),
-				),
-			},
-			expectedResult: nil,
-			expectedError:  fmt.Errorf("NATs backend is not specified in the eventing CR"),
+			givenBackendType: v1alpha1.NatsBackendType,
+			patchApplyErr:    errors.New("patch apply error"),
+			wantErr: fmt.Errorf("failed to apply Publisher Proxy deployment: %v",
+				errors.New("patch apply error")),
 		},
 	}
 
-	// Iterate over the test cases and run sub-tests
+	ctx := context.Background()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			ctx := context.Background()
-			mockECReconcileClient := new(mocks.ECReconcilerClient)
-			mockClient := new(mocks.Client)
 			kubeClient := new(k8smocks.Client)
-
-			kubeClient.On("GetNATSResources", ctx, tc.givenEventing.Namespace).Return(&natsv1alpha1.NATSList{
-				Items: tc.givenNats,
-			}, nil)
-			mockECReconcileClient.On("CreateOrUpdatePublisherProxy",
-				mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.expectedResult, nil)
-
-			logger, _ := logger.New("json", "info")
-			em := EventingManager{
-				Client:     mockClient,
-				kubeClient: kubeClient,
-				logger:     logger,
+			kubeClient.On("GetDeployment", ctx, mock.Anything, mock.Anything).Return(tc.givenDeployment, nil)
+			kubeClient.On("Create", ctx, mock.Anything).Return(nil)
+			kubeClient.On("PatchApply", ctx, mock.Anything).Return(tc.patchApplyErr)
+			setOwnerReference = func(eventing *v1alpha1.Eventing, desiredPublisher *appsv1.Deployment,
+				scheme *runtime.Scheme) error {
+				return nil
 			}
 
+			mockClient := new(mocks.Client)
+			mockClient.On("Scheme").Return(&runtime.Scheme{})
+			em := &EventingManager{
+				Client:        mockClient,
+				kubeClient:    kubeClient,
+				natsConfig:    env.NATSConfig{},
+				backendConfig: env.BackendConfig{},
+			}
+			em.updatePublisherConfig(tc.givenEventing)
+
 			// when
-			result, err := em.CreateOrUpdatePublisherProxy(ctx, tc.givenEventing, tc.givenEventing.GetNATSBackend().Type)
+			deployment, err := em.applyPublisherProxyDeployment(ctx, tc.givenEventing, tc.givenBackendType)
 
 			// then
-			require.Equal(t, tc.expectedResult, result)
-			require.Equal(t, tc.expectedError, err)
+			require.Equal(t, tc.wantErr, err)
+			if tc.wantedDeployment != nil {
+				require.NotNil(t, deployment)
+				require.Equal(t, tc.wantedDeployment.Spec.Template.ObjectMeta.Annotations,
+					deployment.Spec.Template.ObjectMeta.Annotations)
+			}
 		})
 	}
 }

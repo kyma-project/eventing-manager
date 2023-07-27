@@ -29,6 +29,7 @@ var (
 	}
 )
 
+//go:generate mockery --name=Manager --outpkg=mocks --case=underscore
 type Manager interface {
 	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
 	CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
@@ -67,14 +68,6 @@ func NewEventingManager(
 	}
 }
 
-type ECReconcilerClient interface {
-	CreateOrUpdatePublisherProxy(
-		ctx context.Context,
-		backend ecv1alpha1.BackendType,
-		natsConfig env.NATSConfig,
-		backendConfig env.BackendConfig) (*appsv1.Deployment, error)
-}
-
 func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	// update EC reconciler NATS and public config from the data in the eventing CR
 	if err := em.updateNatsConfig(ctx, eventing); err != nil {
@@ -92,19 +85,19 @@ func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, even
 func (em *EventingManager) applyPublisherProxyDeployment(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
-	backend v1alpha1.BackendType) (*appsv1.Deployment, error) {
+	backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	var desiredPublisher *appsv1.Deployment
 
-	switch backend {
+	switch backendType {
 	case v1alpha1.NatsBackendType:
 		desiredPublisher = newNATSPublisherDeployment(eventing.Name, eventing.Namespace, em.natsConfig, em.backendConfig.PublisherConfig)
 	case v1alpha1.EventMeshBackendType:
 		desiredPublisher = newBEBPublisherDeployment(eventing.Name, eventing.Namespace, em.backendConfig.PublisherConfig)
 	default:
-		return nil, fmt.Errorf("unknown EventingBackend type %q", backend)
+		return nil, fmt.Errorf("unknown EventingBackend type %q", backendType)
 	}
 
-	if err := controllerutil.SetControllerReference(eventing, desiredPublisher, em.Scheme()); err != nil {
+	if err := setOwnerReference(eventing, desiredPublisher, em.Scheme()); err != nil {
 		return nil, fmt.Errorf("failed to set controller reference: %v", err)
 	}
 
@@ -124,10 +117,18 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	}
 	// Update publisher proxy deployment
 	if err := em.kubeClient.PatchApply(ctx, desiredPublisher); err != nil {
-		return nil, fmt.Errorf("update Event Publisher deployment failed: %v", err)
+		return nil, fmt.Errorf("failed to apply Publisher Proxy deployment: %v", err)
 	}
 
 	return desiredPublisher, nil
+}
+
+// used for unit testing to mock the controllerutil.SetControllerReference
+var setOwnerReference = func(
+	eventing *v1alpha1.Eventing,
+	desiredPublisher *appsv1.Deployment,
+	scheme *runtime.Scheme) error {
+	return controllerutil.SetControllerReference(eventing, desiredPublisher, scheme)
 }
 
 // CreateOrUpdateHPA creates or updates the HPA for the given deployment.
