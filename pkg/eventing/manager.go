@@ -243,7 +243,7 @@ func (em EventingManager) DeployPublisherProxyResources(
 		)
 	}
 
-	//// create the resources on k8s.
+	// create the resources on k8s.
 	for _, object := range resources {
 		// add owner reference.
 		if err = controllerutil.SetControllerReference(eventing, object, scheme); err != nil {

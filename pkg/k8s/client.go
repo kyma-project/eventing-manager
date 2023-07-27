@@ -66,7 +66,7 @@ func (c *KubeClient) PeerAuthenticationCRDExists(ctx context.Context) (bool, err
 }
 
 // PatchApply uses the server-side apply to create/update the resource.
-// The object should have defined `GVK` (i.e. object.TypeMeta).
+// The object must define `GVK` (i.e. object.TypeMeta).
 func (c *KubeClient) PatchApply(ctx context.Context, object client.Object) error {
 	return c.client.Patch(ctx, object, client.Apply, &client.PatchOptions{
 		Force:        pointer.Bool(true),
