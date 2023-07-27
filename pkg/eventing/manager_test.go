@@ -207,7 +207,7 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 			// Set up the mock client to return an error or a HorizontalPodAutoscaler object
 			var hpa *autoscalingv2.HorizontalPodAutoscaler
 			if tc.expectedError == nil {
-				hpa = createNewHorizontalPodAutoscaler(
+				hpa = newHorizontalPodAutoscaler(
 					tc.givenDeployment,
 					int32(tc.givenEventing.Spec.Publisher.Min), int32(tc.givenEventing.Spec.Publisher.Max),
 					tc.cpuUtilization, tc.memoryUtilization,

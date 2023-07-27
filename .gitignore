@@ -33,3 +33,5 @@ bin/*
 
 # Vendor
 vendor/
+
+.env.dev

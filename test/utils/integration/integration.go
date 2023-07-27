@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
 	"github.com/onsi/gomega"
@@ -24,7 +26,8 @@ import (
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	eventing "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
@@ -62,7 +65,7 @@ type TestEnvironment struct {
 	k8sClient        client.Client
 	KubeClient       *k8s.Client
 	K8sDynamicClient *dynamic.DynamicClient
-	Reconciler       *eventing.Reconciler
+	Reconciler       *eventingctrl.Reconciler
 	Logger           *logger.Logger
 	Recorder         *record.EventRecorder
 	TestCancelFn     context.CancelFunc
@@ -133,10 +136,6 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	}
 	recorder := ctrlMgr.GetEventRecorderFor("eventing-manager-test")
 
-	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient())
-
-	// create NATS manager instance
-
 	// setup reconciler
 	natsConfig := env.NATSConfig{
 		EventTypePrefix: EventTypePrefix,
@@ -145,13 +144,24 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	os.Setenv("WEBHOOK_TOKEN_ENDPOINT", "https://oauth2.ev-manager.kymatunas.shoot.canary.k8s-hana.ondemand.com/oauth2/token")
 	os.Setenv("DOMAIN", "my.test.domain")
 	os.Setenv("EVENT_TYPE_PREFIX", EventTypePrefix)
-	eventingReconciler := eventing.NewReconciler(
-		ctx,
-		natsConfig,
+
+	// create k8s clients.
+	apiClientSet, err := apiclientset.NewForConfig(ctrlMgr.GetConfig())
+	if err != nil {
+		return nil, err
+	}
+	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), apiClientSet, "eventing-manager")
+
+	// create eventing manager instance.
+	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, natsConfig, ctrLogger, recorder)
+
+	eventingReconciler := eventingctrl.NewReconciler(
 		k8sClient,
+		kubeClient,
 		ctrlMgr.GetScheme(),
 		ctrLogger,
 		ctrlMgr.GetEventRecorderFor("eventing-manager-test"),
+		eventingManager,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(ctrlMgr); err != nil {

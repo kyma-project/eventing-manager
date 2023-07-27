@@ -9,4 +9,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: europe-docker.pkg.dev/kyma-project/dev/eventing-manager
-  newTag: PR-23
+  newTag: PR-26

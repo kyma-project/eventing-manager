@@ -23,8 +23,9 @@ import (
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -54,30 +55,47 @@ type Reconciler struct {
 	ctrlManager     ctrl.Manager
 	eventingManager eventing.Manager
 	kubeClient      k8s.Client
+	scheme          *runtime.Scheme
+	recorder        record.EventRecorder
 }
 
 func NewReconciler(
-	ctx context.Context,
-	natsConfig env.NATSConfig,
 	client client.Client,
+	kubeClient k8s.Client,
 	scheme *runtime.Scheme,
 	logger *logger.Logger,
 	recorder record.EventRecorder,
+	manager eventing.Manager,
 ) *Reconciler {
 	return &Reconciler{
 		Client:          client,
 		logger:          logger,
-		eventingManager: eventing.NewEventingManager(ctx, client, natsConfig, logger, recorder),
-		kubeClient:      k8s.NewKubeClient(client),
+		eventingManager: manager,
+		kubeClient:      kubeClient,
+		scheme:          scheme,
+		recorder:        recorder,
 	}
 }
 
+// RBAC permissions.
+//nolint:lll
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=eventings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=eventings/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=eventings/finalizers,verbs=update
-//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;update;patch;create;delete
+//+kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=clusterroles,verbs=get;list;watch;update;patch;create;delete
+//+kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=clusterrolebindings,verbs=get;list;watch;update;patch;create;delete
+//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;update;patch;create;delete
+//+kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="security.istio.io",resources=peerauthentications,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=security.istio.io,resources=customresourcedefinitions,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=nats,verbs=get;list;watch
+//+kubebuilder:rbac:groups="applicationconnector.kyma-project.io",resources=applications,verbs=get;list;watch;update;patch;create;delete
+//+kubebuilder:rbac:groups="eventing.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
+//+kubebuilder:rbac:groups="operator.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -107,9 +125,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.ctrlManager = mgr
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&eventingv1alpha1.Eventing{}).
 		Owns(&v1.Deployment{}).
+		Owns(&corev1.Service{}).
+		Owns(&rbacv1.ClusterRole{}).
+		Owns(&rbacv1.ClusterRoleBinding{}).
+		Owns(&corev1.ServiceAccount{}).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
 		Complete(r)
 }
@@ -199,6 +222,11 @@ func (r *Reconciler) handlePublisherProxy(ctx context.Context, eventing *eventin
 	err = r.setDeploymentOwnerReference(ctx, deployment, eventing)
 	if err != nil {
 		return deployment, fmt.Errorf("failed to set owner reference for publisher proxy deployment: %s", err)
+	}
+
+	// deploy publisher proxy resources.
+	if err = r.eventingManager.DeployPublisherProxyResources(ctx, eventing, deployment, r.Scheme()); err != nil {
+		return deployment, err
 	}
 
 	// CreateOrUpdate HPA for publisher proxy deployment

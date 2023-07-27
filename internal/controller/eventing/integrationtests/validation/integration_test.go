@@ -2,6 +2,9 @@ package validation_test
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test"
 	eventingMatchers "github.com/kyma-project/eventing-manager/test/matchers"
@@ -13,8 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"os"
-	"testing"
 )
 
 const projectRootDir = "../../../../../"
