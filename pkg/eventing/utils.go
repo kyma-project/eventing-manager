@@ -8,7 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -206,32 +205,6 @@ func newPublisherProxyHealthService(name, namespace string, labels map[string]st
 					Protocol:   "TCP",
 					Port:       15020,
 					TargetPort: intstr.FromInt(15020),
-				},
-			},
-		},
-	}
-}
-
-func newPublisherProxyPeerAuthentication(name, namespace string, labels map[string]string,
-	selectorLabels map[string]string) *unstructured.Unstructured {
-	// setting `TypeMeta` is important for patch apply to work.
-	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"kind":       "PeerAuthentication",
-			"apiVersion": "security.istio.io/v1beta1",
-			"metadata": map[string]interface{}{
-				"name":      fmt.Sprintf("%s-metrics", name),
-				"namespace": namespace,
-				"labels":    labels,
-			},
-			"spec": map[string]interface{}{
-				"selector": map[string]interface{}{
-					"matchLabels": selectorLabels,
-				},
-				"portLevelMtls": map[string]interface{}{
-					"9090": map[string]interface{}{
-						"mode": "PERMISSIVE",
-					},
 				},
 			},
 		},
