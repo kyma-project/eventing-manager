@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	ecbackend "github.com/kyma-project/kyma/components/eventing-controller/controllers/backend"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
@@ -22,9 +21,17 @@ import (
 
 const natsClientPort = 4222
 
+var (
+	// allowedAnnotations are the publisher proxy deployment spec template annotations
+	// which should be preserved during reconciliation.
+	allowedAnnotations = map[string]string{
+		"kubectl.kubernetes.io/restartedAt": "",
+	}
+)
+
 type Manager interface {
 	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
-	CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*appsv1.Deployment, error)
+	CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
 	CreateOrUpdateHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
 	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment, *runtime.Scheme) error
 }
@@ -32,12 +39,11 @@ type Manager interface {
 type EventingManager struct {
 	ctx context.Context
 	client.Client
-	natsConfig         env.NATSConfig
-	backendConfig      env.BackendConfig
-	kubeClient         k8s.Client
-	ecReconcilerClient ECReconcilerClient
-	logger             *logger.Logger
-	recorder           record.EventRecorder
+	natsConfig    env.NATSConfig
+	backendConfig env.BackendConfig
+	kubeClient    k8s.Client
+	logger        *logger.Logger
+	recorder      record.EventRecorder
 }
 
 func NewEventingManager(
@@ -50,26 +56,14 @@ func NewEventingManager(
 ) Manager {
 	// create an instance of ecbackend Reconciler
 	backendConfig := env.GetBackendConfig()
-	ecReconciler := ecbackend.NewReconciler(
-		ctx,
-		nil,
-		natsConfig,
-		env.GetConfig(),
-		backendConfig,
-		nil,
-		client,
-		logger,
-		recorder,
-	)
 	return EventingManager{
-		ctx:                ctx,
-		Client:             client,
-		natsConfig:         natsConfig,
-		backendConfig:      backendConfig,
-		kubeClient:         kubeClient,
-		ecReconcilerClient: &ECReconcilerEventingClient{ecReconciler},
-		logger:             logger,
-		recorder:           recorder,
+		ctx:           ctx,
+		Client:        client,
+		natsConfig:    natsConfig,
+		backendConfig: backendConfig,
+		kubeClient:    kubeClient,
+		logger:        logger,
+		recorder:      recorder,
 	}
 }
 
@@ -81,42 +75,59 @@ type ECReconcilerClient interface {
 		backendConfig env.BackendConfig) (*appsv1.Deployment, error)
 }
 
-type ECReconcilerEventingClient struct {
-	ecReconciler *ecbackend.Reconciler
-}
-
-func (e *ECReconcilerEventingClient) CreateOrUpdatePublisherProxy(
-	ctx context.Context,
-	backendType ecv1alpha1.BackendType,
-	natsConfig env.NATSConfig,
-	backendConfig env.BackendConfig) (*appsv1.Deployment, error) {
-	e.ecReconciler.SetNatsConfig(natsConfig)
-	e.ecReconciler.SetBackendConfig(backendConfig)
-	return e.ecReconciler.CreateOrUpdatePublisherProxyDeployment(ctx, backendType, false)
-}
-
-func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*appsv1.Deployment, error) {
-	natsBackend := eventing.GetNATSBackend()
-	var ecBackendType ecv1alpha1.BackendType
-	if natsBackend == nil {
-		return nil, fmt.Errorf("NATs backend is not specified in the eventing CR")
-	}
-
-	ecBackendType, err := convertECBackendType(natsBackend.Type)
-	if err != nil {
-		return nil, err
-	}
-
+func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	// update EC reconciler NATS and public config from the data in the eventing CR
 	if err := em.updateNatsConfig(ctx, eventing); err != nil {
 		return nil, err
 	}
 	em.updatePublisherConfig(eventing)
-	deployment, err := em.ecReconcilerClient.CreateOrUpdatePublisherProxy(ctx, ecBackendType, em.natsConfig, em.backendConfig)
+	// deployment, err := em.ecReconcilerClient.CreateOrUpdatePublisherProxy(ctx, ecBackendType, em.natsConfig, em.backendConfig)
+	deployment, err := em.applyPublisherProxyDeployment(ctx, eventing, backendType)
 	if err != nil {
 		return nil, err
 	}
 	return deployment, nil
+}
+
+func (em *EventingManager) applyPublisherProxyDeployment(
+	ctx context.Context,
+	eventing *v1alpha1.Eventing,
+	backend v1alpha1.BackendType) (*appsv1.Deployment, error) {
+	var desiredPublisher *appsv1.Deployment
+
+	switch backend {
+	case v1alpha1.NatsBackendType:
+		desiredPublisher = newNATSPublisherDeployment(eventing.Name, eventing.Namespace, em.natsConfig, em.backendConfig.PublisherConfig)
+	case v1alpha1.EventMeshBackendType:
+		desiredPublisher = newBEBPublisherDeployment(eventing.Name, eventing.Namespace, em.backendConfig.PublisherConfig)
+	default:
+		return nil, fmt.Errorf("unknown EventingBackend type %q", backend)
+	}
+
+	if err := controllerutil.SetControllerReference(eventing, desiredPublisher, em.Scheme()); err != nil {
+		return nil, fmt.Errorf("failed to set controller reference: %v", err)
+	}
+
+	currentPublisher, err := em.kubeClient.GetDeployment(ctx, eventing.Name, eventing.Namespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Event Publisher deployment: %v", err)
+	}
+
+	if currentPublisher != nil {
+		// preserve only allowed annotations
+		desiredPublisher.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
+		for k, v := range currentPublisher.Spec.Template.ObjectMeta.Annotations {
+			if _, ok := allowedAnnotations[k]; ok {
+				desiredPublisher.Spec.Template.ObjectMeta.Annotations[k] = v
+			}
+		}
+	}
+	// Update publisher proxy deployment
+	if err := em.kubeClient.PatchApply(ctx, desiredPublisher); err != nil {
+		return nil, fmt.Errorf("update Event Publisher deployment failed: %v", err)
+	}
+
+	return desiredPublisher, nil
 }
 
 // CreateOrUpdateHPA creates or updates the HPA for the given deployment.

@@ -96,14 +96,13 @@ func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
 
 			logger, _ := logger.New("json", "info")
 			em := EventingManager{
-				Client:             mockClient,
-				kubeClient:         kubeClient,
-				ecReconcilerClient: mockECReconcileClient,
-				logger:             logger,
+				Client:     mockClient,
+				kubeClient: kubeClient,
+				logger:     logger,
 			}
 
 			// when
-			result, err := em.CreateOrUpdatePublisherProxy(ctx, tc.givenEventing)
+			result, err := em.CreateOrUpdatePublisherProxy(ctx, tc.givenEventing, tc.givenEventing.GetNATSBackend().Type)
 
 			// then
 			require.Equal(t, tc.expectedResult, result)

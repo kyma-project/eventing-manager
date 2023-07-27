@@ -15,6 +15,7 @@ import (
 //go:generate mockery --name=Client --outpkg=mocks --case=underscore
 type Client interface {
 	GetDeployment(context.Context, string, string) (*v1.Deployment, error)
+	DeleteDeployment(context.Context, string, string) error
 	GetNATSResources(context.Context, string) (*natsv1alpha1.NATSList, error)
 	PatchApply(context.Context, client.Object) error
 	PeerAuthenticationCRDExists(context.Context) (bool, error)
@@ -37,11 +38,23 @@ func NewKubeClient(client client.Client, clientset k8sclientset.Interface, field
 
 func (c *KubeClient) GetDeployment(ctx context.Context, name, namespace string) (*v1.Deployment, error) {
 	deployment := &v1.Deployment{}
-	err := c.client.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, deployment)
-	if err != nil {
-		return nil, err
+	if err := c.client.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, deployment); err != nil {
+		return nil, client.IgnoreNotFound(err)
 	}
 	return deployment, nil
+}
+
+func (c *KubeClient) DeleteDeployment(ctx context.Context, name, namespace string) error {
+	deployment := &v1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	if err := c.client.Delete(ctx, deployment); err != nil {
+		return client.IgnoreNotFound(err)
+	}
+	return nil
 }
 
 func (c *KubeClient) GetNATSResources(ctx context.Context, namespace string) (*natsv1alpha1.NATSList, error) {
