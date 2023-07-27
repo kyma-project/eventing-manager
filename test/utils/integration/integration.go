@@ -29,7 +29,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	ecdeployment "github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
@@ -410,7 +409,7 @@ func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *nats
 
 func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, eventing *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		deployment, err := env.GetDeploymentFromK8s(ecdeployment.PublisherName, eventing.Namespace)
+		deployment, err := env.GetDeploymentFromK8s(eventing.Name, eventing.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventing.Name, "namespace", eventing.Namespace)
@@ -424,7 +423,7 @@ func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, ev
 
 func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventing *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		hpa, err := env.GetHPAFromK8s(ecdeployment.PublisherName, eventing.Namespace)
+		hpa, err := env.GetHPAFromK8s(eventing.Name, eventing.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventing.Name, "namespace", eventing.Namespace)
@@ -435,7 +434,7 @@ func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventin
 
 func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, eventing *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		deployment, err := env.GetDeploymentFromK8s(ecdeployment.PublisherName, eventing.Namespace)
+		deployment, err := env.GetDeploymentFromK8s(eventing.Name, eventing.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventing.Name, "namespace", eventing.Namespace)

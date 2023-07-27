@@ -27,17 +27,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	v1 "k8s.io/api/apps/v1"
-	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -45,7 +41,7 @@ const (
 	ControllerName            = "eventing-manager-controller"
 	ManagedByLabelKey         = "app.kubernetes.io/managed-by"
 	ManagedByLabelValue       = ControllerName
-	NatsServerNotAvailableMsg = "NATS server is not available in namespace %s"
+	NatsServerNotAvailableMsg = "NATS server is not available"
 )
 
 // Reconciler reconciles a Eventing object
@@ -188,7 +184,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 		return ctrl.Result{}, err
 	}
 
-	deployment, err := r.handlePublisherProxy(ctx, eventing, log)
+	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.GetNATSBackend().Type, log)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
@@ -202,25 +198,20 @@ func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *eventi
 		return err
 	}
 	if !natsAvailable {
-		return fmt.Errorf(NatsServerNotAvailableMsg, eventing.Namespace)
+		return fmt.Errorf(NatsServerNotAvailableMsg)
 	}
 	return nil
 }
 
-func (r *Reconciler) handlePublisherProxy(ctx context.Context, eventing *eventingv1alpha1.Eventing,
+func (r *Reconciler) handlePublisherProxy(
+	ctx context.Context,
+	eventing *eventingv1alpha1.Eventing,
+	backendType eventingv1alpha1.BackendType,
 	log *zap.SugaredLogger) (*v1.Deployment, error) {
 	// CreateOrUpdate deployment for eventing publisher proxy deployment
-	deployment, err := r.eventingManager.CreateOrUpdatePublisherProxy(ctx, eventing)
+	deployment, err := r.eventingManager.CreateOrUpdatePublisherProxy(ctx, eventing, backendType)
 	if err != nil {
 		return nil, err
-	}
-
-	// TODO: remove other owner references and set the following owner reference
-	// Overwrite owner reference for publisher proxy deployment as the EC sets its deployment as owner
-	// and we want the Eventing CR to be the owner.
-	err = r.setDeploymentOwnerReference(ctx, deployment, eventing)
-	if err != nil {
-		return deployment, fmt.Errorf("failed to set owner reference for publisher proxy deployment: %s", err)
 	}
 
 	// deploy publisher proxy resources.
@@ -240,22 +231,6 @@ func (r *Reconciler) handlePublisherProxy(ctx context.Context, eventing *eventin
 func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
 	// TODO: Implement me.
 	return ctrl.Result{}, nil
-}
-
-func (r *Reconciler) setDeploymentOwnerReference(ctx context.Context, deployment *v1.Deployment, eventing *eventingv1alpha1.Eventing) error {
-	// Update the deployment object
-	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, deployment)
-		if err != nil {
-			return err
-		}
-		// Set the controller reference to the parent object
-		if err := controllerutil.SetControllerReference(eventing, deployment, r.Scheme()); err != nil {
-			return fmt.Errorf("failed to set controller reference: %v", err)
-		}
-		return r.Update(ctx, deployment)
-	})
-	return retryErr
 }
 
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {
