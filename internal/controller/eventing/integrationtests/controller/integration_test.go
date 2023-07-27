@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/test/matchers"
@@ -56,6 +58,7 @@ func Test_CreateEventingCR(t *testing.T) {
 		givenDeploymentReady bool
 		givenNATSReady       bool
 		wantMatches          gomegatypes.GomegaMatcher
+		wantEnsureK8sObjects bool
 	}{
 		{
 			name: "Eventing CR should error state due to NATS is unavailable",
@@ -94,6 +97,7 @@ func Test_CreateEventingCR(t *testing.T) {
 				matchers.HaveNATSAvailableConditionAvailable(),
 				matchers.HavePublisherProxyReadyConditionDeployed(),
 			),
+			wantEnsureK8sObjects: true,
 		},
 		{
 			name: "Eventing CR should have processing state deployment is not ready yet",
@@ -158,6 +162,17 @@ func Test_CreateEventingCR(t *testing.T) {
 				testEnvironment.EnsureEventingReplicasReflected(t, tc.givenEventing)
 				testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenEventing)
 				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
+			}
+
+			if tc.wantEnsureK8sObjects {
+				// check if EPP resources exists.
+				testEnvironment.EnsureEPPK8sResourcesExists(t, *tc.givenEventing)
+
+				// check if the owner reference is set.
+				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
+
+				// check if EPP resources are correctly created.
+				// @TODO: implement me
 			}
 		})
 	}
@@ -293,6 +308,22 @@ func Test_DeleteEventingCR(t *testing.T) {
 			if *testEnvironment.EnvTestInstance.UseExistingCluster {
 				testEnvironment.EnsureDeploymentNotFound(t, ecdeployment.PublisherName, givenNamespace)
 				testEnvironment.EnsureHPANotFound(t, ecdeployment.PublisherName, givenNamespace)
+				testEnvironment.EnsureK8sServiceNotFound(t,
+					eventing.GetEPPPublishServiceName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sServiceNotFound(t,
+					eventing.GetEPPMetricsServiceName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sServiceNotFound(t,
+					eventing.GetEPPHealthServiceName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sServiceAccountNotFound(t,
+					eventing.GetEPPServiceAccountName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sClusterRoleNotFound(t,
+					eventing.GetEPPClusterRoleName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
+					eventing.GetEPPClusterRoleBindingName(*tc.givenEventing), givenNamespace)
+			} else {
+				// check if the owner reference is set.
+				// if owner reference is set then these resources would be garbage collected in real k8s cluster.
+				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
 			}
 		})
 	}

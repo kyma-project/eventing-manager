@@ -215,19 +215,20 @@ func (em EventingManager) DeployPublisherProxyResources(
 	// define list of resources to create for EPP.
 	resources := []client.Object{
 		// ServiceAccount
-		newPublisherProxyServiceAccount(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels),
+		newPublisherProxyServiceAccount(GetEPPServiceAccountName(*eventing), eventing.Namespace, eppDeployment.Labels),
 		// ClusterRole
-		newPublisherProxyClusterRole(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels),
+		newPublisherProxyClusterRole(GetEPPClusterRoleName(*eventing), eventing.Namespace, eppDeployment.Labels),
 		// ClusterRoleBinding
-		newPublisherProxyClusterRoleBinding(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels),
+		newPublisherProxyClusterRoleBinding(GetEPPClusterRoleBindingName(*eventing), eventing.Namespace,
+			eppDeployment.Labels),
 		// Service to expose event publishing endpoint of EPP.
-		newPublisherProxyService(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels,
+		newPublisherProxyService(GetEPPPublishServiceName(*eventing), eventing.Namespace, eppDeployment.Labels,
 			eppDeployment.Spec.Template.Labels),
 		// Service to expose metrics endpoint of EPP.
-		newPublisherProxyMetricsService(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels,
+		newPublisherProxyMetricsService(GetEPPMetricsServiceName(*eventing), eventing.Namespace, eppDeployment.Labels,
 			eppDeployment.Spec.Template.Labels),
 		// Service to expose health endpoint of EPP.
-		newPublisherProxyHealthService(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels,
+		newPublisherProxyHealthService(GetEPPHealthServiceName(*eventing), eventing.Namespace, eppDeployment.Labels,
 			eppDeployment.Spec.Template.Labels),
 	}
 
