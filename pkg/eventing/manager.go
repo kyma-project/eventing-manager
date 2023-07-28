@@ -10,11 +10,8 @@ import (
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -32,8 +29,8 @@ var (
 //go:generate mockery --name=Manager --outpkg=mocks --case=underscore
 type Manager interface {
 	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
-	CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
-	CreateOrUpdateHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
+	DeployPublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
+	DeployHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
 	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment, *runtime.Scheme) error
 }
 
@@ -68,13 +65,13 @@ func NewEventingManager(
 	}
 }
 
-func (em EventingManager) CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
+func (em EventingManager) DeployPublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	// update EC reconciler NATS and public config from the data in the eventing CR
 	if err := em.updateNatsConfig(ctx, eventing); err != nil {
 		return nil, err
 	}
 	em.updatePublisherConfig(eventing)
-	// deployment, err := em.ecReconcilerClient.CreateOrUpdatePublisherProxy(ctx, ecBackendType, em.natsConfig, em.backendConfig)
+	// deployment, err := em.ecReconcilerClient.DeployPublisherProxy(ctx, ecBackendType, em.natsConfig, em.backendConfig)
 	deployment, err := em.applyPublisherProxyDeployment(ctx, eventing, backendType)
 	if err != nil {
 		return nil, err
@@ -132,41 +129,18 @@ var setOwnerReference = func(
 }
 
 // CreateOrUpdateHPA creates or updates the HPA for the given deployment.
-func (em EventingManager) CreateOrUpdateHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error {
-	// try to get the existing horizontal pod autoscaler object
-	hpa := &autoscalingv2.HorizontalPodAutoscaler{}
-	err := em.Client.Get(ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, hpa)
-	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to get horizontal pod autoscaler: %v", err)
-	}
+func (em EventingManager) DeployHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error {
 	min := int32(eventing.Spec.Publisher.Min)
 	max := int32(eventing.Spec.Publisher.Max)
-	hpa = newHorizontalPodAutoscaler(deployment, min, max, cpuUtilization, memoryUtilization)
+	hpa := newHorizontalPodAutoscaler(deployment, min, max, cpuUtilization, memoryUtilization)
 	if err := controllerutil.SetControllerReference(eventing, hpa, em.Scheme()); err != nil {
 		return err
 	}
-	// if the horizontal pod autoscaler object does not exist, create it
-	if errors.IsNotFound(err) {
-		// create a new horizontal pod autoscaler object
-		err = em.Client.Create(ctx, hpa)
-		if err != nil {
-			return fmt.Errorf("failed to create horizontal pod autoscaler: %v", err)
-		}
-		return nil
+	// apply a new horizontal pod autoscaler object
+	err := em.kubeClient.PatchApply(ctx, hpa)
+	if err != nil {
+		return fmt.Errorf("failed to create horizontal pod autoscaler: %v", err)
 	}
-
-	// if the horizontal pod autoscaler object exists, update it
-	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err = em.Client.Update(ctx, hpa)
-		if err != nil {
-			return fmt.Errorf("failed to update horizontal pod autoscaler: %v", err)
-		}
-		return nil
-	})
-	if retryErr != nil {
-		return fmt.Errorf("failed to update horizontal pod autoscaler: %v", retryErr)
-	}
-
 	return nil
 }
 
