@@ -6,10 +6,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -118,10 +118,12 @@ func Test_DeleteDeployment(t *testing.T) {
 
 	// Run tests
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			fakeClient := fake.NewFakeClient()
+			ctx := context.Background()
+			fakeClient := fake.NewClientBuilder().Build()
 			kubeClient := &KubeClient{
 				client: fakeClient,
 			}
@@ -133,16 +135,18 @@ func Test_DeleteDeployment(t *testing.T) {
 			}
 			// Create the deployment if it should exist
 			if !tc.noDeployment {
-				fakeClient.Create(context.Background(), deployment)
+				if err := fakeClient.Create(ctx, deployment); err != nil {
+					t.Fatalf("failed to create deployment: %v", err)
+				}
 			}
 
 			// when
-			err := kubeClient.DeleteDeployment(context.Background(), deployment.Name, deployment.Namespace)
+			err := kubeClient.DeleteDeployment(ctx, deployment.Name, deployment.Namespace)
 
 			// then
 			require.Nil(t, err)
 			// Check that the deployment was deleted
-			err = fakeClient.Get(context.Background(),
+			err = fakeClient.Get(ctx,
 				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &appsv1.Deployment{})
 			require.True(t, errors.IsNotFound(err), "DeleteDeployment did not delete deployment")
 		})
