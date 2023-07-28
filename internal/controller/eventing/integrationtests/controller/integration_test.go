@@ -172,7 +172,16 @@ func Test_CreateEventingCR(t *testing.T) {
 				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
 
 				// check if EPP resources are correctly created.
-				// @TODO: implement me
+				deployment, err := testEnvironment.GetDeploymentFromK8s(ecdeployment.PublisherName, givenNamespace)
+				require.NoError(t, err)
+				// K8s Services
+				testEnvironment.EnsureEPPPublishServiceCorrect(t, deployment, *tc.givenEventing)
+				testEnvironment.EnsureEPPMetricsServiceCorrect(t, deployment, *tc.givenEventing)
+				testEnvironment.EnsureEPPHealthServiceCorrect(t, deployment, *tc.givenEventing)
+				// ClusterRole
+				testEnvironment.EnsureEPPClusterRoleCorrect(t, *tc.givenEventing)
+				// ClusterRoleBinding
+				testEnvironment.EnsureEPPClusterRoleBindingCorrect(t, *tc.givenEventing)
 			}
 		})
 	}
