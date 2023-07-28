@@ -19,7 +19,7 @@ const (
 	livenessInitialDelaySecs = int32(5)
 	livenessTimeoutSecs      = int32(1)
 	livenessPeriodSecs       = int32(2)
-	bebNamespacePrefix       = "/"
+	eventMeshNamespacePrefix = "/"
 	InstanceLabelKey         = "app.kubernetes.io/instance"
 	InstanceLabelValue       = "eventing"
 	DashboardLabelKey        = "kyma-project.io/dashboard"
@@ -59,7 +59,7 @@ func newNATSPublisherDeployment(
 	)
 }
 
-func newBEBPublisherDeployment(
+func newEventMeshPublisherDeployment(
 	name, namespace string,
 	publisherConfig env.PublisherConfig) *appsv1.Deployment {
 	return newDeployment(
@@ -198,9 +198,12 @@ func WithNATSEnvVars(publisherName string, natsConfig env.NATSConfig, publisherC
 
 func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig) []v1.EnvVar {
 	return []v1.EnvVar{
+		{Name: "BACKEND", Value: "nats"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
+		{Name: "NATS_URL", Value: natsConfig.URL},
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{Name: "LEGACY_NAMESPACE", Value: "kyma"},
+		{Name: "EVENT_TYPE_PREFIX", Value: natsConfig.EventTypePrefix},
 		// JetStream-specific config
 		{Name: "JS_STREAM_NAME", Value: natsConfig.JSStreamName},
 	}
@@ -297,13 +300,13 @@ func WithBEBEnvVars(publisherName string, publisherConfig env.PublisherConfig) D
 	return func(d *appsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
 			if strings.EqualFold(container.Name, publisherName) {
-				d.Spec.Template.Spec.Containers[i].Env = getBEBEnvVars(publisherName, publisherConfig)
+				d.Spec.Template.Spec.Containers[i].Env = getEventMeshEnvVars(publisherName, publisherConfig)
 			}
 		}
 	}
 }
 
-func getBEBEnvVars(publisherName string, publisherConfig env.PublisherConfig) []v1.EnvVar {
+func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConfig) []v1.EnvVar {
 	return []v1.EnvVar{
 		{Name: "BACKEND", Value: "beb"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
@@ -350,7 +353,7 @@ func getBEBEnvVars(publisherName string, publisherConfig env.PublisherConfig) []
 		},
 		{
 			Name:  "BEB_NAMESPACE",
-			Value: fmt.Sprintf("%s$(BEB_NAMESPACE_VALUE)", bebNamespacePrefix),
+			Value: fmt.Sprintf("%s$(BEB_NAMESPACE_VALUE)", eventMeshNamespacePrefix),
 		},
 	}
 }
