@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	ecdeployment "github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,7 +15,6 @@ import (
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
@@ -24,90 +22,106 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test_CreateOrUpdatePublisherProxy(t *testing.T) {
+func Test_ApplyPublisherProxyDeployment(t *testing.T) {
+	// Define test cases
 	testCases := []struct {
-		name           string
-		givenEventing  *v1alpha1.Eventing
-		givenNats      []natsv1alpha1.NATS
-		expectedResult *appsv1.Deployment
-		expectedError  error
+		name             string
+		givenEventing    *v1alpha1.Eventing
+		givenBackendType v1alpha1.BackendType
+		givenDeployment  *appsv1.Deployment
+		patchApplyErr    error
+		wantedDeployment *appsv1.Deployment
+		wantErr          error
 	}{
 		{
-			name: "CreateOrUpdatePublisherProxy success",
+			name: "NATS backend, no current publisher",
 			givenEventing: testutils.NewEventingCR(
-				testutils.WithEventingCRName("test-eventing"),
-				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
 				testutils.WithEventingCRMinimal(),
-				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
 			),
-			givenNats: []natsv1alpha1.NATS{
-				*natstestutils.NewNATSCR(
-					natstestutils.WithNATSCRName("test-eventing"),
-					natstestutils.WithNATSCRNamespace(ecdeployment.PublisherNamespace),
-					natstestutils.WithNATSStateReady(),
-				),
-			},
-			expectedResult: &appsv1.Deployment{
+			givenBackendType: v1alpha1.NatsBackendType,
+			wantedDeployment: testutils.NewDeployment(
+				"test-eventing-nats-publisher",
+				"test-namespace", nil),
+		},
+		{
+			name: "NATS backend, preserve only allowed annotations",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRMinimal(),
+			),
+			givenBackendType: v1alpha1.NatsBackendType,
+			givenDeployment: testutils.NewDeployment(
+				"test-eventing-nats-publisher",
+				"test-namespace",
+				map[string]string{
+					"kubectl.kubernetes.io/restartedAt": "value1",
+					"annotation2":                       "value2",
+				}),
+			wantedDeployment: testutils.NewDeployment(
+				"test-eventing-nats-publisher",
+				"test-namespace",
+				map[string]string{
+					"kubectl.kubernetes.io/restartedAt": "value1",
+				}),
+		},
+		{
+			name: "Unknown backend",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRMinimal(),
+			),
+			givenBackendType: "unknown-backend",
+			wantErr:          fmt.Errorf("unknown EventingBackend type %q", "unknown-backend"),
+		},
+		{
+			name: "PatchApply failure",
+			givenEventing: &v1alpha1.Eventing{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing-publisher-proxy",
+					Name:      "test-eventing",
 					Namespace: "test-namespace",
 				},
 			},
-			expectedError: nil,
-		},
-		{
-			name: "CreateOrUpdatePublisherProxy error",
-			givenEventing: testutils.NewEventingCR(
-				testutils.WithEventingCRName("test-eventing"),
-				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
-				testutils.WithEventingInvalidBackend(),
-				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
-			),
-			givenNats: []natsv1alpha1.NATS{
-				*natstestutils.NewNATSCR(
-					natstestutils.WithNATSCRName("test-eventing"),
-					natstestutils.WithNATSCRNamespace(ecdeployment.PublisherNamespace),
-					natstestutils.WithNATSStateReady(),
-				),
-			},
-			expectedResult: nil,
-			expectedError:  fmt.Errorf("NATs backend is not specified in the eventing CR"),
+			givenBackendType: v1alpha1.NatsBackendType,
+			patchApplyErr:    errors.New("patch apply error"),
+			wantErr: fmt.Errorf("failed to apply Publisher Proxy deployment: %v",
+				errors.New("patch apply error")),
 		},
 	}
 
-	// Iterate over the test cases and run sub-tests
+	ctx := context.Background()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			ctx := context.Background()
-			mockECReconcileClient := new(mocks.ECReconcilerClient)
-			mockClient := new(mocks.Client)
 			kubeClient := new(k8smocks.Client)
-
-			kubeClient.On("GetNATSResources", ctx, tc.givenEventing.Namespace).Return(&natsv1alpha1.NATSList{
-				Items: tc.givenNats,
-			}, nil)
-			mockECReconcileClient.On("CreateOrUpdatePublisherProxy",
-				mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.expectedResult, nil)
-
-			logger, _ := logger.New("json", "info")
-			em := EventingManager{
-				Client:             mockClient,
-				kubeClient:         kubeClient,
-				ecReconcilerClient: mockECReconcileClient,
-				logger:             logger,
+			kubeClient.On("GetDeployment", ctx, mock.Anything, mock.Anything).Return(tc.givenDeployment, nil)
+			kubeClient.On("Create", ctx, mock.Anything).Return(nil)
+			kubeClient.On("PatchApply", ctx, mock.Anything).Return(tc.patchApplyErr)
+			setOwnerReference = func(eventing *v1alpha1.Eventing, desiredPublisher *appsv1.Deployment,
+				scheme *runtime.Scheme) error {
+				return nil
 			}
 
+			mockClient := new(mocks.Client)
+			mockClient.On("Scheme").Return(&runtime.Scheme{})
+			em := &EventingManager{
+				Client:        mockClient,
+				kubeClient:    kubeClient,
+				natsConfig:    env.NATSConfig{},
+				backendConfig: env.BackendConfig{},
+			}
+			em.updatePublisherConfig(tc.givenEventing)
+
 			// when
-			result, err := em.CreateOrUpdatePublisherProxy(ctx, tc.givenEventing)
+			deployment, err := em.applyPublisherProxyDeployment(ctx, tc.givenEventing, tc.givenBackendType)
 
 			// then
-			require.Equal(t, tc.expectedResult, result)
-			require.Equal(t, tc.expectedError, err)
+			require.Equal(t, tc.wantErr, err)
+			if tc.wantedDeployment != nil {
+				require.NotNil(t, deployment)
+				require.Equal(t, tc.wantedDeployment.Spec.Template.ObjectMeta.Annotations,
+					deployment.Spec.Template.ObjectMeta.Annotations)
+			}
 		})
 	}
 }
@@ -120,33 +134,11 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 		givenEventing     *v1alpha1.Eventing
 		cpuUtilization    int32
 		memoryUtilization int32
-		expectedGetHPAErr error
+		patchApplyErr     error
 		expectedError     error
 	}{
 		{
-			name: "Create new HPA",
-			givenDeployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-deployment",
-					Namespace: "test-namespace",
-				},
-				Spec: appsv1.DeploymentSpec{
-					Replicas: int32Ptr(2),
-				},
-			},
-			givenEventing: testutils.NewEventingCR(
-				testutils.WithEventingCRName("test-eventing"),
-				testutils.WithEventingCRNamespace("test-namespace"),
-				testutils.WithEventingInvalidBackend(),
-				testutils.WithEventingPublisherData(1, 5, "100m", "256Mi", "200m", "512Mi"),
-			),
-			cpuUtilization:    50,
-			memoryUtilization: 50,
-			expectedGetHPAErr: apierrors.NewNotFound(autoscalingv2.Resource("HorizontalPodAutoscaler"), "eventing-publisher-proxy"),
-			expectedError:     nil,
-		},
-		{
-			name: "Update existing HPA",
+			name: "Apply HPA successfully",
 			givenDeployment: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-deployment",
@@ -185,15 +177,15 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 			),
 			cpuUtilization:    50,
 			memoryUtilization: 50,
-			expectedGetHPAErr: errors.New("get HPA error"),
-			expectedError: fmt.Errorf("failed to get horizontal pod autoscaler: %v",
-				errors.New("get HPA error")),
+			patchApplyErr:     errors.New("patchApply HPA error"),
+			expectedError: fmt.Errorf("failed to create horizontal pod autoscaler: %v",
+				errors.New("patchApply HPA error")),
 		},
 	}
 
-	// Iterate over the test cases and run sub-tests
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			// given
 			// Create a mock client
 			mockClient := new(mocks.Client)
 			kubeClient := new(k8smocks.Client)
@@ -204,16 +196,6 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 				kubeClient: kubeClient,
 			}
 
-			// Set up the mock client to return an error or a HorizontalPodAutoscaler object
-			var hpa *autoscalingv2.HorizontalPodAutoscaler
-			if tc.expectedError == nil {
-				hpa = newHorizontalPodAutoscaler(
-					tc.givenDeployment,
-					int32(tc.givenEventing.Spec.Publisher.Min), int32(tc.givenEventing.Spec.Publisher.Max),
-					tc.cpuUtilization, tc.memoryUtilization,
-				)
-			}
-
 			mockClient.On("Scheme").Return(func() *runtime.Scheme {
 				scheme := runtime.NewScheme()
 				_ = v1alpha1.AddToScheme(scheme)
@@ -221,34 +203,22 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 				_ = autoscalingv2.AddToScheme(scheme)
 				return scheme
 			}())
-			mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(tc.expectedGetHPAErr).Run(
-				func(args mock.Arguments) {
-					hpaArg := args.Get(2).(*autoscalingv2.HorizontalPodAutoscaler)
-					if hpa != nil {
-						*hpaArg = *hpa
-					}
-				})
-			mockClient.On("Create", mock.Anything, mock.Anything).Return(nil)
-			mockClient.On("Update", mock.Anything, mock.Anything).Return(nil)
+			kubeClient.On("PatchApply", mock.Anything, mock.Anything).Return(tc.patchApplyErr)
 
 			// when
-			err := em.CreateOrUpdateHPA(context.Background(), tc.givenDeployment, tc.givenEventing, tc.cpuUtilization, tc.memoryUtilization)
+			err := em.DeployHPA(context.Background(), tc.givenDeployment, tc.givenEventing, tc.cpuUtilization, tc.memoryUtilization)
 
 			// then
-
 			require.Equal(t, tc.expectedError, err)
-			// create case
-			if tc.expectedGetHPAErr != nil && apierrors.IsNotFound(tc.expectedGetHPAErr) {
-				mockClient.AssertCalled(t, "Create", mock.Anything, mock.Anything)
-			}
 			// update case
-			if tc.expectedError == nil && tc.expectedGetHPAErr == nil {
-				mockClient.AssertCalled(t, "Update", mock.Anything, mock.Anything)
-				hpaArg := mockClient.Calls[0].Arguments.Get(2).(*autoscalingv2.HorizontalPodAutoscaler)
+			if tc.expectedError == nil {
+				kubeClient.AssertCalled(t, "PatchApply", mock.Anything, mock.Anything)
+				// verify PatchApply called with given arguments
+				hpaArg := kubeClient.Calls[0].Arguments.Get(1).(*autoscalingv2.HorizontalPodAutoscaler)
 				require.Equal(t, int32(tc.givenEventing.Spec.Publisher.Min), *hpaArg.Spec.MinReplicas)
 				require.Equal(t, int32(tc.givenEventing.Spec.Publisher.Max), hpaArg.Spec.MaxReplicas)
-				require.Equal(t, int32(tc.cpuUtilization), *hpaArg.Spec.Metrics[0].Resource.Target.AverageUtilization)
-				require.Equal(t, int32(tc.memoryUtilization), *hpaArg.Spec.Metrics[1].Resource.Target.AverageUtilization)
+				require.Equal(t, tc.cpuUtilization, *hpaArg.Spec.Metrics[0].Resource.Target.AverageUtilization)
+				require.Equal(t, tc.memoryUtilization, *hpaArg.Spec.Metrics[1].Resource.Target.AverageUtilization)
 			}
 		})
 	}

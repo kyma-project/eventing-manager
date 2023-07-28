@@ -42,7 +42,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
-	github.com/kyma-incubator/api-gateway v0.0.0-20220819093753-296e6704d413 // indirect
 	github.com/kyma-project/kyma/common/logging v0.0.0-20230616102347-ad6927dc28d5 // indirect
 	github.com/kyma-project/kyma/components/application-operator v0.0.0-20230127165033-ec8e43477eca // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -67,7 +66,6 @@ require (
 	golang.org/x/term v0.10.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
