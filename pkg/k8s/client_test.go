@@ -6,7 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -91,6 +93,62 @@ func Test_PatchApply(t *testing.T) {
 			require.Equal(t, tc.givenUpdateDeployment.GetName(), gotSTS.Name)
 			require.Equal(t, tc.givenUpdateDeployment.GetNamespace(), gotSTS.Namespace)
 			require.Equal(t, *tc.givenUpdateDeployment.Spec.Replicas, *gotSTS.Spec.Replicas)
+		})
+	}
+}
+
+func Test_DeleteDeployment(t *testing.T) {
+	t.Parallel()
+	// Define test cases
+	testCases := []struct {
+		name         string
+		namespace    string
+		noDeployment bool
+	}{
+		{
+			name:      "deployment exists",
+			namespace: "test-namespace",
+		},
+		{
+			name:         "deployment does not exist",
+			namespace:    "test-namespace",
+			noDeployment: true,
+		},
+	}
+
+	// Run tests
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			fakeClient := fake.NewClientBuilder().Build()
+			kubeClient := &KubeClient{
+				client: fakeClient,
+			}
+			deployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-deployment",
+					Namespace: "test-namespace",
+				},
+			}
+			// Create the deployment if it should exist
+			if !tc.noDeployment {
+				if err := fakeClient.Create(ctx, deployment); err != nil {
+					t.Fatalf("failed to create deployment: %v", err)
+				}
+			}
+
+			// when
+			err := kubeClient.DeleteDeployment(ctx, deployment.Name, deployment.Namespace)
+
+			// then
+			require.Nil(t, err)
+			// Check that the deployment was deleted
+			err = fakeClient.Get(ctx,
+				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &appsv1.Deployment{})
+			require.True(t, errors.IsNotFound(err), "DeleteDeployment did not delete deployment")
 		})
 	}
 }

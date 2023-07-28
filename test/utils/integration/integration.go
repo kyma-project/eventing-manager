@@ -33,7 +33,6 @@ import (
 	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	ecdeployment "github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
@@ -296,7 +295,7 @@ func (env TestEnvironment) TearDown() error {
 	return err
 }
 
-// GetEventingAssert fetches a Eventing from k8s and allows making assertions on it.
+// GetEventingAssert fetches Eventing from k8s and allows making assertions on it.
 func (env TestEnvironment) GetEventingAssert(g *gomega.GomegaWithT,
 	eventing *eventingv1alpha1.Eventing) gomega.AsyncAssertion {
 	return g.Eventually(func() *eventingv1alpha1.Eventing {
@@ -494,7 +493,7 @@ func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *nats
 
 func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, eventing *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		deployment, err := env.GetDeploymentFromK8s(ecdeployment.PublisherName, eventing.Namespace)
+		deployment, err := env.GetDeploymentFromK8s(eventing.Name, eventing.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventing.Name, "namespace", eventing.Namespace)
@@ -508,7 +507,7 @@ func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, ev
 
 func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventing *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		hpa, err := env.GetHPAFromK8s(ecdeployment.PublisherName, eventing.Namespace)
+		hpa, err := env.GetHPAFromK8s(eventing.Name, eventing.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventing.Name, "namespace", eventing.Namespace)
@@ -519,7 +518,7 @@ func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventin
 
 func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, eventing *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		deployment, err := env.GetDeploymentFromK8s(ecdeployment.PublisherName, eventing.Namespace)
+		deployment, err := env.GetDeploymentFromK8s(eventing.Name, eventing.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventing.Name, "namespace", eventing.Namespace)

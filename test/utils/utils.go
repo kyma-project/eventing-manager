@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -181,4 +182,31 @@ func IsEPPClusterRoleBindingCorrect(clusterRoleBinding rbacv1.ClusterRoleBinding
 
 	return reflect.DeepEqual(wantRoleRef, clusterRoleBinding.RoleRef) &&
 		reflect.DeepEqual(wantSubjects, clusterRoleBinding.Subjects)
+}
+
+func NewDeployment(name, namespace string, annotations map[string]string) *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   namespace,
+			Annotations: annotations,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        name,
+					Namespace:   namespace,
+					Annotations: annotations,
+				},
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{
+							Name:  "publisher",
+							Image: "test-image",
+						},
+					},
+				},
+			},
+		},
+	}
 }
