@@ -30,6 +30,10 @@ import (
 )
 
 func Test_ApplyPublisherProxyDeployment(t *testing.T) {
+	// given
+	newScheme := runtime.NewScheme()
+	require.NoError(t, v1alpha1.AddToScheme(newScheme))
+
 	// Define test cases
 	testCases := []struct {
 		name             string
@@ -101,13 +105,9 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 			kubeClient.On("GetDeployment", ctx, mock.Anything, mock.Anything).Return(tc.givenDeployment, nil)
 			kubeClient.On("Create", ctx, mock.Anything).Return(nil)
 			kubeClient.On("PatchApply", ctx, mock.Anything).Return(tc.patchApplyErr)
-			setOwnerReference = func(eventing *v1alpha1.Eventing, desiredPublisher *appsv1.Deployment,
-				scheme *runtime.Scheme) error {
-				return nil
-			}
 
 			mockClient := new(mocks.Client)
-			mockClient.On("Scheme").Return(&runtime.Scheme{})
+			mockClient.On("Scheme").Return(newScheme)
 			em := &EventingManager{
 				Client:        mockClient,
 				kubeClient:    kubeClient,

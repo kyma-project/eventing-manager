@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -93,7 +92,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 		return nil, fmt.Errorf("unknown EventingBackend type %q", backendType)
 	}
 
-	if err := setOwnerReference(eventing, desiredPublisher, em.Scheme()); err != nil {
+	if err := controllerutil.SetControllerReference(eventing, desiredPublisher, em.Scheme()); err != nil {
 		return nil, fmt.Errorf("failed to set controller reference: %v", err)
 	}
 
@@ -117,14 +116,6 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	}
 
 	return desiredPublisher, nil
-}
-
-// used for unit testing to mock the controllerutil.SetControllerReference
-var setOwnerReference = func(
-	eventing *v1alpha1.Eventing,
-	desiredPublisher *appsv1.Deployment,
-	scheme *runtime.Scheme) error {
-	return controllerutil.SetControllerReference(eventing, desiredPublisher, scheme)
 }
 
 // CreateOrUpdateHPA creates or updates the HPA for the given deployment.
