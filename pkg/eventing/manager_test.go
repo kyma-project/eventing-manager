@@ -571,7 +571,7 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 		wantCreatedResourcesCount int
 	}{
 		{
-			name: "CreateOrUpdatePublisherProxy success",
+			name: "DeployPublisherProxyResources success",
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
