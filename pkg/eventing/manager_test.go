@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -135,33 +134,11 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 		givenEventing     *v1alpha1.Eventing
 		cpuUtilization    int32
 		memoryUtilization int32
-		expectedGetHPAErr error
+		patchApplyErr     error
 		expectedError     error
 	}{
 		{
-			name: "Create new HPA",
-			givenDeployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-deployment",
-					Namespace: "test-namespace",
-				},
-				Spec: appsv1.DeploymentSpec{
-					Replicas: int32Ptr(2),
-				},
-			},
-			givenEventing: testutils.NewEventingCR(
-				testutils.WithEventingCRName("test-eventing"),
-				testutils.WithEventingCRNamespace("test-namespace"),
-				testutils.WithEventingInvalidBackend(),
-				testutils.WithEventingPublisherData(1, 5, "100m", "256Mi", "200m", "512Mi"),
-			),
-			cpuUtilization:    50,
-			memoryUtilization: 50,
-			expectedGetHPAErr: apierrors.NewNotFound(autoscalingv2.Resource("HorizontalPodAutoscaler"), "eventing-publisher-proxy"),
-			expectedError:     nil,
-		},
-		{
-			name: "Update existing HPA",
+			name: "Apply HPA successfully",
 			givenDeployment: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-deployment",
@@ -200,15 +177,15 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 			),
 			cpuUtilization:    50,
 			memoryUtilization: 50,
-			expectedGetHPAErr: errors.New("get HPA error"),
-			expectedError: fmt.Errorf("failed to get horizontal pod autoscaler: %v",
-				errors.New("get HPA error")),
+			patchApplyErr:     errors.New("patchApply HPA error"),
+			expectedError: fmt.Errorf("failed to create horizontal pod autoscaler: %v",
+				errors.New("patchApply HPA error")),
 		},
 	}
 
-	// Iterate over the test cases and run sub-tests
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			// given
 			// Create a mock client
 			mockClient := new(mocks.Client)
 			kubeClient := new(k8smocks.Client)
@@ -219,16 +196,6 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 				kubeClient: kubeClient,
 			}
 
-			// Set up the mock client to return an error or a HorizontalPodAutoscaler object
-			var hpa *autoscalingv2.HorizontalPodAutoscaler
-			if tc.expectedError == nil {
-				hpa = newHorizontalPodAutoscaler(
-					tc.givenDeployment,
-					int32(tc.givenEventing.Spec.Publisher.Min), int32(tc.givenEventing.Spec.Publisher.Max),
-					tc.cpuUtilization, tc.memoryUtilization,
-				)
-			}
-
 			mockClient.On("Scheme").Return(func() *runtime.Scheme {
 				scheme := runtime.NewScheme()
 				_ = v1alpha1.AddToScheme(scheme)
@@ -236,34 +203,22 @@ func Test_CreateOrUpdateHPA(t *testing.T) {
 				_ = autoscalingv2.AddToScheme(scheme)
 				return scheme
 			}())
-			mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(tc.expectedGetHPAErr).Run(
-				func(args mock.Arguments) {
-					hpaArg := args.Get(2).(*autoscalingv2.HorizontalPodAutoscaler)
-					if hpa != nil {
-						*hpaArg = *hpa
-					}
-				})
-			mockClient.On("Create", mock.Anything, mock.Anything).Return(nil)
-			mockClient.On("Update", mock.Anything, mock.Anything).Return(nil)
+			kubeClient.On("PatchApply", mock.Anything, mock.Anything).Return(tc.patchApplyErr)
 
 			// when
-			err := em.CreateOrUpdateHPA(context.Background(), tc.givenDeployment, tc.givenEventing, tc.cpuUtilization, tc.memoryUtilization)
+			err := em.DeployHPA(context.Background(), tc.givenDeployment, tc.givenEventing, tc.cpuUtilization, tc.memoryUtilization)
 
 			// then
-
 			require.Equal(t, tc.expectedError, err)
-			// create case
-			if tc.expectedGetHPAErr != nil && apierrors.IsNotFound(tc.expectedGetHPAErr) {
-				mockClient.AssertCalled(t, "Create", mock.Anything, mock.Anything)
-			}
 			// update case
-			if tc.expectedError == nil && tc.expectedGetHPAErr == nil {
-				mockClient.AssertCalled(t, "Update", mock.Anything, mock.Anything)
-				hpaArg := mockClient.Calls[0].Arguments.Get(2).(*autoscalingv2.HorizontalPodAutoscaler)
+			if tc.expectedError == nil {
+				kubeClient.AssertCalled(t, "PatchApply", mock.Anything, mock.Anything)
+				// verify PatchApply called with given arguments
+				hpaArg := kubeClient.Calls[0].Arguments.Get(1).(*autoscalingv2.HorizontalPodAutoscaler)
 				require.Equal(t, int32(tc.givenEventing.Spec.Publisher.Min), *hpaArg.Spec.MinReplicas)
 				require.Equal(t, int32(tc.givenEventing.Spec.Publisher.Max), hpaArg.Spec.MaxReplicas)
-				require.Equal(t, int32(tc.cpuUtilization), *hpaArg.Spec.Metrics[0].Resource.Target.AverageUtilization)
-				require.Equal(t, int32(tc.memoryUtilization), *hpaArg.Spec.Metrics[1].Resource.Target.AverageUtilization)
+				require.Equal(t, tc.cpuUtilization, *hpaArg.Spec.Metrics[0].Resource.Target.AverageUtilization)
+				require.Equal(t, tc.memoryUtilization, *hpaArg.Spec.Metrics[1].Resource.Target.AverageUtilization)
 			}
 		})
 	}

@@ -297,7 +297,7 @@ func (env TestEnvironment) TearDown() error {
 	return err
 }
 
-// GetEventingAssert fetches a Eventing from k8s and allows making assertions on it.
+// GetEventingAssert fetches Eventing from k8s and allows making assertions on it.
 func (env TestEnvironment) GetEventingAssert(g *gomega.GomegaWithT,
 	eventing *eventingv1alpha1.Eventing) gomega.AsyncAssertion {
 	return g.Eventually(func() *eventingv1alpha1.Eventing {

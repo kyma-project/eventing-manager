@@ -27,8 +27,8 @@ func (_m *Manager) EXPECT() *Manager_Expecter {
 	return &Manager_Expecter{mock: &_m.Mock}
 }
 
-// CreateOrUpdateHPA provides a mock function with given fields: ctx, deployment, _a2, cpuUtilization, memoryUtilization
-func (_m *Manager) CreateOrUpdateHPA(ctx context.Context, deployment *v1.Deployment, _a2 *v1alpha1.Eventing, cpuUtilization int32, memoryUtilization int32) error {
+// DeployHPA provides a mock function with given fields: ctx, deployment, _a2, cpuUtilization, memoryUtilization
+func (_m *Manager) DeployHPA(ctx context.Context, deployment *v1.Deployment, _a2 *v1alpha1.Eventing, cpuUtilization int32, memoryUtilization int32) error {
 	ret := _m.Called(ctx, deployment, _a2, cpuUtilization, memoryUtilization)
 
 	var r0 error
@@ -41,40 +41,40 @@ func (_m *Manager) CreateOrUpdateHPA(ctx context.Context, deployment *v1.Deploym
 	return r0
 }
 
-// Manager_CreateOrUpdateHPA_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateOrUpdateHPA'
-type Manager_CreateOrUpdateHPA_Call struct {
+// Manager_DeployHPA_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployHPA'
+type Manager_DeployHPA_Call struct {
 	*mock.Call
 }
 
-// CreateOrUpdateHPA is a helper method to define mock.On call
+// DeployHPA is a helper method to define mock.On call
 //   - ctx context.Context
 //   - deployment *v1.Deployment
 //   - _a2 *v1alpha1.Eventing
 //   - cpuUtilization int32
 //   - memoryUtilization int32
-func (_e *Manager_Expecter) CreateOrUpdateHPA(ctx interface{}, deployment interface{}, _a2 interface{}, cpuUtilization interface{}, memoryUtilization interface{}) *Manager_CreateOrUpdateHPA_Call {
-	return &Manager_CreateOrUpdateHPA_Call{Call: _e.mock.On("CreateOrUpdateHPA", ctx, deployment, _a2, cpuUtilization, memoryUtilization)}
+func (_e *Manager_Expecter) DeployHPA(ctx interface{}, deployment interface{}, _a2 interface{}, cpuUtilization interface{}, memoryUtilization interface{}) *Manager_DeployHPA_Call {
+	return &Manager_DeployHPA_Call{Call: _e.mock.On("DeployHPA", ctx, deployment, _a2, cpuUtilization, memoryUtilization)}
 }
 
-func (_c *Manager_CreateOrUpdateHPA_Call) Run(run func(ctx context.Context, deployment *v1.Deployment, _a2 *v1alpha1.Eventing, cpuUtilization int32, memoryUtilization int32)) *Manager_CreateOrUpdateHPA_Call {
+func (_c *Manager_DeployHPA_Call) Run(run func(ctx context.Context, deployment *v1.Deployment, _a2 *v1alpha1.Eventing, cpuUtilization int32, memoryUtilization int32)) *Manager_DeployHPA_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*v1.Deployment), args[2].(*v1alpha1.Eventing), args[3].(int32), args[4].(int32))
 	})
 	return _c
 }
 
-func (_c *Manager_CreateOrUpdateHPA_Call) Return(_a0 error) *Manager_CreateOrUpdateHPA_Call {
+func (_c *Manager_DeployHPA_Call) Return(_a0 error) *Manager_DeployHPA_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Manager_CreateOrUpdateHPA_Call) RunAndReturn(run func(context.Context, *v1.Deployment, *v1alpha1.Eventing, int32, int32) error) *Manager_CreateOrUpdateHPA_Call {
+func (_c *Manager_DeployHPA_Call) RunAndReturn(run func(context.Context, *v1.Deployment, *v1alpha1.Eventing, int32, int32) error) *Manager_DeployHPA_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CreateOrUpdatePublisherProxy provides a mock function with given fields: ctx, _a1, backendType
-func (_m *Manager) CreateOrUpdatePublisherProxy(ctx context.Context, _a1 *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*v1.Deployment, error) {
+// DeployPublisherProxy provides a mock function with given fields: ctx, _a1, backendType
+func (_m *Manager) DeployPublisherProxy(ctx context.Context, _a1 *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*v1.Deployment, error) {
 	ret := _m.Called(ctx, _a1, backendType)
 
 	var r0 *v1.Deployment
@@ -99,32 +99,32 @@ func (_m *Manager) CreateOrUpdatePublisherProxy(ctx context.Context, _a1 *v1alph
 	return r0, r1
 }
 
-// Manager_CreateOrUpdatePublisherProxy_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateOrUpdatePublisherProxy'
-type Manager_CreateOrUpdatePublisherProxy_Call struct {
+// Manager_DeployPublisherProxy_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployPublisherProxy'
+type Manager_DeployPublisherProxy_Call struct {
 	*mock.Call
 }
 
-// CreateOrUpdatePublisherProxy is a helper method to define mock.On call
+// DeployPublisherProxy is a helper method to define mock.On call
 //   - ctx context.Context
 //   - _a1 *v1alpha1.Eventing
 //   - backendType v1alpha1.BackendType
-func (_e *Manager_Expecter) CreateOrUpdatePublisherProxy(ctx interface{}, _a1 interface{}, backendType interface{}) *Manager_CreateOrUpdatePublisherProxy_Call {
-	return &Manager_CreateOrUpdatePublisherProxy_Call{Call: _e.mock.On("CreateOrUpdatePublisherProxy", ctx, _a1, backendType)}
+func (_e *Manager_Expecter) DeployPublisherProxy(ctx interface{}, _a1 interface{}, backendType interface{}) *Manager_DeployPublisherProxy_Call {
+	return &Manager_DeployPublisherProxy_Call{Call: _e.mock.On("DeployPublisherProxy", ctx, _a1, backendType)}
 }
 
-func (_c *Manager_CreateOrUpdatePublisherProxy_Call) Run(run func(ctx context.Context, _a1 *v1alpha1.Eventing, backendType v1alpha1.BackendType)) *Manager_CreateOrUpdatePublisherProxy_Call {
+func (_c *Manager_DeployPublisherProxy_Call) Run(run func(ctx context.Context, _a1 *v1alpha1.Eventing, backendType v1alpha1.BackendType)) *Manager_DeployPublisherProxy_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*v1alpha1.Eventing), args[2].(v1alpha1.BackendType))
 	})
 	return _c
 }
 
-func (_c *Manager_CreateOrUpdatePublisherProxy_Call) Return(_a0 *v1.Deployment, _a1 error) *Manager_CreateOrUpdatePublisherProxy_Call {
+func (_c *Manager_DeployPublisherProxy_Call) Return(_a0 *v1.Deployment, _a1 error) *Manager_DeployPublisherProxy_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Manager_CreateOrUpdatePublisherProxy_Call) RunAndReturn(run func(context.Context, *v1alpha1.Eventing, v1alpha1.BackendType) (*v1.Deployment, error)) *Manager_CreateOrUpdatePublisherProxy_Call {
+func (_c *Manager_DeployPublisherProxy_Call) RunAndReturn(run func(context.Context, *v1alpha1.Eventing, v1alpha1.BackendType) (*v1.Deployment, error)) *Manager_DeployPublisherProxy_Call {
 	_c.Call.Return(run)
 	return _c
 }

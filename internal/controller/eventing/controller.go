@@ -210,7 +210,7 @@ func (r *Reconciler) handlePublisherProxy(
 	backendType eventingv1alpha1.BackendType,
 	log *zap.SugaredLogger) (*v1.Deployment, error) {
 	// CreateOrUpdate deployment for eventing publisher proxy deployment
-	deployment, err := r.eventingManager.CreateOrUpdatePublisherProxy(ctx, eventing, backendType)
+	deployment, err := r.eventingManager.DeployPublisherProxy(ctx, eventing, backendType)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (r *Reconciler) handlePublisherProxy(
 	}
 
 	// CreateOrUpdate HPA for publisher proxy deployment
-	err = r.eventingManager.CreateOrUpdateHPA(ctx, deployment, eventing, 60, 60)
+	err = r.eventingManager.DeployHPA(ctx, deployment, eventing, 60, 60)
 	if err != nil {
 		return deployment, fmt.Errorf("failed to create or update HPA for publisher proxy deployment: %s", err)
 	}
