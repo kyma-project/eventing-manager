@@ -92,7 +92,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	case v1alpha1.NatsBackendType:
 		desiredPublisher = newNATSPublisherDeployment(eventing.Name, eventing.Namespace, em.natsConfig, em.backendConfig.PublisherConfig)
 	case v1alpha1.EventMeshBackendType:
-		desiredPublisher = newBEBPublisherDeployment(eventing.Name, eventing.Namespace, em.backendConfig.PublisherConfig)
+		desiredPublisher = newEventMeshPublisherDeployment(eventing.Name, eventing.Namespace, em.backendConfig.PublisherConfig)
 	default:
 		return nil, fmt.Errorf("unknown EventingBackend type %q", backendType)
 	}
