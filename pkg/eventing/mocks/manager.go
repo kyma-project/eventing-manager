@@ -7,8 +7,6 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	runtime "k8s.io/apimachinery/pkg/runtime"
-
 	v1 "k8s.io/api/apps/v1"
 
 	v1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
@@ -129,13 +127,13 @@ func (_c *Manager_DeployPublisherProxy_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// DeployPublisherProxyResources provides a mock function with given fields: _a0, _a1, _a2, _a3
-func (_m *Manager) DeployPublisherProxyResources(_a0 context.Context, _a1 *v1alpha1.Eventing, _a2 *v1.Deployment, _a3 *runtime.Scheme) error {
-	ret := _m.Called(_a0, _a1, _a2, _a3)
+// DeployPublisherProxyResources provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Manager) DeployPublisherProxyResources(_a0 context.Context, _a1 *v1alpha1.Eventing, _a2 *v1.Deployment) error {
+	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Eventing, *v1.Deployment, *runtime.Scheme) error); ok {
-		r0 = rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Eventing, *v1.Deployment) error); ok {
+		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -152,14 +150,13 @@ type Manager_DeployPublisherProxyResources_Call struct {
 //   - _a0 context.Context
 //   - _a1 *v1alpha1.Eventing
 //   - _a2 *v1.Deployment
-//   - _a3 *runtime.Scheme
-func (_e *Manager_Expecter) DeployPublisherProxyResources(_a0 interface{}, _a1 interface{}, _a2 interface{}, _a3 interface{}) *Manager_DeployPublisherProxyResources_Call {
-	return &Manager_DeployPublisherProxyResources_Call{Call: _e.mock.On("DeployPublisherProxyResources", _a0, _a1, _a2, _a3)}
+func (_e *Manager_Expecter) DeployPublisherProxyResources(_a0 interface{}, _a1 interface{}, _a2 interface{}) *Manager_DeployPublisherProxyResources_Call {
+	return &Manager_DeployPublisherProxyResources_Call{Call: _e.mock.On("DeployPublisherProxyResources", _a0, _a1, _a2)}
 }
 
-func (_c *Manager_DeployPublisherProxyResources_Call) Run(run func(_a0 context.Context, _a1 *v1alpha1.Eventing, _a2 *v1.Deployment, _a3 *runtime.Scheme)) *Manager_DeployPublisherProxyResources_Call {
+func (_c *Manager_DeployPublisherProxyResources_Call) Run(run func(_a0 context.Context, _a1 *v1alpha1.Eventing, _a2 *v1.Deployment)) *Manager_DeployPublisherProxyResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*v1alpha1.Eventing), args[2].(*v1.Deployment), args[3].(*runtime.Scheme))
+		run(args[0].(context.Context), args[1].(*v1alpha1.Eventing), args[2].(*v1.Deployment))
 	})
 	return _c
 }
@@ -169,7 +166,7 @@ func (_c *Manager_DeployPublisherProxyResources_Call) Return(_a0 error) *Manager
 	return _c
 }
 
-func (_c *Manager_DeployPublisherProxyResources_Call) RunAndReturn(run func(context.Context, *v1alpha1.Eventing, *v1.Deployment, *runtime.Scheme) error) *Manager_DeployPublisherProxyResources_Call {
+func (_c *Manager_DeployPublisherProxyResources_Call) RunAndReturn(run func(context.Context, *v1alpha1.Eventing, *v1.Deployment) error) *Manager_DeployPublisherProxyResources_Call {
 	_c.Call.Return(run)
 	return _c
 }
