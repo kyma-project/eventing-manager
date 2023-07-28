@@ -43,7 +43,6 @@ import (
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -115,14 +114,8 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 
 	// init custom kube client wrapper
-	apiClientSet, err := apiclientset.NewForConfig(mgr.GetConfig())
-	if err != nil {
-		setupLog.Error(err, "failed to create new k8s clientset")
-		os.Exit(1)
-	}
-
 	k8sClient := mgr.GetClient()
-	kubeClient := k8s.NewKubeClient(k8sClient, apiClientSet, "eventing-manager")
+	kubeClient := k8s.NewKubeClient(k8sClient, "eventing-manager")
 	recorder := mgr.GetEventRecorderFor("eventing-manager")
 	ctx := context.Background()
 

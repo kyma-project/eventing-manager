@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
 	"github.com/onsi/gomega"
@@ -146,11 +144,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	os.Setenv("EVENT_TYPE_PREFIX", EventTypePrefix)
 
 	// create k8s clients.
-	apiClientSet, err := apiclientset.NewForConfig(ctrlMgr.GetConfig())
-	if err != nil {
-		return nil, err
-	}
-	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), apiClientSet, "eventing-manager")
+	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), "eventing-manager")
 
 	// create eventing manager instance.
 	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, natsConfig, ctrLogger, recorder)
