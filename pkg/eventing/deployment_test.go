@@ -10,11 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 
+	"github.com/kyma-project/eventing-manager/test"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 )
 
 const (
-	natsURL = "eventing-nats.kyma-system.svc.cluster.local"
+	natsURL         = "eventing-nats.kyma-system.svc.cluster.local"
+	eventTypePrefix = "test.prefix"
 )
 
 func TestNewDeployment(t *testing.T) {
@@ -61,7 +63,7 @@ func TestNewDeployment(t *testing.T) {
 				natsConfig = env.NATSConfig{
 					JSStreamName:    "kyma",
 					URL:             natsURL,
-					EventTypePrefix: "test.prefix",
+					EventTypePrefix: eventTypePrefix,
 				}
 				deployment = newNATSPublisherDeployment(publisherName, publisherNamespace, natsConfig, publisherConfig)
 			case "EventMesh":
@@ -145,7 +147,7 @@ func Test_GetNATSEnvVars(t *testing.T) {
 
 			// ensure the right envs were set
 			for index, val := range tc.wantEnvs {
-				gotEnv := findEnvVar(envVars, index)
+				gotEnv := test.FindEnvVar(envVars, index)
 				assert.NotNil(t, gotEnv)
 				assert.Equal(t, val, gotEnv.Value)
 			}
@@ -208,7 +210,7 @@ func Test_GetLogEnvVars(t *testing.T) {
 
 			// ensure the right envs were set
 			for index, val := range tc.wantEnvs {
-				gotEnv := findEnvVar(envVars, index)
+				gotEnv := test.FindEnvVar(envVars, index)
 				assert.NotNil(t, gotEnv)
 				assert.Equal(t, val, gotEnv.Value)
 			}
@@ -251,7 +253,7 @@ func Test_GetEventMeshEnvVars(t *testing.T) {
 
 			// ensure the right envs were set
 			for index, val := range tc.wantEnvs {
-				gotEnv := findEnvVar(envVars, index)
+				gotEnv := test.FindEnvVar(envVars, index)
 				assert.NotNil(t, gotEnv)
 				assert.Equal(t, val, gotEnv.Value)
 			}
@@ -264,10 +266,12 @@ func natsBackendAssertions(t *testing.T, publisherName string, deployment appsv1
 	container := findPublisherContainer(publisherName, deployment)
 	assert.NotNil(t, container)
 
-	streamName := findEnvVar(container.Env, "JS_STREAM_NAME")
+	streamName := test.FindEnvVar(container.Env, "JS_STREAM_NAME")
 	assert.Equal(t, streamName.Value, "kyma")
-	url := findEnvVar(container.Env, "NATS_URL")
+	url := test.FindEnvVar(container.Env, "NATS_URL")
 	assert.Equal(t, url.Value, natsURL)
+	eventTypePrefixEnv := test.FindEnvVar(container.Env, "EVENT_TYPE_PREFIX")
+	assert.Equal(t, eventTypePrefixEnv.Value, eventTypePrefix)
 
 	// check the affinity was set
 	affinityLabels := deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].PodAffinityTerm.LabelSelector.MatchLabels
@@ -282,7 +286,7 @@ func eventMeshBackendAssertions(t *testing.T, publisherName string, deployment a
 	assert.NotNil(t, container)
 
 	// check eventmesh-specific env variables
-	eventMeshNamespace := findEnvVar(container.Env, "BEB_NAMESPACE")
+	eventMeshNamespace := test.FindEnvVar(container.Env, "BEB_NAMESPACE")
 	assert.Equal(t, eventMeshNamespace.Value, fmt.Sprintf("%s$(BEB_NAMESPACE_VALUE)", eventMeshNamespacePrefix))
 
 	// check the affinity is empty
@@ -298,15 +302,4 @@ func findPublisherContainer(publisherName string, deployment appsv1.Deployment) 
 		}
 	}
 	return container
-}
-
-// findEnvVar returns the env variable which has `name == envVar.Name`,
-// or `nil` if there is no such env variable.
-func findEnvVar(envVars []v1.EnvVar, name string) *v1.EnvVar {
-	for _, n := range envVars {
-		if name == n.Name {
-			return &n
-		}
-	}
-	return nil
 }

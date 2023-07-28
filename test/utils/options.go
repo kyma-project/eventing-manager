@@ -19,27 +19,6 @@ func WithEventingCRMinimal() EventingOption {
 	}
 }
 
-func WithEventingCRStatusInitialized() EventingOption {
-	return func(nats *v1alpha1.Eventing) error {
-		nats.Status.SetStateProcessing()
-		return nil
-	}
-}
-
-func WithNATSStateReady() EventingOption {
-	return func(nats *v1alpha1.Eventing) error {
-		nats.Status.State = v1alpha1.StateReady
-		return nil
-	}
-}
-
-func WithNATSStateProcessing() EventingOption {
-	return func(nats *v1alpha1.Eventing) error {
-		nats.Status.State = v1alpha1.StateProcessing
-		return nil
-	}
-}
-
 func WithEventingCRName(name string) EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
 		nats.Name = name
@@ -54,7 +33,7 @@ func WithEventingCRNamespace(namespace string) EventingOption {
 	}
 }
 
-func WithEventingStreamData(natsStorageType string, natsStorageSize string, maxStreamSize string, natsStreamReplicas, maxMsgsPerTopic int) EventingOption {
+func WithEventingStreamData(natsStorageType string, maxStreamSize string, natsStreamReplicas, maxMsgsPerTopic int) EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
 		nats.Spec.Backends[0].Config = v1alpha1.BackendConfig{
 			NATSStreamStorageType: natsStorageType,
@@ -97,6 +76,13 @@ func WithEventingInvalidBackend() EventingOption {
 				},
 			},
 		}
+		return nil
+	}
+}
+
+func WithEventingEventTypePrefix(eventTypePrefix string) EventingOption {
+	return func(nats *v1alpha1.Eventing) error {
+		nats.Spec.Backends[0].Config.EventTypePrefix = eventTypePrefix
 		return nil
 	}
 }

@@ -372,7 +372,8 @@ func Test_UpdateNatsConfig(t *testing.T) {
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace("test-namespace"),
 				testutils.WithEventingCRMinimal(),
-				testutils.WithEventingStreamData("File", "1Gi", "700Mi", 2, 1000),
+				testutils.WithEventingStreamData("File", "700Mi", 2, 1000),
+				testutils.WithEventingEventTypePrefix("test-prefix"),
 			),
 			givenNatsResources: []natsv1alpha1.NATS{
 				*natstestutils.NewNATSCR(
@@ -382,6 +383,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 			},
 			expectedConfig: env.NATSConfig{
 				URL:                     "nats://test-nats.test-namespace.svc.cluster.local:4222",
+				EventTypePrefix:         "test-prefix",
 				JSStreamStorageType:     "File",
 				JSStreamReplicas:        2,
 				JSStreamMaxBytes:        "700Mi",
@@ -395,7 +397,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace("test-namespace"),
 				testutils.WithEventingCRMinimal(),
-				testutils.WithEventingStreamData("Memory", "1Gi", "700Mi", 2, 1000),
+				testutils.WithEventingStreamData("Memory", "700Mi", 2, 1000),
 			),
 			givenNatsResources: nil,
 			expectedError:      fmt.Errorf("failed to get NATS URL"),
