@@ -13,7 +13,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,7 +25,7 @@ type Manager interface {
 	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
 	CreateOrUpdatePublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing) (*appsv1.Deployment, error)
 	CreateOrUpdateHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
-	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment, *runtime.Scheme) error
+	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
 }
 
 type EventingManager struct {
@@ -210,8 +209,7 @@ func (em *EventingManager) GetBackendConfig() *env.BackendConfig {
 func (em EventingManager) DeployPublisherProxyResources(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
-	eppDeployment *appsv1.Deployment,
-	scheme *runtime.Scheme) error {
+	eppDeployment *appsv1.Deployment) error {
 	// define list of resources to create for EPP.
 	resources := []client.Object{
 		// ServiceAccount
@@ -235,7 +233,7 @@ func (em EventingManager) DeployPublisherProxyResources(
 	// create the resources on k8s.
 	for _, object := range resources {
 		// add owner reference.
-		if err := controllerutil.SetControllerReference(eventing, object, scheme); err != nil {
+		if err := controllerutil.SetControllerReference(eventing, object, em.Scheme()); err != nil {
 			return err
 		}
 

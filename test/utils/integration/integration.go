@@ -6,11 +6,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
-
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -33,6 +30,7 @@ import (
 	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	ecdeployment "github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
@@ -526,7 +524,7 @@ func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, event
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventing.Name, "namespace", eventing.Namespace)
 		}
-		return env.HasOwnerReference(deployment, *eventing)
+		return evnttestutils.HasOwnerReference(deployment, *eventing)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing owner reference is set")
 }
 
@@ -537,7 +535,7 @@ func (env TestEnvironment) EnsureEPPPublishServiceOwnerReferenceSet(t *testing.T
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return env.HasOwnerReference(result, eventingCR)
+		return evnttestutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure PublishService owner reference is set")
 }
 
@@ -548,7 +546,7 @@ func (env TestEnvironment) EnsureEPPMetricsServiceOwnerReferenceSet(t *testing.T
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return env.HasOwnerReference(result, eventingCR)
+		return evnttestutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure MetricsService owner reference is set")
 }
 
@@ -559,7 +557,7 @@ func (env TestEnvironment) EnsureEPPHealthServiceOwnerReferenceSet(t *testing.T,
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return env.HasOwnerReference(result, eventingCR)
+		return evnttestutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure HealthService owner reference is set")
 }
 
@@ -570,7 +568,7 @@ func (env TestEnvironment) EnsureEPPServiceAccountOwnerReferenceSet(t *testing.T
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return env.HasOwnerReference(result, eventingCR)
+		return evnttestutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ServiceAccount owner reference is set")
 }
 
@@ -581,7 +579,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleOwnerReferenceSet(t *testing.T, e
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return env.HasOwnerReference(result, eventingCR)
+		return evnttestutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRole owner reference is set")
 }
 
@@ -593,16 +591,8 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingOwnerReferenceSet(t *testi
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return env.HasOwnerReference(result, eventingCR)
+		return evnttestutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRoleBinding owner reference is set")
-}
-
-func (env TestEnvironment) HasOwnerReference(object client.Object, eventingCR v1alpha1.Eventing) bool {
-	ownerReferences := object.GetOwnerReferences()
-
-	return len(ownerReferences) > 0 && ownerReferences[0].Name == eventingCR.Name &&
-		ownerReferences[0].Kind == "Eventing" &&
-		ownerReferences[0].UID == eventingCR.UID
 }
 
 func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeployment *v1.Deployment,
@@ -613,21 +603,7 @@ func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeplo
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-
-		wantSpec := corev1.ServiceSpec{
-			Selector: eppDeployment.Spec.Template.Labels,
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "http-client",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(8080),
-				},
-			},
-		}
-
-		return reflect.DeepEqual(wantSpec.Selector, result.Spec.Selector) &&
-			reflect.DeepEqual(wantSpec.Ports, result.Spec.Ports)
+		return evnttestutils.IsEPPPublishServiceCorrect(*result, *eppDeployment)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure PublishService correctness.")
 }
 
@@ -639,28 +615,7 @@ func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeplo
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-
-		wantAnnotations := map[string]string{
-			"prometheus.io/scrape": "true",
-			"prometheus.io/port":   "9090",
-			"prometheus.io/scheme": "http",
-		}
-
-		wantSpec := corev1.ServiceSpec{
-			Selector: eppDeployment.Spec.Template.Labels,
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "http-metrics",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(9090),
-				},
-			},
-		}
-
-		return reflect.DeepEqual(wantSpec.Selector, result.Spec.Selector) &&
-			reflect.DeepEqual(wantSpec.Ports, result.Spec.Ports) &&
-			reflect.DeepEqual(wantAnnotations, result.Annotations)
+		return evnttestutils.IsEPPMetricsServiceCorrect(*result, *eppDeployment)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure MetricsService correctness.")
 }
 
@@ -672,21 +627,7 @@ func (env TestEnvironment) EnsureEPPHealthServiceCorrect(t *testing.T, eppDeploy
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-
-		wantSpec := corev1.ServiceSpec{
-			Selector: eppDeployment.Spec.Template.Labels,
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "http-status",
-					Protocol:   "TCP",
-					Port:       15020,
-					TargetPort: intstr.FromInt(15020),
-				},
-			},
-		}
-
-		return reflect.DeepEqual(wantSpec.Selector, result.Spec.Selector) &&
-			reflect.DeepEqual(wantSpec.Ports, result.Spec.Ports)
+		return evnttestutils.IsEPPHealthServiceCorrect(*result, *eppDeployment)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure HealthService correctness.")
 }
 
@@ -697,25 +638,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleCorrect(t *testing.T, eventingCR 
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-
-		wantRules := []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{"eventing.kyma-project.io"},
-				Resources: []string{"subscriptions"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"operator.kyma-project.io"},
-				Resources: []string{"subscriptions"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"applicationconnector.kyma-project.io"},
-				Resources: []string{"applications"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		}
-		return reflect.DeepEqual(wantRules, result.Rules)
+		return evnttestutils.IsEPPClusterRoleCorrect(*result)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRole correctness")
 }
 
@@ -727,22 +650,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingCorrect(t *testing.T, even
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-
-		wantRoleRef := rbacv1.RoleRef{
-			Kind:     "ClusterRole",
-			Name:     eventing.GetEPPClusterRoleName(eventingCR),
-			APIGroup: "rbac.authorization.k8s.io",
-		}
-		wantSubjects := []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      eventing.GetEPPServiceAccountName(eventingCR),
-				Namespace: eventingCR.Namespace,
-			},
-		}
-
-		return reflect.DeepEqual(wantRoleRef, result.RoleRef) &&
-			reflect.DeepEqual(wantSubjects, result.Subjects)
+		return evnttestutils.IsEPPClusterRoleBindingCorrect(*result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRoleBinding correctness")
 }
 

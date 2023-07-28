@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
