@@ -71,7 +71,6 @@ func (em EventingManager) DeployPublisherProxy(ctx context.Context, eventing *v1
 		return nil, err
 	}
 	em.updatePublisherConfig(eventing)
-	// deployment, err := em.ecReconcilerClient.DeployPublisherProxy(ctx, ecBackendType, em.natsConfig, em.backendConfig)
 	deployment, err := em.applyPublisherProxyDeployment(ctx, eventing, backendType)
 	if err != nil {
 		return nil, err
@@ -218,27 +217,15 @@ func (em EventingManager) DeployPublisherProxyResources(
 			eppDeployment.Spec.Template.Labels),
 	}
 
-	// add PeerAuthentication for istio.
-	paExists, err := em.kubeClient.PeerAuthenticationCRDExists(ctx)
-	if err != nil {
-		return err
-	}
-	if paExists {
-		resources = append(resources, newPublisherProxyPeerAuthentication(eppDeployment.Name, eppDeployment.Namespace,
-			eppDeployment.Labels,
-			eppDeployment.Spec.Template.Labels),
-		)
-	}
-
 	// create the resources on k8s.
 	for _, object := range resources {
 		// add owner reference.
-		if err = controllerutil.SetControllerReference(eventing, object, scheme); err != nil {
+		if err := controllerutil.SetControllerReference(eventing, object, scheme); err != nil {
 			return err
 		}
 
 		// patch apply the object.
-		if err = em.kubeClient.PatchApply(ctx, object); err != nil {
+		if err := em.kubeClient.PatchApply(ctx, object); err != nil {
 			return err
 		}
 	}

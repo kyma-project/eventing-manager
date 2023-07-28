@@ -5,8 +5,6 @@ import (
 	"math/rand"
 	"time"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -69,25 +67,6 @@ func NewEventingCR(opts ...EventingOption) *v1alpha1.Eventing {
 
 	return eventing
 
-}
-
-func NewPeerAuthenticationCRD() *apiextensionsv1.CustomResourceDefinition {
-	result := &apiextensionsv1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "security.istio.io/v1beta1",
-			Kind:       "CustomResourceDefinition",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "peerauthentications.security.istio.io",
-		},
-		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-			Names:                 apiextensionsv1.CustomResourceDefinitionNames{},
-			Scope:                 "Namespaced",
-			PreserveUnknownFields: false,
-		},
-	}
-
-	return result
 }
 
 func NewDeployment(name, namespace string, annotations map[string]string) *appsv1.Deployment {
