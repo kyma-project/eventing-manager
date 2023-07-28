@@ -8,6 +8,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -91,6 +93,58 @@ func Test_PatchApply(t *testing.T) {
 			require.Equal(t, tc.givenUpdateDeployment.GetName(), gotSTS.Name)
 			require.Equal(t, tc.givenUpdateDeployment.GetNamespace(), gotSTS.Namespace)
 			require.Equal(t, *tc.givenUpdateDeployment.Spec.Replicas, *gotSTS.Spec.Replicas)
+		})
+	}
+}
+
+func Test_DeleteDeployment(t *testing.T) {
+	t.Parallel()
+	// Define test cases
+	testCases := []struct {
+		name         string
+		namespace    string
+		noDeployment bool
+	}{
+		{
+			name:      "deployment exists",
+			namespace: "test-namespace",
+		},
+		{
+			name:         "deployment does not exist",
+			namespace:    "test-namespace",
+			noDeployment: true,
+		},
+	}
+
+	// Run tests
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			fakeClient := fake.NewFakeClient()
+			kubeClient := &KubeClient{
+				client: fakeClient,
+			}
+			deployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-deployment",
+					Namespace: "test-namespace",
+				},
+			}
+			// Create the deployment if it should exist
+			if !tc.noDeployment {
+				fakeClient.Create(context.Background(), deployment)
+			}
+
+			// when
+			err := kubeClient.DeleteDeployment(context.Background(), deployment.Name, deployment.Namespace)
+
+			// then
+			require.Nil(t, err)
+			// Check that the deployment was deleted
+			err = fakeClient.Get(context.Background(),
+				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &appsv1.Deployment{})
+			require.True(t, errors.IsNotFound(err), "DeleteDeployment did not delete deployment")
 		})
 	}
 }

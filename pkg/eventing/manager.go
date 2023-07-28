@@ -71,7 +71,6 @@ func (em EventingManager) DeployPublisherProxy(ctx context.Context, eventing *v1
 		return nil, err
 	}
 	em.updatePublisherConfig(eventing)
-	// deployment, err := em.ecReconcilerClient.DeployPublisherProxy(ctx, ecBackendType, em.natsConfig, em.backendConfig)
 	deployment, err := em.applyPublisherProxyDeployment(ctx, eventing, backendType)
 	if err != nil {
 		return nil, err
