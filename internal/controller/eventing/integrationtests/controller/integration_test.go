@@ -146,7 +146,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			}()
 
 			// then
-			// check NATS CR status.
+			// check Eventing CR status.
 			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
 			if tc.givenDeploymentReady {
 				testEnvironment.EnsureDeploymentExists(t, tc.givenEventing.Name, givenNamespace)
@@ -325,6 +325,178 @@ func Test_DeleteEventingCR(t *testing.T) {
 				// if owner reference is set then these resources would be garbage collected in real k8s cluster.
 				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
 			}
+		})
+	}
+}
+
+// Test_WatcherEventingCRK8sObjects tests that deleting the k8s objects deployed by Eventing CR
+// should trigger reconciliation.
+func Test_WatcherEventingCRK8sObjects(t *testing.T) {
+	t.Parallel()
+
+	type deletionFunc func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error
+
+	deletePublishServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
+		return env.DeleteServiceFromK8s(eventing.GetEPPPublishServiceName(eventingCR), eventingCR.Namespace)
+	}
+
+	deleteMetricsServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
+		return env.DeleteServiceFromK8s(eventing.GetEPPMetricsServiceName(eventingCR), eventingCR.Namespace)
+	}
+
+	deleteHealthServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
+		return env.DeleteServiceFromK8s(eventing.GetEPPHealthServiceName(eventingCR), eventingCR.Namespace)
+	}
+
+	deleteServiceAccountFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
+		return env.DeleteServiceAccountFromK8s(eventing.GetEPPServiceAccountName(eventingCR), eventingCR.Namespace)
+	}
+
+	deleteClusterRoleFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
+		return env.DeleteClusterRoleFromK8s(eventing.GetEPPClusterRoleName(eventingCR), eventingCR.Namespace)
+	}
+
+	deleteClusterRoleBindingFromK8s := func(env *testutils.TestEnvironment,
+		eventingCR eventingv1alpha1.Eventing) error {
+		return env.DeleteClusterRoleBindingFromK8s(eventing.GetEPPClusterRoleBindingName(eventingCR),
+			eventingCR.Namespace)
+	}
+
+	testCases := []struct {
+		name                 string
+		givenEventing        *eventingv1alpha1.Eventing
+		wantResourceDeletion []deletionFunc
+	}{
+		{
+			name: "should recreate Publish Service",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			wantResourceDeletion: []deletionFunc{
+				deletePublishServiceFromK8s,
+			},
+		},
+		{
+			name: "should recreate Metrics Service",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			wantResourceDeletion: []deletionFunc{
+				deleteMetricsServiceFromK8s,
+			},
+		},
+		{
+			name: "should recreate Health Service",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			wantResourceDeletion: []deletionFunc{
+				deleteHealthServiceFromK8s,
+			},
+		},
+		{
+			name: "should recreate ServiceAccount",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			wantResourceDeletion: []deletionFunc{
+				deleteServiceAccountFromK8s,
+			},
+		},
+		//{
+		//	name: "should recreate ClusterRole",
+		//	givenEventing: utils.NewEventingCR(
+		//		utils.WithEventingCRMinimal(),
+		//		utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+		//		utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+		//	),
+		//	wantResourceDeletion: []deletionFunc{
+		//		deleteClusterRoleFromK8s,
+		//	},
+		//},
+		//{
+		//	name: "should recreate ClusterRoleBinding",
+		//	givenEventing: utils.NewEventingCR(
+		//		utils.WithEventingCRMinimal(),
+		//		utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+		//		utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+		//	),
+		//	wantResourceDeletion: []deletionFunc{
+		//		deleteClusterRoleBindingFromK8s,
+		//	},
+		//},
+		{
+			name: "should recreate all objects",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			wantResourceDeletion: []deletionFunc{
+				deletePublishServiceFromK8s,
+				deleteMetricsServiceFromK8s,
+				deleteHealthServiceFromK8s,
+				deleteServiceAccountFromK8s,
+				deleteClusterRoleFromK8s,
+				deleteClusterRoleBindingFromK8s,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// given
+			g := gomega.NewWithT(t)
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+				return true
+			}
+
+			// create unique namespace for this test run.
+			givenNamespace := tc.givenEventing.GetNamespace()
+			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
+
+			nats := natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRNamespace(tc.givenEventing.Namespace),
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateReady(),
+			)
+			testEnvironment.EnsureK8sResourceCreated(t, nats)
+			testEnvironment.EnsureNATSResourceStateReady(t, nats)
+
+			//defer func() {
+			//	if !*testEnvironment.EnvTestInstance.UseExistingCluster {
+			//		testEnvironment.EnsureDeploymentDeletion(t, tc.givenEventing.Name, givenNamespace)
+			//	}
+			//	testEnvironment.EnsureK8sResourceDeleted(t, nats)
+			//}()
+
+			// create Eventing CR
+			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+			// check Eventing CR status.
+			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(matchers.HaveStatusReady())
+
+			// check if EPP resources exists.
+			testEnvironment.EnsureEPPK8sResourcesExists(t, *tc.givenEventing)
+
+			// when
+			for _, f := range tc.wantResourceDeletion {
+				require.NoError(t, f(testEnvironment, *tc.givenEventing))
+			}
+
+			// then
+			// ensure all k8s objects exists again.
+			testEnvironment.EnsureEPPK8sResourcesExists(t, *tc.givenEventing)
 		})
 	}
 }

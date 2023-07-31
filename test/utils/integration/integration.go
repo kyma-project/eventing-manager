@@ -653,6 +653,42 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingCorrect(t *testing.T, even
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRoleBinding correctness")
 }
 
+func (env TestEnvironment) DeleteServiceFromK8s(name, namespace string) error {
+	return env.k8sClient.Delete(env.Context, &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
+}
+
+func (env TestEnvironment) DeleteServiceAccountFromK8s(name, namespace string) error {
+	return env.k8sClient.Delete(env.Context, &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
+}
+
+func (env TestEnvironment) DeleteClusterRoleFromK8s(name, namespace string) error {
+	return env.k8sClient.Delete(env.Context, &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
+}
+
+func (env TestEnvironment) DeleteClusterRoleBindingFromK8s(name, namespace string) error {
+	return env.k8sClient.Delete(env.Context, &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
+}
+
 func (env TestEnvironment) UpdateEventingStatus(eventing *v1alpha1.Eventing) error {
 	return env.k8sClient.Status().Update(env.Context, eventing)
 }

@@ -82,6 +82,8 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	eventing *v1alpha1.Eventing,
 	backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	var desiredPublisher *appsv1.Deployment
+	// update service account name.
+	em.backendConfig.PublisherConfig.ServiceAccount = GetEPPServiceAccountName(*eventing)
 
 	switch backendType {
 	case v1alpha1.NatsBackendType:
