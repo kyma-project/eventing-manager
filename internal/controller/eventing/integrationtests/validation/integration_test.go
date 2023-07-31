@@ -31,44 +31,46 @@ const (
 	name               = "name"
 	namespace          = "namespace"
 
-	spec                  = "spec"
-	backends              = "backends"
-	backendType           = "type"
-	typeEventMesh         = "EventMesh"
-	typeNats              = "NATS"
-	config                = "config"
-	natsStreamStorageType = "natsStreamStorageType"
-	storageTypeFile       = "File"
-	storageTypeMemory     = "Memory"
-	natsStreamReplicas    = "natsStreamReplicas"
-	streamReplicas        = 3
-	natsStreamMaxSize     = "natsStreamMaxSize"
-	maxSize               = "700Mi"
-	natsMaxMsgsPerTopic   = "natsMaxMsgsPerTopic"
-	msgsPerTopic          = 1000000
-	eventMeshSecret       = "eventMeshSecret"
-	someSecret            = "namespace/name"
-	wrongSecret           = "gibberish"
-	publisher             = "publisher"
-	replicas              = "replicas"
-	max                   = "max"
-	min                   = "min"
-	resources             = "resources"
-	limits                = "limits"
-	requests              = "requests"
-	cpu                   = "cpu"
-	memory                = "memory"
-	limitsCpuValue        = "500m"
-	limitsMemoryValue     = "512Mi"
-	requestsCpuValue      = "10m"
-	requestsMemoryValue   = "256Mi"
-	logging               = "logging"
-	logLevel              = "logLevel"
-	logLevelInfo          = "Info"
-	logLevelWarn          = "Warn"
-	logLevelError         = "Error"
-	logLevelDebug         = "Debug"
-	gibberish             = "Gibberish"
+	spec                   = "spec"
+	backends               = "backends"
+	backendType            = "type"
+	typeEventMesh          = "EventMesh"
+	typeNats               = "NATS"
+	config                 = "config"
+	natsStreamStorageType  = "natsStreamStorageType"
+	storageTypeFile        = "File"
+	storageTypeMemory      = "Memory"
+	natsStreamReplicas     = "natsStreamReplicas"
+	streamReplicas         = 3
+	natsStreamMaxSize      = "natsStreamMaxSize"
+	maxSize                = "700Mi"
+	natsMaxMsgsPerTopic    = "natsMaxMsgsPerTopic"
+	msgsPerTopic           = 1000000
+	eventTypePrefix        = "eventTypePrefix"
+	eventMeshSecret        = "eventMeshSecret"
+	someSecret             = "namespace/name"
+	wrongSecret            = "gibberish"
+	publisher              = "publisher"
+	replicas               = "replicas"
+	max                    = "max"
+	min                    = "min"
+	resources              = "resources"
+	limits                 = "limits"
+	requests               = "requests"
+	cpu                    = "cpu"
+	memory                 = "memory"
+	limitsCpuValue         = "500m"
+	limitsMemoryValue      = "512Mi"
+	requestsCpuValue       = "10m"
+	requestsMemoryValue    = "256Mi"
+	logging                = "logging"
+	logLevel               = "logLevel"
+	logLevelInfo           = "Info"
+	logLevelWarn           = "Warn"
+	logLevelError          = "Error"
+	logLevelDebug          = "Debug"
+	gibberish              = "Gibberish"
+	defaultEventTypePrefix = "sap.kyma.custom"
 )
 
 var testEnvironment *integration.TestEnvironment
@@ -366,6 +368,53 @@ func Test_Validate_CreateEventing(t *testing.T) {
 								backendType: typeNats,
 								config: map[string]any{
 									natsStreamStorageType: storageTypeMemory,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.backends.config.eventTypePrefix fails for empty string`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeNats,
+								config: map[string]any{
+									eventTypePrefix: "",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErrMsg: "eventTypePrefix cannot be empty",
+		},
+		{
+			name: `validation of spec.backends.config.eventTypePrefix should pass for valid value`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backends: []interface{}{
+							map[string]any{
+								backendType: typeNats,
+								config: map[string]any{
+									eventTypePrefix: "mock.test.prefix",
 								},
 							},
 						},
@@ -701,6 +750,7 @@ func defaultBackendConfig() v1alpha1.BackendConfig {
 		NATSStreamReplicas:    3,
 		NATSStreamMaxSize:     resource.MustParse("700Mi"),
 		NATSMaxMsgsPerTopic:   1000000,
+		EventTypePrefix:       defaultEventTypePrefix,
 	}
 }
 

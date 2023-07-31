@@ -27,9 +27,9 @@ import (
 
 	"github.com/go-logr/zapr"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.

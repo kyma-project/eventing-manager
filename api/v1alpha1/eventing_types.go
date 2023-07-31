@@ -141,6 +141,10 @@ type BackendConfig struct {
 	// EventMeshSecret defines the namespaced name of K8s Secret containing EventMesh credentials. The format of name is "namespace/name".
 	// +kubebuilder:validation:Pattern:="^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$"
 	EventMeshSecret string `json:"eventMeshSecret,omitempty"`
+
+	// +kubebuilder:default:="sap.kyma.custom"
+	// +kubebuilder:validation:XValidation:rule="self!=''", message="eventTypePrefix cannot be empty"
+	EventTypePrefix string `json:"eventTypePrefix,omitempty"`
 }
 
 func (ev *Eventing) GetNATSBackend() *Backend {

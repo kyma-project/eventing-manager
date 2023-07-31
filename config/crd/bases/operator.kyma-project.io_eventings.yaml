@@ -98,6 +98,12 @@ spec:
                             of name is "namespace/name".
                           pattern: ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$
                           type: string
+                        eventTypePrefix:
+                          default: sap.kyma.custom
+                          type: string
+                          x-kubernetes-validations:
+                          - message: eventTypePrefix cannot be empty
+                            rule: self!=''
                         natsMaxMsgsPerTopic:
                           default: 1000000
                           description: NATSMaxMsgsPerTopic limits how many messages

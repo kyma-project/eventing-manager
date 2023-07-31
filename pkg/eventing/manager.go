@@ -3,12 +3,13 @@ package eventing
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -177,6 +178,7 @@ func (em *EventingManager) updateNatsConfig(ctx context.Context, eventing *v1alp
 	em.natsConfig.JSStreamReplicas = eventing.Spec.Backends[0].Config.NATSStreamReplicas
 	em.natsConfig.JSStreamMaxBytes = eventing.Spec.Backends[0].Config.NATSStreamMaxSize.String()
 	em.natsConfig.JSStreamMaxMsgsPerTopic = int64(eventing.Spec.Backends[0].Config.NATSMaxMsgsPerTopic)
+	em.natsConfig.EventTypePrefix = eventing.Spec.Backends[0].Config.EventTypePrefix
 	return nil
 }
 
@@ -186,6 +188,7 @@ func (em *EventingManager) updatePublisherConfig(eventing *v1alpha1.Eventing) {
 	em.backendConfig.PublisherConfig.LimitsCPU = eventing.Spec.Publisher.Resources.Limits.Cpu().String()
 	em.backendConfig.PublisherConfig.LimitsMemory = eventing.Spec.Publisher.Resources.Limits.Memory().String()
 	em.backendConfig.PublisherConfig.Replicas = int32(eventing.Spec.Min)
+	em.backendConfig.PublisherConfig.AppLogLevel = strings.ToLower(eventing.Spec.LogLevel)
 }
 
 func (em *EventingManager) GetBackendConfig() *env.BackendConfig {
