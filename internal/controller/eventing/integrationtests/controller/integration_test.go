@@ -411,6 +411,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 				deleteServiceAccountFromK8s,
 			},
 		},
+		// @TODO: Fix the watching of ClusterRoles and ClusterRoleBindings
 		//{
 		//	name: "should recreate ClusterRole",
 		//	givenEventing: utils.NewEventingCR(
@@ -473,13 +474,6 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			)
 			testEnvironment.EnsureK8sResourceCreated(t, nats)
 			testEnvironment.EnsureNATSResourceStateReady(t, nats)
-
-			//defer func() {
-			//	if !*testEnvironment.EnvTestInstance.UseExistingCluster {
-			//		testEnvironment.EnsureDeploymentDeletion(t, tc.givenEventing.Name, givenNamespace)
-			//	}
-			//	testEnvironment.EnsureK8sResourceDeleted(t, nats)
-			//}()
 
 			// create Eventing CR
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
