@@ -440,6 +440,7 @@ func Test_UpdatePublisherConfig(t *testing.T) {
 			eventing: testutils.NewEventingCR(
 				testutils.WithEventingCRMinimal(),
 				testutils.WithEventingPublisherData(2, 2, "100m", "99Mi", "399m", "199Mi"),
+				testutils.WithEventingEventingLogLevel("Info"),
 			),
 			expectedConfig: env.BackendConfig{
 				PublisherConfig: env.PublisherConfig{
@@ -448,6 +449,7 @@ func Test_UpdatePublisherConfig(t *testing.T) {
 					LimitsCPU:      "399m",
 					LimitsMemory:   "199Mi",
 					Replicas:       2,
+					AppLogLevel:    "info",
 				},
 			},
 		},

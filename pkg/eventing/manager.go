@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -187,6 +188,7 @@ func (em *EventingManager) updatePublisherConfig(eventing *v1alpha1.Eventing) {
 	em.backendConfig.PublisherConfig.LimitsCPU = eventing.Spec.Publisher.Resources.Limits.Cpu().String()
 	em.backendConfig.PublisherConfig.LimitsMemory = eventing.Spec.Publisher.Resources.Limits.Memory().String()
 	em.backendConfig.PublisherConfig.Replicas = int32(eventing.Spec.Min)
+	em.backendConfig.PublisherConfig.AppLogLevel = strings.ToLower(eventing.Spec.LogLevel)
 }
 
 func (em *EventingManager) GetBackendConfig() *env.BackendConfig {
