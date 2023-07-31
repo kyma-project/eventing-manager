@@ -103,6 +103,10 @@ func HaveBackendTypeNats(bc v1alpha1.BackendConfig) gomegatypes.GomegaMatcher {
 			func(e *v1alpha1.Eventing) int {
 				return e.GetNATSBackend().Config.NATSMaxMsgsPerTopic
 			}, gomega.Equal(bc.NATSMaxMsgsPerTopic)),
+		gomega.WithTransform(
+			func(e *v1alpha1.Eventing) string {
+				return e.GetNATSBackend().Config.EventTypePrefix
+			}, gomega.Equal(bc.EventTypePrefix)),
 	)
 }
 

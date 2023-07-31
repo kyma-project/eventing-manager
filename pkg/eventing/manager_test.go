@@ -15,11 +15,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/stretchr/testify/mock"
@@ -376,7 +376,8 @@ func Test_UpdateNatsConfig(t *testing.T) {
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace("test-namespace"),
 				testutils.WithEventingCRMinimal(),
-				testutils.WithEventingStreamData("File", "1Gi", "700Mi", 2, 1000),
+				testutils.WithEventingStreamData("File", "700Mi", 2, 1000),
+				testutils.WithEventingEventTypePrefix("test-prefix"),
 			),
 			givenNatsResources: []natsv1alpha1.NATS{
 				*natstestutils.NewNATSCR(
@@ -386,6 +387,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 			},
 			expectedConfig: env.NATSConfig{
 				URL:                     "nats://test-nats.test-namespace.svc.cluster.local:4222",
+				EventTypePrefix:         "test-prefix",
 				JSStreamStorageType:     "File",
 				JSStreamReplicas:        2,
 				JSStreamMaxBytes:        "700Mi",
@@ -399,7 +401,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace("test-namespace"),
 				testutils.WithEventingCRMinimal(),
-				testutils.WithEventingStreamData("Memory", "1Gi", "700Mi", 2, 1000),
+				testutils.WithEventingStreamData("Memory", "700Mi", 2, 1000),
 			),
 			givenNatsResources: nil,
 			expectedError:      fmt.Errorf("failed to get NATS URL"),
@@ -442,6 +444,7 @@ func Test_UpdatePublisherConfig(t *testing.T) {
 			eventing: testutils.NewEventingCR(
 				testutils.WithEventingCRMinimal(),
 				testutils.WithEventingPublisherData(2, 2, "100m", "99Mi", "399m", "199Mi"),
+				testutils.WithEventingLogLevel("Info"),
 			),
 			expectedConfig: env.BackendConfig{
 				PublisherConfig: env.PublisherConfig{
@@ -450,6 +453,7 @@ func Test_UpdatePublisherConfig(t *testing.T) {
 					LimitsCPU:      "399m",
 					LimitsMemory:   "199Mi",
 					Replicas:       2,
+					AppLogLevel:    "info",
 				},
 			},
 		},

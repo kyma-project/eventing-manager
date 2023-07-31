@@ -63,7 +63,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			name: "Eventing CR should error state due to NATS is unavailable",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			givenNATS: natstestutils.NewNATSCR(
@@ -79,8 +79,9 @@ func Test_CreateEventingCR(t *testing.T) {
 			name: "Eventing CR should have ready state when all deployment replicas are ready",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
 			),
 			givenNATS: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
@@ -98,7 +99,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			name: "Eventing CR should have processing state deployment is not ready yet",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			givenNATS: natstestutils.NewNATSCR(
@@ -191,12 +192,12 @@ func Test_UpdateEventingCR(t *testing.T) {
 			name: "Updating Eventing CR should be reflected",
 			givenExistingEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			givenNewEventingForUpdate: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "2M", "2M", 2, 2),
+				utils.WithEventingStreamData("Memory", "2M", 2, 2),
 				utils.WithEventingPublisherData(2, 2, "299m", "199Mi", "499m", "299Mi"),
 			),
 		},
@@ -264,7 +265,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			name: "Delete Eventing CR should delete the owned resources",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 		},
@@ -371,7 +372,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			name: "should recreate Publish Service",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			wantResourceDeletion: []deletionFunc{
@@ -382,7 +383,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			name: "should recreate Metrics Service",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			wantResourceDeletion: []deletionFunc{
@@ -393,7 +394,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			name: "should recreate Health Service",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			wantResourceDeletion: []deletionFunc{
@@ -404,7 +405,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			name: "should recreate ServiceAccount",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			wantResourceDeletion: []deletionFunc{
@@ -438,7 +439,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			name: "should recreate all objects",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 			),
 			wantResourceDeletion: []deletionFunc{

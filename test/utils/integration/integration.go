@@ -12,6 +12,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
+	"github.com/kyma-project/eventing-manager/test"
+
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
 	"github.com/onsi/gomega"
@@ -28,12 +30,12 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -498,10 +500,14 @@ func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, ev
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventing.Name, "namespace", eventing.Namespace)
 		}
+
+		eventTypePrefix := test.FindEnvVar(deployment.Spec.Template.Spec.Containers[0].Env, "EVENT_TYPE_PREFIX")
+		eventTypePrefixCheck := eventTypePrefix != nil && eventTypePrefix.Value == eventing.Spec.Backends[0].Config.EventTypePrefix
 		return eventing.Spec.Publisher.Resources.Limits.Cpu().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu()) &&
 			eventing.Spec.Publisher.Resources.Limits.Memory().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()) &&
 			eventing.Spec.Publisher.Resources.Requests.Cpu().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu()) &&
-			eventing.Spec.Publisher.Resources.Requests.Memory().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Memory())
+			eventing.Spec.Publisher.Resources.Requests.Memory().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Memory()) &&
+			eventTypePrefixCheck
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing spec publisher is reflected")
 }
 

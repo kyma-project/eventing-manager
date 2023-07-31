@@ -80,3 +80,14 @@ func GetFreePort() (int, error) {
 	err = l.Close()
 	return port, err
 }
+
+// findEnvVar returns the env variable which has `name == envVar.Name`,
+// or `nil` if there is no such env variable.
+func FindEnvVar(envVars []apiv1.EnvVar, name string) *apiv1.EnvVar {
+	for _, n := range envVars {
+		if name == n.Name {
+			return &n
+		}
+	}
+	return nil
+}
