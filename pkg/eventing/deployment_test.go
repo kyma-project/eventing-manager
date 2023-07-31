@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/test"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 )
 
 const (

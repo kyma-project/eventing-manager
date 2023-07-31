@@ -11,11 +11,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/stretchr/testify/mock"

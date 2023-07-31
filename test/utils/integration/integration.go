@@ -3,12 +3,13 @@ package integration
 import (
 	"context"
 	"crypto/rand"
-	"github.com/kyma-project/eventing-manager/test"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/eventing-manager/test"
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
@@ -26,11 +27,11 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
