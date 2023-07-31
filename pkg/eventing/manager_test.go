@@ -440,7 +440,7 @@ func Test_UpdatePublisherConfig(t *testing.T) {
 			eventing: testutils.NewEventingCR(
 				testutils.WithEventingCRMinimal(),
 				testutils.WithEventingPublisherData(2, 2, "100m", "99Mi", "399m", "199Mi"),
-				testutils.WithEventingEventingLogLevel("Info"),
+				testutils.WithEventingLogLevel("Info"),
 			),
 			expectedConfig: env.BackendConfig{
 				PublisherConfig: env.PublisherConfig{

@@ -11,9 +11,6 @@ import (
 type BackendConfig struct {
 	PublisherConfig PublisherConfig
 
-	BackendCRNamespace string `envconfig:"BACKEND_CR_NAMESPACE" default:"kyma-system"`
-	BackendCRName      string `envconfig:"BACKEND_CR_NAME" default:"eventing-backend"`
-
 	WebhookSecretName   string `envconfig:"WEBHOOK_SECRET_NAME" default:"eventing-webhook-server-cert"`
 	MutatingWebhookName string `envconfig:"MUTATING_WEBHOOK_NAME" default:"subscription-mutating-webhook-configuration"`
 	//nolint:lll

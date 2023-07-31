@@ -87,7 +87,7 @@ func WithEventingEventTypePrefix(eventTypePrefix string) EventingOption {
 	}
 }
 
-func WithEventingEventingLogLevel(logLevel string) EventingOption {
+func WithEventingLogLevel(logLevel string) EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
 		nats.Spec.LogLevel = logLevel
 		return nil
