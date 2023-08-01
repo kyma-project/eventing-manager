@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+
 	"github.com/kyma-project/eventing-manager/test"
 
 	"github.com/avast/retry-go/v3"
@@ -30,6 +33,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
@@ -323,11 +327,63 @@ func (env TestEnvironment) EnsureK8sResourceCreated(t *testing.T, obj client.Obj
 	require.NoError(t, env.k8sClient.Create(env.Context, obj))
 }
 
+func (env TestEnvironment) EnsureEPPK8sResourcesExists(t *testing.T, eventingCR v1alpha1.Eventing) {
+	env.EnsureK8sServiceExists(t,
+		eventing.GetEPPPublishServiceName(eventingCR), eventingCR.Namespace)
+	env.EnsureK8sServiceExists(t,
+		eventing.GetEPPMetricsServiceName(eventingCR), eventingCR.Namespace)
+	env.EnsureK8sServiceExists(t,
+		eventing.GetEPPHealthServiceName(eventingCR), eventingCR.Namespace)
+	env.EnsureK8sServiceAccountExists(t,
+		eventing.GetEPPServiceAccountName(eventingCR), eventingCR.Namespace)
+	env.EnsureK8sClusterRoleExists(t,
+		eventing.GetEPPClusterRoleName(eventingCR), eventingCR.Namespace)
+	env.EnsureK8sClusterRoleBindingExists(t,
+		eventing.GetEPPClusterRoleBindingName(eventingCR), eventingCR.Namespace)
+}
+
+func (env TestEnvironment) EnsureEPPK8sResourcesHaveOwnerReference(t *testing.T, eventingCR v1alpha1.Eventing) {
+	env.EnsureEPPPublishServiceOwnerReferenceSet(t, eventingCR)
+	env.EnsureEPPMetricsServiceOwnerReferenceSet(t, eventingCR)
+	env.EnsureEPPHealthServiceOwnerReferenceSet(t, eventingCR)
+	env.EnsureEPPServiceAccountOwnerReferenceSet(t, eventingCR)
+	env.EnsureEPPClusterRoleOwnerReferenceSet(t, eventingCR)
+	env.EnsureEPPClusterRoleBindingOwnerReferenceSet(t, eventingCR)
+}
+
 func (env TestEnvironment) EnsureDeploymentExists(t *testing.T, name, namespace string) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetDeploymentFromK8s(name, namespace)
 		return err == nil && result != nil
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of Deployment")
+}
+
+func (env TestEnvironment) EnsureK8sServiceExists(t *testing.T, name, namespace string) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetServiceFromK8s(name, namespace)
+		return err == nil && result != nil
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of Service")
+}
+
+func (env TestEnvironment) EnsureK8sServiceAccountExists(t *testing.T, name, namespace string) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetServiceAccountFromK8s(name, namespace)
+		return err == nil && result != nil
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of ServiceAccount")
+}
+
+func (env TestEnvironment) EnsureK8sClusterRoleExists(t *testing.T, name, namespace string) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetClusterRoleFromK8s(name, namespace)
+		return err == nil && result != nil
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of ClusterRole")
+}
+
+func (env TestEnvironment) EnsureK8sClusterRoleBindingExists(t *testing.T, name, namespace string) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetClusterRoleBindingFromK8s(name, namespace)
+		return err == nil && result != nil
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of ClusterRoleBinding")
 }
 
 func (env TestEnvironment) EnsureHPAExists(t *testing.T, name, namespace string) {
@@ -364,6 +420,34 @@ func (env TestEnvironment) EnsureDeploymentNotFound(t *testing.T, name, namespac
 		_, err := env.GetDeploymentFromK8s(name, namespace)
 		return err != nil && errors.IsNotFound(err)
 	}, BigTimeOut, BigPollingInterval, "failed to ensure deletion of Deployment")
+}
+
+func (env TestEnvironment) EnsureK8sServiceNotFound(t *testing.T, name, namespace string) {
+	require.Eventually(t, func() bool {
+		_, err := env.GetServiceFromK8s(name, namespace)
+		return err != nil && errors.IsNotFound(err)
+	}, BigTimeOut, BigPollingInterval, "failed to ensure non-existence of Service")
+}
+
+func (env TestEnvironment) EnsureK8sServiceAccountNotFound(t *testing.T, name, namespace string) {
+	require.Eventually(t, func() bool {
+		_, err := env.GetServiceAccountFromK8s(name, namespace)
+		return err != nil && errors.IsNotFound(err)
+	}, BigTimeOut, BigPollingInterval, "failed to ensure non-existence of ServiceAccount")
+}
+
+func (env TestEnvironment) EnsureK8sClusterRoleNotFound(t *testing.T, name, namespace string) {
+	require.Eventually(t, func() bool {
+		_, err := env.GetClusterRoleFromK8s(name, namespace)
+		return err != nil && errors.IsNotFound(err)
+	}, BigTimeOut, BigPollingInterval, "failed to ensure non-existence of ClusterRole")
+}
+
+func (env TestEnvironment) EnsureK8sClusterRoleBindingNotFound(t *testing.T, name, namespace string) {
+	require.Eventually(t, func() bool {
+		_, err := env.GetClusterRoleBindingFromK8s(name, namespace)
+		return err != nil && errors.IsNotFound(err)
+	}, BigTimeOut, BigPollingInterval, "failed to ensure non-existence of ClusterRoleBinding")
 }
 
 func (env TestEnvironment) EnsureHPADeletion(t *testing.T, name, namespace string) {
@@ -445,10 +529,170 @@ func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, event
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventing.Name, "namespace", eventing.Namespace)
 		}
-		return len(deployment.OwnerReferences) > 0 && deployment.OwnerReferences[0].Name == eventing.Name &&
-			deployment.OwnerReferences[0].Kind == "Eventing" &&
-			deployment.OwnerReferences[0].UID == eventing.UID
+		return evnttestutils.HasOwnerReference(deployment, *eventing)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing owner reference is set")
+}
+
+func (env TestEnvironment) EnsureEPPPublishServiceOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetServiceFromK8s(eventing.GetEPPPublishServiceName(eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.HasOwnerReference(result, eventingCR)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure PublishService owner reference is set")
+}
+
+func (env TestEnvironment) EnsureEPPMetricsServiceOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetServiceFromK8s(eventing.GetEPPMetricsServiceName(eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.HasOwnerReference(result, eventingCR)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure MetricsService owner reference is set")
+}
+
+func (env TestEnvironment) EnsureEPPHealthServiceOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetServiceFromK8s(eventing.GetEPPHealthServiceName(eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.HasOwnerReference(result, eventingCR)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure HealthService owner reference is set")
+}
+
+func (env TestEnvironment) EnsureEPPServiceAccountOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetServiceAccountFromK8s(eventing.GetEPPServiceAccountName(eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.HasOwnerReference(result, eventingCR)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ServiceAccount owner reference is set")
+}
+
+func (env TestEnvironment) EnsureEPPClusterRoleOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetClusterRoleFromK8s(eventing.GetEPPClusterRoleName(eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.HasOwnerReference(result, eventingCR)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRole owner reference is set")
+}
+
+func (env TestEnvironment) EnsureEPPClusterRoleBindingOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetClusterRoleBindingFromK8s(eventing.GetEPPClusterRoleBindingName(eventingCR),
+			eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.HasOwnerReference(result, eventingCR)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRoleBinding owner reference is set")
+}
+
+func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeployment *v1.Deployment,
+	eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetServiceFromK8s(eventing.GetEPPPublishServiceName(eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.IsEPPPublishServiceCorrect(*result, *eppDeployment)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure PublishService correctness.")
+}
+
+func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeployment *v1.Deployment,
+	eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetServiceFromK8s(eventing.GetEPPMetricsServiceName(eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.IsEPPMetricsServiceCorrect(*result, *eppDeployment)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure MetricsService correctness.")
+}
+
+func (env TestEnvironment) EnsureEPPHealthServiceCorrect(t *testing.T, eppDeployment *v1.Deployment,
+	eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetServiceFromK8s(eventing.GetEPPHealthServiceName(eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.IsEPPHealthServiceCorrect(*result, *eppDeployment)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure HealthService correctness.")
+}
+
+func (env TestEnvironment) EnsureEPPClusterRoleCorrect(t *testing.T, eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetClusterRoleFromK8s(eventing.GetEPPClusterRoleName(eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.IsEPPClusterRoleCorrect(*result)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRole correctness")
+}
+
+func (env TestEnvironment) EnsureEPPClusterRoleBindingCorrect(t *testing.T, eventingCR v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetClusterRoleBindingFromK8s(eventing.GetEPPClusterRoleBindingName(eventingCR),
+			eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+		return evnttestutils.IsEPPClusterRoleBindingCorrect(*result, eventingCR)
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRoleBinding correctness")
+}
+
+func (env TestEnvironment) DeleteServiceFromK8s(name, namespace string) error {
+	return env.k8sClient.Delete(env.Context, &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
+}
+
+func (env TestEnvironment) DeleteServiceAccountFromK8s(name, namespace string) error {
+	return env.k8sClient.Delete(env.Context, &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
+}
+
+func (env TestEnvironment) DeleteClusterRoleFromK8s(name, namespace string) error {
+	return env.k8sClient.Delete(env.Context, &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
+}
+
+func (env TestEnvironment) DeleteClusterRoleBindingFromK8s(name, namespace string) error {
+	return env.k8sClient.Delete(env.Context, &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
 }
 
 func (env TestEnvironment) UpdateEventingStatus(eventing *v1alpha1.Eventing) error {
@@ -522,6 +766,54 @@ func (env TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*v1.Dep
 		Namespace: namespace,
 	}
 	result := &v1.Deployment{}
+	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (env TestEnvironment) GetServiceFromK8s(name, namespace string) (*corev1.Service, error) {
+	nn := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	result := &corev1.Service{}
+	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (env TestEnvironment) GetServiceAccountFromK8s(name, namespace string) (*corev1.ServiceAccount, error) {
+	nn := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	result := &corev1.ServiceAccount{}
+	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (env TestEnvironment) GetClusterRoleFromK8s(name, namespace string) (*rbacv1.ClusterRole, error) {
+	nn := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	result := &rbacv1.ClusterRole{}
+	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (env TestEnvironment) GetClusterRoleBindingFromK8s(name, namespace string) (*rbacv1.ClusterRoleBinding, error) {
+	nn := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	result := &rbacv1.ClusterRoleBinding{}
 	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
 		return nil, err
 	}

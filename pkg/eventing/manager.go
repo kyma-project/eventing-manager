@@ -11,7 +11,6 @@ import (
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -32,7 +31,7 @@ type Manager interface {
 	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
 	DeployPublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
 	DeployHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
-	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment, *runtime.Scheme) error
+	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
 }
 
 type EventingManager struct {
@@ -84,6 +83,8 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	eventing *v1alpha1.Eventing,
 	backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	var desiredPublisher *appsv1.Deployment
+	// update service account name.
+	em.backendConfig.PublisherConfig.ServiceAccount = GetEPPServiceAccountName(*eventing)
 
 	switch backendType {
 	case v1alpha1.NatsBackendType:
@@ -94,7 +95,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 		return nil, fmt.Errorf("unknown EventingBackend type %q", backendType)
 	}
 
-	if err := setOwnerReference(eventing, desiredPublisher, em.Scheme()); err != nil {
+	if err := controllerutil.SetControllerReference(eventing, desiredPublisher, em.Scheme()); err != nil {
 		return nil, fmt.Errorf("failed to set controller reference: %v", err)
 	}
 
@@ -118,14 +119,6 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	}
 
 	return desiredPublisher, nil
-}
-
-// used for unit testing to mock the controllerutil.SetControllerReference
-var setOwnerReference = func(
-	eventing *v1alpha1.Eventing,
-	desiredPublisher *appsv1.Deployment,
-	scheme *runtime.Scheme) error {
-	return controllerutil.SetControllerReference(eventing, desiredPublisher, scheme)
 }
 
 // CreateOrUpdateHPA creates or updates the HPA for the given deployment.
@@ -198,31 +191,31 @@ func (em *EventingManager) GetBackendConfig() *env.BackendConfig {
 func (em EventingManager) DeployPublisherProxyResources(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
-	eppDeployment *appsv1.Deployment,
-	scheme *runtime.Scheme) error {
+	eppDeployment *appsv1.Deployment) error {
 	// define list of resources to create for EPP.
 	resources := []client.Object{
 		// ServiceAccount
-		newPublisherProxyServiceAccount(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels),
+		newPublisherProxyServiceAccount(GetEPPServiceAccountName(*eventing), eventing.Namespace, eppDeployment.Labels),
 		// ClusterRole
-		newPublisherProxyClusterRole(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels),
+		newPublisherProxyClusterRole(GetEPPClusterRoleName(*eventing), eventing.Namespace, eppDeployment.Labels),
 		// ClusterRoleBinding
-		newPublisherProxyClusterRoleBinding(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels),
+		newPublisherProxyClusterRoleBinding(GetEPPClusterRoleBindingName(*eventing), eventing.Namespace,
+			eppDeployment.Labels),
 		// Service to expose event publishing endpoint of EPP.
-		newPublisherProxyService(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels,
+		newPublisherProxyService(GetEPPPublishServiceName(*eventing), eventing.Namespace, eppDeployment.Labels,
 			eppDeployment.Spec.Template.Labels),
 		// Service to expose metrics endpoint of EPP.
-		newPublisherProxyMetricsService(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels,
+		newPublisherProxyMetricsService(GetEPPMetricsServiceName(*eventing), eventing.Namespace, eppDeployment.Labels,
 			eppDeployment.Spec.Template.Labels),
 		// Service to expose health endpoint of EPP.
-		newPublisherProxyHealthService(eppDeployment.Name, eppDeployment.Namespace, eppDeployment.Labels,
+		newPublisherProxyHealthService(GetEPPHealthServiceName(*eventing), eventing.Namespace, eppDeployment.Labels,
 			eppDeployment.Spec.Template.Labels),
 	}
 
 	// create the resources on k8s.
 	for _, object := range resources {
 		// add owner reference.
-		if err := controllerutil.SetControllerReference(eventing, object, scheme); err != nil {
+		if err := controllerutil.SetControllerReference(eventing, object, em.Scheme()); err != nil {
 			return err
 		}
 

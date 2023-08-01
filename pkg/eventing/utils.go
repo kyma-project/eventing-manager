@@ -3,6 +3,7 @@ package eventing
 import (
 	"fmt"
 
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -10,6 +11,32 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+const publisherProxySuffix = "publisher-proxy"
+
+func GetEPPPublishServiceName(eventing v1alpha1.Eventing) string {
+	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
+}
+
+func GetEPPMetricsServiceName(eventing v1alpha1.Eventing) string {
+	return fmt.Sprintf("%s-%s-metrics", eventing.GetName(), publisherProxySuffix)
+}
+
+func GetEPPHealthServiceName(eventing v1alpha1.Eventing) string {
+	return fmt.Sprintf("%s-%s-health", eventing.GetName(), publisherProxySuffix)
+}
+
+func GetEPPServiceAccountName(eventing v1alpha1.Eventing) string {
+	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
+}
+
+func GetEPPClusterRoleName(eventing v1alpha1.Eventing) string {
+	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
+}
+
+func GetEPPClusterRoleBindingName(eventing v1alpha1.Eventing) string {
+	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
+}
 
 func newHorizontalPodAutoscaler(deployment *v1.Deployment, min int32, max int32, cpuUtilization, memoryUtilization int32) *autoscalingv2.HorizontalPodAutoscaler {
 	return &autoscalingv2.HorizontalPodAutoscaler{
@@ -165,7 +192,7 @@ func newPublisherProxyMetricsService(name, namespace string, labels map[string]s
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-metrics", name),
+			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
@@ -197,7 +224,7 @@ func newPublisherProxyHealthService(name, namespace string, labels map[string]st
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-health", name),
+			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
 		},

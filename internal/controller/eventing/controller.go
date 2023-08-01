@@ -215,7 +215,7 @@ func (r *Reconciler) handlePublisherProxy(
 	}
 
 	// deploy publisher proxy resources.
-	if err = r.eventingManager.DeployPublisherProxyResources(ctx, eventing, deployment, r.Scheme()); err != nil {
+	if err = r.eventingManager.DeployPublisherProxyResources(ctx, eventing, deployment); err != nil {
 		return deployment, err
 	}
 

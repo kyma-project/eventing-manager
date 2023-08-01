@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"testing"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	ecdeployment "github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,6 +29,10 @@ import (
 )
 
 func Test_ApplyPublisherProxyDeployment(t *testing.T) {
+	// given
+	newScheme := runtime.NewScheme()
+	require.NoError(t, v1alpha1.AddToScheme(newScheme))
+
 	// Define test cases
 	testCases := []struct {
 		name             string
@@ -97,13 +104,9 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 			kubeClient.On("GetDeployment", ctx, mock.Anything, mock.Anything).Return(tc.givenDeployment, nil)
 			kubeClient.On("Create", ctx, mock.Anything).Return(nil)
 			kubeClient.On("PatchApply", ctx, mock.Anything).Return(tc.patchApplyErr)
-			setOwnerReference = func(eventing *v1alpha1.Eventing, desiredPublisher *appsv1.Deployment,
-				scheme *runtime.Scheme) error {
-				return nil
-			}
 
 			mockClient := new(mocks.Client)
-			mockClient.On("Scheme").Return(&runtime.Scheme{})
+			mockClient.On("Scheme").Return(newScheme)
 			em := &EventingManager{
 				Client:        mockClient,
 				kubeClient:    kubeClient,
@@ -506,6 +509,117 @@ func Test_ConvertECBackendType(t *testing.T) {
 			// then
 			require.Equal(t, tc.expectedError, err)
 			require.Equal(t, tc.expectedResult, result)
+		})
+	}
+}
+
+func Test_DeployPublisherProxyResources(t *testing.T) {
+	t.Parallel()
+
+	// given
+	newScheme := runtime.NewScheme()
+	require.NoError(t, v1alpha1.AddToScheme(newScheme))
+
+	// test cases
+	testCases := []struct {
+		name                      string
+		givenEventing             *v1alpha1.Eventing
+		givenEPPDeployment        *appsv1.Deployment
+		wantError                 bool
+		wantCreatedResourcesCount int
+	}{
+		{
+			name: "should create all required EPP resources",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
+				testutils.WithEventingCRMinimal(),
+				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
+			),
+			givenEPPDeployment:        testutils.NewDeployment("test", "test", map[string]string{}),
+			wantCreatedResourcesCount: 6,
+		},
+		{
+			name: "should return error when patch apply fails",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
+				testutils.WithEventingCRMinimal(),
+				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
+			),
+			givenEPPDeployment: testutils.NewDeployment("test", "test", map[string]string{}),
+			wantError:          true,
+		},
+	}
+
+	// Iterate over the test cases.
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			mockClient := new(mocks.Client)
+			kubeClient := new(k8smocks.Client)
+
+			var createdObjects []client.Object
+			// define mocks behaviours.
+			mockClient.On("Scheme").Return(newScheme)
+			if tc.wantError {
+				kubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed"))
+			} else {
+				kubeClient.On("PatchApply", ctx, mock.Anything).Run(func(args mock.Arguments) {
+					obj := args.Get(1).(client.Object)
+					createdObjects = append(createdObjects, obj)
+				}).Return(nil)
+			}
+
+			em := EventingManager{
+				Client:     mockClient,
+				kubeClient: kubeClient,
+			}
+
+			// when
+			err := em.DeployPublisherProxyResources(ctx, tc.givenEventing, tc.givenEPPDeployment)
+
+			// then
+			if tc.wantError {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tc.wantCreatedResourcesCount, len(createdObjects))
+
+			// check ServiceAccount.
+			sa, err := testutils.FindObjectByKind("ServiceAccount", createdObjects)
+			require.NoError(t, err)
+			require.True(t, testutils.HasOwnerReference(sa, *tc.givenEventing))
+
+			// check ClusterRole.
+			cr, err := testutils.FindObjectByKind("ClusterRole", createdObjects)
+			require.NoError(t, err)
+			require.True(t, testutils.HasOwnerReference(cr, *tc.givenEventing))
+
+			// check ClusterRoleBinding.
+			crb, err := testutils.FindObjectByKind("ClusterRoleBinding", createdObjects)
+			require.NoError(t, err)
+			require.True(t, testutils.HasOwnerReference(crb, *tc.givenEventing))
+
+			// check Publish Service.
+			pSvc, err := testutils.FindServiceFromK8sObjects(GetEPPPublishServiceName(*tc.givenEventing), createdObjects)
+			require.NoError(t, err)
+			require.True(t, testutils.HasOwnerReference(pSvc, *tc.givenEventing))
+
+			// check Metrics Service.
+			mSvc, err := testutils.FindServiceFromK8sObjects(GetEPPMetricsServiceName(*tc.givenEventing), createdObjects)
+			require.NoError(t, err)
+			require.True(t, testutils.HasOwnerReference(mSvc, *tc.givenEventing))
+
+			// check Health Service.
+			hSvc, err := testutils.FindServiceFromK8sObjects(GetEPPHealthServiceName(*tc.givenEventing), createdObjects)
+			require.NoError(t, err)
+			require.True(t, testutils.HasOwnerReference(hSvc, *tc.givenEventing))
 		})
 	}
 }
