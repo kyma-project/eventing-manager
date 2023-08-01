@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	ecdeployment "github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
@@ -521,68 +520,35 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 	newScheme := runtime.NewScheme()
 	require.NoError(t, v1alpha1.AddToScheme(newScheme))
 
-	// EPP deployment
-	sampleEPPDeployment := &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Deployment",
-			APIVersion: "apps/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
-			Labels: map[string]string{
-				"test": "test",
-			},
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32(2),
-			Template: v1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test",
-					Labels: map[string]string{
-						"test2": "test2",
-					},
-				},
-			},
-		},
-	}
-
-	findObjectByKind := func(kind string, objects []client.Object) (client.Object, error) {
-		for _, obj := range objects {
-			if obj.GetObjectKind().GroupVersionKind().Kind == kind {
-				return obj, nil
-			}
-		}
-
-		return nil, errors.New("not found")
-	}
-
-	findService := func(name string, objects []client.Object) (client.Object, error) {
-		for _, obj := range objects {
-			if obj.GetObjectKind().GroupVersionKind().Kind == "Service" &&
-				obj.GetName() == name {
-				return obj, nil
-			}
-		}
-
-		return nil, errors.New("not found")
-	}
-
 	// test cases
 	testCases := []struct {
 		name                      string
 		givenEventing             *v1alpha1.Eventing
+		givenEPPDeployment        *appsv1.Deployment
+		wantError                 bool
 		wantCreatedResourcesCount int
 	}{
 		{
-			name: "DeployPublisherProxyResources success",
+			name: "should create all required EPP resources",
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
 				testutils.WithEventingCRMinimal(),
 				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
 			),
+			givenEPPDeployment:        testutils.NewDeployment("test", "test", map[string]string{}),
 			wantCreatedResourcesCount: 6,
+		},
+		{
+			name: "should return error when patch apply fails",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace(ecdeployment.PublisherNamespace),
+				testutils.WithEventingCRMinimal(),
+				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
+			),
+			givenEPPDeployment: testutils.NewDeployment("test", "test", map[string]string{}),
+			wantError:          true,
 		},
 	}
 
@@ -597,11 +563,16 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			kubeClient := new(k8smocks.Client)
 
 			var createdObjects []client.Object
+			// define mocks behaviours.
 			mockClient.On("Scheme").Return(newScheme)
-			kubeClient.On("PatchApply", ctx, mock.Anything).Run(func(args mock.Arguments) {
-				obj := args.Get(1).(client.Object)
-				createdObjects = append(createdObjects, obj)
-			}).Return(nil)
+			if tc.wantError {
+				kubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed"))
+			} else {
+				kubeClient.On("PatchApply", ctx, mock.Anything).Run(func(args mock.Arguments) {
+					obj := args.Get(1).(client.Object)
+					createdObjects = append(createdObjects, obj)
+				}).Return(nil)
+			}
 
 			em := EventingManager{
 				Client:     mockClient,
@@ -609,39 +580,44 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			}
 
 			// when
-			err := em.DeployPublisherProxyResources(ctx, tc.givenEventing, sampleEPPDeployment)
+			err := em.DeployPublisherProxyResources(ctx, tc.givenEventing, tc.givenEPPDeployment)
 
 			// then
+			if tc.wantError {
+				require.Error(t, err)
+				return
+			}
+
 			require.NoError(t, err)
 			require.Equal(t, tc.wantCreatedResourcesCount, len(createdObjects))
 
 			// check ServiceAccount.
-			sa, err := findObjectByKind("ServiceAccount", createdObjects)
+			sa, err := testutils.FindObjectByKind("ServiceAccount", createdObjects)
 			require.NoError(t, err)
 			require.True(t, testutils.HasOwnerReference(sa, *tc.givenEventing))
 
 			// check ClusterRole.
-			cr, err := findObjectByKind("ClusterRole", createdObjects)
+			cr, err := testutils.FindObjectByKind("ClusterRole", createdObjects)
 			require.NoError(t, err)
 			require.True(t, testutils.HasOwnerReference(cr, *tc.givenEventing))
 
 			// check ClusterRoleBinding.
-			crb, err := findObjectByKind("ClusterRoleBinding", createdObjects)
+			crb, err := testutils.FindObjectByKind("ClusterRoleBinding", createdObjects)
 			require.NoError(t, err)
 			require.True(t, testutils.HasOwnerReference(crb, *tc.givenEventing))
 
 			// check Publish Service.
-			pSvc, err := findService(GetEPPPublishServiceName(*tc.givenEventing), createdObjects)
+			pSvc, err := testutils.FindServiceFromK8sObjects(GetEPPPublishServiceName(*tc.givenEventing), createdObjects)
 			require.NoError(t, err)
 			require.True(t, testutils.HasOwnerReference(pSvc, *tc.givenEventing))
 
 			// check Metrics Service.
-			mSvc, err := findService(GetEPPMetricsServiceName(*tc.givenEventing), createdObjects)
+			mSvc, err := testutils.FindServiceFromK8sObjects(GetEPPMetricsServiceName(*tc.givenEventing), createdObjects)
 			require.NoError(t, err)
 			require.True(t, testutils.HasOwnerReference(mSvc, *tc.givenEventing))
 
 			// check Health Service.
-			hSvc, err := findService(GetEPPHealthServiceName(*tc.givenEventing), createdObjects)
+			hSvc, err := testutils.FindServiceFromK8sObjects(GetEPPHealthServiceName(*tc.givenEventing), createdObjects)
 			require.NoError(t, err)
 			require.True(t, testutils.HasOwnerReference(hSvc, *tc.givenEventing))
 		})

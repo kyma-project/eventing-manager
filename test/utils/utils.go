@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -208,4 +209,25 @@ func NewDeployment(name, namespace string, annotations map[string]string) *appsv
 			},
 		},
 	}
+}
+
+func FindObjectByKind(kind string, objects []client.Object) (client.Object, error) {
+	for _, obj := range objects {
+		if obj.GetObjectKind().GroupVersionKind().Kind == kind {
+			return obj, nil
+		}
+	}
+
+	return nil, errors.New("not found")
+}
+
+func FindServiceFromK8sObjects(name string, objects []client.Object) (client.Object, error) {
+	for _, obj := range objects {
+		if obj.GetObjectKind().GroupVersionKind().Kind == "Service" &&
+			obj.GetName() == name {
+			return obj, nil
+		}
+	}
+
+	return nil, errors.New("not found")
 }
