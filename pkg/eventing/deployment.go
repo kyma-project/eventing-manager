@@ -86,7 +86,6 @@ func newDeployment(name, namespace string, publisherConfig env.PublisherConfig, 
 			Namespace: namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: utils.Int32Ptr(publisherConfig.Replicas),
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
