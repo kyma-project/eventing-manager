@@ -20,6 +20,13 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
   - serviceaccounts
   verbs:
   - create
@@ -98,6 +105,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - eventing.kyma-project.io
+  resources:
+  - subscriptions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - operator.kyma-project.io
   resources:
   - eventings
@@ -143,6 +158,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - subscriptions/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:

@@ -32,6 +32,8 @@ type Manager interface {
 	DeployPublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
 	DeployHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
 	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
+	GetNATSConfig() env.NATSConfig
+	GetBackendConfig() *env.BackendConfig
 }
 
 type EventingManager struct {
@@ -63,6 +65,10 @@ func NewEventingManager(
 		logger:        logger,
 		recorder:      recorder,
 	}
+}
+
+func (em EventingManager) GetNATSConfig() env.NATSConfig {
+	return em.natsConfig
 }
 
 func (em EventingManager) DeployPublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
@@ -184,7 +190,7 @@ func (em *EventingManager) updatePublisherConfig(eventing *v1alpha1.Eventing) {
 	em.backendConfig.PublisherConfig.AppLogLevel = strings.ToLower(eventing.Spec.LogLevel)
 }
 
-func (em *EventingManager) GetBackendConfig() *env.BackendConfig {
+func (em EventingManager) GetBackendConfig() *env.BackendConfig {
 	return &em.backendConfig
 }
 

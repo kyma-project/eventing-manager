@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func WithEventingCRMinimal() EventingOption {
@@ -29,6 +30,13 @@ func WithEventingCRName(name string) EventingOption {
 func WithEventingCRNamespace(namespace string) EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
 		nats.Namespace = namespace
+		return nil
+	}
+}
+
+func WithEventingCRFinalizer(finalizer string) EventingOption {
+	return func(eventing *v1alpha1.Eventing) error {
+		controllerutil.AddFinalizer(eventing, finalizer)
 		return nil
 	}
 }

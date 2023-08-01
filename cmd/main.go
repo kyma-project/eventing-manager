@@ -22,6 +22,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+
+	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager/jetstream"
+
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 
@@ -30,6 +34,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
+	backendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -56,6 +61,9 @@ func init() {
 
 	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(natsv1alpha1.AddToScheme(scheme))
+
+	//utilruntime.Must(jetstream.AddToScheme(scheme))
+	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -94,7 +102,8 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	setupLogger := ctrLogger.WithContext().Named("setup")
 
 	// setup ctrl manager
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	k8sRestCfg := ctrl.GetConfigOrDie()
+	mgr, err := ctrl.NewManager(k8sRestCfg, ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     opts.MetricsAddr,
 		Port:                   9443,
@@ -122,6 +131,18 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	// create eventing manager instance.
 	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, natsConfig, ctrLogger, recorder)
 
+	// init the metrics collector.
+	metricsCollector := backendmetrics.NewCollector()
+	metricsCollector.RegisterMetrics()
+
+	// init subscription manager factory.
+	subManagerFactory := subscriptionmanager.NewFactory(
+		k8sRestCfg,
+		":8080",
+		metricsCollector,
+		ctrLogger,
+	)
+
 	// create Eventing reconciler instance
 	eventingReconciler := eventingcontroller.NewReconciler(
 		k8sClient,
@@ -130,6 +151,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		ctrLogger,
 		recorder,
 		eventingManager,
+		subManagerFactory,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(mgr); err != nil {
