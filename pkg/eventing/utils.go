@@ -14,6 +14,10 @@ import (
 
 const publisherProxySuffix = "publisher-proxy"
 
+func GetEPPDeploymentName(eventing v1alpha1.Eventing) string {
+	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
+}
+
 func GetEPPPublishServiceName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
 }

@@ -25,52 +25,6 @@ func (_m *Manager) EXPECT() *Manager_Expecter {
 	return &Manager_Expecter{mock: &_m.Mock}
 }
 
-// DeployHPA provides a mock function with given fields: ctx, deployment, _a2, cpuUtilization, memoryUtilization
-func (_m *Manager) DeployHPA(ctx context.Context, deployment *v1.Deployment, _a2 *v1alpha1.Eventing, cpuUtilization int32, memoryUtilization int32) error {
-	ret := _m.Called(ctx, deployment, _a2, cpuUtilization, memoryUtilization)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *v1.Deployment, *v1alpha1.Eventing, int32, int32) error); ok {
-		r0 = rf(ctx, deployment, _a2, cpuUtilization, memoryUtilization)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Manager_DeployHPA_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployHPA'
-type Manager_DeployHPA_Call struct {
-	*mock.Call
-}
-
-// DeployHPA is a helper method to define mock.On call
-//   - ctx context.Context
-//   - deployment *v1.Deployment
-//   - _a2 *v1alpha1.Eventing
-//   - cpuUtilization int32
-//   - memoryUtilization int32
-func (_e *Manager_Expecter) DeployHPA(ctx interface{}, deployment interface{}, _a2 interface{}, cpuUtilization interface{}, memoryUtilization interface{}) *Manager_DeployHPA_Call {
-	return &Manager_DeployHPA_Call{Call: _e.mock.On("DeployHPA", ctx, deployment, _a2, cpuUtilization, memoryUtilization)}
-}
-
-func (_c *Manager_DeployHPA_Call) Run(run func(ctx context.Context, deployment *v1.Deployment, _a2 *v1alpha1.Eventing, cpuUtilization int32, memoryUtilization int32)) *Manager_DeployHPA_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*v1.Deployment), args[2].(*v1alpha1.Eventing), args[3].(int32), args[4].(int32))
-	})
-	return _c
-}
-
-func (_c *Manager_DeployHPA_Call) Return(_a0 error) *Manager_DeployHPA_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Manager_DeployHPA_Call) RunAndReturn(run func(context.Context, *v1.Deployment, *v1alpha1.Eventing, int32, int32) error) *Manager_DeployHPA_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // DeployPublisherProxy provides a mock function with given fields: ctx, _a1, backendType
 func (_m *Manager) DeployPublisherProxy(ctx context.Context, _a1 *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*v1.Deployment, error) {
 	ret := _m.Called(ctx, _a1, backendType)

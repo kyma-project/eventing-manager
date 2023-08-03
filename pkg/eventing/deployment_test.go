@@ -8,10 +8,13 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/test"
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
 )
 
 const (
@@ -21,13 +24,8 @@ const (
 
 func TestNewDeployment(t *testing.T) {
 	publisherConfig := env.PublisherConfig{
-		RequestsCPU:     "32m",
-		RequestsMemory:  "64Mi",
-		LimitsCPU:       "100m",
-		LimitsMemory:    "128Mi",
 		Image:           "testImage",
 		ImagePullPolicy: "Always",
-		AppLogLevel:     "info",
 		AppLogFormat:    "json",
 	}
 	testCases := []struct {
@@ -50,7 +48,7 @@ func TestNewDeployment(t *testing.T) {
 		},
 	}
 
-	publisherName := "test-name"
+	publisherName := fmt.Sprintf("%s-%s", "test-name", publisherProxySuffix)
 	publisherNamespace := "test-namespace"
 	for _, tc := range testCases {
 		tc := tc
@@ -65,9 +63,15 @@ func TestNewDeployment(t *testing.T) {
 					URL:             natsURL,
 					EventTypePrefix: eventTypePrefix,
 				}
-				deployment = newNATSPublisherDeployment(publisherName, publisherNamespace, natsConfig, publisherConfig)
+				deployment = newNATSPublisherDeployment(testutils.NewEventingCR(
+					testutils.WithEventingCRName(tc.givenPublisherName),
+					testutils.WithEventingCRNamespace(publisherNamespace),
+				), natsConfig, publisherConfig)
 			case "EventMesh":
-				deployment = newEventMeshPublisherDeployment(publisherName, publisherNamespace, publisherConfig)
+				deployment = newEventMeshPublisherDeployment(testutils.NewEventingCR(
+					testutils.WithEventingCRName(tc.givenPublisherName),
+					testutils.WithEventingCRNamespace(publisherNamespace),
+				), publisherConfig)
 			default:
 				t.Errorf("Invalid backend!")
 			}
@@ -89,10 +93,15 @@ func TestNewDeployment(t *testing.T) {
 	}
 }
 
-func TestNewDeploymentSecurityContext(t *testing.T) {
+func Test_NewDeploymentSecurityContext(t *testing.T) {
 	// given
 	config := env.GetBackendConfig()
-	deployment := newDeployment("test-name", "test-namespace", config.PublisherConfig, WithContainers("test-name", config.PublisherConfig))
+	givenEventing := testutils.NewEventingCR(
+		testutils.WithEventingCRName("tets-deployment"),
+		testutils.WithEventingCRNamespace("test-namespace"),
+	)
+	deployment := newDeployment(givenEventing, config.PublisherConfig,
+		WithContainers(config.PublisherConfig, givenEventing))
 
 	// when
 	podSecurityContext := deployment.Spec.Template.Spec.SecurityContext
@@ -156,64 +165,48 @@ func Test_GetNATSEnvVars(t *testing.T) {
 }
 func Test_GetLogEnvVars(t *testing.T) {
 	testCases := []struct {
-		name      string
-		givenEnvs map[string]string
-		wantEnvs  map[string]string
+		name          string
+		givenEventing *v1alpha1.Eventing
+		wantEnvs      []v1.EnvVar
 	}{
 		{
 			name: "APP_LOG_FORMAT should be text and APP_LOG_LEVEL should become the default info value",
-			givenEnvs: map[string]string{
-				"APP_LOG_FORMAT": "text",
-			},
-			wantEnvs: map[string]string{
-				"APP_LOG_FORMAT": "text",
-				"APP_LOG_LEVEL":  "info",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingLogLevel("info"),
+			),
+			wantEnvs: []v1.EnvVar{
+				{Name: "APP_LOG_FORMAT", Value: "json"},
+				{Name: "APP_LOG_LEVEL", Value: "info"},
 			},
 		},
 		{
 			name: "APP_LOG_FORMAT should become default json and APP_LOG_LEVEL should be warning",
-			givenEnvs: map[string]string{
-				"APP_LOG_LEVEL": "warning",
-			},
-			wantEnvs: map[string]string{
-				"APP_LOG_FORMAT": "json",
-				"APP_LOG_LEVEL":  "warning",
-			},
-		},
-		{
-			name:      "APP_LOG_FORMAT and APP_LOG_LEVEL should take the default values",
-			givenEnvs: map[string]string{},
-			wantEnvs: map[string]string{
-				"APP_LOG_FORMAT": "json",
-				"APP_LOG_LEVEL":  "info",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingLogLevel("warn"),
+			),
+			wantEnvs: []v1.EnvVar{
+				{Name: "APP_LOG_FORMAT", Value: "json"},
+				{Name: "APP_LOG_LEVEL", Value: "warn"},
 			},
 		},
 		{
 			name: "APP_LOG_FORMAT should be testFormat and APP_LOG_LEVEL should be error",
-			givenEnvs: map[string]string{
-				"APP_LOG_FORMAT": "text",
-				"APP_LOG_LEVEL":  "error",
-			},
-			wantEnvs: map[string]string{
-				"APP_LOG_FORMAT": "text",
-				"APP_LOG_LEVEL":  "error",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingLogLevel("error"),
+			),
+			wantEnvs: []v1.EnvVar{
+				{Name: "APP_LOG_FORMAT", Value: "json"},
+				{Name: "APP_LOG_LEVEL", Value: "error"},
 			},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			for k, v := range tc.givenEnvs {
-				t.Setenv(k, v)
-			}
 			backendConfig := env.GetBackendConfig()
-			envVars := getLogEnvVars(backendConfig.PublisherConfig)
+			envVars := getLogEnvVars(backendConfig.PublisherConfig, tc.givenEventing)
 
 			// ensure the right envs were set
-			for index, val := range tc.wantEnvs {
-				gotEnv := test.FindEnvVar(envVars, index)
-				assert.NotNil(t, gotEnv)
-				assert.Equal(t, val, gotEnv.Value)
-			}
+			require.Equal(t, tc.wantEnvs, envVars)
 		})
 	}
 }
