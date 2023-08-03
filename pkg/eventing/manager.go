@@ -69,7 +69,7 @@ func NewEventingManager(
 
 func (em EventingManager) DeployPublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	// update EC reconciler NATS and public config from the data in the eventing CR
-	if err := em.updateNatsConfig(ctx, eventing); err != nil {
+	if err := em.setUrlToNatsConfig(ctx, eventing); err != nil {
 		return nil, err
 	}
 	deployment, err := em.applyPublisherProxyDeployment(ctx, eventing, backendType)
@@ -144,17 +144,12 @@ func (em *EventingManager) getNATSUrl(ctx context.Context, namespace string) (st
 	return "", fmt.Errorf("NATS CR is not found to build NATS server URL")
 }
 
-func (em *EventingManager) updateNatsConfig(ctx context.Context, eventing *v1alpha1.Eventing) error {
+func (em *EventingManager) setUrlToNatsConfig(ctx context.Context, eventing *v1alpha1.Eventing) error {
 	natsUrl, err := em.getNATSUrl(ctx, eventing.Namespace)
 	if err != nil {
 		return err
 	}
 	em.natsConfig.URL = natsUrl
-	em.natsConfig.JSStreamStorageType = eventing.Spec.Backends[0].Config.NATSStreamStorageType
-	em.natsConfig.JSStreamReplicas = eventing.Spec.Backends[0].Config.NATSStreamReplicas
-	em.natsConfig.JSStreamMaxBytes = eventing.Spec.Backends[0].Config.NATSStreamMaxSize.String()
-	em.natsConfig.JSStreamMaxMsgsPerTopic = int64(eventing.Spec.Backends[0].Config.NATSMaxMsgsPerTopic)
-	em.natsConfig.EventTypePrefix = eventing.Spec.Backends[0].Config.EventTypePrefix
 	return nil
 }
 

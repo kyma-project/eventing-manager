@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_ApplyPublisherProxyDeployment(t *testing.T) {
@@ -79,12 +78,10 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 		},
 		{
 			name: "PatchApply failure",
-			givenEventing: &v1alpha1.Eventing{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eventing",
-					Namespace: "test-namespace",
-				},
-			},
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRMinimal(),
+				testutils.WithEventingEventTypePrefix("test-prefix"),
+			),
 			givenBackendType: v1alpha1.NatsBackendType,
 			patchApplyErr:    errors.New("patch apply error"),
 			wantErr: fmt.Errorf("failed to apply Publisher Proxy deployment: %v",
@@ -269,9 +266,6 @@ func Test_UpdateNatsConfig(t *testing.T) {
 			eventing: testutils.NewEventingCR(
 				testutils.WithEventingCRName("test-eventing"),
 				testutils.WithEventingCRNamespace("test-namespace"),
-				testutils.WithEventingCRMinimal(),
-				testutils.WithEventingStreamData("File", "700Mi", 2, 1000),
-				testutils.WithEventingEventTypePrefix("test-prefix"),
 			),
 			givenNatsResources: []natsv1alpha1.NATS{
 				*natstestutils.NewNATSCR(
@@ -280,12 +274,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 				),
 			},
 			expectedConfig: env.NATSConfig{
-				URL:                     "nats://test-nats.test-namespace.svc.cluster.local:4222",
-				EventTypePrefix:         "test-prefix",
-				JSStreamStorageType:     "File",
-				JSStreamReplicas:        2,
-				JSStreamMaxBytes:        "700Mi",
-				JSStreamMaxMsgsPerTopic: 1000,
+				URL: "nats://test-nats.test-namespace.svc.cluster.local:4222",
 			},
 			expectedError: nil,
 		},
@@ -317,7 +306,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 			}
 
 			// when
-			err := em.updateNatsConfig(ctx, tc.eventing)
+			err := em.setUrlToNatsConfig(ctx, tc.eventing)
 
 			// then
 			require.Equal(t, tc.expectedError, err)

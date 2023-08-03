@@ -47,15 +47,14 @@ func newNATSPublisherDeployment(
 	eventing *v1alpha1.Eventing,
 	natsConfig env.NATSConfig,
 	publisherConfig env.PublisherConfig) *appsv1.Deployment {
-	publishername := GetEPPDeploymentName(*eventing)
 	return newDeployment(
 		eventing,
 		publisherConfig,
-		WithLabels(publishername, v1alpha1.NatsBackendType),
+		WithLabels(GetEPPDeploymentName(*eventing), v1alpha1.NatsBackendType),
 		WithContainers(publisherConfig, eventing),
-		WithNATSEnvVars(publishername, natsConfig, publisherConfig),
+		WithNATSEnvVars(natsConfig, publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
-		WithAffinity(publishername),
+		WithAffinity(GetEPPDeploymentName(*eventing)),
 	)
 }
 
@@ -176,34 +175,35 @@ func WithContainers(publisherConfig env.PublisherConfig, eventing *v1alpha1.Even
 }
 
 func WithLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) DeployOpt {
-	publisherName := GetEPPDeploymentName(*eventing)
 	return func(d *appsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
-			if strings.EqualFold(container.Name, publisherName) {
+			if strings.EqualFold(container.Name, GetEPPDeploymentName(*eventing)) {
 				d.Spec.Template.Spec.Containers[i].Env = append(d.Spec.Template.Spec.Containers[i].Env, getLogEnvVars(publisherConfig, eventing)...)
 			}
 		}
 	}
 }
 
-func WithNATSEnvVars(publisherName string, natsConfig env.NATSConfig, publisherConfig env.PublisherConfig) DeployOpt {
+func WithNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig,
+	eventing *v1alpha1.Eventing) DeployOpt {
 	return func(d *appsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
-			if strings.EqualFold(container.Name, publisherName) {
-				d.Spec.Template.Spec.Containers[i].Env = getNATSEnvVars(natsConfig, publisherConfig)
+			if strings.EqualFold(container.Name, GetEPPDeploymentName(*eventing)) {
+				d.Spec.Template.Spec.Containers[i].Env = getNATSEnvVars(natsConfig, publisherConfig, eventing)
 			}
 		}
 	}
 }
 
-func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig) []v1.EnvVar {
+func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig,
+	eventing *v1alpha1.Eventing) []v1.EnvVar {
 	return []v1.EnvVar{
 		{Name: "BACKEND", Value: "nats"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
 		{Name: "NATS_URL", Value: natsConfig.URL},
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{Name: "LEGACY_NAMESPACE", Value: "kyma"},
-		{Name: "EVENT_TYPE_PREFIX", Value: natsConfig.EventTypePrefix},
+		{Name: "EVENT_TYPE_PREFIX", Value: eventing.GetNATSBackend().Config.EventTypePrefix},
 		// JetStream-specific config
 		{Name: "JS_STREAM_NAME", Value: natsConfig.JSStreamName},
 	}
@@ -279,7 +279,7 @@ func getContainerPorts() []v1.ContainerPort {
 func getLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) []v1.EnvVar {
 	return []v1.EnvVar{
 		{Name: "APP_LOG_FORMAT", Value: publisherConfig.AppLogFormat},
-		{Name: "APP_LOG_LEVEL", Value: eventing.Spec.LogLevel},
+		{Name: "APP_LOG_LEVEL", Value: strings.ToLower(eventing.Spec.LogLevel)},
 	}
 }
 

@@ -59,13 +59,13 @@ func TestNewDeployment(t *testing.T) {
 			switch tc.givenBackend {
 			case "NATS":
 				natsConfig = env.NATSConfig{
-					JSStreamName:    "kyma",
-					URL:             natsURL,
-					EventTypePrefix: eventTypePrefix,
+					JSStreamName: "kyma",
+					URL:          natsURL,
 				}
 				deployment = newNATSPublisherDeployment(testutils.NewEventingCR(
 					testutils.WithEventingCRName(tc.givenPublisherName),
 					testutils.WithEventingCRNamespace(publisherNamespace),
+					testutils.WithEventingEventTypePrefix(eventTypePrefix),
 				), natsConfig, publisherConfig)
 			case "EventMesh":
 				deployment = newEventMeshPublisherDeployment(testutils.NewEventingCR(
@@ -117,19 +117,23 @@ func Test_GetNATSEnvVars(t *testing.T) {
 		name            string
 		givenEnvs       map[string]string
 		givenNATSConfig env.NATSConfig
-		wantEnvs        map[string]string
+		givenEventing   *v1alpha1.Eventing
+		wantEnvs        []v1.EnvVar
 	}{
 		{
-			name: "REQUEST_TIMEOUT should not be set and JS envs should stay empty",
+			name: "JS envs should stay empty",
 			givenEnvs: map[string]string{
-				"PUBLISHER_REQUESTS_CPU":    "64m",
-				"PUBLISHER_REQUESTS_MEMORY": "128Mi",
 				"PUBLISHER_REQUEST_TIMEOUT": "10s",
 			},
-			givenNATSConfig: env.NATSConfig{},
-			wantEnvs: map[string]string{
-				"REQUEST_TIMEOUT": "10s",
-				"JS_STREAM_NAME":  "",
+			givenEventing: testutils.NewEventingCR(),
+			wantEnvs: []v1.EnvVar{
+				{Name: "BACKEND", Value: "nats"},
+				{Name: "PORT", Value: "8080"},
+				{Name: "NATS_URL", Value: ""},
+				{Name: "REQUEST_TIMEOUT", Value: "10s"},
+				{Name: "LEGACY_NAMESPACE", Value: "kyma"},
+				{Name: "EVENT_TYPE_PREFIX", Value: ""},
+				{Name: "JS_STREAM_NAME", Value: ""},
 			},
 		},
 		{
@@ -138,11 +142,18 @@ func Test_GetNATSEnvVars(t *testing.T) {
 				"PUBLISHER_REQUEST_TIMEOUT": "10s",
 			},
 			givenNATSConfig: env.NATSConfig{
-				JSStreamName: "kyma",
+				JSStreamName: "sap",
+				URL:          "test-url",
 			},
-			wantEnvs: map[string]string{
-				"REQUEST_TIMEOUT": "10s",
-				"JS_STREAM_NAME":  "kyma",
+			givenEventing: testutils.NewEventingCR(),
+			wantEnvs: []v1.EnvVar{
+				{Name: "BACKEND", Value: "nats"},
+				{Name: "PORT", Value: "8080"},
+				{Name: "NATS_URL", Value: "test-url"},
+				{Name: "REQUEST_TIMEOUT", Value: "10s"},
+				{Name: "LEGACY_NAMESPACE", Value: "kyma"},
+				{Name: "EVENT_TYPE_PREFIX", Value: ""},
+				{Name: "JS_STREAM_NAME", Value: "sap"},
 			},
 		},
 	}
@@ -152,14 +163,10 @@ func Test_GetNATSEnvVars(t *testing.T) {
 				t.Setenv(k, v)
 			}
 			backendConfig := env.GetBackendConfig()
-			envVars := getNATSEnvVars(tc.givenNATSConfig, backendConfig.PublisherConfig)
+			envVars := getNATSEnvVars(tc.givenNATSConfig, backendConfig.PublisherConfig, tc.givenEventing)
 
 			// ensure the right envs were set
-			for index, val := range tc.wantEnvs {
-				gotEnv := test.FindEnvVar(envVars, index)
-				assert.NotNil(t, gotEnv)
-				assert.Equal(t, val, gotEnv.Value)
-			}
+			require.Equal(t, tc.wantEnvs, envVars)
 		})
 	}
 }
@@ -172,7 +179,7 @@ func Test_GetLogEnvVars(t *testing.T) {
 		{
 			name: "APP_LOG_FORMAT should be text and APP_LOG_LEVEL should become the default info value",
 			givenEventing: testutils.NewEventingCR(
-				testutils.WithEventingLogLevel("info"),
+				testutils.WithEventingLogLevel("Info"),
 			),
 			wantEnvs: []v1.EnvVar{
 				{Name: "APP_LOG_FORMAT", Value: "json"},
@@ -182,7 +189,7 @@ func Test_GetLogEnvVars(t *testing.T) {
 		{
 			name: "APP_LOG_FORMAT should become default json and APP_LOG_LEVEL should be warning",
 			givenEventing: testutils.NewEventingCR(
-				testutils.WithEventingLogLevel("warn"),
+				testutils.WithEventingLogLevel("Warn"),
 			),
 			wantEnvs: []v1.EnvVar{
 				{Name: "APP_LOG_FORMAT", Value: "json"},
@@ -192,7 +199,7 @@ func Test_GetLogEnvVars(t *testing.T) {
 		{
 			name: "APP_LOG_FORMAT should be testFormat and APP_LOG_LEVEL should be error",
 			givenEventing: testutils.NewEventingCR(
-				testutils.WithEventingLogLevel("error"),
+				testutils.WithEventingLogLevel("Error"),
 			),
 			wantEnvs: []v1.EnvVar{
 				{Name: "APP_LOG_FORMAT", Value: "json"},

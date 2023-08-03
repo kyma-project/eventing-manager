@@ -141,12 +141,10 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 
 	// setup reconciler
 	natsConfig := env.NATSConfig{
-		EventTypePrefix: EventTypePrefix,
-		JSStreamName:    JSStreamName,
+		JSStreamName: JSStreamName,
 	}
 	os.Setenv("WEBHOOK_TOKEN_ENDPOINT", "https://oauth2.ev-manager.kymatunas.shoot.canary.k8s-hana.ondemand.com/oauth2/token")
 	os.Setenv("DOMAIN", "my.test.domain")
-	os.Setenv("EVENT_TYPE_PREFIX", EventTypePrefix)
 
 	// create k8s clients.
 	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), "eventing-manager")
