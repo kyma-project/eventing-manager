@@ -340,6 +340,7 @@ func (env TestEnvironment) EnsureEPPK8sResourcesExists(t *testing.T, eventingCR 
 		eventing.GetEPPClusterRoleName(eventingCR), eventingCR.Namespace)
 	env.EnsureK8sClusterRoleBindingExists(t,
 		eventing.GetEPPClusterRoleBindingName(eventingCR), eventingCR.Namespace)
+	env.EnsureHPAExists(t, eventing.GetEPPDeploymentName(eventingCR), eventingCR.Namespace)
 }
 
 func (env TestEnvironment) EnsureEPPK8sResourcesHaveOwnerReference(t *testing.T, eventingCR v1alpha1.Eventing) {
@@ -493,43 +494,43 @@ func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *nats
 	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
 }
 
-func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, eventing *v1alpha1.Eventing) {
+func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, eventingCR *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		deployment, err := env.GetDeploymentFromK8s(eventing.Name, eventing.Namespace)
+		deployment, err := env.GetDeploymentFromK8s(eventing.GetEPPDeploymentName(*eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
-				"name", eventing.Name, "namespace", eventing.Namespace)
+				"name", eventingCR.Name, "namespace", eventingCR.Namespace)
 		}
 
 		eventTypePrefix := test.FindEnvVar(deployment.Spec.Template.Spec.Containers[0].Env, "EVENT_TYPE_PREFIX")
-		eventTypePrefixCheck := eventTypePrefix != nil && eventTypePrefix.Value == eventing.Spec.Backends[0].Config.EventTypePrefix
-		return eventing.Spec.Publisher.Resources.Limits.Cpu().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu()) &&
-			eventing.Spec.Publisher.Resources.Limits.Memory().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()) &&
-			eventing.Spec.Publisher.Resources.Requests.Cpu().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu()) &&
-			eventing.Spec.Publisher.Resources.Requests.Memory().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Memory()) &&
+		eventTypePrefixCheck := eventTypePrefix != nil && eventTypePrefix.Value == eventingCR.Spec.Backends[0].Config.EventTypePrefix
+		return eventingCR.Spec.Publisher.Resources.Limits.Cpu().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu()) &&
+			eventingCR.Spec.Publisher.Resources.Limits.Memory().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()) &&
+			eventingCR.Spec.Publisher.Resources.Requests.Cpu().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu()) &&
+			eventingCR.Spec.Publisher.Resources.Requests.Memory().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Memory()) &&
 			eventTypePrefixCheck
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing spec publisher is reflected")
 }
 
-func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventing *v1alpha1.Eventing) {
+func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventingCR *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		hpa, err := env.GetHPAFromK8s(eventing.Name, eventing.Namespace)
+		hpa, err := env.GetHPAFromK8s(eventing.GetEPPDeploymentName(*eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
-				"name", eventing.Name, "namespace", eventing.Namespace)
+				"name", eventingCR.Name, "namespace", eventingCR.Namespace)
 		}
-		return *hpa.Spec.MinReplicas == int32(eventing.Spec.Publisher.Replicas.Min) && hpa.Spec.MaxReplicas == int32(eventing.Spec.Publisher.Replicas.Max)
+		return *hpa.Spec.MinReplicas == int32(eventingCR.Spec.Publisher.Replicas.Min) && hpa.Spec.MaxReplicas == int32(eventingCR.Spec.Publisher.Replicas.Max)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing spec replicas is reflected")
 }
 
-func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, eventing *v1alpha1.Eventing) {
+func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, eventingCR *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		deployment, err := env.GetDeploymentFromK8s(eventing.Name, eventing.Namespace)
+		deployment, err := env.GetDeploymentFromK8s(eventing.GetEPPDeploymentName(*eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
-				"name", eventing.Name, "namespace", eventing.Namespace)
+				"name", eventingCR.Name, "namespace", eventingCR.Namespace)
 		}
-		return evnttestutils.HasOwnerReference(deployment, *eventing)
+		return evnttestutils.HasOwnerReference(deployment, *eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing owner reference is set")
 }
 
@@ -688,6 +689,15 @@ func (env TestEnvironment) DeleteClusterRoleFromK8s(name, namespace string) erro
 
 func (env TestEnvironment) DeleteClusterRoleBindingFromK8s(name, namespace string) error {
 	return env.k8sClient.Delete(env.Context, &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
+}
+
+func (env TestEnvironment) DeleteHPAFromK8s(name, namespace string) error {
+	return env.k8sClient.Delete(env.Context, &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,

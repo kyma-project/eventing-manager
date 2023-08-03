@@ -141,7 +141,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			defer func() {
 				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
 				if tc.givenNATSReady && !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, tc.givenEventing.Name, givenNamespace)
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenNATS)
 			}()
@@ -150,11 +150,11 @@ func Test_CreateEventingCR(t *testing.T) {
 			// check Eventing CR status.
 			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
 			if tc.givenDeploymentReady {
-				testEnvironment.EnsureDeploymentExists(t, tc.givenEventing.Name, givenNamespace)
-				testEnvironment.EnsureHPAExists(t, tc.givenEventing.Name, givenNamespace)
-				testEnvironment.EnsureEventingSpecPublisherReflected(t, tc.givenEventing)
-				testEnvironment.EnsureEventingReplicasReflected(t, tc.givenEventing)
+				testEnvironment.EnsureDeploymentExists(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
 				testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenEventing)
+
+				testEnvironment.EnsureEventingSpecPublisherReflected(t, tc.givenEventing)
+
 				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
@@ -166,7 +166,7 @@ func Test_CreateEventingCR(t *testing.T) {
 				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
 
 				// check if EPP resources are correctly created.
-				deployment, err := testEnvironment.GetDeploymentFromK8s(tc.givenEventing.Name, givenNamespace)
+				deployment, err := testEnvironment.GetDeploymentFromK8s(eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
 				require.NoError(t, err)
 				// K8s Services
 				testEnvironment.EnsureEPPPublishServiceCorrect(t, deployment, *tc.givenEventing)
@@ -176,6 +176,8 @@ func Test_CreateEventingCR(t *testing.T) {
 				testEnvironment.EnsureEPPClusterRoleCorrect(t, *tc.givenEventing)
 				// ClusterRoleBinding
 				testEnvironment.EnsureEPPClusterRoleBindingCorrect(t, *tc.givenEventing)
+				// HPA
+				testEnvironment.EnsureEventingReplicasReflected(t, tc.givenEventing)
 			}
 		})
 	}
@@ -226,13 +228,13 @@ func Test_UpdateEventingCR(t *testing.T) {
 			testEnvironment.EnsureNATSResourceStateReady(t, nats)
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenExistingEventing)
 
-			testEnvironment.EnsureDeploymentExists(t, tc.givenExistingEventing.Name, givenNamespace)
-			testEnvironment.EnsureHPAExists(t, tc.givenExistingEventing.Name, givenNamespace)
+			testEnvironment.EnsureDeploymentExists(t, eventing.GetEPPDeploymentName(*tc.givenExistingEventing), givenNamespace)
+			testEnvironment.EnsureHPAExists(t, eventing.GetEPPDeploymentName(*tc.givenExistingEventing), givenNamespace)
 
 			defer func() {
 				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenExistingEventing.Name, givenNamespace)
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, tc.givenExistingEventing.Name, givenNamespace)
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetEPPDeploymentName(*tc.givenExistingEventing), givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, nats)
 			}()
@@ -296,13 +298,13 @@ func Test_DeleteEventingCR(t *testing.T) {
 
 			defer func() {
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, tc.givenEventing.Name, givenNamespace)
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, nats)
 			}()
 
-			testEnvironment.EnsureDeploymentExists(t, tc.givenEventing.Name, givenNamespace)
-			testEnvironment.EnsureHPAExists(t, tc.givenEventing.Name, givenNamespace)
+			testEnvironment.EnsureDeploymentExists(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
+			testEnvironment.EnsureHPAExists(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
 			testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
 
 			// then
@@ -363,6 +365,12 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			eventingCR.Namespace)
 	}
 
+	deleteHPAFromK8s := func(env *testutils.TestEnvironment,
+		eventingCR eventingv1alpha1.Eventing) error {
+		return env.DeleteHPAFromK8s(eventing.GetEPPDeploymentName(eventingCR),
+			eventingCR.Namespace)
+	}
+
 	testCases := []struct {
 		name                 string
 		givenEventing        *eventingv1alpha1.Eventing
@@ -410,6 +418,17 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			),
 			wantResourceDeletion: []deletionFunc{
 				deleteServiceAccountFromK8s,
+			},
+		},
+		{
+			name: "should recreate HPA",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			wantResourceDeletion: []deletionFunc{
+				deleteHPAFromK8s,
 			},
 		},
 		// @TODO: Fix the watching of ClusterRoles and ClusterRoleBindings

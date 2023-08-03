@@ -16,7 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const natsClientPort = 4222
+const (
+	natsClientPort    = 4222
+	cpuUtilization    = 60
+	memoryUtilization = 60
+)
 
 var (
 	// allowedAnnotations are the publisher proxy deployment spec template annotations
@@ -30,7 +34,6 @@ var (
 type Manager interface {
 	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
 	DeployPublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
-	DeployHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error
 	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
 }
 
@@ -88,9 +91,9 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 
 	switch backendType {
 	case v1alpha1.NatsBackendType:
-		desiredPublisher = newNATSPublisherDeployment(eventing.Name, eventing.Namespace, em.natsConfig, em.backendConfig.PublisherConfig)
+		desiredPublisher = newNATSPublisherDeployment(GetEPPDeploymentName(*eventing), eventing.Namespace, em.natsConfig, em.backendConfig.PublisherConfig)
 	case v1alpha1.EventMeshBackendType:
-		desiredPublisher = newEventMeshPublisherDeployment(eventing.Name, eventing.Namespace, em.backendConfig.PublisherConfig)
+		desiredPublisher = newEventMeshPublisherDeployment(GetEPPDeploymentName(*eventing), eventing.Namespace, em.backendConfig.PublisherConfig)
 	default:
 		return nil, fmt.Errorf("unknown EventingBackend type %q", backendType)
 	}
@@ -119,22 +122,6 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	}
 
 	return desiredPublisher, nil
-}
-
-// CreateOrUpdateHPA creates or updates the HPA for the given deployment.
-func (em EventingManager) DeployHPA(ctx context.Context, deployment *appsv1.Deployment, eventing *v1alpha1.Eventing, cpuUtilization, memoryUtilization int32) error {
-	min := int32(eventing.Spec.Publisher.Min)
-	max := int32(eventing.Spec.Publisher.Max)
-	hpa := newHorizontalPodAutoscaler(deployment, min, max, cpuUtilization, memoryUtilization)
-	if err := controllerutil.SetControllerReference(eventing, hpa, em.Scheme()); err != nil {
-		return err
-	}
-	// apply a new horizontal pod autoscaler object
-	err := em.kubeClient.PatchApply(ctx, hpa)
-	if err != nil {
-		return fmt.Errorf("failed to create horizontal pod autoscaler: %v", err)
-	}
-	return nil
 }
 
 func (em EventingManager) IsNATSAvailable(ctx context.Context, namespace string) (bool, error) {
@@ -210,6 +197,9 @@ func (em EventingManager) DeployPublisherProxyResources(
 		// Service to expose health endpoint of EPP.
 		newPublisherProxyHealthService(GetEPPHealthServiceName(*eventing), eventing.Namespace, eppDeployment.Labels,
 			eppDeployment.Spec.Template.Labels),
+		// HPA to auto-scale publisher proxy.
+		newHorizontalPodAutoscaler(eppDeployment, int32(eventing.Spec.Publisher.Min),
+			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization),
 	}
 
 	// create the resources on k8s.

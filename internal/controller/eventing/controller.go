@@ -184,7 +184,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 		return ctrl.Result{}, err
 	}
 
-	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.GetNATSBackend().Type, log)
+	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.GetNATSBackend().Type)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
@@ -206,26 +206,15 @@ func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *eventi
 func (r *Reconciler) handlePublisherProxy(
 	ctx context.Context,
 	eventing *eventingv1alpha1.Eventing,
-	backendType eventingv1alpha1.BackendType,
-	log *zap.SugaredLogger) (*v1.Deployment, error) {
-	// CreateOrUpdate deployment for eventing publisher proxy deployment
+	backendType eventingv1alpha1.BackendType) (*v1.Deployment, error) {
+	// deploy publisher proxy k8s deployment.
 	deployment, err := r.eventingManager.DeployPublisherProxy(ctx, eventing, backendType)
 	if err != nil {
 		return nil, err
 	}
 
 	// deploy publisher proxy resources.
-	if err = r.eventingManager.DeployPublisherProxyResources(ctx, eventing, deployment); err != nil {
-		return deployment, err
-	}
-
-	// CreateOrUpdate HPA for publisher proxy deployment
-	err = r.eventingManager.DeployHPA(ctx, deployment, eventing, 60, 60)
-	if err != nil {
-		return deployment, fmt.Errorf("failed to create or update HPA for publisher proxy deployment: %s", err)
-	}
-
-	return deployment, nil
+	return deployment, r.eventingManager.DeployPublisherProxyResources(ctx, eventing, deployment)
 }
 
 func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
