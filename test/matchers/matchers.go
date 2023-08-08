@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func HaveStatusReady() gomegatypes.GomegaMatcher {
@@ -30,6 +31,13 @@ func HaveStatusError() gomegatypes.GomegaMatcher {
 		func(n *v1alpha1.Eventing) string {
 			return n.Status.State
 		}, gomega.Equal(v1alpha1.StateError))
+}
+
+func HaveFinalizer() gomegatypes.GomegaMatcher {
+	return gomega.WithTransform(
+		func(n *v1alpha1.Eventing) bool {
+			return controllerutil.ContainsFinalizer(n, eventing.FinalizerName)
+		}, gomega.BeTrue())
 }
 
 func HaveCondition(condition metav1.Condition) gomegatypes.GomegaMatcher {
