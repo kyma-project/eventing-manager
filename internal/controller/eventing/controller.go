@@ -165,7 +165,7 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 	log *zap.SugaredLogger) (ctrl.Result, error) {
 	// skip reconciliation for deletion if the finalizer is not set.
 	if !r.containsFinalizer(eventing) {
-		log.Debugf("skipped reconciliation for deletion as finalizer is not set.")
+		log.Debug("skipped reconciliation for deletion as finalizer is not set.")
 		return ctrl.Result{}, nil
 	}
 
