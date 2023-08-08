@@ -73,6 +73,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			wantMatches: gomega.And(
 				matchers.HaveStatusError(),
 				matchers.HaveNATSAvailableConditionNotAvailable(),
+				matchers.HaveFinalizer(),
 			),
 		},
 		{
@@ -92,6 +93,7 @@ func Test_CreateEventingCR(t *testing.T) {
 				matchers.HaveStatusReady(),
 				matchers.HaveNATSAvailableConditionAvailable(),
 				matchers.HavePublisherProxyReadyConditionDeployed(),
+				matchers.HaveFinalizer(),
 			),
 			wantEnsureK8sObjects: true,
 		},
@@ -111,6 +113,7 @@ func Test_CreateEventingCR(t *testing.T) {
 				matchers.HaveStatusProcessing(),
 				matchers.HaveNATSAvailableConditionAvailable(),
 				matchers.HavePublisherProxyReadyConditionProcessing(),
+				matchers.HaveFinalizer(),
 			),
 		},
 	}

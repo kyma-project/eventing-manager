@@ -44,7 +44,10 @@ const (
 	NatsServerNotAvailableMsg = "NATS server is not available"
 )
 
-// Reconciler reconciles a Eventing object
+// Reconciler reconciles an Eventing object
+//
+//go:generate mockery --name=Controller --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/controller --outpkg=mocks --case=underscore
+//go:generate mockery --name=Manager --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/manager --outpkg=mocks --case=underscore
 type Reconciler struct {
 	client.Client
 	logger          *logger.Logger
@@ -143,16 +146,27 @@ func (r *Reconciler) loggerWithEventing(eventing *eventingv1alpha1.Eventing) *za
 	)
 }
 
-func (r *Reconciler) handleEventingDeletion(_ context.Context, _ *eventingv1alpha1.Eventing,
+func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *eventingv1alpha1.Eventing,
 	log *zap.SugaredLogger) (ctrl.Result, error) {
-	log.Info("handling Eventing deletion...")
-	// TODO: Implement me.
-	return ctrl.Result{}, nil
+	// skip reconciliation for deletion if the finalizer is not set.
+	if !r.containsFinalizer(eventing) {
+		log.Debugf("skipped reconciliation for deletion as finalizer is not set.")
+		return ctrl.Result{}, nil
+	}
+
+	// TODO: Implement me, this is a dummy implementation for testing.
+
+	return r.removeFinalizer(ctx, eventing)
 }
 
 func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
 	log.Info("handling Eventing reconciliation...")
+
+	// make sure the finalizer exists.
+	if !r.containsFinalizer(eventing) {
+		return r.addFinalizer(ctx, eventing)
+	}
 
 	// set state processing if not set yet
 	r.InitStateProcessing(eventing)
