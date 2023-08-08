@@ -50,7 +50,6 @@ func Test_addFinalizer(t *testing.T) {
 	t.Parallel()
 
 	t.Run("should add finalizer", func(t *testing.T) {
-		t.Parallel()
 
 		// given
 		givenEventing := utils.NewEventingCR()
@@ -73,7 +72,6 @@ func Test_removeFinalizer(t *testing.T) {
 	t.Parallel()
 
 	t.Run("should remove finalizer", func(t *testing.T) {
-		t.Parallel()
 
 		// given
 		givenEventing := utils.NewEventingCR(utils.WithEventingCRFinalizer(FinalizerName))
