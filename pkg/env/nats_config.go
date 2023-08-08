@@ -1,6 +1,7 @@
 package env
 
 import (
+	"strings"
 	"time"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
@@ -78,7 +79,7 @@ func (nc NATSConfig) ToECENVNATSConfig(eventingCR v1alpha1.Eventing) ecenv.NATSC
 		JSConsumerDeliverPolicy: nc.JSConsumerDeliverPolicy,
 		// values from Eventing CR.
 		EventTypePrefix:         eventingCR.Spec.Backends[0].Config.EventTypePrefix,
-		JSStreamStorageType:     eventingCR.Spec.Backends[0].Config.NATSStreamStorageType,
+		JSStreamStorageType:     strings.ToLower(eventingCR.Spec.Backends[0].Config.NATSStreamStorageType),
 		JSStreamReplicas:        eventingCR.Spec.Backends[0].Config.NATSStreamReplicas,
 		JSStreamMaxBytes:        eventingCR.Spec.Backends[0].Config.NATSStreamMaxSize.String(),
 		JSStreamMaxMsgsPerTopic: int64(eventingCR.Spec.Backends[0].Config.NATSMaxMsgsPerTopic),

@@ -1,6 +1,7 @@
 package env
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/kyma-project/eventing-manager/test/utils"
@@ -20,7 +21,7 @@ func Test_ToECENVNATSConfig(t *testing.T) {
 		IdleConnTimeout:         16,
 		JSStreamName:            "17",
 		JSSubjectPrefix:         "18",
-		JSStreamStorageType:     "19",
+		JSStreamStorageType:     "File",
 		JSStreamReplicas:        20,
 		JSStreamRetentionPolicy: "21",
 		JSStreamMaxMessages:     22,
@@ -56,7 +57,7 @@ func Test_ToECENVNATSConfig(t *testing.T) {
 
 	// check values from eventing CR.
 	require.Equal(t, givenEventing.Spec.Backends[0].Config.EventTypePrefix, result.EventTypePrefix)
-	require.Equal(t, givenEventing.Spec.Backends[0].Config.NATSStreamStorageType, result.JSStreamStorageType)
+	require.Equal(t, strings.ToLower(givenEventing.Spec.Backends[0].Config.NATSStreamStorageType), result.JSStreamStorageType)
 	require.Equal(t, givenEventing.Spec.Backends[0].Config.NATSStreamReplicas, result.JSStreamReplicas)
 	require.Equal(t, givenEventing.Spec.Backends[0].Config.NATSStreamMaxSize.String(), result.JSStreamMaxBytes)
 	require.Equal(t, int64(givenEventing.Spec.Backends[0].Config.NATSMaxMsgsPerTopic), result.JSStreamMaxMsgsPerTopic)
