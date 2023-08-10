@@ -1,9 +1,13 @@
 package env
 
 import (
+	"strings"
 	"time"
 
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+
 	"github.com/kelseyhightower/envconfig"
+	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 )
 
 // NATSConfig represents the environment config for the Eventing Controller with Nats.
@@ -53,6 +57,33 @@ type NATSConfig struct {
 	// - new: When first consuming messages, the consumer starts receiving messages that were created
 	//   after the consumer was created.
 	JSConsumerDeliverPolicy string `envconfig:"JS_CONSUMER_DELIVER_POLICY" default:"new"`
+}
+
+// ToECENVNATSConfig returns eventing-controller's NATSConfig.
+// Expects eventingCR.Spec.Backends to be of length==1.
+func (nc NATSConfig) ToECENVNATSConfig(eventingCR v1alpha1.Eventing) ecenv.NATSConfig {
+	return ecenv.NATSConfig{
+		// values from local NATSConfig.
+		URL:                     nc.URL,
+		MaxReconnects:           nc.MaxReconnects,
+		ReconnectWait:           nc.ReconnectWait,
+		MaxIdleConns:            nc.MaxIdleConns,
+		MaxConnsPerHost:         nc.MaxConnsPerHost,
+		MaxIdleConnsPerHost:     nc.MaxIdleConnsPerHost,
+		IdleConnTimeout:         nc.IdleConnTimeout,
+		JSStreamName:            nc.JSStreamName,
+		JSSubjectPrefix:         nc.JSSubjectPrefix,
+		JSStreamRetentionPolicy: nc.JSStreamRetentionPolicy,
+		JSStreamMaxMessages:     nc.JSStreamMaxMessages,
+		JSStreamDiscardPolicy:   nc.JSStreamDiscardPolicy,
+		JSConsumerDeliverPolicy: nc.JSConsumerDeliverPolicy,
+		// values from Eventing CR.
+		EventTypePrefix:         eventingCR.Spec.Backends[0].Config.EventTypePrefix,
+		JSStreamStorageType:     strings.ToLower(eventingCR.Spec.Backends[0].Config.NATSStreamStorageType),
+		JSStreamReplicas:        eventingCR.Spec.Backends[0].Config.NATSStreamReplicas,
+		JSStreamMaxBytes:        eventingCR.Spec.Backends[0].Config.NATSStreamMaxSize.String(),
+		JSStreamMaxMsgsPerTopic: int64(eventingCR.Spec.Backends[0].Config.NATSMaxMsgsPerTopic),
+	}
 }
 
 func GetNATSConfig(maxReconnects int, reconnectWait time.Duration) (NATSConfig, error) {

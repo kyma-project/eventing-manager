@@ -5,6 +5,8 @@ package mocks
 import (
 	context "context"
 
+	env "github.com/kyma-project/eventing-manager/pkg/env"
+
 	mock "github.com/stretchr/testify/mock"
 
 	v1 "k8s.io/api/apps/v1"
@@ -167,6 +169,90 @@ func (_c *Manager_DeployPublisherProxyResources_Call) Return(_a0 error) *Manager
 }
 
 func (_c *Manager_DeployPublisherProxyResources_Call) RunAndReturn(run func(context.Context, *v1alpha1.Eventing, *v1.Deployment) error) *Manager_DeployPublisherProxyResources_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetBackendConfig provides a mock function with given fields:
+func (_m *Manager) GetBackendConfig() *env.BackendConfig {
+	ret := _m.Called()
+
+	var r0 *env.BackendConfig
+	if rf, ok := ret.Get(0).(func() *env.BackendConfig); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*env.BackendConfig)
+		}
+	}
+
+	return r0
+}
+
+// Manager_GetBackendConfig_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBackendConfig'
+type Manager_GetBackendConfig_Call struct {
+	*mock.Call
+}
+
+// GetBackendConfig is a helper method to define mock.On call
+func (_e *Manager_Expecter) GetBackendConfig() *Manager_GetBackendConfig_Call {
+	return &Manager_GetBackendConfig_Call{Call: _e.mock.On("GetBackendConfig")}
+}
+
+func (_c *Manager_GetBackendConfig_Call) Run(run func()) *Manager_GetBackendConfig_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Manager_GetBackendConfig_Call) Return(_a0 *env.BackendConfig) *Manager_GetBackendConfig_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Manager_GetBackendConfig_Call) RunAndReturn(run func() *env.BackendConfig) *Manager_GetBackendConfig_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetNATSConfig provides a mock function with given fields:
+func (_m *Manager) GetNATSConfig() env.NATSConfig {
+	ret := _m.Called()
+
+	var r0 env.NATSConfig
+	if rf, ok := ret.Get(0).(func() env.NATSConfig); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(env.NATSConfig)
+	}
+
+	return r0
+}
+
+// Manager_GetNATSConfig_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNATSConfig'
+type Manager_GetNATSConfig_Call struct {
+	*mock.Call
+}
+
+// GetNATSConfig is a helper method to define mock.On call
+func (_e *Manager_Expecter) GetNATSConfig() *Manager_GetNATSConfig_Call {
+	return &Manager_GetNATSConfig_Call{Call: _e.mock.On("GetNATSConfig")}
+}
+
+func (_c *Manager_GetNATSConfig_Call) Run(run func()) *Manager_GetNATSConfig_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Manager_GetNATSConfig_Call) Return(_a0 env.NATSConfig) *Manager_GetNATSConfig_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Manager_GetNATSConfig_Call) RunAndReturn(run func() env.NATSConfig) *Manager_GetNATSConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }

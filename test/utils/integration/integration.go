@@ -9,6 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
+	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
+	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
+	"github.com/stretchr/testify/mock"
+
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -63,15 +69,17 @@ const (
 
 // TestEnvironment provides mocked resources for integration tests.
 type TestEnvironment struct {
-	Context          context.Context
-	EnvTestInstance  *envtest.Environment
-	k8sClient        client.Client
-	KubeClient       *k8s.Client
-	K8sDynamicClient *dynamic.DynamicClient
-	Reconciler       *eventingctrl.Reconciler
-	Logger           *logger.Logger
-	Recorder         *record.EventRecorder
-	TestCancelFn     context.CancelFunc
+	Context             context.Context
+	EnvTestInstance     *envtest.Environment
+	k8sClient           client.Client
+	KubeClient          *k8s.Client
+	K8sDynamicClient    *dynamic.DynamicClient
+	Reconciler          *eventingctrl.Reconciler
+	Logger              *logger.Logger
+	Recorder            *record.EventRecorder
+	TestCancelFn        context.CancelFunc
+	SubManagerFactory   subscriptionmanager.ManagerFactory
+	JetStreamSubManager ecsubscriptionmanager.Manager
 }
 
 //nolint:funlen // Used in testing
@@ -154,6 +162,16 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	// create eventing manager instance.
 	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, natsConfig, ctrLogger, recorder)
 
+	// define JetStream subscription manager mock.
+	jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
+	jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil)
+	jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
+	jetStreamSubManagerMock.On("Stop", mock.Anything).Return(nil)
+
+	// define subscription manager factory mock.
+	subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
+	subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(jetStreamSubManagerMock)
+
 	eventingReconciler := eventingctrl.NewReconciler(
 		k8sClient,
 		kubeClient,
@@ -161,6 +179,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 		ctrLogger,
 		ctrlMgr.GetEventRecorderFor("eventing-manager-test"),
 		eventingManager,
+		subManagerFactoryMock,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(ctrlMgr); err != nil {
@@ -179,15 +198,17 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	}()
 
 	return &TestEnvironment{
-		Context:          ctx,
-		k8sClient:        k8sClient,
-		KubeClient:       &kubeClient,
-		K8sDynamicClient: dynamicClient,
-		Reconciler:       eventingReconciler,
-		Logger:           ctrLogger,
-		Recorder:         &recorder,
-		EnvTestInstance:  testEnv,
-		TestCancelFn:     cancelCtx,
+		Context:             ctx,
+		k8sClient:           k8sClient,
+		KubeClient:          &kubeClient,
+		K8sDynamicClient:    dynamicClient,
+		Reconciler:          eventingReconciler,
+		Logger:              ctrLogger,
+		Recorder:            &recorder,
+		EnvTestInstance:     testEnv,
+		TestCancelFn:        cancelCtx,
+		SubManagerFactory:   subManagerFactoryMock,
+		JetStreamSubManager: jetStreamSubManagerMock,
 	}, nil
 }
 

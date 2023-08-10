@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
@@ -28,6 +30,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,12 +53,15 @@ const (
 //go:generate mockery --name=Manager --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/manager --outpkg=mocks --case=underscore
 type Reconciler struct {
 	client.Client
-	logger          *logger.Logger
-	ctrlManager     ctrl.Manager
-	eventingManager eventing.Manager
-	kubeClient      k8s.Client
-	scheme          *runtime.Scheme
-	recorder        record.EventRecorder
+	logger                  *logger.Logger
+	ctrlManager             ctrl.Manager
+	eventingManager         eventing.Manager
+	kubeClient              k8s.Client
+	scheme                  *runtime.Scheme
+	recorder                record.EventRecorder
+	subManagerFactory       subscriptionmanager.ManagerFactory
+	natsSubManager          ecsubscriptionmanager.Manager
+	isNATSSubManagerStarted bool
 }
 
 func NewReconciler(
@@ -65,14 +71,19 @@ func NewReconciler(
 	logger *logger.Logger,
 	recorder record.EventRecorder,
 	manager eventing.Manager,
+	subManagerFactory subscriptionmanager.ManagerFactory,
 ) *Reconciler {
 	return &Reconciler{
-		Client:          client,
-		logger:          logger,
-		eventingManager: manager,
-		kubeClient:      kubeClient,
-		scheme:          scheme,
-		recorder:        recorder,
+		Client:                  client,
+		logger:                  logger,
+		ctrlManager:             nil, // ctrlManager will be initialized in `SetupWithManager`.
+		eventingManager:         manager,
+		kubeClient:              kubeClient,
+		scheme:                  scheme,
+		recorder:                recorder,
+		subManagerFactory:       subManagerFactory,
+		natsSubManager:          nil,
+		isNATSSubManagerStarted: false,
 	}
 }
 
@@ -93,7 +104,11 @@ func NewReconciler(
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=nats,verbs=get;list;watch
 //+kubebuilder:rbac:groups="applicationconnector.kyma-project.io",resources=applications,verbs=get;list;watch;update;patch;create;delete
 //+kubebuilder:rbac:groups="eventing.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
+// +kubebuilder:rbac:groups=eventing.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="operator.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
+// +kubebuilder:rbac:groups=operator.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
+// Generate required RBAC to emit kubernetes events in the controller.
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -154,6 +169,11 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 		return ctrl.Result{}, nil
 	}
 
+	log.Info("handling Eventing deletion...")
+	if err := r.stopNATSSubManager(true, log); err != nil {
+		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+	}
+
 	// TODO: Implement me, this is a dummy implementation for testing.
 
 	return r.removeFinalizer(ctx, eventing)
@@ -201,6 +221,11 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.GetNATSBackend().Type, log)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
+	}
+
+	// start NATS subscription manager
+	if err := r.reconcileNATSSubManager(eventing, log); err != nil {
+		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 
 	return r.handleEventingState(ctx, deployment, eventing, log)
