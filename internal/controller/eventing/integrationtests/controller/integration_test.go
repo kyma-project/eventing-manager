@@ -481,6 +481,15 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 
 			// create Eventing CR
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+
+			defer func() {
+				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
+					testEnvironment.EnsureDeploymentDeletion(t, tc.givenEventing.Name, givenNamespace)
+				}
+				testEnvironment.EnsureK8sResourceDeleted(t, nats)
+			}()
+
 			// check Eventing CR status.
 			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(matchers.HaveStatusReady())
 

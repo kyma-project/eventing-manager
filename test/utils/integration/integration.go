@@ -328,7 +328,7 @@ func (env TestEnvironment) GetEventingAssert(g *gomega.GomegaWithT,
 			return nil
 		}
 		return gotEventing
-	}, BigTimeOut, SmallPollingInterval)
+	}, BigTimeOut, BigPollingInterval)
 }
 
 func (env TestEnvironment) EnsureNamespaceCreation(t *testing.T, namespace string) {
