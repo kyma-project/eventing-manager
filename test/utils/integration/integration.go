@@ -60,7 +60,7 @@ const (
 	namespacePrefixLength    = 5
 	TwoMinTimeOut            = 120 * time.Second
 	BigPollingInterval       = 3 * time.Second
-	BigTimeOut               = 30 * time.Second
+	BigTimeOut               = 60 * time.Second
 	SmallTimeOut             = 5 * time.Second
 	SmallPollingInterval     = 1 * time.Second
 	EventTypePrefix          = "prefix"
