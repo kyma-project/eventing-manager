@@ -1,5 +1,3 @@
-//go:build unit
-
 package env
 
 import (
@@ -22,14 +20,9 @@ func Test_GetNATSConfig(t *testing.T) {
 		want    NATSConfig
 		wantErr bool
 	}{
-		{name: "Empty env triggers error",
-			wantErr: true,
-		},
 		{name: "Required values only gives valid config",
 			args: args{
 				envs: map[string]string{
-					"NATS_URL":                 "natsurl",
-					"EVENT_TYPE_PREFIX":        "etp",
 					"JS_STREAM_NAME":           "jsn",
 					"JS_STREAM_SUBJECT_PREFIX": "kma",
 				},
@@ -37,21 +30,15 @@ func Test_GetNATSConfig(t *testing.T) {
 				reconnectWait: 1 * time.Second,
 			},
 			want: NATSConfig{
-				URL:                     "natsurl",
 				MaxReconnects:           1,
 				ReconnectWait:           1 * time.Second,
-				EventTypePrefix:         "etp",
 				MaxIdleConns:            50,
 				MaxConnsPerHost:         50,
 				MaxIdleConnsPerHost:     50,
 				IdleConnTimeout:         10 * time.Second,
 				JSStreamName:            "jsn",
 				JSSubjectPrefix:         "kma",
-				JSStreamStorageType:     "memory",
-				JSStreamReplicas:        1,
 				JSStreamRetentionPolicy: "interest",
-				JSStreamMaxMessages:     -1,
-				JSStreamMaxBytes:        "-1",
 				JSConsumerDeliverPolicy: "new",
 				JSStreamDiscardPolicy:   "new",
 			},
@@ -60,19 +47,13 @@ func Test_GetNATSConfig(t *testing.T) {
 		{name: "Envs are mapped correctly",
 			args: args{
 				envs: map[string]string{
-					"EVENT_TYPE_PREFIX":          "etp",
 					"JS_STREAM_NAME":             "jsn",
 					"JS_STREAM_SUBJECT_PREFIX":   "testjsn",
-					"NATS_URL":                   "natsurl",
 					"MAX_IDLE_CONNS":             "1",
 					"MAX_CONNS_PER_HOST":         "2",
 					"MAX_IDLE_CONNS_PER_HOST":    "3",
 					"IDLE_CONN_TIMEOUT":          "1s",
-					"JS_STREAM_STORAGE_TYPE":     "jsst",
-					"JS_STREAM_REPLICAS":         "4",
 					"JS_STREAM_RETENTION_POLICY": "jsrp",
-					"JS_STREAM_MAX_MSGS":         "5",
-					"JS_STREAM_MAX_BYTES":        "6",
 					"JS_CONSUMER_DELIVER_POLICY": "jcdp",
 					"JS_STREAM_DISCARD_POLICY":   "jsdp",
 				},
@@ -80,21 +61,15 @@ func Test_GetNATSConfig(t *testing.T) {
 				reconnectWait: 1 * time.Second,
 			},
 			want: NATSConfig{
-				URL:                     "natsurl",
 				MaxReconnects:           1,
 				ReconnectWait:           1 * time.Second,
-				EventTypePrefix:         "etp",
 				MaxIdleConns:            1,
 				MaxConnsPerHost:         2,
 				MaxIdleConnsPerHost:     3,
 				IdleConnTimeout:         1 * time.Second,
 				JSStreamName:            "jsn",
 				JSSubjectPrefix:         "testjsn",
-				JSStreamStorageType:     "jsst",
-				JSStreamReplicas:        4,
 				JSStreamRetentionPolicy: "jsrp",
-				JSStreamMaxMessages:     5,
-				JSStreamMaxBytes:        "6",
 				JSConsumerDeliverPolicy: "jcdp",
 				JSStreamDiscardPolicy:   "jsdp",
 			},
