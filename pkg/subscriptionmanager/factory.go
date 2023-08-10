@@ -4,7 +4,7 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	eclogger "github.com/kyma-project/kyma/components/eventing-controller/logger"
-	backendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
+	ecbackendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
 	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager/jetstream"
 	"k8s.io/client-go/rest"
@@ -22,14 +22,14 @@ type ManagerFactory interface {
 type Factory struct {
 	k8sRestCfg       *rest.Config
 	metricsAddress   string
-	metricsCollector *backendmetrics.Collector
+	metricsCollector *ecbackendmetrics.Collector
 	logger           *eclogger.Logger
 }
 
 func NewFactory(
 	k8sRestCfg *rest.Config,
 	metricsAddress string,
-	metricsCollector *backendmetrics.Collector,
+	metricsCollector *ecbackendmetrics.Collector,
 	logger *eclogger.Logger) *Factory {
 	return &Factory{
 		k8sRestCfg:       k8sRestCfg,

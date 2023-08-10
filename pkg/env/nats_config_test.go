@@ -11,29 +11,29 @@ import (
 func Test_ToECENVNATSConfig(t *testing.T) {
 	// given
 	givenConfig := NATSConfig{
-		URL:                     "test123",
+		URL:                     "http://eventing-nats.svc.cluster.local",
 		MaxReconnects:           10,
-		ReconnectWait:           11,
-		EventTypePrefix:         "12",
-		MaxIdleConns:            13,
-		MaxConnsPerHost:         14,
-		MaxIdleConnsPerHost:     15,
-		IdleConnTimeout:         16,
-		JSStreamName:            "17",
-		JSSubjectPrefix:         "18",
+		ReconnectWait:           100,
+		EventTypePrefix:         "sap.kyma.custom",
+		MaxIdleConns:            5,
+		MaxConnsPerHost:         10,
+		MaxIdleConnsPerHost:     10,
+		IdleConnTimeout:         100,
+		JSStreamName:            "kyma",
+		JSSubjectPrefix:         "kyma",
 		JSStreamStorageType:     "File",
-		JSStreamReplicas:        20,
-		JSStreamRetentionPolicy: "21",
-		JSStreamMaxMessages:     22,
-		JSStreamMaxBytes:        "23",
-		JSStreamMaxMsgsPerTopic: 24,
-		JSStreamDiscardPolicy:   "25",
-		JSConsumerDeliverPolicy: "26",
+		JSStreamReplicas:        3,
+		JSStreamRetentionPolicy: "Interest",
+		JSStreamMaxMessages:     100000,
+		JSStreamMaxBytes:        "700Mi",
+		JSStreamMaxMsgsPerTopic: 10000,
+		JSStreamDiscardPolicy:   "DiscardNew",
+		JSConsumerDeliverPolicy: "DeliverNew",
 	}
 
 	givenEventing := utils.NewEventingCR(
-		utils.WithEventingStreamData("Memory", "650M", 99, 98),
-		utils.WithEventingEventTypePrefix("one.two.three"),
+		utils.WithEventingStreamData("Memory", "650M", 5, 5000),
+		utils.WithEventingEventTypePrefix("sap.kyma.custom"),
 	)
 
 	// when

@@ -7,7 +7,7 @@ import (
 )
 
 func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
-	if r.NATSSubManager == nil {
+	if r.natsSubManager == nil {
 		// create instance of NATS subscription manager
 		natsSubManager := r.subManagerFactory.NewJetStreamManager(*eventing, r.eventingManager.GetNATSConfig())
 
@@ -18,7 +18,7 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 
 		log.Info("NATS subscription-manager initialized")
 		// save instance only when init is successful.
-		r.NATSSubManager = natsSubManager
+		r.natsSubManager = natsSubManager
 	}
 
 	if r.isNATSSubManagerStarted {
@@ -30,7 +30,7 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 	defaultSubsConfig := r.eventingManager.GetBackendConfig().
 		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
 
-	if err := r.NATSSubManager.Start(defaultSubsConfig, ecsubscriptionmanager.Params{}); err != nil {
+	if err := r.natsSubManager.Start(defaultSubsConfig, ecsubscriptionmanager.Params{}); err != nil {
 		return err
 	}
 
@@ -43,20 +43,20 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 
 func (r *Reconciler) stopNATSSubManager(runCleanup bool, log *zap.SugaredLogger) error {
 	log.Debug("stopping NATS subscription-manager")
-	if r.NATSSubManager == nil || !r.isNATSSubManagerStarted {
+	if r.natsSubManager == nil || !r.isNATSSubManagerStarted {
 		log.Info("NATS subscription-manager is already stopped!")
 		return nil
 	}
 
 	// stop the subscription manager.
-	if err := r.NATSSubManager.Stop(runCleanup); err != nil {
+	if err := r.natsSubManager.Stop(runCleanup); err != nil {
 		return err
 	}
 
 	log.Info("NATS subscription-manager stopped!")
-	// update flags so it do not try to stop the manager again.
+	// update flags so it does not try to stop the manager again.
 	r.isNATSSubManagerStarted = false
-	r.NATSSubManager = nil
+	r.natsSubManager = nil
 
 	return nil
 }

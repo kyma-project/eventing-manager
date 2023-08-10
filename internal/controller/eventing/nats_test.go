@@ -23,31 +23,31 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 	)
 
 	givenNATSConfig := env.NATSConfig{
-		URL:                     "test123",
+		URL:                     "http://eventing-nats.svc.cluster.local",
 		MaxReconnects:           10,
-		ReconnectWait:           11,
-		EventTypePrefix:         "12",
-		MaxIdleConns:            13,
-		MaxConnsPerHost:         14,
-		MaxIdleConnsPerHost:     15,
-		IdleConnTimeout:         16,
-		JSStreamName:            "17",
-		JSSubjectPrefix:         "18",
-		JSStreamStorageType:     "19",
-		JSStreamReplicas:        20,
-		JSStreamRetentionPolicy: "21",
-		JSStreamMaxMessages:     22,
-		JSStreamMaxBytes:        "23",
-		JSStreamMaxMsgsPerTopic: 24,
-		JSStreamDiscardPolicy:   "25",
-		JSConsumerDeliverPolicy: "26",
+		ReconnectWait:           100,
+		EventTypePrefix:         "sap.kyma.custom",
+		MaxIdleConns:            5,
+		MaxConnsPerHost:         10,
+		MaxIdleConnsPerHost:     10,
+		IdleConnTimeout:         100,
+		JSStreamName:            "kyma",
+		JSSubjectPrefix:         "kyma",
+		JSStreamStorageType:     "File",
+		JSStreamReplicas:        3,
+		JSStreamRetentionPolicy: "Interest",
+		JSStreamMaxMessages:     100000,
+		JSStreamMaxBytes:        "700Mi",
+		JSStreamMaxMsgsPerTopic: 10000,
+		JSStreamDiscardPolicy:   "DiscardNew",
+		JSConsumerDeliverPolicy: "DeliverNew",
 	}
 
 	givenBackendConfig := &env.BackendConfig{
 		DefaultSubscriptionConfig: env.DefaultSubscriptionConfig{
-			MaxInFlightMessages:   55,
-			DispatcherRetryPeriod: 56,
-			DispatcherMaxRetries:  57,
+			MaxInFlightMessages:   6,
+			DispatcherRetryPeriod: 30,
+			DispatcherMaxRetries:  100,
 		},
 	}
 
@@ -61,7 +61,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 		wantAssertCheck              bool
 	}{
 		{
-			name:                         "should do nothing if NATSSubManager is already started",
+			name:                         "it should do nothing because NATSSubManager is already started",
 			givenIsNATSSubManagerStarted: true,
 			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
 				return new(ecsubmanagermocks.Manager)
@@ -74,7 +74,8 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			},
 		},
 		{
-			name:                         "should init and start NATSSubManager",
+			name: "it should initialize and start subscription manager because " +
+				"natsSubManager is not started",
 			givenIsNATSSubManagerStarted: false,
 			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
 				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
@@ -116,9 +117,9 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			testEnv.Reconciler.isNATSSubManagerStarted = tc.givenIsNATSSubManagerStarted
 			testEnv.Reconciler.eventingManager = givenEventingManagerMock
 			testEnv.Reconciler.subManagerFactory = givenManagerFactoryMock
-			testEnv.Reconciler.NATSSubManager = nil
+			testEnv.Reconciler.natsSubManager = nil
 			if givenManagerFactoryMock == nil {
-				testEnv.Reconciler.NATSSubManager = givenNATSSubManagerMock
+				testEnv.Reconciler.natsSubManager = givenNATSSubManagerMock
 			}
 
 			// when
@@ -126,7 +127,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 
 			// then
 			require.NoError(t, err)
-			require.NotNil(t, testEnv.Reconciler.NATSSubManager)
+			require.NotNil(t, testEnv.Reconciler.natsSubManager)
 			require.True(t, testEnv.Reconciler.isNATSSubManagerStarted)
 			if tc.wantAssertCheck {
 				givenNATSSubManagerMock.AssertExpectations(t)
@@ -194,7 +195,7 @@ func Test_stopNATSSubManager(t *testing.T) {
 			givenNATSSubManagerMock := tc.givenNATSSubManagerMock()
 
 			// connect mocks with reconciler.
-			testEnv.Reconciler.NATSSubManager = givenNATSSubManagerMock
+			testEnv.Reconciler.natsSubManager = givenNATSSubManagerMock
 			testEnv.Reconciler.isNATSSubManagerStarted = tc.givenIsNATSSubManagerStarted
 
 			// when
@@ -202,7 +203,7 @@ func Test_stopNATSSubManager(t *testing.T) {
 			// then
 			if tc.wantError == nil {
 				require.NoError(t, err)
-				require.Nil(t, testEnv.Reconciler.NATSSubManager)
+				require.Nil(t, testEnv.Reconciler.natsSubManager)
 				require.False(t, testEnv.Reconciler.isNATSSubManagerStarted)
 			} else {
 				require.Equal(t, tc.wantError.Error(), err.Error())

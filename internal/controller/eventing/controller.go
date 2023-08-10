@@ -60,7 +60,7 @@ type Reconciler struct {
 	scheme                  *runtime.Scheme
 	recorder                record.EventRecorder
 	subManagerFactory       subscriptionmanager.ManagerFactory
-	NATSSubManager          ecsubscriptionmanager.Manager
+	natsSubManager          ecsubscriptionmanager.Manager
 	isNATSSubManagerStarted bool
 }
 
@@ -82,7 +82,7 @@ func NewReconciler(
 		scheme:                  scheme,
 		recorder:                recorder,
 		subManagerFactory:       subManagerFactory,
-		NATSSubManager:          nil,
+		natsSubManager:          nil,
 		isNATSSubManagerStarted: false,
 	}
 }
