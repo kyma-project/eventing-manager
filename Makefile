@@ -117,6 +117,8 @@ endif
 
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+	kubectl apply -f https://raw.githubusercontent.com/kyma-project/kyma/main/installation/resources/crds/eventing/subscriptions.eventing.kyma-project.io.crd.yaml
+	kubectl apply -f https://raw.githubusercontent.com/kyma-project/kyma/main/installation/resources/crds/application-connector/applications.applicationconnector.crd.yaml
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 .PHONY: uninstall

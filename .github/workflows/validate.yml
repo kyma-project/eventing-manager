@@ -1,0 +1,31 @@
+name: validate
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Sync GO dependencies
+        run: |
+          go mod tidy
+          go mod vendor
+      - name: Run tests
+        run: |
+          make test-only
+  validate-crd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: nolar/setup-k3d-k3s@v1
+        with:
+          # This is the Kubernetes version used by k3d. See https://kubernetes.io/releases/
+          version: v1.26.5
+      - name: apply crd
+        run: kubectl apply -f config/crd/bases/operator.kyma-project.io_eventings.yaml

@@ -73,6 +73,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			wantMatches: gomega.And(
 				matchers.HaveStatusError(),
 				matchers.HaveNATSAvailableConditionNotAvailable(),
+				matchers.HaveFinalizer(),
 			),
 		},
 		{
@@ -92,6 +93,7 @@ func Test_CreateEventingCR(t *testing.T) {
 				matchers.HaveStatusReady(),
 				matchers.HaveNATSAvailableConditionAvailable(),
 				matchers.HavePublisherProxyReadyConditionDeployed(),
+				matchers.HaveFinalizer(),
 			),
 			wantEnsureK8sObjects: true,
 		},
@@ -111,6 +113,7 @@ func Test_CreateEventingCR(t *testing.T) {
 				matchers.HaveStatusProcessing(),
 				matchers.HaveNATSAvailableConditionAvailable(),
 				matchers.HavePublisherProxyReadyConditionProcessing(),
+				matchers.HaveFinalizer(),
 			),
 		},
 	}
@@ -495,6 +498,15 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 
 			// create Eventing CR
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+
+			defer func() {
+				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
+					testEnvironment.EnsureDeploymentDeletion(t, tc.givenEventing.Name, givenNamespace)
+				}
+				testEnvironment.EnsureK8sResourceDeleted(t, nats)
+			}()
+
 			// check Eventing CR status.
 			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(matchers.HaveStatusReady())
 
