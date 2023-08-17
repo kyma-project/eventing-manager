@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/internal/controller/eventing/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -12,11 +15,11 @@ import (
 	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
 	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
 	"github.com/kyma-project/eventing-manager/test/utils"
+	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_reconcileNATSSubManager(t *testing.T) {
@@ -270,6 +273,94 @@ func Test_stopNATSSubManager(t *testing.T) {
 	}
 }
 
+func Test_GetNatsConfig(t *testing.T) {
+	// Define a list of test cases
+	testCases := []struct {
+		name               string
+		eventing           *v1alpha1.Eventing
+		expectedConfig     *env.NATSConfig
+		givenNatsResources []natsv1alpha1.NATS
+		expectedError      error
+	}{
+		{
+			name: "Update NATSConfig",
+			eventing: utils.NewEventingCR(
+				utils.WithEventingCRName("test-eventing"),
+				utils.WithEventingCRNamespace("test-namespace"),
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("File", "700Mi", 2, 1000),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			givenNatsResources: []natsv1alpha1.NATS{
+				*natstestutils.NewNATSCR(
+					natstestutils.WithNATSCRName("test-nats"),
+					natstestutils.WithNATSCRNamespace("test-namespace"),
+				),
+			},
+			expectedConfig: &env.NATSConfig{
+				URL:                     "nats://test-nats.test-namespace.svc.cluster.local:4222",
+				EventTypePrefix:         "test-prefix",
+				JSStreamStorageType:     "File",
+				JSStreamReplicas:        2,
+				JSStreamMaxBytes:        "700Mi",
+				JSStreamMaxMsgsPerTopic: 1000,
+				MaxReconnects:           10,
+				ReconnectWait:           3 * time.Second,
+				MaxIdleConns:            50,
+				MaxConnsPerHost:         50,
+				MaxIdleConnsPerHost:     50,
+				IdleConnTimeout:         10 * time.Second,
+				JSStreamName:            "sap",
+				JSSubjectPrefix:         "",
+				JSStreamRetentionPolicy: "interest",
+				JSStreamDiscardPolicy:   "new",
+				JSConsumerDeliverPolicy: "new",
+				JSStreamMaxMessages:     -1,
+			},
+			expectedError: nil,
+		},
+		{
+			name: "Error getting NATS URL",
+			eventing: utils.NewEventingCR(
+				utils.WithEventingCRName("test-eventing"),
+				utils.WithEventingCRNamespace("test-namespace"),
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "700Mi", 2, 1000),
+			),
+			givenNatsResources: nil,
+			expectedConfig:     nil,
+			expectedError:      fmt.Errorf("failed to get NATS URL"),
+		},
+	}
+
+	opts := &options.Options{}
+	require.NoError(t, opts.Parse())
+	// run test cases
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			ctx := context.Background()
+			kubeClient := new(k8smocks.Client)
+			kubeClient.On("GetNATSResources", ctx, tc.eventing.Namespace).Return(&natsv1alpha1.NATSList{
+				Items: tc.givenNatsResources,
+			}, tc.expectedError)
+
+			natsConfigHandler := NatsConfigHandlerImpl{
+				kubeClient: kubeClient,
+				opts:       opts,
+			}
+
+			// when
+			natsConfig, err := natsConfigHandler.GetNatsConfig(ctx, *tc.eventing)
+
+			// then
+			require.Equal(t, tc.expectedError, err)
+			require.Equal(t, tc.expectedConfig, natsConfig)
+		})
+	}
+}
+
 func Test_getNATSUrl(t *testing.T) {
 	testCases := []struct {
 		name                string
@@ -309,7 +400,9 @@ func Test_getNATSUrl(t *testing.T) {
 		},
 	}
 
+	// run test cases
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// given
 			ctx := context.Background()
