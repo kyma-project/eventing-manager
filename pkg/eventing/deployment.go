@@ -61,13 +61,13 @@ func newNATSPublisherDeployment(
 func newEventMeshPublisherDeployment(
 	eventing *v1alpha1.Eventing,
 	publisherConfig env.PublisherConfig) *appsv1.Deployment {
-	publishername := GetEPPDeploymentName(*eventing)
+	publisherName := GetEPPDeploymentName(*eventing)
 	return newDeployment(
 		eventing,
 		publisherConfig,
-		WithLabels(publishername, v1alpha1.EventMeshBackendType),
+		WithLabels(publisherName, v1alpha1.EventMeshBackendType),
 		WithContainers(publisherConfig, eventing),
-		WithBEBEnvVars(publishername, publisherConfig),
+		WithBEBEnvVars(publisherName, publisherConfig),
 		WithLogEnvVars(publisherConfig, eventing),
 	)
 }
