@@ -103,12 +103,11 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 			em := &EventingManager{
 				Client:        mockClient,
 				kubeClient:    kubeClient,
-				natsConfig:    env.NATSConfig{},
 				backendConfig: env.BackendConfig{},
 			}
 
 			// when
-			deployment, err := em.applyPublisherProxyDeployment(ctx, tc.givenEventing, tc.givenBackendType)
+			deployment, err := em.applyPublisherProxyDeployment(ctx, tc.givenEventing, &env.NATSConfig{}, tc.givenBackendType)
 
 			// then
 			require.Equal(t, tc.wantErr, err)
@@ -188,131 +187,6 @@ func Test_IsNATSAvailable(t *testing.T) {
 		})
 	}
 
-}
-
-func Test_getNATSUrl(t *testing.T) {
-	testCases := []struct {
-		name                string
-		givenNatsResources  []natsv1alpha1.NATS
-		givenNamespace      string
-		want                string
-		getNATSResourcesErr error
-		wantErr             error
-	}{
-		{
-			name: "NATS resource exists",
-			givenNatsResources: []natsv1alpha1.NATS{
-				*natstestutils.NewNATSCR(
-					natstestutils.WithNATSCRName("test-nats"),
-					natstestutils.WithNATSCRNamespace("test-namespace"),
-				),
-			},
-			givenNamespace: "test-namespace",
-			want:           "nats://test-nats.test-namespace.svc.cluster.local:4222",
-			wantErr:        nil,
-		},
-		{
-			name:                "NATS resource doesn't exist",
-			givenNatsResources:  []natsv1alpha1.NATS{},
-			givenNamespace:      "test-namespace",
-			want:                "",
-			getNATSResourcesErr: nil,
-			wantErr:             fmt.Errorf("NATS CR is not found to build NATS server URL"),
-		},
-		{
-			name:                "NATS resource does not exist",
-			givenNatsResources:  nil,
-			givenNamespace:      "test-namespace",
-			want:                "",
-			getNATSResourcesErr: fmt.Errorf("NATS CR is not found to build NATS server URL"),
-			wantErr:             fmt.Errorf("NATS CR is not found to build NATS server URL"),
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// given
-			ctx := context.Background()
-			kubeClient := new(k8smocks.Client)
-			kubeClient.On("GetNATSResources", ctx, tc.givenNamespace).Return(&natsv1alpha1.NATSList{
-				Items: tc.givenNatsResources,
-			}, tc.getNATSResourcesErr)
-
-			em := EventingManager{
-				kubeClient: kubeClient,
-			}
-
-			// when
-			url, err := em.getNATSUrl(ctx, tc.givenNamespace)
-
-			// then
-			require.Equal(t, tc.wantErr, err)
-			require.Equal(t, tc.want, url)
-		})
-	}
-}
-
-func Test_UpdateNatsConfig(t *testing.T) {
-	// Define a list of test cases
-	testCases := []struct {
-		name               string
-		eventing           *v1alpha1.Eventing
-		expectedConfig     env.NATSConfig
-		givenNatsResources []natsv1alpha1.NATS
-		expectedError      error
-	}{
-		{
-			name: "Update NATSConfig",
-			eventing: testutils.NewEventingCR(
-				testutils.WithEventingCRName("test-eventing"),
-				testutils.WithEventingCRNamespace("test-namespace"),
-			),
-			givenNatsResources: []natsv1alpha1.NATS{
-				*natstestutils.NewNATSCR(
-					natstestutils.WithNATSCRName("test-nats"),
-					natstestutils.WithNATSCRNamespace("test-namespace"),
-				),
-			},
-			expectedConfig: env.NATSConfig{
-				URL: "nats://test-nats.test-namespace.svc.cluster.local:4222",
-			},
-			expectedError: nil,
-		},
-		{
-			name: "Error getting NATS URL",
-			eventing: testutils.NewEventingCR(
-				testutils.WithEventingCRName("test-eventing"),
-				testutils.WithEventingCRNamespace("test-namespace"),
-				testutils.WithEventingCRMinimal(),
-				testutils.WithEventingStreamData("Memory", "700Mi", 2, 1000),
-			),
-			givenNatsResources: nil,
-			expectedError:      fmt.Errorf("failed to get NATS URL"),
-		},
-	}
-
-	// Iterate over the test cases and run sub-tests
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// given
-			ctx := context.Background()
-			kubeClient := new(k8smocks.Client)
-			kubeClient.On("GetNATSResources", ctx, tc.eventing.Namespace).Return(&natsv1alpha1.NATSList{
-				Items: tc.givenNatsResources,
-			}, tc.expectedError)
-
-			em := &EventingManager{
-				kubeClient: kubeClient,
-			}
-
-			// when
-			err := em.setUrlToNatsConfig(ctx, tc.eventing)
-
-			// then
-			require.Equal(t, tc.expectedError, err)
-			require.Equal(t, tc.expectedConfig, em.natsConfig)
-		})
-	}
 }
 
 func Test_ConvertECBackendType(t *testing.T) {

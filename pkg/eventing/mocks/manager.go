@@ -27,25 +27,25 @@ func (_m *Manager) EXPECT() *Manager_Expecter {
 	return &Manager_Expecter{mock: &_m.Mock}
 }
 
-// DeployPublisherProxy provides a mock function with given fields: ctx, _a1, backendType
-func (_m *Manager) DeployPublisherProxy(ctx context.Context, _a1 *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*v1.Deployment, error) {
-	ret := _m.Called(ctx, _a1, backendType)
+// DeployPublisherProxy provides a mock function with given fields: ctx, _a1, natsConfig, backendType
+func (_m *Manager) DeployPublisherProxy(ctx context.Context, _a1 *v1alpha1.Eventing, natsConfig *env.NATSConfig, backendType v1alpha1.BackendType) (*v1.Deployment, error) {
+	ret := _m.Called(ctx, _a1, natsConfig, backendType)
 
 	var r0 *v1.Deployment
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Eventing, v1alpha1.BackendType) (*v1.Deployment, error)); ok {
-		return rf(ctx, _a1, backendType)
+	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Eventing, *env.NATSConfig, v1alpha1.BackendType) (*v1.Deployment, error)); ok {
+		return rf(ctx, _a1, natsConfig, backendType)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Eventing, v1alpha1.BackendType) *v1.Deployment); ok {
-		r0 = rf(ctx, _a1, backendType)
+	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Eventing, *env.NATSConfig, v1alpha1.BackendType) *v1.Deployment); ok {
+		r0 = rf(ctx, _a1, natsConfig, backendType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Deployment)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *v1alpha1.Eventing, v1alpha1.BackendType) error); ok {
-		r1 = rf(ctx, _a1, backendType)
+	if rf, ok := ret.Get(1).(func(context.Context, *v1alpha1.Eventing, *env.NATSConfig, v1alpha1.BackendType) error); ok {
+		r1 = rf(ctx, _a1, natsConfig, backendType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -61,14 +61,15 @@ type Manager_DeployPublisherProxy_Call struct {
 // DeployPublisherProxy is a helper method to define mock.On call
 //   - ctx context.Context
 //   - _a1 *v1alpha1.Eventing
+//   - natsConfig *env.NATSConfig
 //   - backendType v1alpha1.BackendType
-func (_e *Manager_Expecter) DeployPublisherProxy(ctx interface{}, _a1 interface{}, backendType interface{}) *Manager_DeployPublisherProxy_Call {
-	return &Manager_DeployPublisherProxy_Call{Call: _e.mock.On("DeployPublisherProxy", ctx, _a1, backendType)}
+func (_e *Manager_Expecter) DeployPublisherProxy(ctx interface{}, _a1 interface{}, natsConfig interface{}, backendType interface{}) *Manager_DeployPublisherProxy_Call {
+	return &Manager_DeployPublisherProxy_Call{Call: _e.mock.On("DeployPublisherProxy", ctx, _a1, natsConfig, backendType)}
 }
 
-func (_c *Manager_DeployPublisherProxy_Call) Run(run func(ctx context.Context, _a1 *v1alpha1.Eventing, backendType v1alpha1.BackendType)) *Manager_DeployPublisherProxy_Call {
+func (_c *Manager_DeployPublisherProxy_Call) Run(run func(ctx context.Context, _a1 *v1alpha1.Eventing, natsConfig *env.NATSConfig, backendType v1alpha1.BackendType)) *Manager_DeployPublisherProxy_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*v1alpha1.Eventing), args[2].(v1alpha1.BackendType))
+		run(args[0].(context.Context), args[1].(*v1alpha1.Eventing), args[2].(*env.NATSConfig), args[3].(v1alpha1.BackendType))
 	})
 	return _c
 }
@@ -78,7 +79,7 @@ func (_c *Manager_DeployPublisherProxy_Call) Return(_a0 *v1.Deployment, _a1 erro
 	return _c
 }
 
-func (_c *Manager_DeployPublisherProxy_Call) RunAndReturn(run func(context.Context, *v1alpha1.Eventing, v1alpha1.BackendType) (*v1.Deployment, error)) *Manager_DeployPublisherProxy_Call {
+func (_c *Manager_DeployPublisherProxy_Call) RunAndReturn(run func(context.Context, *v1alpha1.Eventing, *env.NATSConfig, v1alpha1.BackendType) (*v1.Deployment, error)) *Manager_DeployPublisherProxy_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -166,47 +167,6 @@ func (_c *Manager_GetBackendConfig_Call) Return(_a0 *env.BackendConfig) *Manager
 }
 
 func (_c *Manager_GetBackendConfig_Call) RunAndReturn(run func() *env.BackendConfig) *Manager_GetBackendConfig_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetNATSConfig provides a mock function with given fields:
-func (_m *Manager) GetNATSConfig() env.NATSConfig {
-	ret := _m.Called()
-
-	var r0 env.NATSConfig
-	if rf, ok := ret.Get(0).(func() env.NATSConfig); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(env.NATSConfig)
-	}
-
-	return r0
-}
-
-// Manager_GetNATSConfig_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNATSConfig'
-type Manager_GetNATSConfig_Call struct {
-	*mock.Call
-}
-
-// GetNATSConfig is a helper method to define mock.On call
-func (_e *Manager_Expecter) GetNATSConfig() *Manager_GetNATSConfig_Call {
-	return &Manager_GetNATSConfig_Call{Call: _e.mock.On("GetNATSConfig")}
-}
-
-func (_c *Manager_GetNATSConfig_Call) Run(run func()) *Manager_GetNATSConfig_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Manager_GetNATSConfig_Call) Return(_a0 env.NATSConfig) *Manager_GetNATSConfig_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Manager_GetNATSConfig_Call) RunAndReturn(run func() env.NATSConfig) *Manager_GetNATSConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }

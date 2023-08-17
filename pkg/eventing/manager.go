@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	natsClientPort    = 4222
 	cpuUtilization    = 60
 	memoryUtilization = 60
 )
@@ -32,16 +31,18 @@ var (
 //go:generate mockery --name=Manager --outpkg=mocks --case=underscore
 type Manager interface {
 	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
-	DeployPublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
+	DeployPublisherProxy(
+		ctx context.Context,
+		eventing *v1alpha1.Eventing,
+		natsConfig *env.NATSConfig,
+		backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
 	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
-	GetNATSConfig() env.NATSConfig
 	GetBackendConfig() *env.BackendConfig
 }
 
 type EventingManager struct {
 	ctx context.Context
 	client.Client
-	natsConfig    env.NATSConfig
 	backendConfig env.BackendConfig
 	kubeClient    k8s.Client
 	logger        *logger.Logger
@@ -52,7 +53,6 @@ func NewEventingManager(
 	ctx context.Context,
 	client client.Client,
 	kubeClient k8s.Client,
-	natsConfig env.NATSConfig,
 	logger *logger.Logger,
 	recorder record.EventRecorder,
 ) Manager {
@@ -61,7 +61,6 @@ func NewEventingManager(
 	return EventingManager{
 		ctx:           ctx,
 		Client:        client,
-		natsConfig:    natsConfig,
 		backendConfig: backendConfig,
 		kubeClient:    kubeClient,
 		logger:        logger,
@@ -69,16 +68,13 @@ func NewEventingManager(
 	}
 }
 
-func (em EventingManager) GetNATSConfig() env.NATSConfig {
-	return em.natsConfig
-}
-
-func (em EventingManager) DeployPublisherProxy(ctx context.Context, eventing *v1alpha1.Eventing, backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
+func (em EventingManager) DeployPublisherProxy(
+	ctx context.Context,
+	eventing *v1alpha1.Eventing,
+	natsConfig *env.NATSConfig,
+	backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	// update EC reconciler NATS and public config from the data in the eventing CR
-	if err := em.setUrlToNatsConfig(ctx, eventing); err != nil {
-		return nil, err
-	}
-	deployment, err := em.applyPublisherProxyDeployment(ctx, eventing, backendType)
+	deployment, err := em.applyPublisherProxyDeployment(ctx, eventing, natsConfig, backendType)
 	if err != nil {
 		return nil, err
 	}
@@ -88,12 +84,13 @@ func (em EventingManager) DeployPublisherProxy(ctx context.Context, eventing *v1
 func (em *EventingManager) applyPublisherProxyDeployment(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
+	natsConfig *env.NATSConfig,
 	backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	var desiredPublisher *appsv1.Deployment
 
 	switch backendType {
 	case v1alpha1.NatsBackendType:
-		desiredPublisher = newNATSPublisherDeployment(eventing, em.natsConfig, em.backendConfig.PublisherConfig)
+		desiredPublisher = newNATSPublisherDeployment(eventing, *natsConfig, em.backendConfig.PublisherConfig)
 	case v1alpha1.EventMeshBackendType:
 		desiredPublisher = newEventMeshPublisherDeployment(eventing, em.backendConfig.PublisherConfig)
 	default:
@@ -139,27 +136,7 @@ func (em EventingManager) IsNATSAvailable(ctx context.Context, namespace string)
 	return false, nil
 }
 
-func (em *EventingManager) getNATSUrl(ctx context.Context, namespace string) (string, error) {
-	natsList, err := em.kubeClient.GetNATSResources(ctx, namespace)
-	if err != nil {
-		return "", err
-	}
-	for _, nats := range natsList.Items {
-		return fmt.Sprintf("nats://%s.%s.svc.cluster.local:%d", nats.Name, nats.Namespace, natsClientPort), nil
-	}
-	return "", fmt.Errorf("NATS CR is not found to build NATS server URL")
-}
-
-func (em *EventingManager) setUrlToNatsConfig(ctx context.Context, eventing *v1alpha1.Eventing) error {
-	natsUrl, err := em.getNATSUrl(ctx, eventing.Namespace)
-	if err != nil {
-		return err
-	}
-	em.natsConfig.URL = natsUrl
-	return nil
-}
-
-func (em *EventingManager) GetBackendConfig() *env.BackendConfig {
+func (em EventingManager) GetBackendConfig() *env.BackendConfig {
 	return &em.backendConfig
 }
 

@@ -147,10 +147,6 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	}
 	recorder := ctrlMgr.GetEventRecorderFor("eventing-manager-test")
 
-	// setup reconciler
-	natsConfig := env.NATSConfig{
-		JSStreamName: JSStreamName,
-	}
 	os.Setenv("WEBHOOK_TOKEN_ENDPOINT", "https://oauth2.ev-manager.kymatunas.shoot.canary.k8s-hana.ondemand.com/oauth2/token")
 	os.Setenv("DOMAIN", "my.test.domain")
 
@@ -158,7 +154,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), "eventing-manager")
 
 	// create eventing manager instance.
-	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, natsConfig, ctrLogger, recorder)
+	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, ctrLogger, recorder)
 
 	// define JetStream subscription manager mock.
 	jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
@@ -178,6 +174,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 		ctrlMgr.GetEventRecorderFor("eventing-manager-test"),
 		eventingManager,
 		subManagerFactoryMock,
+		opts,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(ctrlMgr); err != nil {

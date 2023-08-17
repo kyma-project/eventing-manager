@@ -502,7 +502,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			defer func() {
 				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, tc.givenEventing.Name, givenNamespace)
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, nats)
 			}()
