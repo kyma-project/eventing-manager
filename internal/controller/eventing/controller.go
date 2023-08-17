@@ -19,12 +19,11 @@ package eventing
 import (
 	"context"
 	"fmt"
-
-	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
-
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
+	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -45,6 +44,7 @@ const (
 	ManagedByLabelKey         = "app.kubernetes.io/managed-by"
 	ManagedByLabelValue       = ControllerName
 	NatsServerNotAvailableMsg = "NATS server is not available"
+	natsClientPort            = 4222
 )
 
 // Reconciler reconciles an Eventing object
@@ -62,6 +62,7 @@ type Reconciler struct {
 	subManagerFactory       subscriptionmanager.ManagerFactory
 	natsSubManager          ecsubscriptionmanager.Manager
 	isNATSSubManagerStarted bool
+	natsConfigHandler       NatsConfigHandler
 }
 
 func NewReconciler(
@@ -72,6 +73,7 @@ func NewReconciler(
 	recorder record.EventRecorder,
 	manager eventing.Manager,
 	subManagerFactory subscriptionmanager.ManagerFactory,
+	opts *options.Options,
 ) *Reconciler {
 	return &Reconciler{
 		Client:                  client,
@@ -84,6 +86,7 @@ func NewReconciler(
 		subManagerFactory:       subManagerFactory,
 		natsSubManager:          nil,
 		isNATSSubManagerStarted: false,
+		natsConfigHandler:       NewNatsConfigHandler(kubeClient, opts),
 	}
 }
 
@@ -215,7 +218,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	// set NATSAvailable condition to true and update status
 	eventing.Status.SetNATSAvailableConditionToTrue()
 
-	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.GetNATSBackend().Type, log)
+	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.GetNATSBackend().Type)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
@@ -242,10 +245,14 @@ func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *eventi
 func (r *Reconciler) handlePublisherProxy(
 	ctx context.Context,
 	eventing *eventingv1alpha1.Eventing,
-	backendType eventingv1alpha1.BackendType,
-	log *zap.SugaredLogger) (*v1.Deployment, error) {
+	backendType eventingv1alpha1.BackendType) (*v1.Deployment, error) {
+	// get nats config with NATS server url
+	natsConfig, err := r.natsConfigHandler.GetNatsConfig(ctx, *eventing)
+	if err != nil {
+		return nil, err
+	}
 	// CreateOrUpdate deployment for eventing publisher proxy deployment
-	deployment, err := r.eventingManager.DeployPublisherProxy(ctx, eventing, backendType)
+	deployment, err := r.eventingManager.DeployPublisherProxy(ctx, eventing, natsConfig, backendType)
 	if err != nil {
 		return nil, err
 	}
@@ -253,12 +260,6 @@ func (r *Reconciler) handlePublisherProxy(
 	// deploy publisher proxy resources.
 	if err = r.eventingManager.DeployPublisherProxyResources(ctx, eventing, deployment); err != nil {
 		return deployment, err
-	}
-
-	// CreateOrUpdate HPA for publisher proxy deployment
-	err = r.eventingManager.DeployHPA(ctx, deployment, eventing, 60, 60)
-	if err != nil {
-		return deployment, fmt.Errorf("failed to create or update HPA for publisher proxy deployment: %s", err)
 	}
 
 	return deployment, nil

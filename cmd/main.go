@@ -31,7 +31,6 @@ import (
 
 	"github.com/go-logr/zapr"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
-	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	backendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
@@ -98,9 +97,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	// Set controller core logger.
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 
-	// prepare the setup logger
-	setupLogger := ctrLogger.WithContext().Named("setup")
-
 	// setup ctrl manager
 	k8sRestCfg := ctrl.GetConfigOrDie()
 	mgr, err := ctrl.NewManager(k8sRestCfg, ctrl.Options{
@@ -117,11 +113,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		os.Exit(1)
 	}
 
-	natsConfig, err := env.GetNATSConfig(opts.MaxReconnects, opts.ReconnectWait)
-	if err != nil {
-		setupLogger.Fatalw("Failed to load configuration", "error", err)
-	}
-
 	// init custom kube client wrapper
 	k8sClient := mgr.GetClient()
 	kubeClient := k8s.NewKubeClient(k8sClient, "eventing-manager")
@@ -129,7 +120,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	ctx := context.Background()
 
 	// create eventing manager instance.
-	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, natsConfig, ctrLogger, recorder)
+	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, ctrLogger, recorder)
 
 	// init the metrics collector.
 	metricsCollector := backendmetrics.NewCollector()
@@ -152,6 +143,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		recorder,
 		eventingManager,
 		subManagerFactory,
+		opts,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(mgr); err != nil {

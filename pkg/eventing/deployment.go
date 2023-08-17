@@ -44,55 +44,54 @@ var (
 )
 
 func newNATSPublisherDeployment(
-	name, namespace string,
+	eventing *v1alpha1.Eventing,
 	natsConfig env.NATSConfig,
 	publisherConfig env.PublisherConfig) *appsv1.Deployment {
 	return newDeployment(
-		name,
-		namespace,
+		eventing,
 		publisherConfig,
-		WithLabels(name, v1alpha1.NatsBackendType),
-		WithContainers(name, publisherConfig),
-		WithNATSEnvVars(name, natsConfig, publisherConfig),
-		WithLogEnvVars(name, publisherConfig),
-		WithAffinity(name),
+		WithLabels(GetEPPDeploymentName(*eventing), v1alpha1.NatsBackendType),
+		WithContainers(publisherConfig, eventing),
+		WithNATSEnvVars(natsConfig, publisherConfig, eventing),
+		WithLogEnvVars(publisherConfig, eventing),
+		WithAffinity(GetEPPDeploymentName(*eventing)),
 	)
 }
 
 func newEventMeshPublisherDeployment(
-	name, namespace string,
+	eventing *v1alpha1.Eventing,
 	publisherConfig env.PublisherConfig) *appsv1.Deployment {
+	publisherName := GetEPPDeploymentName(*eventing)
 	return newDeployment(
-		name,
-		namespace,
+		eventing,
 		publisherConfig,
-		WithLabels(name, v1alpha1.EventMeshBackendType),
-		WithContainers(name, publisherConfig),
-		WithBEBEnvVars(name, publisherConfig),
-		WithLogEnvVars(name, publisherConfig),
+		WithLabels(publisherName, v1alpha1.EventMeshBackendType),
+		WithContainers(publisherConfig, eventing),
+		WithBEBEnvVars(publisherName, publisherConfig),
+		WithLogEnvVars(publisherConfig, eventing),
 	)
 }
 
 type DeployOpt func(deployment *appsv1.Deployment)
 
-func newDeployment(name, namespace string, publisherConfig env.PublisherConfig, opts ...DeployOpt) *appsv1.Deployment {
+func newDeployment(eventing *v1alpha1.Eventing, publisherConfig env.PublisherConfig, opts ...DeployOpt) *appsv1.Deployment {
 	newDeployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name:      GetEPPDeploymentName(*eventing),
+			Namespace: eventing.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: name,
+					Name: GetEPPDeploymentName(*eventing),
 				},
 				Spec: v1.PodSpec{
 					RestartPolicy:                 v1.RestartPolicyAlways,
-					ServiceAccountName:            publisherConfig.ServiceAccount,
+					ServiceAccountName:            GetEPPServiceAccountName(*eventing),
 					TerminationGracePeriodSeconds: &TerminationGracePeriodSeconds,
 					PriorityClassName:             publisherConfig.PriorityClassName,
 					SecurityContext:               getPodSecurityContext(),
@@ -155,54 +154,56 @@ func WithAffinity(publisherName string) DeployOpt {
 		}
 	}
 }
-func WithContainers(publisherName string, publisherConfig env.PublisherConfig) DeployOpt {
+func WithContainers(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) DeployOpt {
 	return func(d *appsv1.Deployment) {
 		d.Spec.Template.Spec.Containers = []v1.Container{
 			{
-				Name:            publisherName,
+				Name:            GetEPPDeploymentName(*eventing),
 				Image:           publisherConfig.Image,
 				Ports:           getContainerPorts(),
 				LivenessProbe:   getLivenessProbe(),
 				ReadinessProbe:  getReadinessProbe(),
 				ImagePullPolicy: getImagePullPolicy(publisherConfig.ImagePullPolicy),
 				SecurityContext: getContainerSecurityContext(),
-				Resources: getResources(publisherConfig.RequestsCPU,
-					publisherConfig.RequestsMemory,
-					publisherConfig.LimitsCPU,
-					publisherConfig.LimitsMemory),
+				Resources: getResources(eventing.Spec.Publisher.Resources.Requests.Cpu().String(),
+					eventing.Spec.Publisher.Resources.Requests.Memory().String(),
+					eventing.Spec.Publisher.Resources.Limits.Cpu().String(),
+					eventing.Spec.Publisher.Resources.Limits.Memory().String()),
 			},
 		}
 	}
 }
 
-func WithLogEnvVars(publisherName string, publisherConfig env.PublisherConfig) DeployOpt {
+func WithLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) DeployOpt {
 	return func(d *appsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
-			if strings.EqualFold(container.Name, publisherName) {
-				d.Spec.Template.Spec.Containers[i].Env = append(d.Spec.Template.Spec.Containers[i].Env, getLogEnvVars(publisherConfig)...)
+			if strings.EqualFold(container.Name, GetEPPDeploymentName(*eventing)) {
+				d.Spec.Template.Spec.Containers[i].Env = append(d.Spec.Template.Spec.Containers[i].Env, getLogEnvVars(publisherConfig, eventing)...)
 			}
 		}
 	}
 }
 
-func WithNATSEnvVars(publisherName string, natsConfig env.NATSConfig, publisherConfig env.PublisherConfig) DeployOpt {
+func WithNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig,
+	eventing *v1alpha1.Eventing) DeployOpt {
 	return func(d *appsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
-			if strings.EqualFold(container.Name, publisherName) {
-				d.Spec.Template.Spec.Containers[i].Env = getNATSEnvVars(natsConfig, publisherConfig)
+			if strings.EqualFold(container.Name, GetEPPDeploymentName(*eventing)) {
+				d.Spec.Template.Spec.Containers[i].Env = getNATSEnvVars(natsConfig, publisherConfig, eventing)
 			}
 		}
 	}
 }
 
-func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig) []v1.EnvVar {
+func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig,
+	eventing *v1alpha1.Eventing) []v1.EnvVar {
 	return []v1.EnvVar{
 		{Name: "BACKEND", Value: "nats"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
 		{Name: "NATS_URL", Value: natsConfig.URL},
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{Name: "LEGACY_NAMESPACE", Value: "kyma"},
-		{Name: "EVENT_TYPE_PREFIX", Value: natsConfig.EventTypePrefix},
+		{Name: "EVENT_TYPE_PREFIX", Value: eventing.GetNATSBackend().Config.EventTypePrefix},
 		// JetStream-specific config
 		{Name: "JS_STREAM_NAME", Value: natsConfig.JSStreamName},
 	}
@@ -275,10 +276,10 @@ func getContainerPorts() []v1.ContainerPort {
 	}
 }
 
-func getLogEnvVars(publisherConfig env.PublisherConfig) []v1.EnvVar {
+func getLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) []v1.EnvVar {
 	return []v1.EnvVar{
 		{Name: "APP_LOG_FORMAT", Value: publisherConfig.AppLogFormat},
-		{Name: "APP_LOG_LEVEL", Value: publisherConfig.AppLogLevel},
+		{Name: "APP_LOG_LEVEL", Value: strings.ToLower(eventing.Spec.LogLevel)},
 	}
 }
 

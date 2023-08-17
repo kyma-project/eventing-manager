@@ -2,6 +2,7 @@ package eventing
 
 import (
 	"context"
+	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	"testing"
 
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
@@ -58,6 +59,8 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	eventingManager := new(managermocks.Manager)
 	mockManager := new(ctrlmocks.Manager)
 
+	opts := options.New()
+
 	// setup reconciler
 	reconciler := NewReconciler(
 		fakeClient,
@@ -67,6 +70,7 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 		recorder,
 		eventingManager,
 		nil,
+		opts,
 	)
 	reconciler.ctrlManager = mockManager
 

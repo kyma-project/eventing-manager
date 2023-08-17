@@ -15,6 +15,7 @@ func Test_EPPResourcesNames(t *testing.T) {
 		},
 	}
 
+	require.Equal(t, "test1-publisher-proxy", GetEPPDeploymentName(eventingCR))
 	require.Equal(t, "test1-publisher-proxy", GetEPPPublishServiceName(eventingCR))
 	require.Equal(t, "test1-publisher-proxy-metrics", GetEPPMetricsServiceName(eventingCR))
 	require.Equal(t, "test1-publisher-proxy-health", GetEPPHealthServiceName(eventingCR))

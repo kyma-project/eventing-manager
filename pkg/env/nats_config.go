@@ -13,13 +13,13 @@ import (
 // NATSConfig represents the environment config for the Eventing Controller with Nats.
 type NATSConfig struct {
 	// Following details are for eventing-controller to communicate to Nats
-	URL           string `envconfig:"NATS_URL"`
+	URL           string
 	MaxReconnects int
 	ReconnectWait time.Duration
 
 	// EventTypePrefix prefix for the EventType
 	// note: eventType format is <prefix>.<application>.<event>.<version>
-	EventTypePrefix string `envconfig:"EVENT_TYPE_PREFIX"`
+	EventTypePrefix string
 
 	// HTTP Transport config for the message dispatcher
 	MaxIdleConns        int           `envconfig:"MAX_IDLE_CONNS" default:"50"`
@@ -29,21 +29,21 @@ type NATSConfig struct {
 
 	// JetStream-specific configs
 	// Name of the JetStream stream where all events are stored.
-	JSStreamName string `envconfig:"JS_STREAM_NAME"`
+	JSStreamName string `envconfig:"JS_STREAM_NAME" default:"sap"`
 	// Prefix for the subjects in the stream.
 	JSSubjectPrefix string `envconfig:"JS_STREAM_SUBJECT_PREFIX"`
 	// Storage type of the stream, memory or file.
-	JSStreamStorageType string `envconfig:"JS_STREAM_STORAGE_TYPE" default:"memory"`
+	JSStreamStorageType string
 	// Number of replicas for the JetStream stream
-	JSStreamReplicas int `envconfig:"JS_STREAM_REPLICAS" default:"1"`
+	JSStreamReplicas int
 	// Retention policy specifies when to delete events from the stream.
 	//  interest: when all known observables have acknowledged a message, it can be removed.
 	//  limits: messages are retained until any given limit is reached.
 	//  configured via JSStreamMaxMessages and JSStreamMaxBytes.
 	JSStreamRetentionPolicy string `envconfig:"JS_STREAM_RETENTION_POLICY" default:"interest"`
 	JSStreamMaxMessages     int64  `envconfig:"JS_STREAM_MAX_MSGS" default:"-1"`
-	JSStreamMaxBytes        string `envconfig:"JS_STREAM_MAX_BYTES" default:"-1"`
-	JSStreamMaxMsgsPerTopic int64  `envconfig:"JS_STREAM_MAX_MSGS_PER_TOPIC" default:"-1"`
+	JSStreamMaxBytes        string
+	JSStreamMaxMsgsPerTopic int64
 	// JSStreamDiscardPolicy specifies which events to discard from the stream in case limits are reached
 	//  new: reject new messages for the stream
 	//  old: discard old messages from the stream to make room for new messages
