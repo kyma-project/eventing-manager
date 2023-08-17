@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"log"
@@ -153,8 +154,11 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	// create k8s clients.
 	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), "eventing-manager")
 
+	// get backend configs.
+	backendConfig := env.GetBackendConfig()
+
 	// create eventing manager instance.
-	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, ctrLogger, recorder)
+	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, backendConfig, ctrLogger, recorder)
 
 	// define JetStream subscription manager mock.
 	jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
@@ -173,6 +177,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 		ctrLogger,
 		ctrlMgr.GetEventRecorderFor("eventing-manager-test"),
 		eventingManager,
+		backendConfig,
 		subManagerFactoryMock,
 		opts,
 	)
@@ -191,6 +196,22 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 			panic(err)
 		}
 	}()
+
+	// create namespace
+	ns := testutils.NewNamespace(getTestBackendConfig().Namespace)
+	if err = client.IgnoreAlreadyExists(k8sClient.Create(ctx, ns)); err != nil {
+		return nil, err
+	}
+
+	// create webhook cert secret.
+	newCABundle := make([]byte, 40)
+	if _, err := rand.Read(newCABundle); err != nil {
+		return nil, err
+	}
+	err = k8sClient.Create(ctx, newSecretWithTLSSecret(newCABundle))
+	if err != nil {
+		return nil, err
+	}
 
 	return &TestEnvironment{
 		Context:             ctx,
@@ -216,11 +237,6 @@ func StartEnvTest(projectRootDir string, celValidationEnabled bool) (*envtest.En
 		return nil, nil, err
 	}
 
-	newCABundle := make([]byte, 20)
-	if _, err := rand.Read(newCABundle); err != nil {
-		return nil, nil, err
-	}
-
 	url := "https://eventing-controller.kyma-system.svc.cluster.local"
 	sideEffectClassNone := admissionv1.SideEffectClassNone
 	mwh := getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
@@ -234,7 +250,7 @@ func StartEnvTest(projectRootDir string, celValidationEnabled bool) (*envtest.En
 			AdmissionReviewVersions: []string{"v1beta1"},
 		},
 	})
-	mwh.Name = "subscription-mutating-webhook-configuration"
+	mwh.Name = getTestBackendConfig().MutatingWebhookName
 
 	// setup dummy validating webhook
 	vwh := getValidatingWebhookConfig([]admissionv1.ValidatingWebhook{
@@ -248,7 +264,7 @@ func StartEnvTest(projectRootDir string, celValidationEnabled bool) (*envtest.En
 			AdmissionReviewVersions: []string{"v1beta1"},
 		},
 	})
-	vwh.Name = "subscription-validating-webhook-configuration"
+	vwh.Name = getTestBackendConfig().ValidatingWebhookName
 
 	testEnv := &envtest.Environment{
 		CRDDirectoryPaths: []string{
@@ -675,6 +691,41 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingCorrect(t *testing.T, even
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRoleBinding correctness")
 }
 
+func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
+	require.Eventually(t, func() bool {
+		// get cert secret from k8s.
+		certSecret, err := env.GetSecretFromK8s(getTestBackendConfig().WebhookSecretName,
+			getTestBackendConfig().Namespace)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+
+		// get Mutating and validating webhook configurations from k8s.
+		mwh, vwh, err := env.GetMutatingAndValidatingWebHookConfigFromK8s(env.Context)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+
+		if len(mwh.Webhooks) == 0 || len(vwh.Webhooks) == 0 {
+			env.Logger.WithContext().Error("Invalid mutating and validating webhook configurations")
+			return false
+		}
+
+		if !bytes.Equal(mwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventingctrl.TLSCertField]) {
+			env.Logger.WithContext().Error("CABundle of mutating configuration is not correct")
+			return false
+		}
+
+		if !bytes.Equal(vwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventingctrl.TLSCertField]) {
+			env.Logger.WithContext().Error("CABundle of validating configuration is not correct")
+			return false
+		}
+		return true
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure correctness of CABundle in Webhooks")
+}
+
 func (env TestEnvironment) DeleteServiceFromK8s(name, namespace string) error {
 	return env.k8sClient.Delete(env.Context, &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -750,6 +801,22 @@ func (env TestEnvironment) GetNATSFromK8s(name, namespace string) (*natsv1alpha1
 	return nats, err
 }
 
+func newSecretWithTLSSecret(dummyCABundle []byte) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      getTestBackendConfig().WebhookSecretName,
+			Namespace: getTestBackendConfig().Namespace,
+		},
+		Data: map[string][]byte{
+			eventingctrl.TLSCertField: dummyCABundle,
+		},
+	}
+}
+
 func getMutatingWebhookConfig(webhook []admissionv1.MutatingWebhook) *admissionv1.MutatingWebhookConfiguration {
 	return &admissionv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
@@ -770,9 +837,10 @@ func getValidatingWebhookConfig(webhook []admissionv1.ValidatingWebhook) *admiss
 
 func getTestBackendConfig() env.BackendConfig {
 	return env.BackendConfig{
-		WebhookSecretName:     "webhookSecret",
-		MutatingWebhookName:   "mutatingWH",
-		ValidatingWebhookName: "validatingWH",
+		WebhookSecretName:     "eventing-manager-webhook-server-cert",
+		MutatingWebhookName:   "subscription-mutating-webhook-configuration",
+		ValidatingWebhookName: "subscription-validating-webhook-configuration",
+		Namespace:             "kyma-system",
 	}
 }
 
@@ -807,6 +875,37 @@ func (env TestEnvironment) GetServiceFromK8s(name, namespace string) (*corev1.Se
 		return nil, err
 	}
 	return result, nil
+}
+
+func (env TestEnvironment) GetSecretFromK8s(name, namespace string) (*corev1.Secret, error) {
+	nn := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	result := &corev1.Secret{}
+	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (env TestEnvironment) GetMutatingAndValidatingWebHookConfigFromK8s(ctx context.Context) (
+	*admissionv1.MutatingWebhookConfiguration, *admissionv1.ValidatingWebhookConfiguration, error) {
+	var mutatingWH admissionv1.MutatingWebhookConfiguration
+	mutatingWHKey := client.ObjectKey{
+		Name: getTestBackendConfig().MutatingWebhookName,
+	}
+	if err := env.k8sClient.Get(ctx, mutatingWHKey, &mutatingWH); err != nil {
+		return nil, nil, err
+	}
+	var validatingWH admissionv1.ValidatingWebhookConfiguration
+	validatingWHKey := client.ObjectKey{
+		Name: getTestBackendConfig().ValidatingWebhookName,
+	}
+	if err := env.k8sClient.Get(ctx, validatingWHKey, &validatingWH); err != nil {
+		return nil, nil, err
+	}
+	return &mutatingWH, &validatingWH, nil
 }
 
 func (env TestEnvironment) GetServiceAccountFromK8s(name, namespace string) (*corev1.ServiceAccount, error) {

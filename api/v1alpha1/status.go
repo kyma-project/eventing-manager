@@ -32,6 +32,18 @@ func (es *EventingStatus) UpdateConditionPublisherProxyReady(status metav1.Condi
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
+func (es *EventingStatus) UpdateConditionWebhookReady(status metav1.ConditionStatus, reason ConditionReason,
+	message string) {
+	condition := metav1.Condition{
+		Type:               string(ConditionWebhookReady),
+		Status:             status,
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(reason),
+		Message:            message,
+	}
+	meta.SetStatusCondition(&es.Conditions, condition)
+}
+
 func (es *EventingStatus) SetStateReady() {
 	es.State = StateReady
 	es.UpdateConditionNATSAvailable(metav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
@@ -45,6 +57,10 @@ func (es *EventingStatus) SetNATSAvailableConditionToTrue() {
 func (es *EventingStatus) SetPublisherProxyReadyToTrue() {
 	es.State = StateReady
 	es.UpdateConditionPublisherProxyReady(metav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)
+}
+
+func (es *EventingStatus) SetWebhookReadyConditionToTrue() {
+	es.UpdateConditionWebhookReady(metav1.ConditionTrue, ConditionReasonWebhookReady, ConditionWebhookReadyMessage)
 }
 
 func (es *EventingStatus) SetStateProcessing() {

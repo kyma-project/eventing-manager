@@ -34,6 +34,7 @@ const (
 
 	ConditionNATSAvailable       ConditionType = "NATSAvailable"
 	ConditionPublisherProxyReady ConditionType = "PublisherProxyReady"
+	ConditionWebhookReady        ConditionType = "WebhookReady"
 
 	ConditionReasonProcessing                 ConditionReason = "Processing"
 	ConditionReasonDeployed                   ConditionReason = "Deployed"
@@ -41,9 +42,12 @@ const (
 	ConditionReasonDeploymentStatusSyncFailed ConditionReason = "DeploymentStatusSyncFailed"
 	ConditionReasonNATSAvailable              ConditionReason = "Available"
 	ConditionReasonNATSNotAvailable           ConditionReason = "NotAvailable"
+	ConditionReasonWebhookFailed              ConditionReason = "WebhookFailed"
+	ConditionReasonWebhookReady               ConditionReason = "Ready"
 
 	ConditionPublisherProxyReadyMessage      = "Publisher proxy is deployed"
 	ConditionNATSAvailableMessage            = "NATS is available"
+	ConditionWebhookReadyMessage             = "Webhook is available"
 	ConditionPublisherProxyProcessingMessage = "Eventing publisher proxy deployment is in progress"
 )
 

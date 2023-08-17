@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: eventing-manager-webhook-service
+  labels:
+    app.kubernetes.io/name: eventing-manager-webhook-service
+    app.kubernetes.io/component: eventing-manager
+    app.kubernetes.io/created-by: eventing-manager
+    app.kubernetes.io/part-of: eventing-manager
+spec:
+  selector:
+    control-plane: eventing-manager
+    app.kubernetes.io/name: eventing-manager
+    app.kubernetes.io/instance: eventing-manager
+    app.kubernetes.io/component: eventing-manager
+  ports:
+    - name:  http-convert
+      port: 443
+      protocol: TCP
+      targetPort: 9443

@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/eventing-manager/pkg/env"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
@@ -64,6 +66,7 @@ type Reconciler struct {
 	natsSubManager          ecsubscriptionmanager.Manager
 	isNATSSubManagerStarted bool
 	natsConfigHandler       NatsConfigHandler
+	backendConfig           env.BackendConfig
 }
 
 func NewReconciler(
@@ -73,6 +76,7 @@ func NewReconciler(
 	logger *logger.Logger,
 	recorder record.EventRecorder,
 	manager eventing.Manager,
+	backendConfig env.BackendConfig,
 	subManagerFactory subscriptionmanager.ManagerFactory,
 	opts *options.Options,
 ) *Reconciler {
@@ -84,6 +88,7 @@ func NewReconciler(
 		kubeClient:              kubeClient,
 		scheme:                  scheme,
 		recorder:                recorder,
+		backendConfig:           backendConfig,
 		subManagerFactory:       subManagerFactory,
 		natsSubManager:          nil,
 		isNATSSubManagerStarted: false,
@@ -105,6 +110,9 @@ func NewReconciler(
 //+kubebuilder:rbac:groups=security.istio.io,resources=customresourcedefinitions,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;update;patch;create;delete
+//+kubebuilder:rbac:groups="admissionregistration.k8s.io",resources=mutatingwebhookconfigurations,verbs=get;list;watch;update;patch;create;delete
+//+kubebuilder:rbac:groups="admissionregistration.k8s.io",resources=validatingwebhookconfigurations,verbs=get;list;watch;update;patch;create;delete
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=nats,verbs=get;list;watch
 //+kubebuilder:rbac:groups="applicationconnector.kyma-project.io",resources=applications,verbs=get;list;watch;update;patch;create;delete
 //+kubebuilder:rbac:groups="eventing.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
@@ -194,6 +202,13 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 
 	// set state processing if not set yet
 	r.InitStateProcessing(eventing)
+
+	// sync webhooks CABundle.
+	if err := r.reconcileWebhooksWithCABundle(ctx); err != nil {
+		return ctrl.Result{}, r.syncStatusWithWebhookErr(ctx, eventing, err, log)
+	}
+	// set webhook condition to true.
+	eventing.Status.SetWebhookReadyConditionToTrue()
 
 	for _, backend := range eventing.Spec.Backends {
 		switch backend.Type {

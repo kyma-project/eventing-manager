@@ -4,6 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
 
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
@@ -49,6 +53,11 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	require.NoError(t, err)
 	err = eventingv1alpha1.AddToScheme(newScheme)
 	require.NoError(t, err)
+	err = corev1.AddToScheme(newScheme)
+	require.NoError(t, err)
+	err = admissionv1.AddToScheme(newScheme)
+	require.NoError(t, err)
+
 	fakeClientBuilder := fake.NewClientBuilder().WithScheme(newScheme)
 	// TODO: once controller-runtime version is upgraded to >=0.15.x, use the following.
 	//fakeClient := fakeClientBuilder.WithObjects(objs...).WithStatusSubresource(objs...).Build()
@@ -62,6 +71,9 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 
 	opts := options.New()
 
+	// get backend configs.
+	backendConfig := env.BackendConfig{}
+
 	// setup reconciler
 	reconciler := NewReconciler(
 		fakeClient,
@@ -70,6 +82,7 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 		ctrLogger,
 		recorder,
 		eventingManager,
+		backendConfig,
 		nil,
 		opts,
 	)

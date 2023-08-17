@@ -168,6 +168,9 @@ func Test_CreateEventingCR(t *testing.T) {
 				// check if the owner reference is set.
 				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
 
+				// check if webhook configurations are updated with correct CABundle.
+				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
+
 				// check if EPP resources are correctly created.
 				deployment, err := testEnvironment.GetDeploymentFromK8s(eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				require.NoError(t, err)

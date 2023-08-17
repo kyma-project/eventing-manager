@@ -85,7 +85,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 # (i.e. docker build --platform linux/arm64 ). However, you must enable docker buildKit for it.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
+docker-build: ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push
@@ -116,10 +116,13 @@ ifndef ignore-not-found
 endif
 
 .PHONY: install
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	kubectl apply -f https://raw.githubusercontent.com/kyma-project/kyma/main/installation/resources/crds/eventing/subscriptions.eventing.kyma-project.io.crd.yaml
-	kubectl apply -f https://raw.githubusercontent.com/kyma-project/kyma/main/installation/resources/crds/application-connector/applications.applicationconnector.crd.yaml
+install: download-external-crds manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+
+.PHONY: download-external-crds
+download-external-crds:
+	curl -s -L -o config/crd/external/subscriptions.eventing.kyma-project.io.crd.yaml https://raw.githubusercontent.com/kyma-project/kyma/main/installation/resources/crds/eventing/subscriptions.eventing.kyma-project.io.crd.yaml
+	curl -s -L -o config/crd/external/applications.applicationconnector.crd.yaml https://raw.githubusercontent.com/kyma-project/kyma/main/installation/resources/crds/application-connector/applications.applicationconnector.crd.yaml
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
