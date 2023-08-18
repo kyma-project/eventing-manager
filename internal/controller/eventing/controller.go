@@ -19,6 +19,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"

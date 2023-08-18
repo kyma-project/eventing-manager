@@ -14,31 +14,31 @@ import (
 
 const publisherProxySuffix = "publisher-proxy"
 
-func GetEPPDeploymentName(eventing v1alpha1.Eventing) string {
+func GetPublisherDeploymentName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
 }
 
-func GetEPPPublishServiceName(eventing v1alpha1.Eventing) string {
+func GetPublisherPublishServiceName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
 }
 
-func GetEPPMetricsServiceName(eventing v1alpha1.Eventing) string {
+func GetPublisherMetricsServiceName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s-metrics", eventing.GetName(), publisherProxySuffix)
 }
 
-func GetEPPHealthServiceName(eventing v1alpha1.Eventing) string {
+func GetPublisherHealthServiceName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s-health", eventing.GetName(), publisherProxySuffix)
 }
 
-func GetEPPServiceAccountName(eventing v1alpha1.Eventing) string {
+func GetPublisherServiceAccountName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
 }
 
-func GetEPPClusterRoleName(eventing v1alpha1.Eventing) string {
+func GetPublisherClusterRoleName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
 }
 
-func GetEPPClusterRoleBindingName(eventing v1alpha1.Eventing) string {
+func GetPublisherClusterRoleBindingName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
 }
 

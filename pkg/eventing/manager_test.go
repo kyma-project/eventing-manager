@@ -323,17 +323,17 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			require.True(t, testutils.HasOwnerReference(crb, *tc.givenEventing))
 
 			// check Publish Service.
-			pSvc, err := testutils.FindServiceFromK8sObjects(GetEPPPublishServiceName(*tc.givenEventing), createdObjects)
+			pSvc, err := testutils.FindServiceFromK8sObjects(GetPublisherPublishServiceName(*tc.givenEventing), createdObjects)
 			require.NoError(t, err)
 			require.True(t, testutils.HasOwnerReference(pSvc, *tc.givenEventing))
 
 			// check Metrics Service.
-			mSvc, err := testutils.FindServiceFromK8sObjects(GetEPPMetricsServiceName(*tc.givenEventing), createdObjects)
+			mSvc, err := testutils.FindServiceFromK8sObjects(GetPublisherMetricsServiceName(*tc.givenEventing), createdObjects)
 			require.NoError(t, err)
 			require.True(t, testutils.HasOwnerReference(mSvc, *tc.givenEventing))
 
 			// check Health Service.
-			hSvc, err := testutils.FindServiceFromK8sObjects(GetEPPHealthServiceName(*tc.givenEventing), createdObjects)
+			hSvc, err := testutils.FindServiceFromK8sObjects(GetPublisherHealthServiceName(*tc.givenEventing), createdObjects)
 			require.NoError(t, err)
 			require.True(t, testutils.HasOwnerReference(hSvc, *tc.givenEventing))
 

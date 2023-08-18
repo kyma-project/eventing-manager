@@ -345,17 +345,17 @@ func (env TestEnvironment) EnsureK8sResourceCreated(t *testing.T, obj client.Obj
 
 func (env TestEnvironment) EnsureEPPK8sResourcesExists(t *testing.T, eventingCR v1alpha1.Eventing) {
 	env.EnsureK8sServiceExists(t,
-		eventing.GetEPPPublishServiceName(eventingCR), eventingCR.Namespace)
+		eventing.GetPublisherPublishServiceName(eventingCR), eventingCR.Namespace)
 	env.EnsureK8sServiceExists(t,
-		eventing.GetEPPMetricsServiceName(eventingCR), eventingCR.Namespace)
+		eventing.GetPublisherMetricsServiceName(eventingCR), eventingCR.Namespace)
 	env.EnsureK8sServiceExists(t,
-		eventing.GetEPPHealthServiceName(eventingCR), eventingCR.Namespace)
+		eventing.GetPublisherHealthServiceName(eventingCR), eventingCR.Namespace)
 	env.EnsureK8sServiceAccountExists(t,
-		eventing.GetEPPServiceAccountName(eventingCR), eventingCR.Namespace)
+		eventing.GetPublisherServiceAccountName(eventingCR), eventingCR.Namespace)
 	env.EnsureK8sClusterRoleExists(t,
-		eventing.GetEPPClusterRoleName(eventingCR), eventingCR.Namespace)
+		eventing.GetPublisherClusterRoleName(eventingCR), eventingCR.Namespace)
 	env.EnsureK8sClusterRoleBindingExists(t,
-		eventing.GetEPPClusterRoleBindingName(eventingCR), eventingCR.Namespace)
+		eventing.GetPublisherClusterRoleBindingName(eventingCR), eventingCR.Namespace)
 }
 
 func (env TestEnvironment) EnsureEPPK8sResourcesHaveOwnerReference(t *testing.T, eventingCR v1alpha1.Eventing) {
@@ -511,7 +511,7 @@ func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *nats
 
 func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, eventingCR *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		deployment, err := env.GetDeploymentFromK8s(eventing.GetEPPDeploymentName(*eventingCR), eventingCR.Namespace)
+		deployment, err := env.GetDeploymentFromK8s(eventing.GetPublisherDeploymentName(*eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventingCR.Name, "namespace", eventingCR.Namespace)
@@ -529,7 +529,7 @@ func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, ev
 
 func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventingCR *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		hpa, err := env.GetHPAFromK8s(eventing.GetEPPDeploymentName(*eventingCR), eventingCR.Namespace)
+		hpa, err := env.GetHPAFromK8s(eventing.GetPublisherDeploymentName(*eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventingCR.Name, "namespace", eventingCR.Namespace)
@@ -540,7 +540,7 @@ func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventin
 
 func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, eventingCR *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		deployment, err := env.GetDeploymentFromK8s(eventing.GetEPPDeploymentName(*eventingCR), eventingCR.Namespace)
+		deployment, err := env.GetDeploymentFromK8s(eventing.GetPublisherDeploymentName(*eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventingCR.Name, "namespace", eventingCR.Namespace)
@@ -551,7 +551,7 @@ func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, event
 
 func (env TestEnvironment) EnsureEPPPublishServiceOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetServiceFromK8s(eventing.GetEPPPublishServiceName(eventingCR), eventingCR.Namespace)
+		result, err := env.GetServiceFromK8s(eventing.GetPublisherPublishServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
 			return false
@@ -562,7 +562,7 @@ func (env TestEnvironment) EnsureEPPPublishServiceOwnerReferenceSet(t *testing.T
 
 func (env TestEnvironment) EnsureEPPMetricsServiceOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetServiceFromK8s(eventing.GetEPPMetricsServiceName(eventingCR), eventingCR.Namespace)
+		result, err := env.GetServiceFromK8s(eventing.GetPublisherMetricsServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
 			return false
@@ -573,7 +573,7 @@ func (env TestEnvironment) EnsureEPPMetricsServiceOwnerReferenceSet(t *testing.T
 
 func (env TestEnvironment) EnsureEPPHealthServiceOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetServiceFromK8s(eventing.GetEPPHealthServiceName(eventingCR), eventingCR.Namespace)
+		result, err := env.GetServiceFromK8s(eventing.GetPublisherHealthServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
 			return false
@@ -584,7 +584,7 @@ func (env TestEnvironment) EnsureEPPHealthServiceOwnerReferenceSet(t *testing.T,
 
 func (env TestEnvironment) EnsureEPPServiceAccountOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetServiceAccountFromK8s(eventing.GetEPPServiceAccountName(eventingCR), eventingCR.Namespace)
+		result, err := env.GetServiceAccountFromK8s(eventing.GetPublisherServiceAccountName(eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
 			return false
@@ -595,7 +595,7 @@ func (env TestEnvironment) EnsureEPPServiceAccountOwnerReferenceSet(t *testing.T
 
 func (env TestEnvironment) EnsureEPPClusterRoleOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetClusterRoleFromK8s(eventing.GetEPPClusterRoleName(eventingCR), eventingCR.Namespace)
+		result, err := env.GetClusterRoleFromK8s(eventing.GetPublisherClusterRoleName(eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
 			return false
@@ -606,7 +606,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleOwnerReferenceSet(t *testing.T, e
 
 func (env TestEnvironment) EnsureEPPClusterRoleBindingOwnerReferenceSet(t *testing.T, eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetClusterRoleBindingFromK8s(eventing.GetEPPClusterRoleBindingName(eventingCR),
+		result, err := env.GetClusterRoleBindingFromK8s(eventing.GetPublisherClusterRoleBindingName(eventingCR),
 			eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
@@ -619,7 +619,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingOwnerReferenceSet(t *testi
 func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeployment *v1.Deployment,
 	eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetServiceFromK8s(eventing.GetEPPPublishServiceName(eventingCR), eventingCR.Namespace)
+		result, err := env.GetServiceFromK8s(eventing.GetPublisherPublishServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
 			return false
@@ -631,7 +631,7 @@ func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeplo
 func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeployment *v1.Deployment,
 	eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetServiceFromK8s(eventing.GetEPPMetricsServiceName(eventingCR), eventingCR.Namespace)
+		result, err := env.GetServiceFromK8s(eventing.GetPublisherMetricsServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
 			return false
@@ -643,7 +643,7 @@ func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeplo
 func (env TestEnvironment) EnsureEPPHealthServiceCorrect(t *testing.T, eppDeployment *v1.Deployment,
 	eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetServiceFromK8s(eventing.GetEPPHealthServiceName(eventingCR), eventingCR.Namespace)
+		result, err := env.GetServiceFromK8s(eventing.GetPublisherHealthServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
 			return false
@@ -654,7 +654,7 @@ func (env TestEnvironment) EnsureEPPHealthServiceCorrect(t *testing.T, eppDeploy
 
 func (env TestEnvironment) EnsureEPPClusterRoleCorrect(t *testing.T, eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetClusterRoleFromK8s(eventing.GetEPPClusterRoleName(eventingCR), eventingCR.Namespace)
+		result, err := env.GetClusterRoleFromK8s(eventing.GetPublisherClusterRoleName(eventingCR), eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
 			return false
@@ -665,7 +665,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleCorrect(t *testing.T, eventingCR 
 
 func (env TestEnvironment) EnsureEPPClusterRoleBindingCorrect(t *testing.T, eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
-		result, err := env.GetClusterRoleBindingFromK8s(eventing.GetEPPClusterRoleBindingName(eventingCR),
+		result, err := env.GetClusterRoleBindingFromK8s(eventing.GetPublisherClusterRoleBindingName(eventingCR),
 			eventingCR.Namespace)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
