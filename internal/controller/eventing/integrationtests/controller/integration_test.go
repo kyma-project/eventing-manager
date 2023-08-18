@@ -144,7 +144,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			defer func() {
 				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
 				if tc.givenNATSReady && !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenNATS)
 			}()
@@ -153,8 +153,8 @@ func Test_CreateEventingCR(t *testing.T) {
 			// check Eventing CR status.
 			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
 			if tc.givenDeploymentReady {
-				testEnvironment.EnsureDeploymentExists(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureHPAExists(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				testEnvironment.EnsureEventingSpecPublisherReflected(t, tc.givenEventing)
 				testEnvironment.EnsureEventingReplicasReflected(t, tc.givenEventing)
 				testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenEventing)
@@ -169,7 +169,7 @@ func Test_CreateEventingCR(t *testing.T) {
 				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
 
 				// check if EPP resources are correctly created.
-				deployment, err := testEnvironment.GetDeploymentFromK8s(eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
+				deployment, err := testEnvironment.GetDeploymentFromK8s(eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				require.NoError(t, err)
 				// K8s Services
 				testEnvironment.EnsureEPPPublishServiceCorrect(t, deployment, *tc.givenEventing)
@@ -228,7 +228,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 			testEnvironment.EnsureK8sResourceCreated(t, nats)
 			testEnvironment.EnsureNATSResourceStateReady(t, nats)
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenExistingEventing)
-			givenEPPDeploymentName := eventing.GetEPPDeploymentName(*tc.givenExistingEventing)
+			givenEPPDeploymentName := eventing.GetPublisherDeploymentName(*tc.givenExistingEventing)
 			testEnvironment.EnsureDeploymentExists(t, givenEPPDeploymentName, givenNamespace)
 			testEnvironment.EnsureHPAExists(t, givenEPPDeploymentName, givenNamespace)
 
@@ -299,31 +299,31 @@ func Test_DeleteEventingCR(t *testing.T) {
 
 			defer func() {
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, nats)
 			}()
 
-			testEnvironment.EnsureDeploymentExists(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
-			testEnvironment.EnsureHPAExists(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
+			testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+			testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 			testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
 
 			// then
 			if *testEnvironment.EnvTestInstance.UseExistingCluster {
-				testEnvironment.EnsureDeploymentNotFound(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureHPANotFound(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureDeploymentNotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureHPANotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetEPPPublishServiceName(*tc.givenEventing), givenNamespace)
+					eventing.GetPublisherPublishServiceName(*tc.givenEventing), givenNamespace)
 				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetEPPMetricsServiceName(*tc.givenEventing), givenNamespace)
+					eventing.GetPublisherMetricsServiceName(*tc.givenEventing), givenNamespace)
 				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetEPPHealthServiceName(*tc.givenEventing), givenNamespace)
+					eventing.GetPublisherHealthServiceName(*tc.givenEventing), givenNamespace)
 				testEnvironment.EnsureK8sServiceAccountNotFound(t,
-					eventing.GetEPPServiceAccountName(*tc.givenEventing), givenNamespace)
+					eventing.GetPublisherServiceAccountName(*tc.givenEventing), givenNamespace)
 				testEnvironment.EnsureK8sClusterRoleNotFound(t,
-					eventing.GetEPPClusterRoleName(*tc.givenEventing), givenNamespace)
+					eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
 				testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
-					eventing.GetEPPClusterRoleBindingName(*tc.givenEventing), givenNamespace)
+					eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
 			} else {
 				// check if the owner reference is set.
 				// if owner reference is set then these resources would be garbage collected in real k8s cluster.
@@ -341,34 +341,34 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 	type deletionFunc func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error
 
 	deletePublishServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
-		return env.DeleteServiceFromK8s(eventing.GetEPPPublishServiceName(eventingCR), eventingCR.Namespace)
+		return env.DeleteServiceFromK8s(eventing.GetPublisherPublishServiceName(eventingCR), eventingCR.Namespace)
 	}
 
 	deleteMetricsServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
-		return env.DeleteServiceFromK8s(eventing.GetEPPMetricsServiceName(eventingCR), eventingCR.Namespace)
+		return env.DeleteServiceFromK8s(eventing.GetPublisherMetricsServiceName(eventingCR), eventingCR.Namespace)
 	}
 
 	deleteHealthServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
-		return env.DeleteServiceFromK8s(eventing.GetEPPHealthServiceName(eventingCR), eventingCR.Namespace)
+		return env.DeleteServiceFromK8s(eventing.GetPublisherHealthServiceName(eventingCR), eventingCR.Namespace)
 	}
 
 	deleteServiceAccountFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
-		return env.DeleteServiceAccountFromK8s(eventing.GetEPPServiceAccountName(eventingCR), eventingCR.Namespace)
+		return env.DeleteServiceAccountFromK8s(eventing.GetPublisherServiceAccountName(eventingCR), eventingCR.Namespace)
 	}
 
 	deleteClusterRoleFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
-		return env.DeleteClusterRoleFromK8s(eventing.GetEPPClusterRoleName(eventingCR), eventingCR.Namespace)
+		return env.DeleteClusterRoleFromK8s(eventing.GetPublisherClusterRoleName(eventingCR), eventingCR.Namespace)
 	}
 
 	deleteClusterRoleBindingFromK8s := func(env *testutils.TestEnvironment,
 		eventingCR eventingv1alpha1.Eventing) error {
-		return env.DeleteClusterRoleBindingFromK8s(eventing.GetEPPClusterRoleBindingName(eventingCR),
+		return env.DeleteClusterRoleBindingFromK8s(eventing.GetPublisherClusterRoleBindingName(eventingCR),
 			eventingCR.Namespace)
 	}
 
 	deleteHPAFromK8s := func(env *testutils.TestEnvironment,
 		eventingCR eventingv1alpha1.Eventing) error {
-		return env.DeleteHPAFromK8s(eventing.GetEPPDeploymentName(eventingCR),
+		return env.DeleteHPAFromK8s(eventing.GetPublisherDeploymentName(eventingCR),
 			eventingCR.Namespace)
 	}
 
@@ -502,7 +502,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			defer func() {
 				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetEPPDeploymentName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, nats)
 			}()

@@ -143,27 +143,27 @@ func (em EventingManager) GetBackendConfig() *env.BackendConfig {
 func (em EventingManager) DeployPublisherProxyResources(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
-	eppDeployment *appsv1.Deployment) error {
+	publisherDeployment *appsv1.Deployment) error {
 	// define list of resources to create for EPP.
 	resources := []client.Object{
 		// ServiceAccount
-		newPublisherProxyServiceAccount(GetEPPServiceAccountName(*eventing), eventing.Namespace, eppDeployment.Labels),
+		newPublisherProxyServiceAccount(GetPublisherServiceAccountName(*eventing), eventing.Namespace, publisherDeployment.Labels),
 		// ClusterRole
-		newPublisherProxyClusterRole(GetEPPClusterRoleName(*eventing), eventing.Namespace, eppDeployment.Labels),
+		newPublisherProxyClusterRole(GetPublisherClusterRoleName(*eventing), eventing.Namespace, publisherDeployment.Labels),
 		// ClusterRoleBinding
-		newPublisherProxyClusterRoleBinding(GetEPPClusterRoleBindingName(*eventing), eventing.Namespace,
-			eppDeployment.Labels),
+		newPublisherProxyClusterRoleBinding(GetPublisherClusterRoleBindingName(*eventing), eventing.Namespace,
+			publisherDeployment.Labels),
 		// Service to expose event publishing endpoint of EPP.
-		newPublisherProxyService(GetEPPPublishServiceName(*eventing), eventing.Namespace, eppDeployment.Labels,
-			eppDeployment.Spec.Template.Labels),
+		newPublisherProxyService(GetPublisherPublishServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
+			publisherDeployment.Spec.Template.Labels),
 		// Service to expose metrics endpoint of EPP.
-		newPublisherProxyMetricsService(GetEPPMetricsServiceName(*eventing), eventing.Namespace, eppDeployment.Labels,
-			eppDeployment.Spec.Template.Labels),
+		newPublisherProxyMetricsService(GetPublisherMetricsServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
+			publisherDeployment.Spec.Template.Labels),
 		// Service to expose health endpoint of EPP.
-		newPublisherProxyHealthService(GetEPPHealthServiceName(*eventing), eventing.Namespace, eppDeployment.Labels,
-			eppDeployment.Spec.Template.Labels),
+		newPublisherProxyHealthService(GetPublisherHealthServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
+			publisherDeployment.Spec.Template.Labels),
 		// HPA to auto-scale publisher proxy.
-		newHorizontalPodAutoscaler(eppDeployment, int32(eventing.Spec.Publisher.Min),
+		newHorizontalPodAutoscaler(publisherDeployment, int32(eventing.Spec.Publisher.Min),
 			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization),
 	}
 

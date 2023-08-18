@@ -50,18 +50,18 @@ func newNATSPublisherDeployment(
 	return newDeployment(
 		eventing,
 		publisherConfig,
-		WithLabels(GetEPPDeploymentName(*eventing), v1alpha1.NatsBackendType),
+		WithLabels(GetPublisherDeploymentName(*eventing), v1alpha1.NatsBackendType),
 		WithContainers(publisherConfig, eventing),
 		WithNATSEnvVars(natsConfig, publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
-		WithAffinity(GetEPPDeploymentName(*eventing)),
+		WithAffinity(GetPublisherDeploymentName(*eventing)),
 	)
 }
 
 func newEventMeshPublisherDeployment(
 	eventing *v1alpha1.Eventing,
 	publisherConfig env.PublisherConfig) *appsv1.Deployment {
-	publisherName := GetEPPDeploymentName(*eventing)
+	publisherName := GetPublisherDeploymentName(*eventing)
 	return newDeployment(
 		eventing,
 		publisherConfig,
@@ -81,17 +81,17 @@ func newDeployment(eventing *v1alpha1.Eventing, publisherConfig env.PublisherCon
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      GetEPPDeploymentName(*eventing),
+			Name:      GetPublisherDeploymentName(*eventing),
 			Namespace: eventing.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: GetEPPDeploymentName(*eventing),
+					Name: GetPublisherDeploymentName(*eventing),
 				},
 				Spec: v1.PodSpec{
 					RestartPolicy:                 v1.RestartPolicyAlways,
-					ServiceAccountName:            GetEPPServiceAccountName(*eventing),
+					ServiceAccountName:            GetPublisherServiceAccountName(*eventing),
 					TerminationGracePeriodSeconds: &TerminationGracePeriodSeconds,
 					PriorityClassName:             publisherConfig.PriorityClassName,
 					SecurityContext:               getPodSecurityContext(),
@@ -158,7 +158,7 @@ func WithContainers(publisherConfig env.PublisherConfig, eventing *v1alpha1.Even
 	return func(d *appsv1.Deployment) {
 		d.Spec.Template.Spec.Containers = []v1.Container{
 			{
-				Name:            GetEPPDeploymentName(*eventing),
+				Name:            GetPublisherDeploymentName(*eventing),
 				Image:           publisherConfig.Image,
 				Ports:           getContainerPorts(),
 				LivenessProbe:   getLivenessProbe(),
@@ -177,7 +177,7 @@ func WithContainers(publisherConfig env.PublisherConfig, eventing *v1alpha1.Even
 func WithLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) DeployOpt {
 	return func(d *appsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
-			if strings.EqualFold(container.Name, GetEPPDeploymentName(*eventing)) {
+			if strings.EqualFold(container.Name, GetPublisherDeploymentName(*eventing)) {
 				d.Spec.Template.Spec.Containers[i].Env = append(d.Spec.Template.Spec.Containers[i].Env, getLogEnvVars(publisherConfig, eventing)...)
 			}
 		}
@@ -188,7 +188,7 @@ func WithNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherCon
 	eventing *v1alpha1.Eventing) DeployOpt {
 	return func(d *appsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
-			if strings.EqualFold(container.Name, GetEPPDeploymentName(*eventing)) {
+			if strings.EqualFold(container.Name, GetPublisherDeploymentName(*eventing)) {
 				d.Spec.Template.Spec.Containers[i].Env = getNATSEnvVars(natsConfig, publisherConfig, eventing)
 			}
 		}

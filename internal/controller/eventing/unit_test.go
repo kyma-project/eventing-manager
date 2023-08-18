@@ -2,8 +2,9 @@ package eventing
 
 import (
 	"context"
-	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	"testing"
+
+	"github.com/kyma-project/kyma/components/eventing-controller/options"
 
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 

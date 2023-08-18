@@ -15,11 +15,11 @@ func Test_EPPResourcesNames(t *testing.T) {
 		},
 	}
 
-	require.Equal(t, "test1-publisher-proxy", GetEPPDeploymentName(eventingCR))
-	require.Equal(t, "test1-publisher-proxy", GetEPPPublishServiceName(eventingCR))
-	require.Equal(t, "test1-publisher-proxy-metrics", GetEPPMetricsServiceName(eventingCR))
-	require.Equal(t, "test1-publisher-proxy-health", GetEPPHealthServiceName(eventingCR))
-	require.Equal(t, "test1-publisher-proxy", GetEPPServiceAccountName(eventingCR))
-	require.Equal(t, "test1-publisher-proxy", GetEPPClusterRoleName(eventingCR))
-	require.Equal(t, "test1-publisher-proxy", GetEPPClusterRoleBindingName(eventingCR))
+	require.Equal(t, "test1-publisher-proxy", GetPublisherDeploymentName(eventingCR))
+	require.Equal(t, "test1-publisher-proxy", GetPublisherPublishServiceName(eventingCR))
+	require.Equal(t, "test1-publisher-proxy-metrics", GetPublisherMetricsServiceName(eventingCR))
+	require.Equal(t, "test1-publisher-proxy-health", GetPublisherHealthServiceName(eventingCR))
+	require.Equal(t, "test1-publisher-proxy", GetPublisherServiceAccountName(eventingCR))
+	require.Equal(t, "test1-publisher-proxy", GetPublisherClusterRoleName(eventingCR))
+	require.Equal(t, "test1-publisher-proxy", GetPublisherClusterRoleBindingName(eventingCR))
 }
