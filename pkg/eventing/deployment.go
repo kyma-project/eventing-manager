@@ -61,13 +61,12 @@ func newNATSPublisherDeployment(
 func newEventMeshPublisherDeployment(
 	eventing *v1alpha1.Eventing,
 	publisherConfig env.PublisherConfig) *appsv1.Deployment {
-	publisherName := GetPublisherDeploymentName(*eventing)
 	return newDeployment(
 		eventing,
 		publisherConfig,
-		WithLabels(publisherName, v1alpha1.EventMeshBackendType),
+		WithLabels(GetPublisherDeploymentName(*eventing), v1alpha1.EventMeshBackendType),
 		WithContainers(publisherConfig, eventing),
-		WithBEBEnvVars(publisherName, publisherConfig),
+		WithBEBEnvVars(GetPublisherDeploymentName(*eventing), publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
 	)
 }
@@ -130,7 +129,7 @@ func WithLabels(publisherName string, backendType v1alpha1.BackendType) DeployOp
 		d.Spec.Template.ObjectMeta.Labels = labels
 
 		// label the event-publisher proxy with the backendType label
-		labels[BackendLabelKey] = fmt.Sprint(backendType)
+		labels[BackendLabelKey] = fmt.Sprint(getECBackendType(backendType))
 		d.ObjectMeta.Labels = labels
 	}
 }
@@ -296,20 +295,23 @@ func getResources(requestsCPU, requestsMemory, limitsCPU, limitsMemory string) v
 	}
 }
 
-func WithBEBEnvVars(publisherName string, publisherConfig env.PublisherConfig) DeployOpt {
+func WithBEBEnvVars(publisherName string, publisherConfig env.PublisherConfig,
+	eventing *v1alpha1.Eventing) DeployOpt {
 	return func(d *appsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
 			if strings.EqualFold(container.Name, publisherName) {
-				d.Spec.Template.Spec.Containers[i].Env = getEventMeshEnvVars(publisherName, publisherConfig)
+				d.Spec.Template.Spec.Containers[i].Env = getEventMeshEnvVars(publisherName, publisherConfig, eventing)
 			}
 		}
 	}
 }
 
-func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConfig) []v1.EnvVar {
+func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConfig,
+	eventing *v1alpha1.Eventing) []v1.EnvVar {
 	return []v1.EnvVar{
 		{Name: "BACKEND", Value: "beb"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
+		{Name: "EVENT_TYPE_PREFIX", Value: eventing.GetEventMeshBackend().Config.EventTypePrefix},
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{
 			Name: "CLIENT_ID",
