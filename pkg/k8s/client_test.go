@@ -2,11 +2,13 @@ package k8s
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -148,7 +150,78 @@ func Test_DeleteDeployment(t *testing.T) {
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
 				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &appsv1.Deployment{})
-			require.True(t, errors.IsNotFound(err), "DeleteDeployment did not delete deployment")
+			require.True(t, apierrors.IsNotFound(err), "DeleteDeployment did not delete deployment")
+		})
+	}
+}
+
+func Test_GetSecret(t *testing.T) {
+	t.Parallel()
+	// Define test cases as a table.
+	testCases := []struct {
+		name              string
+		namespacedName    string
+		wantSecret        *corev1.Secret
+		wantError         error
+		wantNotFoundError bool
+	}{
+		{
+			name:           "success",
+			namespacedName: "test-namespace/test-secret",
+			wantSecret: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Secret",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-secret",
+					Namespace: "test-namespace",
+				},
+				Data: map[string][]byte{
+					"key": []byte("value"),
+				},
+			},
+		},
+		{
+			name:              "not found",
+			namespacedName:    "test-namespace/test-secret",
+			wantSecret:        nil,
+			wantNotFoundError: true,
+		},
+		{
+			name:           "namespaced name format error",
+			namespacedName: "my-secret",
+			wantSecret:     nil,
+			wantError:      errors.New("invalid namespaced name. It must be in the format of 'namespace/name'"),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			fakeClient := fake.NewClientBuilder().Build()
+			kubeClient := &KubeClient{
+				client: fakeClient,
+			}
+
+			// Create the secret if it should exist
+			if tc.wantSecret != nil {
+				require.NoError(t, fakeClient.Create(ctx, tc.wantSecret))
+			}
+
+			// Call the GetSecret function with the test case's namespacedName.
+			secret, err := kubeClient.GetSecret(context.Background(), tc.namespacedName)
+
+			// Assert that the function returned the expected secret and error.
+			if tc.wantNotFoundError {
+				require.True(t, apierrors.IsNotFound(err))
+			} else {
+				require.Equal(t, tc.wantError, err)
+			}
+			require.Equal(t, tc.wantSecret, secret)
 		})
 	}
 }

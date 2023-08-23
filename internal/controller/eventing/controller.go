@@ -18,31 +18,22 @@ package eventing
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
-	"strings"
-
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/object"
 	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
+	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,26 +42,16 @@ import (
 const (
 	FinalizerName             = "eventing.operator.kyma-project.io/finalizer"
 	ControllerName            = "eventing-manager-controller"
-	ManagedByLabelKey         = "app.kubernetes.io/managed-by"
-	ManagedByLabelValue       = ControllerName
 	NatsServerNotAvailableMsg = "NATS server is not available"
 	natsClientPort            = 4222
-
-	BEBBackendSecretLabelKey   = "kyma-project.io/eventing-backend"
-	BEBBackendSecretLabelValue = "beb"
-
-	BEBSecretNameSuffix = "-beb-oauth2"
-
-	BackendCRLabelKey   = "kyma-project.io/eventing"
-	BackendCRLabelValue = "backend"
 
 	AppLabelValue             = deployment.PublisherName
 	PublisherSecretEMSHostKey = "ems-publish-host"
 
-	TokenEndpointFormat             = "%s?grant_type=%s&response_type=token"
-	NamespacePrefix                 = "/"
-	BEBPublishEndpointForSubscriber = "/sap/ems/v1"
-	BEBPublishEndpointForPublisher  = "/sap/ems/v1/events"
+	TokenEndpointFormat                   = "%s?grant_type=%s&response_type=token"
+	NamespacePrefix                       = "/"
+	EventMeshPublishEndpointForSubscriber = "/sap/ems/v1"
+	EventMeshPublishEndpointForPublisher  = "/sap/ems/v1/events"
 )
 
 // Reconciler reconciles an Eventing object
@@ -273,9 +254,13 @@ func (r *Reconciler) handlePublisherProxy(
 	eventing *eventingv1alpha1.Eventing,
 	backendType eventingv1alpha1.BackendType) (*v1.Deployment, error) {
 	// get nats config with NATS server url
-	natsConfig, err := r.natsConfigHandler.GetNatsConfig(ctx, *eventing)
-	if err != nil {
-		return nil, err
+	var natsConfig *env.NATSConfig
+	if backendType == eventingv1alpha1.NatsBackendType {
+		var err error
+		natsConfig, err = r.natsConfigHandler.GetNatsConfig(ctx, *eventing)
+		if err != nil {
+			return nil, err
+		}
 	}
 	// CreateOrUpdate deployment for eventing publisher proxy deployment
 	deployment, err := r.eventingManager.DeployPublisherProxy(ctx, eventing, natsConfig, backendType)
@@ -292,179 +277,20 @@ func (r *Reconciler) handlePublisherProxy(
 }
 
 func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
-	// retrieve secret to authenticate with EventMesh
-	substrings := strings.Split(eventing.GetEventMeshBackend().Config.EventMeshSecret, "/")
-	eventMeshSecret := &corev1.Secret{}
-	if err := r.Get(ctx, types.NamespacedName{Namespace: substrings[0], Name: substrings[1]}, eventMeshSecret); err != nil {
+	// Start the EventMesh subscription controller
+	err := r.startEventMeshSubscriptionController(ctx, eventing)
+	if err != nil {
+		// TODO: implement status handling
 		return ctrl.Result{}, err
 	}
 
-	// CreateOrUpdate deployment for publisher proxy secret
-	secretForPublisher, err := r.SyncPublisherProxySecret(ctx, eventMeshSecret)
-	if err != nil {
-		// backendStatus.SetPublisherReadyCondition(false, eventingv1alpha1.ConditionReasonPublisherProxySecretError, err.Error())
-		// if updateErr := r.syncBackendStatus(ctx, backendStatus, nil); updateErr != nil {
-		// return ctrl.Result{}, fmt.Errorf("failed to update status while syncing Event Publisher secret: %v", err)
-		// }
-		return ctrl.Result{}, err
-	}
-
-	// Set environment with secrets for BEB subscription controller
-	err = setUpEnvironmentForBEBController(secretForPublisher)
-	if err != nil {
-		// backendStatus.SetSubscriptionControllerReadyCondition(false, eventingv1alpha1.ConditionReasonControllerStartFailed, err.Error())
-		// if updateErr := r.syncBackendStatus(ctx, backendStatus, nil); updateErr != nil {
-		// 	return ctrl.Result{},fmt.Errorf(err, "failed to update status while setting up environment variables for BEB controller")
-		// }
-		return ctrl.Result{}, fmt.Errorf("failed to setup environment variables for EventMesh controller: %v", err)
-	}
-
-	//TODO: Start the EventMesh subscription controller
-
-	_, err = r.handlePublisherProxy(ctx, eventing, eventing.GetEventMeshBackend().Type)
+	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.GetEventMeshBackend().Type)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
-	return ctrl.Result{}, nil
+	return r.handleEventingState(ctx, deployment, eventing, log)
 }
 
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {
 	return r.logger.WithContext().Named(ControllerName)
-}
-
-func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *corev1.Secret) (*corev1.Secret, error) {
-	secretNamespacedName := types.NamespacedName{
-		Namespace: deployment.PublisherNamespace,
-		Name:      deployment.PublisherName,
-	}
-	currentSecret := new(corev1.Secret)
-
-	desiredSecret, err := getSecretForPublisher(secret)
-	if err != nil {
-		return nil, fmt.Errorf("invalid secret for Event Publisher: %v", err)
-	}
-	err = r.Get(ctx, secretNamespacedName, currentSecret)
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			// Create secret
-			r.namedLogger().Debug("Creating secret for BEB publisher")
-			err := r.Create(ctx, desiredSecret)
-			if err != nil {
-				return nil, fmt.Errorf("create secret for Event Publisher failed: %v", err)
-			}
-			return desiredSecret, nil
-		}
-		return nil, fmt.Errorf("Failed to get Event Publisher secret failed: %v", err)
-	}
-
-	if object.Semantic.DeepEqual(currentSecret, desiredSecret) {
-		r.namedLogger().Debug("No need to update secret for BEB Event Publisher")
-		return currentSecret, nil
-	}
-
-	// Update secret
-	desiredSecret.ResourceVersion = currentSecret.ResourceVersion
-	if err := r.Update(ctx, desiredSecret); err != nil {
-		return nil, fmt.Errorf("failed to update Event Publisher secret: %v", err)
-	}
-
-	return desiredSecret, nil
-}
-
-func newSecret(name, namespace string) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-	}
-}
-
-func getSecretForPublisher(bebSecret *corev1.Secret) (*corev1.Secret, error) {
-	secret := newSecret(deployment.PublisherName, deployment.PublisherNamespace)
-
-	secret.Labels = map[string]string{
-		deployment.AppLabelKey: AppLabelValue,
-	}
-
-	if _, ok := bebSecret.Data["messaging"]; !ok {
-		return nil, errors.New("message is missing from BEB secret")
-	}
-	messagingBytes := bebSecret.Data["messaging"]
-
-	if _, ok := bebSecret.Data["namespace"]; !ok {
-		return nil, errors.New("namespace is missing from BEB secret")
-	}
-	namespaceBytes := bebSecret.Data["namespace"]
-
-	var messages []Message
-	err := json.Unmarshal(messagingBytes, &messages)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, m := range messages {
-		if m.Broker.BrokerType == "saprestmgw" {
-			if len(m.OA2.ClientID) == 0 {
-				return nil, errors.New("client ID is missing")
-			}
-			if len(m.OA2.ClientSecret) == 0 {
-				return nil, errors.New("client secret is missing")
-			}
-			if len(m.OA2.TokenEndpoint) == 0 {
-				return nil, errors.New("tokenendpoint is missing")
-			}
-			if len(m.OA2.GrantType) == 0 {
-				return nil, errors.New("granttype is missing")
-			}
-			if len(m.URI) == 0 {
-				return nil, errors.New("publish URL is missing")
-			}
-
-			secret.StringData = getSecretStringData(m.OA2.ClientID, m.OA2.ClientSecret, m.OA2.TokenEndpoint, m.OA2.GrantType, m.URI, string(namespaceBytes))
-			break
-		}
-	}
-
-	return secret, nil
-}
-
-func getSecretStringData(clientID, clientSecret, tokenEndpoint, grantType, publishURL, namespace string) map[string]string {
-	return map[string]string{
-		deployment.PublisherSecretClientIDKey:      clientID,
-		deployment.PublisherSecretClientSecretKey:  clientSecret,
-		deployment.PublisherSecretTokenEndpointKey: fmt.Sprintf(TokenEndpointFormat, tokenEndpoint, grantType),
-		deployment.PublisherSecretEMSURLKey:        fmt.Sprintf("%s%s", publishURL, BEBPublishEndpointForPublisher),
-		PublisherSecretEMSHostKey:                  publishURL,
-		deployment.PublisherSecretBEBNamespaceKey:  namespace,
-	}
-}
-
-func setUpEnvironmentForBEBController(secret *corev1.Secret) error {
-	err := os.Setenv("BEB_API_URL", fmt.Sprintf("%s%s", string(secret.Data[PublisherSecretEMSHostKey]), BEBPublishEndpointForSubscriber))
-	if err != nil {
-		return fmt.Errorf("set BEB_API_URL env var failed: %v", err)
-	}
-
-	err = os.Setenv("CLIENT_ID", string(secret.Data[deployment.PublisherSecretClientIDKey]))
-	if err != nil {
-		return fmt.Errorf("set CLIENT_ID env var failed: %v", err)
-	}
-
-	err = os.Setenv("CLIENT_SECRET", string(secret.Data[deployment.PublisherSecretClientSecretKey]))
-	if err != nil {
-		return fmt.Errorf("set CLIENT_SECRET env var failed: %v", err)
-	}
-
-	err = os.Setenv("TOKEN_ENDPOINT", string(secret.Data[deployment.PublisherSecretTokenEndpointKey]))
-	if err != nil {
-		return fmt.Errorf("set TOKEN_ENDPOINT env var failed: %v", err)
-	}
-
-	err = os.Setenv("BEB_NAMESPACE", fmt.Sprintf("%s%s", NamespacePrefix, string(secret.Data[deployment.PublisherSecretBEBNamespaceKey])))
-	if err != nil {
-		return fmt.Errorf("set BEB_NAMESPACE env var failed: %v", err)
-	}
-
-	return nil
 }
