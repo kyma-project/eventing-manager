@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: eventing-manager-cert-handler
+  labels:
+    app: eventing-manager-cert-handler
+    app.kubernetes.io/component: eventing-manager
+    app.kubernetes.io/created-by: eventing-manager
+    app.kubernetes.io/part-of: eventing-manager
+  annotations:
+    sidecar.istio.io/inject: "false"
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: api-gateway
+          image: api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CRD_NAME
+              value: "subscriptions.eventing.kyma-project.io"
+            - name: SECRET_NAME
+              value: "eventing-manager-webhook-server-cert"
+      serviceAccountName: eventing-manager-cert-handler

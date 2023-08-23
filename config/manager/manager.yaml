@@ -1,40 +1,32 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    control-plane: controller-manager
-    app.kubernetes.io/name: namespace
-    app.kubernetes.io/instance: system
-    app.kubernetes.io/component: eventing-manager
-    app.kubernetes.io/created-by: eventing-manager
-    app.kubernetes.io/part-of: eventing-manager
-    app.kubernetes.io/managed-by: kustomize
-  name: system
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: eventing-manager
   namespace: system
   labels:
-    control-plane: controller-manager
-    app.kubernetes.io/name: deployment
-    app.kubernetes.io/instance: controller-manager
+    control-plane: eventing-manager
+    app.kubernetes.io/name: eventing-manager
+    app.kubernetes.io/instance: eventing-manager
     app.kubernetes.io/component: eventing-manager
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
-    app.kubernetes.io/managed-by: kustomize
 spec:
   selector:
     matchLabels:
-      control-plane: controller-manager
+      control-plane: eventing-manager
+      app.kubernetes.io/name: eventing-manager
+      app.kubernetes.io/instance: eventing-manager
+      app.kubernetes.io/component: eventing-manager
   replicas: 1
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
       labels:
-        control-plane: controller-manager
+        control-plane: eventing-manager
+        app.kubernetes.io/name: eventing-manager
+        app.kubernetes.io/instance: eventing-manager
+        app.kubernetes.io/component: eventing-manager
     spec:
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
       # according to the platforms which are supported by your solution.
@@ -74,6 +66,10 @@ spec:
       - command:
         - /manager
         env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
           - name: NATS_URL
             value: eventing-nats.kyma-system.svc.cluster.local
           - name: EVENT_TYPE_PREFIX
@@ -130,7 +126,7 @@ spec:
           - name: JS_STREAM_MAX_BYTES
             value: "700Mi"
           - name: WEBHOOK_SECRET_NAME
-            value: "eventing-webhook-server-cert"
+            value: "eventing-manager-webhook-server-cert"
           - name: MUTATING_WEBHOOK_NAME
             value: "subscription-mutating-webhook-configuration"
           - name: VALIDATING_WEBHOOK_NAME
@@ -170,5 +166,14 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+        volumeMounts:
+          - mountPath: /tmp/k8s-webhook-server/serving-certs
+            name: cert
+            readOnly: true
       serviceAccountName: eventing-controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: "eventing-manager-webhook-server-cert"

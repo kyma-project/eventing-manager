@@ -4,9 +4,9 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    control-plane: controller-manager
-    app.kubernetes.io/name: configmap
-    app.kubernetes.io/instance: system
+    control-plane: eventing-manager
+    app.kubernetes.io/name: eventing
+    app.kubernetes.io/instance: eventing-manager
     app.kubernetes.io/component: eventing-manager
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
