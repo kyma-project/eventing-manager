@@ -11,4 +11,17 @@ metadata:
   namespace: kyma-system
 spec:
   backends:
-    - type: "NATS"
+  - type: "EventMesh"
+    config:
+      eventMeshSecret: "kyma-system/eventing-backend"
+  publisher:
+    replicas:
+      min: 2
+      max: 2
+    resources:
+      limits:
+        cpu: 300m
+        memory: 312Mi
+      requests:
+        cpu: 100m
+        memory: 156Mi

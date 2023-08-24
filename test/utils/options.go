@@ -101,3 +101,15 @@ func WithEventingLogLevel(logLevel string) EventingOption {
 		return nil
 	}
 }
+
+func WithEventMeshBackend(eventMeshSecret string) EventingOption {
+	return func(nats *v1alpha1.Eventing) error {
+		nats.Spec.Backends[0] = v1alpha1.Backend{
+			Type: v1alpha1.EventMeshBackendType,
+			Config: v1alpha1.BackendConfig{
+				EventMeshSecret: eventMeshSecret,
+			},
+		}
+		return nil
+	}
+}

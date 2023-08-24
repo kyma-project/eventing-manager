@@ -10,17 +10,21 @@ import (
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
+
 	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
 
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
+	v1 "k8s.io/api/apps/v1"
 )
 
-const projectRootDir = "../../../../../"
+const (
+	projectRootDir  = "../../../../../"
+	eventTypePrefix = "test-prefix"
+)
 
 var testEnvironment *testutils.TestEnvironment //nolint:gochecknoglobals // used in tests
 
@@ -98,7 +102,7 @@ func Test_CreateEventingCR(t *testing.T) {
 			wantEnsureK8sObjects: true,
 		},
 		{
-			name: "Eventing CR should have processing state deployment is not ready yet",
+			name: "Eventing CR should have processing state when deployment is not ready yet",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
 				utils.WithEventingStreamData("Memory", "1M", 1, 1),
@@ -153,32 +157,103 @@ func Test_CreateEventingCR(t *testing.T) {
 			// check Eventing CR status.
 			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
 			if tc.givenDeploymentReady {
-				testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureEventingSpecPublisherReflected(t, tc.givenEventing)
-				testEnvironment.EnsureEventingReplicasReflected(t, tc.givenEventing)
-				testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenEventing)
+				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
+				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
 				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
 			if tc.wantEnsureK8sObjects {
 				// check if EPP resources exists.
-				testEnvironment.EnsureEPPK8sResourcesExists(t, *tc.givenEventing)
+				ensureK8sResources(t, tc.givenEventing, testEnvironment)
+			}
+		})
+	}
+}
 
-				// check if the owner reference is set.
-				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
+func Test_CreateEventingCR_EventMesh(t *testing.T) {
+	t.Parallel()
 
-				// check if EPP resources are correctly created.
-				deployment, err := testEnvironment.GetDeploymentFromK8s(eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				require.NoError(t, err)
-				// K8s Services
-				testEnvironment.EnsureEPPPublishServiceCorrect(t, deployment, *tc.givenEventing)
-				testEnvironment.EnsureEPPMetricsServiceCorrect(t, deployment, *tc.givenEventing)
-				testEnvironment.EnsureEPPHealthServiceCorrect(t, deployment, *tc.givenEventing)
-				// ClusterRole
-				testEnvironment.EnsureEPPClusterRoleCorrect(t, *tc.givenEventing)
-				// ClusterRoleBinding
-				testEnvironment.EnsureEPPClusterRoleBindingCorrect(t, *tc.givenEventing)
+	testCases := []struct {
+		name                 string
+		givenEventing        *eventingv1alpha1.Eventing
+		givenDeploymentReady bool
+		wantMatches          gomegatypes.GomegaMatcher
+		wantEnsureK8sObjects bool
+	}{
+		{
+			name: "Eventing CR should have ready state when all deployment replicas are ready",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRNamespace("test-namespace1"),
+				utils.WithEventMeshBackend("test-namespace1/test-secret-name"),
+				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			givenDeploymentReady: true,
+			wantMatches: gomega.And(
+				matchers.HaveStatusReady(),
+				//matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HavePublisherProxyReadyConditionDeployed(),
+				matchers.HaveFinalizer(),
+			),
+			wantEnsureK8sObjects: true,
+		},
+		{
+			name: "Eventing CR should have processing state when deployment is not ready yet",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRNamespace("test-namespace2"),
+				utils.WithEventMeshBackend("test-namespace2/test-secret-name"),
+				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			wantMatches: gomega.And(
+				matchers.HaveStatusProcessing(),
+				//matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HavePublisherProxyReadyConditionProcessing(),
+				matchers.HaveFinalizer(),
+			),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			g := gomega.NewWithT(t)
+
+			// given
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+				return tc.givenDeploymentReady
+			}
+
+			// create unique namespace for this test run.
+			givenNamespace := tc.givenEventing.Namespace
+
+			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
+			// create EventMesh secret.
+			testEnvironment.EnsureSecretCreated(t, "test-secret-name", tc.givenEventing.Namespace)
+
+			// when
+			// create Eventing CR.
+			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+
+			defer func() {
+				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+				}
+			}()
+
+			// then
+			// check Eventing CR status.
+			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
+			if tc.givenDeploymentReady {
+				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
+				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
+				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
+			}
+
+			if tc.wantEnsureK8sObjects {
+				// check if other EPP resources exists and values are reflected.
+				ensureK8sResources(t, tc.givenEventing, testEnvironment)
 			}
 		})
 	}
@@ -523,4 +598,31 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			testEnvironment.EnsureEPPK8sResourcesExists(t, *tc.givenEventing)
 		})
 	}
+}
+
+func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+	testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
+	testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
+	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
+	testEnvironment.EnsureEventingReplicasReflected(t, givenEventing)
+	testEnvironment.EnsureDeploymentOwnerReferenceSet(t, givenEventing)
+}
+
+func ensureK8sResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+	testEnvironment.EnsureEPPK8sResourcesExists(t, *givenEventing)
+
+	// check if the owner reference is set.
+	testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *givenEventing)
+
+	// check if EPP resources are correctly created.
+	deployment, err := testEnvironment.GetDeploymentFromK8s(eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
+	require.NoError(t, err)
+	// K8s Services
+	testEnvironment.EnsureEPPPublishServiceCorrect(t, deployment, *givenEventing)
+	testEnvironment.EnsureEPPMetricsServiceCorrect(t, deployment, *givenEventing)
+	testEnvironment.EnsureEPPHealthServiceCorrect(t, deployment, *givenEventing)
+	// ClusterRole
+	testEnvironment.EnsureEPPClusterRoleCorrect(t, *givenEventing)
+	// ClusterRoleBinding
+	testEnvironment.EnsureEPPClusterRoleBindingCorrect(t, *givenEventing)
 }

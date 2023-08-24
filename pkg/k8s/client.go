@@ -2,9 +2,12 @@ package k8s
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -16,6 +19,7 @@ type Client interface {
 	DeleteDeployment(context.Context, string, string) error
 	GetNATSResources(context.Context, string) (*natsv1alpha1.NATSList, error)
 	PatchApply(context.Context, client.Object) error
+	GetSecret(context.Context, string) (*corev1.Secret, error)
 }
 
 type KubeClient struct {
@@ -67,4 +71,22 @@ func (c *KubeClient) PatchApply(ctx context.Context, object client.Object) error
 		Force:        pointer.Bool(true),
 		FieldManager: c.fieldManager,
 	})
+}
+
+// GetSecret returns the secret with the given namespaced name.
+// namespacedName is in the format of "namespace/name".
+func (c *KubeClient) GetSecret(ctx context.Context, namespacedName string) (*corev1.Secret, error) {
+	substrings := strings.Split(namespacedName, "/")
+	if len(substrings) != 2 {
+		return nil, errors.New("invalid namespaced name. It must be in the format of 'namespace/name'")
+	}
+	secret := &corev1.Secret{}
+	err := c.client.Get(ctx, client.ObjectKey{
+		Namespace: substrings[0],
+		Name:      substrings[1],
+	}, secret)
+	if err != nil {
+		return nil, err
+	}
+	return secret, nil
 }

@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: eventing-manager
-  name: eventing-sample
+  name: eventing
   namespace: kyma-system
 spec:
   backends:
