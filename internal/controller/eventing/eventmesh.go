@@ -25,20 +25,12 @@ func (r *Reconciler) startEventMeshSubscriptionController(ctx context.Context, e
 	// CreateOrUpdate deployment for publisher proxy secret
 	secretForPublisher, err := r.SyncPublisherProxySecret(ctx, eventMeshSecret)
 	if err != nil {
-		// backendStatus.SetPublisherReadyCondition(false, eventingv1alpha1.ConditionReasonPublisherProxySecretError, err.Error())
-		// if updateErr := r.syncBackendStatus(ctx, backendStatus, nil); updateErr != nil {
-		// return ctrl.Result{}, fmt.Errorf("failed to update status while syncing Event Publisher secret: %v", err)
-		// }
 		return err
 	}
 
 	// Set environment with secrets for BEB subscription controller
 	err = setUpEnvironmentForEventMesh(secretForPublisher)
 	if err != nil {
-		// backendStatus.SetSubscriptionControllerReadyCondition(false, eventingv1alpha1.ConditionReasonControllerStartFailed, err.Error())
-		// if updateErr := r.syncBackendStatus(ctx, backendStatus, nil); updateErr != nil {
-		// 	return ctrl.Result{},fmt.Errorf(err, "failed to update status while setting up environment variables for BEB controller")
-		// }
 		return fmt.Errorf("failed to setup environment variables for EventMesh controller: %v", err)
 	}
 

@@ -159,15 +159,15 @@ func Test_GetSecret(t *testing.T) {
 	t.Parallel()
 	// Define test cases as a table.
 	testCases := []struct {
-		name              string
-		namespacedName    string
-		wantSecret        *corev1.Secret
-		wantError         error
-		wantNotFoundError bool
+		name                string
+		givenNamespacedName string
+		wantSecret          *corev1.Secret
+		wantError           error
+		wantNotFoundError   bool
 	}{
 		{
-			name:           "success",
-			namespacedName: "test-namespace/test-secret",
+			name:                "success",
+			givenNamespacedName: "test-namespace/test-secret",
 			wantSecret: &corev1.Secret{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Secret",
@@ -183,16 +183,16 @@ func Test_GetSecret(t *testing.T) {
 			},
 		},
 		{
-			name:              "not found",
-			namespacedName:    "test-namespace/test-secret",
-			wantSecret:        nil,
-			wantNotFoundError: true,
+			name:                "not found",
+			givenNamespacedName: "test-namespace/test-secret",
+			wantSecret:          nil,
+			wantNotFoundError:   true,
 		},
 		{
-			name:           "namespaced name format error",
-			namespacedName: "my-secret",
-			wantSecret:     nil,
-			wantError:      errors.New("invalid namespaced name. It must be in the format of 'namespace/name'"),
+			name:                "namespaced name format error",
+			givenNamespacedName: "my-secret",
+			wantSecret:          nil,
+			wantError:           errors.New("invalid namespaced name. It must be in the format of 'namespace/name'"),
 		},
 	}
 
@@ -212,8 +212,8 @@ func Test_GetSecret(t *testing.T) {
 				require.NoError(t, fakeClient.Create(ctx, tc.wantSecret))
 			}
 
-			// Call the GetSecret function with the test case's namespacedName.
-			secret, err := kubeClient.GetSecret(context.Background(), tc.namespacedName)
+			// Call the GetSecret function with the test case's givenNamespacedName.
+			secret, err := kubeClient.GetSecret(context.Background(), tc.givenNamespacedName)
 
 			// Assert that the function returned the expected secret and error.
 			if tc.wantNotFoundError {
