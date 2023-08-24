@@ -534,7 +534,7 @@ func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, ev
 		}
 
 		eventTypePrefix := test.FindEnvVar(deployment.Spec.Template.Spec.Containers[0].Env, "EVENT_TYPE_PREFIX")
-		eventTypePrefixCheck := eventTypePrefix != nil && eventTypePrefix.Value == eventingCR.Spec.Backends[0].Config.EventTypePrefix
+		eventTypePrefixCheck := eventTypePrefix != nil && eventTypePrefix.Value == eventingCR.Spec.Backend.Config.EventTypePrefix
 		return eventingCR.Spec.Publisher.Resources.Limits.Cpu().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu()) &&
 			eventingCR.Spec.Publisher.Resources.Limits.Memory().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Memory()) &&
 			eventingCR.Spec.Publisher.Resources.Requests.Cpu().Equal(*deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu()) &&

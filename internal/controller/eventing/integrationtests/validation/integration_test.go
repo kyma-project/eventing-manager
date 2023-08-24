@@ -32,7 +32,7 @@ const (
 	namespace          = "namespace"
 
 	spec                   = "spec"
-	backends               = "backends"
+	backend                = "backend"
 	backendType            = "type"
 	typeEventMesh          = "EventMesh"
 	typeNats               = "NATS"
@@ -173,7 +173,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			},
 		},
 		{
-			name: `validation of spec.backends.config.eventMeshSecret fails when empty if spec.type = EventMesh`,
+			name: `validation of spec.backend.config.eventMeshSecret fails when empty if spec.type = EventMesh`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -183,11 +183,9 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeEventMesh,
-								config:      map[string]any{},
-							},
+						backend: map[string]any{
+							backendType: typeEventMesh,
+							config:      map[string]any{},
 						},
 					},
 				},
@@ -195,7 +193,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			wantErrMsg: "secret cannot be empty if EventMesh backend is used",
 		},
 		{
-			name: `validation of spec.backends.config.eventMeshSecret fails if it does not match the format namespace/name`,
+			name: `validation of spec.backend.config.eventMeshSecret fails if it does not match the format namespace/name`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -205,21 +203,19 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeEventMesh,
-								config: map[string]any{
-									eventMeshSecret: wrongSecret,
-								},
+						backend: map[string]any{
+							backendType: typeEventMesh,
+							config: map[string]any{
+								eventMeshSecret: wrongSecret,
 							},
 						},
 					},
 				},
 			},
-			wantErrMsg: "spec.backends[0].config.eventMeshSecret in body should match '^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$'",
+			wantErrMsg: "spec.backend.config.eventMeshSecret in body should match '^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$'",
 		},
 		{
-			name: `validation of spec.backends.config.eventMeshSecret passes if it matches the format namespace/name`,
+			name: `validation of spec.backend.config.eventMeshSecret passes if it matches the format namespace/name`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -229,12 +225,10 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeEventMesh,
-								config: map[string]any{
-									eventMeshSecret: someSecret,
-								},
+						backend: map[string]any{
+							backendType: typeEventMesh,
+							config: map[string]any{
+								eventMeshSecret: someSecret,
 							},
 						},
 					},
@@ -242,7 +236,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			},
 		},
 		{
-			name: `validation of spec.backends.type fails for values other than NATS or EventMesh`,
+			name: `validation of spec.backend.type fails for values other than NATS or EventMesh`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -252,10 +246,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: gibberish,
-							},
+						backend: map[string]any{
+							backendType: gibberish,
 						},
 					},
 				},
@@ -263,7 +255,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			wantErrMsg: "backend type can only be set to NATS or EventMesh",
 		},
 		{
-			name: `validation of spec.backends.type passes for value = NATS and spec.backends.config.eventMeshSecret passes when empty`,
+			name: `validation of spec.backend.type passes for value = NATS and spec.backend.config.eventMeshSecret passes when empty`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -273,9 +265,28 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeNats,
+						backend: map[string]any{
+							backendType: typeNats,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.backend.type and spec.backend.config.eventMeshSecret passes for value = EventMesh`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							backendType: typeEventMesh,
+							config: map[string]any{
+								eventMeshSecret: someSecret,
 							},
 						},
 					},
@@ -283,7 +294,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			},
 		},
 		{
-			name: `validation of spec.backends.type and spec.backends.config.eventMeshSecret passes for value = EventMesh`,
+			name: `validation of spec.backend.config.natsStreamStorageType fails for values other than File or Memory`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -293,35 +304,10 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeEventMesh,
-								config: map[string]any{
-									eventMeshSecret: someSecret,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: `validation of spec.backends.config.natsStreamStorageType fails for values other than File or Memory`,
-			givenUnstructuredEventing: unstructured.Unstructured{
-				Object: map[string]any{
-					kind:       kindEventing,
-					apiVersion: apiVersionEventing,
-					metadata: map[string]any{
-						name:      test.GetRandK8sName(7),
-						namespace: test.GetRandK8sName(7),
-					},
-					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeNats,
-								config: map[string]any{
-									natsStreamStorageType: gibberish,
-								},
+						backend: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								natsStreamStorageType: gibberish,
 							},
 						},
 					},
@@ -330,7 +316,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			wantErrMsg: "storage type can only be set to File or Memory",
 		},
 		{
-			name: `validation of spec.backends.config.natsStreamStorageType passes for value = File`,
+			name: `validation of spec.backend.config.natsStreamStorageType passes for value = File`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -340,12 +326,10 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeNats,
-								config: map[string]any{
-									natsStreamStorageType: storageTypeFile,
-								},
+						backend: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								natsStreamStorageType: storageTypeFile,
 							},
 						},
 					},
@@ -353,7 +337,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			},
 		},
 		{
-			name: `validation of spec.backends.config.natsStreamStorageType passes for value = Memory`,
+			name: `validation of spec.backend.config.natsStreamStorageType passes for value = Memory`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -363,12 +347,10 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeNats,
-								config: map[string]any{
-									natsStreamStorageType: storageTypeMemory,
-								},
+						backend: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								natsStreamStorageType: storageTypeMemory,
 							},
 						},
 					},
@@ -376,7 +358,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			},
 		},
 		{
-			name: `validation of spec.backends.config.eventTypePrefix fails for empty string`,
+			name: `validation of spec.backend.config.eventTypePrefix fails for empty string`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -386,12 +368,10 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeNats,
-								config: map[string]any{
-									eventTypePrefix: "",
-								},
+						backend: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								eventTypePrefix: "",
 							},
 						},
 					},
@@ -400,7 +380,7 @@ func Test_Validate_CreateEventing(t *testing.T) {
 			wantErrMsg: "eventTypePrefix cannot be empty",
 		},
 		{
-			name: `validation of spec.backends.config.eventTypePrefix should pass for valid value`,
+			name: `validation of spec.backend.config.eventTypePrefix should pass for valid value`,
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -410,12 +390,10 @@ func Test_Validate_CreateEventing(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeNats,
-								config: map[string]any{
-									eventTypePrefix: "mock.test.prefix",
-								},
+						backend: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								eventTypePrefix: "mock.test.prefix",
 							},
 						},
 					},
@@ -591,7 +569,7 @@ func Test_Validate_Defaulting(t *testing.T) {
 			),
 		},
 		{
-			name: "defaulting with an empty spec.backends.config",
+			name: "defaulting with an empty spec.backend.config",
 			givenUnstructuredEventing: unstructured.Unstructured{
 				Object: map[string]any{
 					kind:       kindEventing,
@@ -601,31 +579,29 @@ func Test_Validate_Defaulting(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeNats,
-								config:      map[string]any{
-									// empty, to be filled by defaulting
+						backend: map[string]any{
+							backendType: typeNats,
+							config:      map[string]any{
+								// empty, to be filled by defaulting
+							},
+							publisher: map[string]any{
+								replicas: map[string]any{
+									min: 2,
+									max: 2,
 								},
-								publisher: map[string]any{
-									replicas: map[string]any{
-										min: 2,
-										max: 2,
+								resources: map[string]any{
+									limits: map[string]any{
+										cpu:    limitsCpuValue,
+										memory: limitsMemoryValue,
 									},
-									resources: map[string]any{
-										limits: map[string]any{
-											cpu:    limitsCpuValue,
-											memory: limitsMemoryValue,
-										},
-										requests: map[string]any{
-											cpu:    requestsCpuValue,
-											memory: requestsMemoryValue,
-										},
+									requests: map[string]any{
+										cpu:    requestsCpuValue,
+										memory: requestsMemoryValue,
 									},
 								},
-								logging: map[string]any{
-									logLevel: logLevelInfo,
-								},
+							},
+							logging: map[string]any{
+								logLevel: logLevelInfo,
 							},
 						},
 					},
@@ -646,21 +622,19 @@ func Test_Validate_Defaulting(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeNats,
-								config: map[string]any{
-									natsStreamStorageType: storageTypeFile,
-									natsStreamReplicas:    streamReplicas,
-									natsStreamMaxSize:     maxSize,
-									natsMaxMsgsPerTopic:   msgsPerTopic,
-								},
-								publisher: map[string]any{
-									// empty, to be filled by defaulting
-								},
-								logging: map[string]any{
-									logLevel: logLevelInfo,
-								},
+						backend: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								natsStreamStorageType: storageTypeFile,
+								natsStreamReplicas:    streamReplicas,
+								natsStreamMaxSize:     maxSize,
+								natsMaxMsgsPerTopic:   msgsPerTopic,
+							},
+							publisher: map[string]any{
+								// empty, to be filled by defaulting
+							},
+							logging: map[string]any{
+								logLevel: logLevelInfo,
 							},
 						},
 					},
@@ -682,34 +656,32 @@ func Test_Validate_Defaulting(t *testing.T) {
 						namespace: test.GetRandK8sName(7),
 					},
 					spec: map[string]any{
-						backends: []interface{}{
-							map[string]any{
-								backendType: typeNats,
-								config: map[string]any{
-									natsStreamStorageType: storageTypeFile,
-									natsStreamReplicas:    streamReplicas,
-									natsStreamMaxSize:     maxSize,
-									natsMaxMsgsPerTopic:   msgsPerTopic,
+						backend: map[string]any{
+							backendType: typeNats,
+							config: map[string]any{
+								natsStreamStorageType: storageTypeFile,
+								natsStreamReplicas:    streamReplicas,
+								natsStreamMaxSize:     maxSize,
+								natsMaxMsgsPerTopic:   msgsPerTopic,
+							},
+							publisher: map[string]any{
+								replicas: map[string]any{
+									min: 2,
+									max: 2,
 								},
-								publisher: map[string]any{
-									replicas: map[string]any{
-										min: 2,
-										max: 2,
+								resources: map[string]any{
+									limits: map[string]any{
+										cpu:    limitsCpuValue,
+										memory: limitsMemoryValue,
 									},
-									resources: map[string]any{
-										limits: map[string]any{
-											cpu:    limitsCpuValue,
-											memory: limitsMemoryValue,
-										},
-										requests: map[string]any{
-											cpu:    requestsCpuValue,
-											memory: requestsMemoryValue,
-										},
+									requests: map[string]any{
+										cpu:    requestsCpuValue,
+										memory: requestsMemoryValue,
 									},
 								},
-								logging: map[string]any{
-									// empty, to be filled by defaulting
-								},
+							},
+							logging: map[string]any{
+								// empty, to be filled by defaulting
 							},
 						},
 					},

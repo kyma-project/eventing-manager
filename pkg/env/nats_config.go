@@ -60,7 +60,6 @@ type NATSConfig struct {
 }
 
 // ToECENVNATSConfig returns eventing-controller's NATSConfig.
-// Expects eventingCR.Spec.Backends to be of length==1.
 func (nc NATSConfig) ToECENVNATSConfig(eventingCR v1alpha1.Eventing) ecenv.NATSConfig {
 	return ecenv.NATSConfig{
 		// values from local NATSConfig.
@@ -78,11 +77,11 @@ func (nc NATSConfig) ToECENVNATSConfig(eventingCR v1alpha1.Eventing) ecenv.NATSC
 		JSStreamDiscardPolicy:   nc.JSStreamDiscardPolicy,
 		JSConsumerDeliverPolicy: nc.JSConsumerDeliverPolicy,
 		// values from Eventing CR.
-		EventTypePrefix:         eventingCR.Spec.Backends[0].Config.EventTypePrefix,
-		JSStreamStorageType:     strings.ToLower(eventingCR.Spec.Backends[0].Config.NATSStreamStorageType),
-		JSStreamReplicas:        eventingCR.Spec.Backends[0].Config.NATSStreamReplicas,
-		JSStreamMaxBytes:        eventingCR.Spec.Backends[0].Config.NATSStreamMaxSize.String(),
-		JSStreamMaxMsgsPerTopic: int64(eventingCR.Spec.Backends[0].Config.NATSMaxMsgsPerTopic),
+		EventTypePrefix:         eventingCR.Spec.Backend.Config.EventTypePrefix,
+		JSStreamStorageType:     strings.ToLower(eventingCR.Spec.Backend.Config.NATSStreamStorageType),
+		JSStreamReplicas:        eventingCR.Spec.Backend.Config.NATSStreamReplicas,
+		JSStreamMaxBytes:        eventingCR.Spec.Backend.Config.NATSStreamMaxSize.String(),
+		JSStreamMaxMsgsPerTopic: int64(eventingCR.Spec.Backend.Config.NATSMaxMsgsPerTopic),
 	}
 }
 

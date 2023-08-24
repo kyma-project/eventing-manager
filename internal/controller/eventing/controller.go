@@ -216,18 +216,14 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// set webhook condition to true.
 	eventing.Status.SetWebhookReadyConditionToTrue()
 
-	for _, backend := range eventing.Spec.Backends {
-		switch backend.Type {
-		case eventingv1alpha1.NatsBackendType:
-			return r.reconcileNATSBackend(ctx, eventing, log)
-		case eventingv1alpha1.EventMeshBackendType:
-			return r.reconcileEventMeshBackend(ctx, eventing, log)
-		default:
-			return ctrl.Result{Requeue: false}, fmt.Errorf("not supported backend type %s", backend.Type)
-		}
+	switch eventing.Spec.Backend.Type {
+	case eventingv1alpha1.NatsBackendType:
+		return r.reconcileNATSBackend(ctx, eventing, log)
+	case eventingv1alpha1.EventMeshBackendType:
+		return r.reconcileEventMeshBackend(ctx, eventing, log)
+	default:
+		return ctrl.Result{Requeue: false}, fmt.Errorf("not supported backend type %s", eventing.Spec.Backend.Type)
 	}
-	// this should never happen, but if happens do nothing
-	return ctrl.Result{Requeue: false}, fmt.Errorf("no backend is provided in the spec")
 }
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {

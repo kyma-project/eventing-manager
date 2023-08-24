@@ -101,11 +101,11 @@ func (n *NatsConfigHandlerImpl) GetNatsConfig(ctx context.Context, eventing v1al
 	if err != nil {
 		return nil, err
 	}
-	natsConfig.JSStreamStorageType = eventing.Spec.Backends[0].Config.NATSStreamStorageType
-	natsConfig.JSStreamReplicas = eventing.Spec.Backends[0].Config.NATSStreamReplicas
-	natsConfig.JSStreamMaxBytes = eventing.Spec.Backends[0].Config.NATSStreamMaxSize.String()
-	natsConfig.JSStreamMaxMsgsPerTopic = int64(eventing.Spec.Backends[0].Config.NATSMaxMsgsPerTopic)
-	natsConfig.EventTypePrefix = eventing.Spec.Backends[0].Config.EventTypePrefix
+	natsConfig.JSStreamStorageType = eventing.Spec.Backend.Config.NATSStreamStorageType
+	natsConfig.JSStreamReplicas = eventing.Spec.Backend.Config.NATSStreamReplicas
+	natsConfig.JSStreamMaxBytes = eventing.Spec.Backend.Config.NATSStreamMaxSize.String()
+	natsConfig.JSStreamMaxMsgsPerTopic = int64(eventing.Spec.Backend.Config.NATSMaxMsgsPerTopic)
+	natsConfig.EventTypePrefix = eventing.Spec.Backend.Config.EventTypePrefix
 	return &natsConfig, nil
 }
 
