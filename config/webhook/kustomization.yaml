@@ -1,0 +1,12 @@
+resources:
+- job.yaml
+- cronjob.yaml
+- webhook_configs.yaml
+- service.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: api-gateway
+  newName: europe-docker.pkg.dev/kyma-project/prod/eventing-webhook-certificates
+  newTag: v20230808-29d8ce01

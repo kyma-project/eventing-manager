@@ -4,14 +4,14 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    control-plane: controller-manager
-    app.kubernetes.io/name: servicemonitor
-    app.kubernetes.io/instance: eventing-controller-manager-metrics-monitor
+    control-plane: eventing-manager
+    app.kubernetes.io/name: eventing-manager-metrics-monitor
+    app.kubernetes.io/instance: eventing-manager-metrics-monitor
     app.kubernetes.io/component: metrics
     app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/part-of: eventing-manager
     app.kubernetes.io/managed-by: kustomize
-  name: eventing-controller-manager-metrics-monitor
+  name: eventing-manager-metrics-monitor
   namespace: system
 spec:
   endpoints:
@@ -23,4 +23,4 @@ spec:
         insecureSkipVerify: true
   selector:
     matchLabels:
-      control-plane: controller-manager
+      control-plane: eventing-manager

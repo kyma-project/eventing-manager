@@ -3,12 +3,15 @@
 # It should be run by config/default
 resources:
 - bases/operator.kyma-project.io_eventings.yaml
+- external/subscriptions.eventing.kyma-project.io.crd.yaml
+- external/applications.applicationconnector.crd.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
 #- patches/webhook_in_eventings.yaml
+- patches/webhook_in_subscriptions.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
