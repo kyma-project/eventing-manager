@@ -35,8 +35,8 @@ type oauth2Credentials struct {
 }
 
 func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
-	// gets oauth2ClientID and secret and stops the BEB controller if changed
-	err := r.syncOauth2ClientIDAndSecret(ctx)
+	// gets oauth2ClientID and secret and stops the EventMesh subscription manager if changed
+	err := r.syncOauth2ClientIDAndSecret(ctx, eventing.Namespace)
 	if err != nil {
 		// TODO: update status
 		//backendStatus.SetPublisherReadyCondition(false, eventingv1alpha1.ConditionReasonOauth2ClientSyncFailed, err.Error())
@@ -117,7 +117,7 @@ func (r *Reconciler) stopEventMeshSubManager(runCleanup bool, log *zap.SugaredLo
 	log.Info("EventMesh subscription-manager stopped!")
 	// update flags so it does not try to stop the manager again.
 	r.isEventMeshSubManagerStarted = false
-	r.eventingManager = nil
+	r.eventMeshSubManager = nil
 
 	return nil
 }
@@ -161,10 +161,8 @@ func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *corev
 	return desiredSecret, nil
 }
 
-func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context) error {
-	// Following could return an error when the OAuth2Client CR is created for the first time, until the secret is
-	// created by the Hydra operator. However, eventually it should get resolved in the next few reconciliation loops.
-	credentials, err := r.getOAuth2ClientCredentials(ctx)
+func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, secretNamespace string) error {
+	credentials, err := r.getOAuth2ClientCredentials(ctx, secretNamespace)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
@@ -202,13 +200,16 @@ func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context) (*oauth2Credentials, error) {
+func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context, secretNamespace string) (*oauth2Credentials, error) {
 	var err error
 	var exists bool
 	var clientID, clientSecret, tokenURL, certsURL []byte
 
 	oauth2Secret := new(corev1.Secret)
-	oauth2SecretNamespacedName := r.getOAuth2SecretNamespacedName()
+	oauth2SecretNamespacedName := types.NamespacedName{
+		Namespace: secretNamespace,
+		Name:      r.cfg.EventingWebhookAuthSecretName,
+	}
 
 	r.namedLogger().Infof("Reading secret %s", oauth2SecretNamespacedName.String())
 
@@ -250,12 +251,6 @@ func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context) (*oauth2Cre
 	}
 
 	return &credentials, nil
-}
-
-func (r *Reconciler) getOAuth2SecretNamespacedName() types.NamespacedName {
-	name := r.cfg.EventingWebhookAuthSecretName
-	namespace := r.cfg.EventingWebhookAuthSecretNamespace
-	return types.NamespacedName{Name: name, Namespace: namespace}
 }
 
 func (r *Reconciler) isOauth2CredentialsInitialized() bool {

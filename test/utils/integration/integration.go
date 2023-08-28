@@ -166,9 +166,16 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
 	jetStreamSubManagerMock.On("Stop", mock.Anything).Return(nil)
 
+	// define EventMesh subscription manager mock.
+	eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+	eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil)
+	eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
+	eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil)
+
 	// define subscription manager factory mock.
 	subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
 	subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(jetStreamSubManagerMock)
+	subManagerFactoryMock.On("NewEventMeshManager", mock.Anything).Return(eventMeshSubManagerMock, nil)
 
 	eventingReconciler := eventingctrl.NewReconciler(
 		k8sClient,
@@ -734,7 +741,7 @@ func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure correctness of CABundle in Webhooks")
 }
 
-func (env TestEnvironment) EnsureSecretCreated(t *testing.T, name, namespace string) {
+func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, name, namespace string) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
@@ -792,6 +799,23 @@ func (env TestEnvironment) EnsureSecretCreated(t *testing.T, name, namespace str
 			"namespace":         []byte("bar"),
 			"serviceinstanceid": []byte("foo"),
 			"xsappname":         []byte("bar"),
+		},
+		Type: "Opaque",
+	}
+	env.EnsureK8sResourceCreated(t, secret)
+}
+
+func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, name, namespace string) {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+		Data: map[string][]byte{
+			"client_id":     []byte("foo"),
+			"client_secret": []byte("bar"),
+			"token_url":     []byte("token-url"),
+			"certs_url":     []byte("certs-url"),
 		},
 		Type: "Opaque",
 	}

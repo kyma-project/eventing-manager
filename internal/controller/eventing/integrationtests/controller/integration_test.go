@@ -51,7 +51,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func Test_CreateEventingCR(t *testing.T) {
+func Test_CreateEventingCR_NATS(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -231,7 +231,9 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 			// create EventMesh secret.
-			testEnvironment.EnsureSecretCreated(t, "test-secret-name", tc.givenEventing.Namespace)
+			testEnvironment.EnsureEventMeshSecretCreated(t, "test-secret-name", tc.givenEventing.Namespace)
+			// create eventing-webhook-auth secret.
+			testEnvironment.EnsureOAuthSecretCreated(t, "eventing-webhook-auth", tc.givenEventing.Namespace)
 
 			// when
 			// create Eventing CR.
