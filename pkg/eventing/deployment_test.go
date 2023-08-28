@@ -31,19 +31,19 @@ func TestNewDeployment(t *testing.T) {
 	testCases := []struct {
 		name                  string
 		givenPublisherName    string
-		givenBackend          string
+		givenBackendType      v1alpha1.BackendType
 		wantBackendAssertions func(t *testing.T, publisherName string, deployment appsv1.Deployment)
 	}{
 		{
 			name:                  "NATS should be set properly after calling the constructor",
 			givenPublisherName:    "test-name",
-			givenBackend:          "NATS",
+			givenBackendType:      v1alpha1.NatsBackendType,
 			wantBackendAssertions: natsBackendAssertions,
 		},
 		{
 			name:                  "EventMesh should be set properly after calling the constructor",
 			givenPublisherName:    "test-name",
-			givenBackend:          "EventMesh",
+			givenBackendType:      v1alpha1.EventMeshBackendType,
 			wantBackendAssertions: eventMeshBackendAssertions,
 		},
 	}
@@ -56,7 +56,7 @@ func TestNewDeployment(t *testing.T) {
 			var deployment *appsv1.Deployment
 			var natsConfig env.NATSConfig
 
-			switch tc.givenBackend {
+			switch tc.givenBackendType {
 			case "NATS":
 				natsConfig = env.NATSConfig{
 					JSStreamName: "kyma",
@@ -71,13 +71,14 @@ func TestNewDeployment(t *testing.T) {
 				deployment = newEventMeshPublisherDeployment(testutils.NewEventingCR(
 					testutils.WithEventingCRName(tc.givenPublisherName),
 					testutils.WithEventingCRNamespace(publisherNamespace),
+					testutils.WithEventMeshBackend("test-namespace/test-name"),
 				), publisherConfig)
 			default:
 				t.Errorf("Invalid backend!")
 			}
 
 			// the tight backenType should be set
-			assert.Equal(t, deployment.ObjectMeta.Labels[BackendLabelKey], tc.givenBackend)
+			assert.Equal(t, deployment.ObjectMeta.Labels[BackendLabelKey], string(getECBackendType(tc.givenBackendType)))
 			assert.Equal(t, deployment.ObjectMeta.Labels[AppLabelKey], publisherName)
 
 			// check the container properties were set properly
@@ -220,15 +221,19 @@ func Test_GetLogEnvVars(t *testing.T) {
 
 func Test_GetEventMeshEnvVars(t *testing.T) {
 	testCases := []struct {
-		name      string
-		givenEnvs map[string]string
-		wantEnvs  map[string]string
+		name          string
+		givenEnvs     map[string]string
+		givenEventing *v1alpha1.Eventing
+		wantEnvs      map[string]string
 	}{
 		{
 			name: "REQUEST_TIMEOUT is not set, the default value should be taken",
 			givenEnvs: map[string]string{
 				"PUBLISHER_REQUESTS_CPU": "64m",
 			},
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventMeshBackend("test-namespace/test-name"),
+			),
 			wantEnvs: map[string]string{
 				"REQUEST_TIMEOUT": "5s", // default value
 			},
@@ -238,8 +243,13 @@ func Test_GetEventMeshEnvVars(t *testing.T) {
 			givenEnvs: map[string]string{
 				"PUBLISHER_REQUEST_TIMEOUT": "10s",
 			},
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventMeshBackend("test-namespace/test-name"),
+				testutils.WithEventingEventTypePrefix(eventTypePrefix),
+			),
 			wantEnvs: map[string]string{
-				"REQUEST_TIMEOUT": "10s",
+				"EVENT_TYPE_PREFIX": eventTypePrefix,
+				"REQUEST_TIMEOUT":   "10s",
 			},
 		},
 	}
@@ -249,7 +259,7 @@ func Test_GetEventMeshEnvVars(t *testing.T) {
 				t.Setenv(k, v)
 			}
 			backendConfig := env.GetBackendConfig()
-			envVars := getEventMeshEnvVars("test-name", backendConfig.PublisherConfig)
+			envVars := getEventMeshEnvVars("test-name", backendConfig.PublisherConfig, tc.givenEventing)
 
 			// ensure the right envs were set
 			for index, val := range tc.wantEnvs {

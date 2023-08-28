@@ -23,18 +23,18 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	"go.uber.org/zap"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
+	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,10 +44,16 @@ import (
 const (
 	FinalizerName             = "eventing.operator.kyma-project.io/finalizer"
 	ControllerName            = "eventing-manager-controller"
-	ManagedByLabelKey         = "app.kubernetes.io/managed-by"
-	ManagedByLabelValue       = ControllerName
 	NatsServerNotAvailableMsg = "NATS server is not available"
 	natsClientPort            = 4222
+
+	AppLabelValue             = deployment.PublisherName
+	PublisherSecretEMSHostKey = "ems-publish-host"
+
+	TokenEndpointFormat                   = "%s?grant_type=%s&response_type=token"
+	NamespacePrefix                       = "/"
+	EventMeshPublishEndpointForSubscriber = "/sap/ems/v1"
+	EventMeshPublishEndpointForPublisher  = "/sap/ems/v1/events"
 )
 
 // Reconciler reconciles an Eventing object
@@ -110,10 +116,10 @@ func NewReconciler(
 //+kubebuilder:rbac:groups=security.istio.io,resources=customresourcedefinitions,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=nats,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;update;patch;create;delete
 //+kubebuilder:rbac:groups="admissionregistration.k8s.io",resources=mutatingwebhookconfigurations,verbs=get;list;watch;update;patch;create;delete
 //+kubebuilder:rbac:groups="admissionregistration.k8s.io",resources=validatingwebhookconfigurations,verbs=get;list;watch;update;patch;create;delete
-//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=nats,verbs=get;list;watch
 //+kubebuilder:rbac:groups="applicationconnector.kyma-project.io",resources=applications,verbs=get;list;watch;update;patch;create;delete
 //+kubebuilder:rbac:groups="eventing.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
 // +kubebuilder:rbac:groups=eventing.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
@@ -263,9 +269,13 @@ func (r *Reconciler) handlePublisherProxy(
 	eventing *eventingv1alpha1.Eventing,
 	backendType eventingv1alpha1.BackendType) (*v1.Deployment, error) {
 	// get nats config with NATS server url
-	natsConfig, err := r.natsConfigHandler.GetNatsConfig(ctx, *eventing)
-	if err != nil {
-		return nil, err
+	var natsConfig *env.NATSConfig
+	if backendType == eventingv1alpha1.NatsBackendType {
+		var err error
+		natsConfig, err = r.natsConfigHandler.GetNatsConfig(ctx, *eventing)
+		if err != nil {
+			return nil, err
+		}
 	}
 	// CreateOrUpdate deployment for eventing publisher proxy deployment
 	deployment, err := r.eventingManager.DeployPublisherProxy(ctx, eventing, natsConfig, backendType)
@@ -282,8 +292,18 @@ func (r *Reconciler) handlePublisherProxy(
 }
 
 func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
-	// TODO: Implement me.
-	return ctrl.Result{}, nil
+	// Start the EventMesh subscription controller
+	err := r.startEventMeshSubscriptionController(ctx, eventing)
+	if err != nil {
+		// TODO: implement status handling
+		return ctrl.Result{}, err
+	}
+
+	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.GetEventMeshBackend().Type)
+	if err != nil {
+		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
+	}
+	return r.handleEventingState(ctx, deployment, eventing, log)
 }
 
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {
