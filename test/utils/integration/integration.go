@@ -73,7 +73,7 @@ type TestEnvironment struct {
 	Context             context.Context
 	EnvTestInstance     *envtest.Environment
 	k8sClient           client.Client
-	KubeClient          *k8s.Client
+	KubeClient          k8s.Client
 	K8sDynamicClient    *dynamic.DynamicClient
 	Reconciler          *eventingctrl.Reconciler
 	Logger              *logger.Logger
@@ -216,7 +216,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	return &TestEnvironment{
 		Context:             ctx,
 		k8sClient:           k8sClient,
-		KubeClient:          &kubeClient,
+		KubeClient:          kubeClient,
 		K8sDynamicClient:    dynamicClient,
 		Reconciler:          eventingReconciler,
 		Logger:              ctrLogger,
@@ -702,7 +702,15 @@ func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
 		}
 
 		// get Mutating and validating webhook configurations from k8s.
-		mwh, vwh, err := env.GetMutatingAndValidatingWebHookConfigFromK8s(env.Context)
+		mwh, err := env.KubeClient.GetMutatingWebHookConfiguration(env.Context,
+			getTestBackendConfig().MutatingWebhookName)
+		if err != nil {
+			env.Logger.WithContext().Error(err)
+			return false
+		}
+
+		vwh, err := env.KubeClient.GetValidatingWebHookConfiguration(env.Context,
+			getTestBackendConfig().ValidatingWebhookName)
 		if err != nil {
 			env.Logger.WithContext().Error(err)
 			return false
@@ -946,30 +954,7 @@ func (env TestEnvironment) GetSecretFromK8s(name, namespace string) (*corev1.Sec
 		Name:      name,
 		Namespace: namespace,
 	}
-	result := &corev1.Secret{}
-	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func (env TestEnvironment) GetMutatingAndValidatingWebHookConfigFromK8s(ctx context.Context) (
-	*admissionv1.MutatingWebhookConfiguration, *admissionv1.ValidatingWebhookConfiguration, error) {
-	var mutatingWH admissionv1.MutatingWebhookConfiguration
-	mutatingWHKey := client.ObjectKey{
-		Name: getTestBackendConfig().MutatingWebhookName,
-	}
-	if err := env.k8sClient.Get(ctx, mutatingWHKey, &mutatingWH); err != nil {
-		return nil, nil, err
-	}
-	var validatingWH admissionv1.ValidatingWebhookConfiguration
-	validatingWHKey := client.ObjectKey{
-		Name: getTestBackendConfig().ValidatingWebhookName,
-	}
-	if err := env.k8sClient.Get(ctx, validatingWHKey, &validatingWH); err != nil {
-		return nil, nil, err
-	}
-	return &mutatingWH, &validatingWH, nil
+	return env.KubeClient.GetSecret(env.Context, nn.String())
 }
 
 func (env TestEnvironment) GetServiceAccountFromK8s(name, namespace string) (*corev1.ServiceAccount, error) {

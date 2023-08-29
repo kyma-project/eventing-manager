@@ -77,7 +77,7 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 			wantError: errInvalidObject,
 		},
 		{
-			name: "WH does not contain valid CABundle",
+			name: "WHs do not contain valid CABundle",
 			givenObjects: []client.Object{
 				getSecretWithTLSSecret(dummyCABundle),
 				getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
@@ -108,7 +108,7 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 			wantError: nil,
 		},
 		{
-			name: "WH contains valid CABundle",
+			name: "WHs contains valid CABundle",
 			givenObjects: []client.Object{
 				getSecretWithTLSSecret(dummyCABundle),
 				getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
@@ -143,7 +143,7 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 			wantError: nil,
 		},
 		{
-			name: "WH contains outdated valid CABundle",
+			name: "WHs contains outdated valid CABundle",
 			givenObjects: []client.Object{
 				getSecretWithTLSSecret(newCABundle),
 				getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
@@ -193,7 +193,11 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 			// then
 			require.ErrorIs(t, err, tc.wantError)
 			if tc.wantError == nil {
-				mutatingWH, validatingWH, newErr := testEnv.Reconciler.getMutatingAndValidatingWebHookConfig(ctx)
+				mutatingWH, newErr := testEnv.Reconciler.kubeClient.GetMutatingWebHookConfiguration(ctx,
+					testEnv.Reconciler.backendConfig.MutatingWebhookName)
+				require.NoError(t, newErr)
+				validatingWH, newErr := testEnv.Reconciler.kubeClient.GetValidatingWebHookConfiguration(ctx,
+					testEnv.Reconciler.backendConfig.ValidatingWebhookName)
 				require.NoError(t, newErr)
 				require.Equal(t, mutatingWH.Webhooks[0], tc.wantMutatingWH.Webhooks[0])
 				require.Equal(t, validatingWH.Webhooks[0], tc.wantValidatingWH.Webhooks[0])
