@@ -34,7 +34,7 @@ func (r *Reconciler) syncStatusWithNATSErr(ctx context.Context,
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
-// syncEventingStatusWithErr syncs Eventing status and sets an error state.
+// syncStatusWithPublisherProxyErr updates Publisher Proxy condition and sets an error state.
 // Returns the relevant error.
 func (r *Reconciler) syncStatusWithPublisherProxyErr(ctx context.Context,
 	eventing *eventingv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
@@ -43,6 +43,24 @@ func (r *Reconciler) syncStatusWithPublisherProxyErr(ctx context.Context,
 	eventing.Status.UpdateConditionPublisherProxyReady(metav1.ConditionFalse, eventingv1alpha1.ConditionReasonDeployedFailed,
 		err.Error())
 
+	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
+}
+
+// syncStatusWithSubscriptionManagerErr updates subscription manager condition and sets an error state.
+// Returns the relevant error.
+func (r *Reconciler) syncStatusWithSubscriptionManagerErr(ctx context.Context,
+	eventing *eventingv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	return r.syncStatusWithSubscriptionManagerErrWithReason(ctx,
+		eventingv1alpha1.ConditionReasonEventMeshSubManagerFailed, eventing, err, log)
+}
+
+func (r *Reconciler) syncStatusWithSubscriptionManagerErrWithReason(ctx context.Context,
+	reason eventingv1alpha1.ConditionReason,
+	eventing *eventingv1alpha1.Eventing,
+	err error, log *zap.SugaredLogger) error {
+	// Set error state in status
+	eventing.Status.SetStateError()
+	eventing.Status.UpdateConditionSubscriptionManagerReady(metav1.ConditionFalse, reason, err.Error())
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 

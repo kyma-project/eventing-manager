@@ -29,13 +29,15 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 
 	// given - common for all test cases.
 	givenEventing := utils.NewEventingCR(
-		utils.WithEventingCRNamespace("test-namespace1"),
-		utils.WithEventMeshBackend("test-namespace1/test-secret-name"),
+		utils.WithEventingCRNamespace("test-namespace"),
+		utils.WithEventMeshBackend("test-namespace/test-secret-name"),
 		utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 		utils.WithEventingEventTypePrefix("test-prefix"),
 	)
 
-	givenBackendConfig := &env.BackendConfig{}
+	givenBackendConfig := &env.BackendConfig{
+		EventingWebhookAuthSecretName: "eventing-webhook-auth",
+	}
 	ctx := context.Background()
 
 	// define test cases
@@ -55,7 +57,9 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			name:                              "it should do nothing because syncing OAuth secret failed",
 			givenIsEventMeshSubManagerStarted: true,
 			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
+				return eventMeshSubManagerMock
 			},
 			givenEventingManagerMock: func() *managermocks.Manager {
 				return nil
@@ -69,7 +73,9 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			name:                              "it should do nothing because failed syncing EventMesh secret",
 			givenIsEventMeshSubManagerStarted: true,
 			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
+				return eventMeshSubManagerMock
 			},
 			givenEventingManagerMock: func() *managermocks.Manager {
 				return nil
@@ -95,7 +101,9 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			name:                              "it should do nothing because failed sync Publisher Proxy secret",
 			givenIsEventMeshSubManagerStarted: true,
 			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
+				return eventMeshSubManagerMock
 			},
 			givenEventingManagerMock: func() *managermocks.Manager {
 				return nil
@@ -122,7 +130,9 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			name:                              "it should do nothing because subscription manager is already started",
 			givenIsEventMeshSubManagerStarted: true,
 			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
+				return eventMeshSubManagerMock
 			},
 			givenEventingManagerMock: func() *managermocks.Manager {
 				return nil
@@ -226,6 +236,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t)
+			testEnv.Reconciler.backendConfig = *givenBackendConfig
 			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
 			// get mocks from test-case.
@@ -605,7 +616,7 @@ func Test_getOAuth2ClientCredentials(t *testing.T) {
 			r := Reconciler{
 				Client: fake.NewClientBuilder().WithObjects().Build(),
 				logger: l,
-				cfg: env.BackendConfig{
+				backendConfig: env.BackendConfig{
 					EventingWebhookAuthSecretName:      defaultEventingWebhookAuthSecretName,
 					EventingWebhookAuthSecretNamespace: defaultEventingWebhookAuthSecretNamespace,
 				},

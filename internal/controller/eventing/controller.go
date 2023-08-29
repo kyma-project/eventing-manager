@@ -75,8 +75,7 @@ type Reconciler struct {
 	isEventMeshSubManagerStarted bool
 	natsConfigHandler            NatsConfigHandler
 	credentials                  oauth2Credentials
-	cfg                          env.BackendConfig
-	backendConfig           env.BackendConfig
+	backendConfig                env.BackendConfig
 }
 
 func NewReconciler(
@@ -104,7 +103,6 @@ func NewReconciler(
 		eventMeshSubManager:     nil,
 		isNATSSubManagerStarted: false,
 		natsConfigHandler:       NewNatsConfigHandler(kubeClient, opts),
-		cfg:                     env.GetBackendConfig(),
 	}
 }
 
@@ -200,7 +198,12 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 		}
 	} else {
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
-			// TODO: implement status handling
+			if updateErr := r.syncStatusWithSubscriptionManagerErrWithReason(ctx,
+				eventingv1alpha1.ConditionReasonEventMeshSubManagerStopFailed,
+				eventing, err, log); updateErr != nil {
+				return ctrl.Result{}, fmt.Errorf(
+					"failed to update status while stopping EventMesh controller: %v", updateErr)
+			}
 			return ctrl.Result{}, err
 		}
 	}
@@ -302,9 +305,9 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *ev
 	// Start the EventMesh subscription controller
 	err := r.reconcileEventMeshSubManager(ctx, eventing, log)
 	if err != nil {
-		// TODO: implement status handling
-		return ctrl.Result{}, err
+		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}
+	eventing.Status.SetSubscriptionManagerReadyConditionToTrue()
 
 	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.Spec.Backend.Type)
 	if err != nil {

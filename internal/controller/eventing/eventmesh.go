@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -17,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/object"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -37,13 +35,8 @@ type oauth2Credentials struct {
 
 func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
 	// gets oauth2ClientID and secret and stops the EventMesh subscription manager if changed
-	err := r.syncOauth2ClientIDAndSecret(ctx, eventing.Namespace)
+	err := r.syncOauth2ClientIDAndSecret(ctx, eventing, log)
 	if err != nil {
-		// TODO: update status
-		//backendStatus.SetPublisherReadyCondition(false, eventingv1alpha1.ConditionReasonOauth2ClientSyncFailed, err.Error())
-		//if updateErr := r.syncBackendStatus(ctx, backendStatus, nil); updateErr != nil {
-		//	return ctrl.Result{}, errors.Wrapf(err, "failed to update status while syncing oauth2Client")
-		//}
 		return errors.Errorf("failed to sync OAuth secret: %v", err)
 	}
 
@@ -136,8 +129,8 @@ func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *corev
 	return desiredSecret, nil
 }
 
-func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, secretNamespace string) error {
-	credentials, err := r.getOAuth2ClientCredentials(ctx, secretNamespace)
+func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
+	credentials, err := r.getOAuth2ClientCredentials(ctx, eventing.Namespace)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
@@ -150,18 +143,16 @@ func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, secretName
 	}
 	if oauth2CredentialsNotFound || oauth2CredentialsChanged {
 		// Stop the controller and mark all subs as not ready
-		message := "Stopping the BEB subscription manager due to change in OAuth2 credentials"
+		message := "Stopping the EventMesh subscription manager due to change in OAuth2 credentials"
 		r.namedLogger().Info(message)
 		if err := r.eventMeshSubManager.Stop(false); err != nil {
 			return err
 		}
 		r.isEventMeshSubManagerStarted = false
-		// update eventing backend status to reflect that the controller is not ready
-		// TODO: update status
-		//backendStatus.SetSubscriptionControllerReadyCondition(false, eventingv1alpha1.ConditionReasonSubscriptionControllerNotReady, message)
-		//if updateErr := r.syncBackendStatus(ctx, backendStatus, nil); updateErr != nil {
-		//	return errors.Wrapf(err, "update status after stopping BEB controller failed")
-		//}
+		// update eventing status to reflect that the EventMesh sub manager is not ready
+		if updateErr := r.syncStatusWithPublisherProxyErr(ctx, eventing, errors.New(message), log); updateErr != nil {
+			return errors.Errorf("update status after stopping EventMesh subscription manager failed: %v", updateErr)
+		}
 	}
 	if oauth2CredentialsNotFound {
 		return err
@@ -183,15 +174,13 @@ func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context, secretNames
 	oauth2Secret := new(corev1.Secret)
 	oauth2SecretNamespacedName := types.NamespacedName{
 		Namespace: secretNamespace,
-		Name:      r.cfg.EventingWebhookAuthSecretName,
+		Name:      r.backendConfig.EventingWebhookAuthSecretName,
 	}
 
 	r.namedLogger().Infof("Reading secret %s", oauth2SecretNamespacedName.String())
 
 	if getErr := r.Get(ctx, oauth2SecretNamespacedName, oauth2Secret); getErr != nil {
-		err = fmt.Errorf("get secret failed namespace:%s name:%s: %v",
-			oauth2SecretNamespacedName.Namespace, oauth2SecretNamespacedName.Name, getErr)
-		return nil, err
+		return nil, getErr
 	}
 
 	if clientID, exists = oauth2Secret.Data[secretKeyClientID]; !exists {

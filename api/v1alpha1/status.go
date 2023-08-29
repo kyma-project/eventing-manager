@@ -44,6 +44,23 @@ func (es *EventingStatus) UpdateConditionWebhookReady(status metav1.ConditionSta
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
+func (sm *EventingStatus) UpdateConditionSubscriptionManagerReady(status metav1.ConditionStatus, reason ConditionReason,
+	message string) {
+	condition := metav1.Condition{
+		Type:               string(ConditionSubscriptionManagerReady),
+		Status:             status,
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(reason),
+		Message:            message,
+	}
+	meta.SetStatusCondition(&sm.Conditions, condition)
+}
+
+func (es *EventingStatus) SetSubscriptionManagerReadyConditionToTrue() {
+	es.UpdateConditionSubscriptionManagerReady(metav1.ConditionTrue, ConditionReasonEventMeshSubManagerReady,
+		ConditionSubscriptionManagerReadyMessage)
+}
+
 func (es *EventingStatus) SetStateReady() {
 	es.State = StateReady
 	es.UpdateConditionNATSAvailable(metav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)

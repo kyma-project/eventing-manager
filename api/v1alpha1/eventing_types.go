@@ -32,11 +32,15 @@ const (
 	StateError      string = "Error"
 	StateProcessing string = "Processing"
 
-	ConditionNATSAvailable       ConditionType = "NATSAvailable"
-	ConditionPublisherProxyReady ConditionType = "PublisherProxyReady"
-	ConditionWebhookReady        ConditionType = "WebhookReady"
+	ConditionNATSAvailable            ConditionType = "NATSAvailable"
+	ConditionPublisherProxyReady      ConditionType = "PublisherProxyReady"
+	ConditionWebhookReady             ConditionType = "WebhookReady"
+	ConditionSubscriptionManagerReady ConditionType = "SubscriptionManagerReady"
 
-	ConditionReasonProcessing                 ConditionReason = "Processing"
+	// common reasons
+	ConditionReasonProcessing ConditionReason = "Processing"
+
+	// publisher proxy reasons
 	ConditionReasonDeployed                   ConditionReason = "Deployed"
 	ConditionReasonDeployedFailed             ConditionReason = "DeployFailed"
 	ConditionReasonDeploymentStatusSyncFailed ConditionReason = "DeploymentStatusSyncFailed"
@@ -45,10 +49,17 @@ const (
 	ConditionReasonWebhookFailed              ConditionReason = "WebhookFailed"
 	ConditionReasonWebhookReady               ConditionReason = "Ready"
 
+	// message for conditions
 	ConditionPublisherProxyReadyMessage      = "Publisher proxy is deployed"
 	ConditionNATSAvailableMessage            = "NATS is available"
 	ConditionWebhookReadyMessage             = "Webhook is available"
 	ConditionPublisherProxyProcessingMessage = "Eventing publisher proxy deployment is in progress"
+	ConditionSubscriptionManagerReadyMessage = "Subscription manager is ready"
+
+	// subscription manager reasons
+	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"
+	ConditionReasonEventMeshSubManagerFailed     ConditionReason = "EventMeshSubscriptionManagerFailed"
+	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.

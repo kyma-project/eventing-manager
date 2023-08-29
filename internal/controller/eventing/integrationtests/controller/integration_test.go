@@ -179,21 +179,38 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 		name                 string
 		givenEventing        *eventingv1alpha1.Eventing
 		givenDeploymentReady bool
+		shouldFailSubManager bool
 		wantMatches          gomegatypes.GomegaMatcher
 		wantEnsureK8sObjects bool
 	}{
 		{
-			name: "Eventing CR should have ready state when all deployment replicas are ready",
+			name: "Eventing CR should have error state when subscription manager is not ready",
 			givenEventing: utils.NewEventingCR(
 				utils.WithEventingCRNamespace("test-namespace1"),
 				utils.WithEventMeshBackend("test-namespace1/test-secret-name"),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			wantMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveEventMeshSubManagerNotReadyCondition(
+					"failed to get EventMesh secret: Secret \"test-secret-name\" not found"),
+				matchers.HaveFinalizer(),
+			),
+			shouldFailSubManager: true,
+		},
+		{
+			name: "Eventing CR should have ready state when all deployment replicas are ready",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRNamespace("test-namespace2"),
+				utils.WithEventMeshBackend("test-namespace2/test-secret-name"),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
 			),
 			givenDeploymentReady: true,
 			wantMatches: gomega.And(
 				matchers.HaveStatusReady(),
-				//matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveEventMeshSubManagerReadyCondition(),
 				matchers.HavePublisherProxyReadyConditionDeployed(),
 				matchers.HaveFinalizer(),
 			),
@@ -202,14 +219,14 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 		{
 			name: "Eventing CR should have processing state when deployment is not ready yet",
 			givenEventing: utils.NewEventingCR(
-				utils.WithEventingCRNamespace("test-namespace2"),
-				utils.WithEventMeshBackend("test-namespace2/test-secret-name"),
+				utils.WithEventingCRNamespace("test-namespace3"),
+				utils.WithEventMeshBackend("test-namespace3/test-secret-name"),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
 			),
 			wantMatches: gomega.And(
 				matchers.HaveStatusProcessing(),
-				//matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveEventMeshSubManagerReadyCondition(),
 				matchers.HavePublisherProxyReadyConditionProcessing(),
 				matchers.HaveFinalizer(),
 			),
@@ -230,10 +247,14 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			givenNamespace := tc.givenEventing.Namespace
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
-			// create EventMesh secret.
-			testEnvironment.EnsureEventMeshSecretCreated(t, "test-secret-name", tc.givenEventing.Namespace)
+
 			// create eventing-webhook-auth secret.
 			testEnvironment.EnsureOAuthSecretCreated(t, "eventing-webhook-auth", tc.givenEventing.Namespace)
+
+			if !tc.shouldFailSubManager {
+				// create EventMesh secret.
+				testEnvironment.EnsureEventMeshSecretCreated(t, "test-secret-name", tc.givenEventing.Namespace)
+			}
 
 			// when
 			// create Eventing CR.
@@ -241,7 +262,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 
 			defer func() {
 				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
-				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
+				if !*testEnvironment.EnvTestInstance.UseExistingCluster && !tc.shouldFailSubManager {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
 			}()
