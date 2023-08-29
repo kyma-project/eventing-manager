@@ -53,11 +53,10 @@ func NewEventingManager(
 	ctx context.Context,
 	client client.Client,
 	kubeClient k8s.Client,
+	backendConfig env.BackendConfig,
 	logger *logger.Logger,
 	recorder record.EventRecorder,
 ) Manager {
-	// create an instance of ecbackend Reconciler
-	backendConfig := env.GetBackendConfig()
 	return EventingManager{
 		ctx:           ctx,
 		Client:        client,

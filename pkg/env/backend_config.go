@@ -13,7 +13,10 @@ import (
 type BackendConfig struct {
 	PublisherConfig PublisherConfig
 
-	WebhookSecretName   string `envconfig:"WEBHOOK_SECRET_NAME" default:"eventing-webhook-server-cert"`
+	// namespace where eventing-manager is deployed.
+	Namespace string `envconfig:"NAMESPACE" default:"kyma-system"`
+
+	WebhookSecretName   string `envconfig:"WEBHOOK_SECRET_NAME" default:"eventing-manager-webhook-server-cert"`
 	MutatingWebhookName string `envconfig:"MUTATING_WEBHOOK_NAME" default:"subscription-mutating-webhook-configuration"`
 	//nolint:lll
 	ValidatingWebhookName string `envconfig:"VALIDATING_WEBHOOK_NAME" default:"subscription-validating-webhook-configuration"`

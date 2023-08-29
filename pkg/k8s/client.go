@@ -5,6 +5,8 @@ import (
 	"errors"
 	"strings"
 
+	admissionv1 "k8s.io/api/admissionregistration/v1"
+
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -20,6 +22,10 @@ type Client interface {
 	GetNATSResources(context.Context, string) (*natsv1alpha1.NATSList, error)
 	PatchApply(context.Context, client.Object) error
 	GetSecret(context.Context, string) (*corev1.Secret, error)
+	GetMutatingWebHookConfiguration(ctx context.Context,
+		name string) (*admissionv1.MutatingWebhookConfiguration, error)
+	GetValidatingWebHookConfiguration(ctx context.Context,
+		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
 }
 
 type KubeClient struct {
@@ -89,4 +95,31 @@ func (c *KubeClient) GetSecret(ctx context.Context, namespacedName string) (*cor
 		return nil, err
 	}
 	return secret, nil
+}
+
+// GetMutatingWebHookConfiguration returns the MutatingWebhookConfiguration k8s resource.
+func (c *KubeClient) GetMutatingWebHookConfiguration(ctx context.Context,
+	name string) (*admissionv1.MutatingWebhookConfiguration, error) {
+	var mutatingWH admissionv1.MutatingWebhookConfiguration
+	mutatingWHKey := client.ObjectKey{
+		Name: name,
+	}
+	if err := c.client.Get(ctx, mutatingWHKey, &mutatingWH); err != nil {
+		return nil, err
+	}
+
+	return &mutatingWH, nil
+}
+
+// GetValidatingWebHookConfiguration returns the ValidatingWebhookConfiguration k8s resource.
+func (c *KubeClient) GetValidatingWebHookConfiguration(ctx context.Context,
+	name string) (*admissionv1.ValidatingWebhookConfiguration, error) {
+	var validatingWH admissionv1.ValidatingWebhookConfiguration
+	validatingWHKey := client.ObjectKey{
+		Name: name,
+	}
+	if err := c.client.Get(ctx, validatingWHKey, &validatingWH); err != nil {
+		return nil, err
+	}
+	return &validatingWH, nil
 }

@@ -46,6 +46,16 @@ func (r *Reconciler) syncStatusWithPublisherProxyErr(ctx context.Context,
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
+func (r *Reconciler) syncStatusWithWebhookErr(ctx context.Context,
+	eventing *eventingv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	// Set error state in status
+	eventing.Status.SetStateError()
+	eventing.Status.UpdateConditionWebhookReady(metav1.ConditionFalse, eventingv1alpha1.ConditionReasonWebhookFailed,
+		err.Error())
+
+	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
+}
+
 // syncEventingStatus syncs Eventing status.
 func (r *Reconciler) syncEventingStatus(ctx context.Context,
 	eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) error {

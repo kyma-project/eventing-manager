@@ -165,6 +165,8 @@ func Test_CreateEventingCR(t *testing.T) {
 			if tc.wantEnsureK8sObjects {
 				// check if EPP resources exists.
 				ensureK8sResources(t, tc.givenEventing, testEnvironment)
+				// check if webhook configurations are updated with correct CABundle.
+				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
 		})
 	}
@@ -254,6 +256,8 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			if tc.wantEnsureK8sObjects {
 				// check if other EPP resources exists and values are reflected.
 				ensureK8sResources(t, tc.givenEventing, testEnvironment)
+				// check if webhook configurations are updated with correct CABundle.
+				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
 		})
 	}

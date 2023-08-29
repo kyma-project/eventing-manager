@@ -19,8 +19,10 @@ package eventing
 import (
 	"context"
 	"fmt"
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+
 	"github.com/kyma-project/eventing-manager/pkg/env"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
@@ -70,6 +72,7 @@ type Reconciler struct {
 	natsSubManager          ecsubscriptionmanager.Manager
 	isNATSSubManagerStarted bool
 	natsConfigHandler       NatsConfigHandler
+	backendConfig           env.BackendConfig
 }
 
 func NewReconciler(
@@ -79,6 +82,7 @@ func NewReconciler(
 	logger *logger.Logger,
 	recorder record.EventRecorder,
 	manager eventing.Manager,
+	backendConfig env.BackendConfig,
 	subManagerFactory subscriptionmanager.ManagerFactory,
 	opts *options.Options,
 ) *Reconciler {
@@ -90,6 +94,7 @@ func NewReconciler(
 		kubeClient:              kubeClient,
 		scheme:                  scheme,
 		recorder:                recorder,
+		backendConfig:           backendConfig,
 		subManagerFactory:       subManagerFactory,
 		natsSubManager:          nil,
 		isNATSSubManagerStarted: false,
@@ -203,6 +208,13 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 
 	// set state processing if not set yet
 	r.InitStateProcessing(eventing)
+
+	// sync webhooks CABundle.
+	if err := r.reconcileWebhooksWithCABundle(ctx); err != nil {
+		return ctrl.Result{}, r.syncStatusWithWebhookErr(ctx, eventing, err, log)
+	}
+	// set webhook condition to true.
+	eventing.Status.SetWebhookReadyConditionToTrue()
 
 	for _, backend := range eventing.Spec.Backends {
 		switch backend.Type {

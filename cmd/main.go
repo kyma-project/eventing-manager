@@ -22,7 +22,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+	subscriptionv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
+	subscriptionv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager/jetstream"
 
@@ -61,7 +64,7 @@ func init() {
 	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(natsv1alpha1.AddToScheme(scheme))
 
-	//utilruntime.Must(jetstream.AddToScheme(scheme))
+	utilruntime.Must(jetstream.AddToScheme(scheme))
 	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -119,8 +122,11 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	recorder := mgr.GetEventRecorderFor("eventing-manager")
 	ctx := context.Background()
 
+	// get backend configs.
+	backendConfig := env.GetBackendConfig()
+
 	// create eventing manager instance.
-	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, ctrLogger, recorder)
+	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, backendConfig, ctrLogger, recorder)
 
 	// init the metrics collector.
 	metricsCollector := backendmetrics.NewCollector()
@@ -142,15 +148,27 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		ctrLogger,
 		recorder,
 		eventingManager,
+		backendConfig,
 		subManagerFactory,
 		opts,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "NATS")
+		setupLog.Error(err, "unable to create controller", "controller", "Eventing")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
+
+	// setup webhooks.
+	if err = (&subscriptionv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook")
+		os.Exit(1)
+	}
+
+	if err = (&subscriptionv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create webhook")
+		os.Exit(1)
+	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")

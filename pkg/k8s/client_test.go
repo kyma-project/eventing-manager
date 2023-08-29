@@ -2,8 +2,11 @@ package k8s
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"testing"
+
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -222,6 +225,146 @@ func Test_GetSecret(t *testing.T) {
 				require.Equal(t, tc.wantError, err)
 			}
 			require.Equal(t, tc.wantSecret, secret)
+		})
+	}
+}
+
+func Test_GetMutatingWebHookConfiguration(t *testing.T) {
+	t.Parallel()
+
+	// given
+	newCABundle := make([]byte, 20)
+	_, readErr := rand.Read(newCABundle)
+	require.NoError(t, readErr)
+
+	// Define test cases as a table.
+	testCases := []struct {
+		name                string
+		givenName           string
+		wantMutatingWebhook *admissionv1.MutatingWebhookConfiguration
+		wantNotFoundError   bool
+	}{
+		{
+			name:      "success",
+			givenName: "test-wh",
+			wantMutatingWebhook: &admissionv1.MutatingWebhookConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-wh",
+				},
+				Webhooks: []admissionv1.MutatingWebhook{
+					{
+						ClientConfig: admissionv1.WebhookClientConfig{
+							CABundle: newCABundle,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:                "not found",
+			givenName:           "test-wh",
+			wantMutatingWebhook: nil,
+			wantNotFoundError:   true,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			fakeClient := fake.NewClientBuilder().Build()
+			kubeClient := &KubeClient{
+				client: fakeClient,
+			}
+
+			// Create the MutatingWebHookConfiguration if it should exist
+			if tc.wantMutatingWebhook != nil {
+				require.NoError(t, fakeClient.Create(ctx, tc.wantMutatingWebhook))
+			}
+
+			// when
+			gotWebhook, err := kubeClient.GetMutatingWebHookConfiguration(context.Background(), tc.givenName)
+
+			// then
+			if !tc.wantNotFoundError {
+				require.NoError(t, err)
+				require.Equal(t, tc.wantMutatingWebhook.Webhooks, gotWebhook.Webhooks)
+			} else {
+				require.Error(t, err)
+				require.True(t, apierrors.IsNotFound(err))
+			}
+		})
+	}
+}
+
+func Test_GetValidatingWebHookConfiguration(t *testing.T) {
+	t.Parallel()
+
+	// given
+	newCABundle := make([]byte, 20)
+	_, readErr := rand.Read(newCABundle)
+	require.NoError(t, readErr)
+
+	// Define test cases as a table.
+	testCases := []struct {
+		name                  string
+		givenName             string
+		wantValidatingWebhook *admissionv1.ValidatingWebhookConfiguration
+		wantNotFoundError     bool
+	}{
+		{
+			name:      "success",
+			givenName: "test-wh",
+			wantValidatingWebhook: &admissionv1.ValidatingWebhookConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-wh",
+				},
+				Webhooks: []admissionv1.ValidatingWebhook{
+					{
+						ClientConfig: admissionv1.WebhookClientConfig{
+							CABundle: newCABundle,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:                  "not found",
+			givenName:             "test-wh",
+			wantValidatingWebhook: nil,
+			wantNotFoundError:     true,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			fakeClient := fake.NewClientBuilder().Build()
+			kubeClient := &KubeClient{
+				client: fakeClient,
+			}
+
+			// Create the ValidatingWebhookConfiguration if it should exist
+			if tc.wantValidatingWebhook != nil {
+				require.NoError(t, fakeClient.Create(ctx, tc.wantValidatingWebhook))
+			}
+
+			// when
+			gotWebhook, err := kubeClient.GetValidatingWebHookConfiguration(context.Background(), tc.givenName)
+
+			// then
+			if !tc.wantNotFoundError {
+				require.NoError(t, err)
+				require.Equal(t, tc.wantValidatingWebhook.Webhooks, gotWebhook.Webhooks)
+			} else {
+				require.Error(t, err)
+				require.True(t, apierrors.IsNotFound(err))
+			}
 		})
 	}
 }
