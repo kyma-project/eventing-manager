@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -43,18 +44,18 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 		//if updateErr := r.syncBackendStatus(ctx, backendStatus, nil); updateErr != nil {
 		//	return ctrl.Result{}, errors.Wrapf(err, "failed to update status while syncing oauth2Client")
 		//}
-		return err
+		return errors.Errorf("failed to sync OAuth secret: %v", err)
 	}
 
 	// retrieve secret to authenticate with EventMesh
 	eventMeshSecret, err := r.kubeClient.GetSecret(ctx, eventing.Spec.Backend.Config.EventMeshSecret)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to get EventMesh secret: %v", err)
 	}
 	// CreateOrUpdate deployment for publisher proxy secret
 	secretForPublisher, err := r.SyncPublisherProxySecret(ctx, eventMeshSecret)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to sync Publisher Proxy secret: %v", err)
 	}
 
 	// Set environment with secrets for EventMesh subscription controller
@@ -123,41 +124,15 @@ func (r *Reconciler) stopEventMeshSubManager(runCleanup bool, log *zap.SugaredLo
 }
 
 func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *corev1.Secret) (*corev1.Secret, error) {
-	secretNamespacedName := types.NamespacedName{
-		Namespace: secret.Namespace,
-		Name:      deployment.PublisherName,
-	}
-	currentSecret := new(corev1.Secret)
-
 	desiredSecret, err := getSecretForPublisher(secret)
 	if err != nil {
 		return nil, fmt.Errorf("invalid secret for Event Publisher: %v", err)
 	}
-	err = r.Get(ctx, secretNamespacedName, currentSecret)
+
+	err = r.kubeClient.PatchApply(ctx, desiredSecret)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			// Create secret
-			r.namedLogger().Debug("Creating secret for BEB publisher")
-			err := r.Create(ctx, desiredSecret)
-			if err != nil {
-				return nil, fmt.Errorf("create secret for Event Publisher failed: %v", err)
-			}
-			return desiredSecret, nil
-		}
-		return nil, fmt.Errorf("failed to get Event Publisher secret failed: %v", err)
+		return nil, err
 	}
-
-	if object.Semantic.DeepEqual(currentSecret, desiredSecret) {
-		r.namedLogger().Debug("No need to update secret for BEB Event Publisher")
-		return currentSecret, nil
-	}
-
-	// Update secret
-	desiredSecret.ResourceVersion = currentSecret.ResourceVersion
-	if err := r.Update(ctx, desiredSecret); err != nil {
-		return nil, fmt.Errorf("failed to update Event Publisher secret: %v", err)
-	}
-
 	return desiredSecret, nil
 }
 
@@ -262,6 +237,10 @@ func (r *Reconciler) isOauth2CredentialsInitialized() bool {
 
 func newSecret(name, namespace string) *corev1.Secret {
 	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: corev1.SchemeGroupVersion.String(),
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,

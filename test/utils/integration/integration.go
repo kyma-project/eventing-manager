@@ -742,83 +742,12 @@ func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
 }
 
 func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, name, namespace string) {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      name,
-		},
-		Data: map[string][]byte{
-			"management": []byte("foo"),
-			"messaging": []byte(`[
-			  {
-				"broker": {
-				  "type": "bar"
-				},
-				"oa2": {
-				  "clientid": "foo",
-				  "clientsecret": "foo",
-				  "granttype": "client_credentials",
-				  "tokenendpoint": "bar"
-				},
-				"protocol": [
-				  "amqp10ws"
-				],
-				"uri": "foo"
-			  },
-			  {
-				"broker": {
-				  "type": "foo"
-				},
-				"oa2": {
-				  "clientid": "bar",
-				  "clientsecret": "bar",
-				  "granttype": "client_credentials",
-				  "tokenendpoint": "foo"
-				},
-				"protocol": [
-				  "bar"
-				],
-				"uri": "bar"
-			  },
-			  {
-				"broker": {
-				  "type": "foo"
-				},
-				"oa2": {
-				  "clientid": "foo",
-				  "clientsecret": "bar",
-				  "granttype": "client_credentials",
-				  "tokenendpoint": "foo"
-				},
-				"protocol": [
-				  "httprest"
-				],
-				"uri": "bar"
-			  }
-			]`),
-			"namespace":         []byte("bar"),
-			"serviceinstanceid": []byte("foo"),
-			"xsappname":         []byte("bar"),
-		},
-		Type: "Opaque",
-	}
+	secret := evnttestutils.NewEventMeshSecret(name, namespace)
 	env.EnsureK8sResourceCreated(t, secret)
 }
 
 func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, name, namespace string) {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      name,
-		},
-		Data: map[string][]byte{
-			"client_id":     []byte("foo"),
-			"client_secret": []byte("bar"),
-			"token_url":     []byte("token-url"),
-			"certs_url":     []byte("certs-url"),
-		},
-		Type: "Opaque",
-	}
+	secret := evnttestutils.NewOAuthSecret(name, namespace)
 	env.EnsureK8sResourceCreated(t, secret)
 }
 
