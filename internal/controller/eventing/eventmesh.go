@@ -33,9 +33,9 @@ type oauth2Credentials struct {
 	certsURL     []byte
 }
 
-func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing) error {
 	// gets oauth2ClientID and secret and stops the EventMesh subscription manager if changed
-	err := r.syncOauth2ClientIDAndSecret(ctx, eventing, log)
+	err := r.syncOauth2ClientIDAndSecret(ctx, eventing)
 	if err != nil {
 		return errors.Errorf("failed to sync OAuth secret: %v", err)
 	}
@@ -69,13 +69,13 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 			return err
 		}
 
-		log.Info("EventMesh subscription-manager initialized")
+		r.namedLogger().Info("EventMesh subscription-manager initialized")
 		// save instance only when init is successful.
 		r.eventMeshSubManager = eventMeshSubManager
 	}
 
 	if r.isEventMeshSubManagerStarted {
-		log.Info("EventMesh subscription-manager is already started")
+		r.namedLogger().Info("EventMesh subscription-manager is already started")
 		return nil
 	}
 
@@ -90,7 +90,7 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	if err = r.eventMeshSubManager.Start(defaultSubsConfig, eventMeshSubMgrParams); err != nil {
 		return err
 	}
-	log.Info("EventMesh subscription-manager started")
+	r.namedLogger().Info("EventMesh subscription-manager started")
 	r.isEventMeshSubManagerStarted = true
 
 	return nil
@@ -129,7 +129,7 @@ func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *corev
 	return desiredSecret, nil
 }
 
-func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
+func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, eventing *v1alpha1.Eventing) error {
 	credentials, err := r.getOAuth2ClientCredentials(ctx, eventing.Namespace)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
@@ -139,7 +139,8 @@ func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, eventing *
 	if err == nil && r.isOauth2CredentialsInitialized() {
 		oauth2CredentialsChanged = !bytes.Equal(r.credentials.clientID, credentials.clientID) ||
 			!bytes.Equal(r.credentials.clientSecret, credentials.clientSecret) ||
-			!bytes.Equal(r.credentials.tokenURL, credentials.tokenURL)
+			!bytes.Equal(r.credentials.tokenURL, credentials.tokenURL) ||
+			!bytes.Equal(r.credentials.certsURL, credentials.certsURL)
 	}
 	if oauth2CredentialsNotFound || oauth2CredentialsChanged {
 		// Stop the controller and mark all subs as not ready
@@ -149,9 +150,11 @@ func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, eventing *
 			return err
 		}
 		r.isEventMeshSubManagerStarted = false
+		r.eventMeshSubManager = nil
 		// update eventing status to reflect that the EventMesh sub manager is not ready
-		if updateErr := r.syncStatusWithPublisherProxyErr(ctx, eventing, errors.New(message), log); updateErr != nil {
-			return errors.Errorf("update status after stopping EventMesh subscription manager failed: %v", updateErr)
+		if updateErr := r.syncStatusWithSubscriptionManagerFailedCondition(ctx, eventing,
+			errors.New(message), r.namedLogger()); updateErr != nil {
+			return updateErr
 		}
 	}
 	if oauth2CredentialsNotFound {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 
@@ -22,6 +23,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+)
+
+const (
+	defaultEventingWebhookAuthSecretName      = "eventing-webhook-auth"
+	defaultEventingWebhookAuthSecretNamespace = "kyma-system"
 )
 
 func Test_reconcileEventMeshSubManager(t *testing.T) {
@@ -237,8 +243,6 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig
-			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
-
 			// get mocks from test-case.
 			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
 			givenManagerFactoryMock := tc.givenManagerFactoryMock(givenEventMeshSubManagerMock)
@@ -262,11 +266,11 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			}
 
 			// when
-			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, logger)
+			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing)
 			if err != nil && tc.givenShouldRetry {
 				// This is to test the scenario where initialization of eventMeshSubManager was successful but
 				// starting the eventMeshSubManager failed. So on next try it should again try to start the eventMeshSubManager.
-				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, logger)
+				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing)
 			}
 
 			// then
@@ -543,12 +547,6 @@ func Test_GetSecretForPublisher(t *testing.T) {
 }
 
 func Test_getOAuth2ClientCredentials(t *testing.T) {
-	const (
-		defaultWebhookTokenEndpoint               = "http://domain.com/token"
-		defaultEventingWebhookAuthSecretName      = "eventing-webhook-auth"
-		defaultEventingWebhookAuthSecretNamespace = "kyma-system"
-	)
-
 	testCases := []struct {
 		name             string
 		givenSecrets     []*corev1.Secret
@@ -709,6 +707,255 @@ func Test_isOauth2CredentialsInitialized(t *testing.T) {
 
 			// then
 			require.Equal(t, tc.wantResult, result)
+		})
+	}
+}
+
+func Test_SyncPublisherProxySecret(t *testing.T) {
+	testCases := []struct {
+		name              string
+		givenSecret       *corev1.Secret
+		mockKubeClient    func() *k8smocks.Client
+		wantErr           bool
+		wantDesiredSecret *corev1.Secret
+	}{
+		{
+			name:        "valid secret",
+			givenSecret: utils.NewEventMeshSecret("valid", "test-namespace"),
+			mockKubeClient: func() *k8smocks.Client {
+				kubeClient := new(k8smocks.Client)
+				kubeClient.On("PatchApply", mock.Anything, mock.Anything).Return(nil).Once()
+				return kubeClient
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid secret",
+			givenSecret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-secret",
+					Namespace: "test-namespace",
+				},
+				Data: map[string][]byte{
+					"client_id": []byte("test-client-id"),
+					// missing client_secret
+				},
+			},
+			mockKubeClient: func() *k8smocks.Client {
+				kubeClient := new(k8smocks.Client)
+				kubeClient.On("PatchApply", mock.Anything, mock.Anything).Return(nil).Once()
+				return kubeClient
+			},
+			wantErr: true,
+		},
+		// patchApply error
+		{
+			name:        "pathApply should fail",
+			givenSecret: utils.NewEventMeshSecret("valid", "test-namespace"),
+			mockKubeClient: func() *k8smocks.Client {
+				kubeClient := new(k8smocks.Client)
+				kubeClient.On("PatchApply", mock.Anything, mock.Anything).Return(errors.New("fake error")).Once()
+				return kubeClient
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			r := &Reconciler{
+				kubeClient: tc.mockKubeClient(),
+			}
+
+			// when
+			_, err := r.SyncPublisherProxySecret(context.Background(), tc.givenSecret)
+
+			// then
+			if tc.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
+func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
+	testCases := []struct {
+		name                           string
+		givenEventing                  *v1alpha1.Eventing
+		givenSecret                    *corev1.Secret
+		givenCredentials               *oauth2Credentials
+		givenSubManagerStarted         bool
+		shouldEventMeshSubManagerExist bool
+		wantErr                        bool
+		wantCredentials                *oauth2Credentials
+		wantAssertCheck                bool
+	}{
+		{
+			name: "oauth2 credentials not initialized",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRNamespace("test-namespace"),
+				utils.WithEventMeshBackend("test-namespace/test-secret-name"),
+				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			givenSecret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+					Name:      defaultEventingWebhookAuthSecretName,
+				},
+				Data: map[string][]byte{
+					secretKeyClientID:     []byte("test-client-id"),
+					secretKeyClientSecret: []byte("test-client-secret"),
+					secretKeyTokenURL:     []byte("test-token-url"),
+					secretKeyCertsURL:     []byte("test-certs-url"),
+				},
+			},
+			givenSubManagerStarted:         true,
+			shouldEventMeshSubManagerExist: true,
+			wantCredentials: &oauth2Credentials{
+				clientID:     []byte("test-client-id"),
+				clientSecret: []byte("test-client-secret"),
+				tokenURL:     []byte("test-token-url"),
+				certsURL:     []byte("test-certs-url"),
+			},
+		},
+		{
+			name: "oauth2 credentials changed",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRNamespace("test-namespace"),
+				utils.WithEventMeshBackend("test-namespace/test-secret-name"),
+				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			givenSecret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+					Name:      defaultEventingWebhookAuthSecretName,
+				},
+				Data: map[string][]byte{
+					secretKeyClientID:     []byte("test-client-id-changed"),
+					secretKeyClientSecret: []byte("test-client-secret-changed"),
+					secretKeyTokenURL:     []byte("test-token-url-changed"),
+					secretKeyCertsURL:     []byte("test-certs-url-changed"),
+				},
+			},
+			givenCredentials: &oauth2Credentials{
+				clientID:     []byte("test-client-id"),
+				clientSecret: []byte("test-client-secret"),
+				tokenURL:     []byte("test-token-url"),
+				certsURL:     []byte("test-certs-url"),
+			},
+			givenSubManagerStarted:         false,
+			shouldEventMeshSubManagerExist: false,
+			wantErr:                        false,
+			wantCredentials: &oauth2Credentials{
+				clientID:     []byte("test-client-id-changed"),
+				clientSecret: []byte("test-client-secret-changed"),
+				tokenURL:     []byte("test-token-url-changed"),
+				certsURL:     []byte("test-certs-url-changed"),
+			},
+			wantAssertCheck: true,
+		},
+		{
+			name: "no change in oauth2 credentials",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRNamespace("test-namespace"),
+				utils.WithEventMeshBackend("test-namespace/test-secret-name"),
+				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			givenSecret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+					Name:      defaultEventingWebhookAuthSecretName,
+				},
+				Data: map[string][]byte{
+					secretKeyClientID:     []byte("test-client-id"),
+					secretKeyClientSecret: []byte("test-client-secret"),
+					secretKeyTokenURL:     []byte("test-token-url"),
+					secretKeyCertsURL:     []byte("test-certs-url"),
+				},
+			},
+			givenCredentials: &oauth2Credentials{
+				clientID:     []byte("test-client-id"),
+				clientSecret: []byte("test-client-secret"),
+				tokenURL:     []byte("test-token-url"),
+				certsURL:     []byte("test-certs-url"),
+			},
+			givenSubManagerStarted:         true,
+			shouldEventMeshSubManagerExist: true,
+			wantErr:                        false,
+			wantCredentials: &oauth2Credentials{
+				clientID:     []byte("test-client-id"),
+				clientSecret: []byte("test-client-secret"),
+				tokenURL:     []byte("test-token-url"),
+				certsURL:     []byte("test-certs-url"),
+			},
+		},
+		{
+			name: "oauth2 credentials not found",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRName("test-eventing"),
+				utils.WithEventingCRNamespace("test-namespace"),
+				utils.WithEventMeshBackend("beb"),
+			),
+			givenSubManagerStarted:         false,
+			shouldEventMeshSubManagerExist: false,
+			wantErr:                        true,
+			wantAssertCheck:                true,
+		},
+	}
+
+	ctx := context.Background()
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			testEnv := NewMockedUnitTestEnvironment(t)
+			testEnv.Reconciler.credentials = oauth2Credentials{}
+			eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+			eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
+			testEnv.Reconciler.eventMeshSubManager = eventMeshSubManagerMock
+			testEnv.Reconciler.backendConfig = env.BackendConfig{
+				EventingWebhookAuthSecretNamespace: tc.givenEventing.Namespace,
+				EventingWebhookAuthSecretName:      defaultEventingWebhookAuthSecretName,
+			}
+			testEnv.Reconciler.isEventMeshSubManagerStarted = true
+
+			if tc.givenSecret != nil {
+				require.NoError(t, testEnv.Reconciler.Client.Create(ctx, tc.givenSecret))
+			}
+
+			if tc.givenEventing != nil {
+				require.NoError(t, testEnv.Reconciler.Client.Create(ctx, tc.givenEventing))
+			}
+
+			if tc.givenCredentials != nil {
+				testEnv.Reconciler.credentials.clientID = tc.givenCredentials.clientID
+				testEnv.Reconciler.credentials.clientSecret = tc.givenCredentials.clientSecret
+				testEnv.Reconciler.credentials.tokenURL = tc.givenCredentials.tokenURL
+				testEnv.Reconciler.credentials.certsURL = tc.givenCredentials.certsURL
+			}
+			// when
+			err := testEnv.Reconciler.syncOauth2ClientIDAndSecret(ctx, tc.givenEventing)
+
+			// then
+			if tc.wantAssertCheck {
+				eventMeshSubManagerMock.AssertExpectations(t)
+			}
+			if tc.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.givenSubManagerStarted, testEnv.Reconciler.isEventMeshSubManagerStarted)
+			require.Equal(t, tc.shouldEventMeshSubManagerExist, testEnv.Reconciler.eventMeshSubManager != nil)
+			require.Equal(t, *tc.wantCredentials, testEnv.Reconciler.credentials)
 		})
 	}
 }

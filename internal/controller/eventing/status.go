@@ -64,6 +64,18 @@ func (r *Reconciler) syncStatusWithSubscriptionManagerErrWithReason(ctx context.
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
+// syncStatusWithSubscriptionManagerFailedCondition updates subscription manager condition and
+// sets an error state. It doesn't return the incoming error.
+func (r *Reconciler) syncStatusWithSubscriptionManagerFailedCondition(ctx context.Context,
+	eventing *eventingv1alpha1.Eventing,
+	err error, log *zap.SugaredLogger) error {
+	// Set error state in status
+	eventing.Status.SetStateError()
+	eventing.Status.UpdateConditionSubscriptionManagerReady(metav1.ConditionFalse,
+		eventingv1alpha1.ConditionReasonEventMeshSubManagerFailed, err.Error())
+	return r.syncEventingStatus(ctx, eventing, log)
+}
+
 func (r *Reconciler) syncStatusWithWebhookErr(ctx context.Context,
 	eventing *eventingv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
 	// Set error state in status

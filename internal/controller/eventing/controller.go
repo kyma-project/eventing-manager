@@ -198,13 +198,9 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 		}
 	} else {
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
-			if updateErr := r.syncStatusWithSubscriptionManagerErrWithReason(ctx,
+			return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErrWithReason(ctx,
 				eventingv1alpha1.ConditionReasonEventMeshSubManagerStopFailed,
-				eventing, err, log); updateErr != nil {
-				return ctrl.Result{}, fmt.Errorf(
-					"failed to update status while stopping EventMesh controller: %v", updateErr)
-			}
-			return ctrl.Result{}, err
+				eventing, err, log)
 		}
 	}
 
@@ -303,7 +299,7 @@ func (r *Reconciler) handlePublisherProxy(
 
 func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
 	// Start the EventMesh subscription controller
-	err := r.reconcileEventMeshSubManager(ctx, eventing, log)
+	err := r.reconcileEventMeshSubManager(ctx, eventing)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}

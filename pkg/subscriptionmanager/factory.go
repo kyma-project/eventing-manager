@@ -52,9 +52,16 @@ func (f Factory) NewJetStreamManager(eventing v1alpha1.Eventing, natsConfig env.
 }
 
 func (f Factory) NewEventMeshManager(eventing v1alpha1.Eventing) (ecsubscriptionmanager.Manager, error) {
-	// Set the EVENT_TYPE_PREFIX env variable as it is read in the NewSubscriptionManager() function.
-	if err := os.Setenv("EVENT_TYPE_PREFIX", eventing.GetEventMeshBackend().Config.EventTypePrefix); err != nil {
+	if err := setUpEventMeshSubManagerEnvironment(eventing); err != nil {
 		return nil, err
 	}
 	return eventmesh.NewSubscriptionManager(f.k8sRestCfg, f.metricsAddress, f.resyncPeriod, f.logger), nil
+}
+
+func setUpEventMeshSubManagerEnvironment(eventing v1alpha1.Eventing) error {
+	// Set the EVENT_TYPE_PREFIX env variable as it is read in the NewSubscriptionManager() function.
+	if err := os.Setenv("EVENT_TYPE_PREFIX", eventing.GetEventMeshBackend().Config.EventTypePrefix); err != nil {
+		return err
+	}
+	return nil
 }
