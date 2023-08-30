@@ -10,5 +10,5 @@ metadata:
   name: eventing
   namespace: kyma-system
 spec:
-  backends:
-    - type: "NATS"
+  backend:
+    type: "NATS"

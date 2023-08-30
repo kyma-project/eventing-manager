@@ -54,11 +54,11 @@ func Test_ToECENVNATSConfig(t *testing.T) {
 	require.Equal(t, givenConfig.JSConsumerDeliverPolicy, result.JSConsumerDeliverPolicy)
 
 	// check values from eventing CR.
-	require.Equal(t, givenEventing.Spec.Backends[0].Config.EventTypePrefix, result.EventTypePrefix)
-	require.Equal(t, strings.ToLower(givenEventing.Spec.Backends[0].Config.NATSStreamStorageType), result.JSStreamStorageType)
-	require.Equal(t, givenEventing.Spec.Backends[0].Config.NATSStreamReplicas, result.JSStreamReplicas)
-	require.Equal(t, givenEventing.Spec.Backends[0].Config.NATSStreamMaxSize.String(), result.JSStreamMaxBytes)
-	require.Equal(t, int64(givenEventing.Spec.Backends[0].Config.NATSMaxMsgsPerTopic), result.JSStreamMaxMsgsPerTopic)
+	require.Equal(t, givenEventing.Spec.Backend.Config.EventTypePrefix, result.EventTypePrefix)
+	require.Equal(t, strings.ToLower(givenEventing.Spec.Backend.Config.NATSStreamStorageType), result.JSStreamStorageType)
+	require.Equal(t, givenEventing.Spec.Backend.Config.NATSStreamReplicas, result.JSStreamReplicas)
+	require.Equal(t, givenEventing.Spec.Backend.Config.NATSStreamMaxSize.String(), result.JSStreamMaxBytes)
+	require.Equal(t, int64(givenEventing.Spec.Backend.Config.NATSMaxMsgsPerTopic), result.JSStreamMaxMsgsPerTopic)
 }
 
 func Test_GetNATSConfig(t *testing.T) {

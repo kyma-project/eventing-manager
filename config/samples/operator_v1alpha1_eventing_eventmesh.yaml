@@ -10,8 +10,8 @@ metadata:
   name: eventing
   namespace: kyma-system
 spec:
-  backends:
-  - type: "EventMesh"
+  backend:
+    type: "EventMesh"
     config:
       eventMeshSecret: "kyma-system/eventing-backend"
   publisher:

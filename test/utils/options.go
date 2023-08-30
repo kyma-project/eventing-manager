@@ -10,10 +10,8 @@ import (
 func WithEventingCRMinimal() EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
 		nats.Spec = v1alpha1.EventingSpec{
-			Backends: []v1alpha1.Backend{
-				{
-					Type: v1alpha1.NatsBackendType,
-				},
+			Backend: v1alpha1.Backend{
+				Type: v1alpha1.NatsBackendType,
 			},
 		}
 		return nil
@@ -43,7 +41,7 @@ func WithEventingCRFinalizer(finalizer string) EventingOption {
 
 func WithEventingStreamData(natsStorageType string, maxStreamSize string, natsStreamReplicas, maxMsgsPerTopic int) EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
-		nats.Spec.Backends[0].Config = v1alpha1.BackendConfig{
+		nats.Spec.Backend.Config = v1alpha1.BackendConfig{
 			NATSStreamStorageType: natsStorageType,
 			NATSStreamMaxSize:     resource.MustParse(maxStreamSize),
 			NATSStreamReplicas:    natsStreamReplicas,
@@ -78,10 +76,8 @@ func WithEventingPublisherData(minReplicas, maxReplicas int, requestCPU, request
 func WithEventingInvalidBackend() EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
 		nats.Spec = v1alpha1.EventingSpec{
-			Backends: []v1alpha1.Backend{
-				{
-					Type: "invalid",
-				},
+			Backend: v1alpha1.Backend{
+				Type: "invalid",
 			},
 		}
 		return nil
@@ -90,7 +86,7 @@ func WithEventingInvalidBackend() EventingOption {
 
 func WithEventingEventTypePrefix(eventTypePrefix string) EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
-		nats.Spec.Backends[0].Config.EventTypePrefix = eventTypePrefix
+		nats.Spec.Backend.Config.EventTypePrefix = eventTypePrefix
 		return nil
 	}
 }
@@ -104,7 +100,7 @@ func WithEventingLogLevel(logLevel string) EventingOption {
 
 func WithEventMeshBackend(eventMeshSecret string) EventingOption {
 	return func(nats *v1alpha1.Eventing) error {
-		nats.Spec.Backends[0] = v1alpha1.Backend{
+		nats.Spec.Backend = v1alpha1.Backend{
 			Type: v1alpha1.EventMeshBackendType,
 			Config: v1alpha1.BackendConfig{
 				EventMeshSecret: eventMeshSecret,
