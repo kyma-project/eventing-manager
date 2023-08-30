@@ -236,7 +236,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	// set NATSAvailable condition to true and update status
 	eventing.Status.SetNATSAvailableConditionToTrue()
 
-	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.GetNATSBackend().Type)
+	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.Spec.Backend.Type)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
@@ -295,7 +295,7 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *ev
 		return ctrl.Result{}, err
 	}
 
-	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.GetEventMeshBackend().Type)
+	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.Spec.Backend.Type)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}

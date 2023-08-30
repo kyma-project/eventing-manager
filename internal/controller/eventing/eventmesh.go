@@ -19,7 +19,7 @@ import (
 
 func (r *Reconciler) startEventMeshSubscriptionController(ctx context.Context, eventing *v1alpha1.Eventing) error {
 	// retrieve secret to authenticate with EventMesh
-	eventMeshSecret, err := r.kubeClient.GetSecret(ctx, eventing.GetEventMeshBackend().Config.EventMeshSecret)
+	eventMeshSecret, err := r.kubeClient.GetSecret(ctx, eventing.Spec.Backend.Config.EventMeshSecret)
 	if err != nil {
 		return err
 	}

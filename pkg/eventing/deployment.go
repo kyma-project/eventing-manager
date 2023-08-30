@@ -202,7 +202,7 @@ func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConf
 		{Name: "NATS_URL", Value: natsConfig.URL},
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{Name: "LEGACY_NAMESPACE", Value: "kyma"},
-		{Name: "EVENT_TYPE_PREFIX", Value: eventing.GetNATSBackend().Config.EventTypePrefix},
+		{Name: "EVENT_TYPE_PREFIX", Value: eventing.Spec.Backend.Config.EventTypePrefix},
 		// JetStream-specific config
 		{Name: "JS_STREAM_NAME", Value: natsConfig.JSStreamName},
 	}
@@ -311,7 +311,7 @@ func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConf
 	return []v1.EnvVar{
 		{Name: "BACKEND", Value: "beb"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
-		{Name: "EVENT_TYPE_PREFIX", Value: eventing.GetEventMeshBackend().Config.EventTypePrefix},
+		{Name: "EVENT_TYPE_PREFIX", Value: eventing.Spec.Backend.Config.EventTypePrefix},
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{
 			Name: "CLIENT_ID",

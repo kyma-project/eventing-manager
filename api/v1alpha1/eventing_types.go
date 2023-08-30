@@ -151,20 +151,6 @@ type BackendConfig struct {
 	EventTypePrefix string `json:"eventTypePrefix,omitempty"`
 }
 
-func (ev *Eventing) GetNATSBackend() *Backend {
-	if ev.Spec.Backend.Type == NatsBackendType {
-		return &ev.Spec.Backend
-	}
-	return nil
-}
-
-func (ev *Eventing) GetEventMeshBackend() *Backend {
-	if ev.Spec.Backend.Type == EventMeshBackendType {
-		return &ev.Spec.Backend
-	}
-	return nil
-}
-
 // Publisher defines the configurations for eventing-publisher-proxy.
 type Publisher struct {
 	// Replicas defines the scaling min/max for eventing-publisher-proxy.

@@ -93,27 +93,27 @@ func HaveBackendTypeNats(bc v1alpha1.BackendConfig) gomegatypes.GomegaMatcher {
 	return gomega.And(
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
-				return string(e.GetNATSBackend().Type)
+				return string(e.Spec.Backend.Type)
 			}, gomega.Equal("NATS")),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
-				return e.GetNATSBackend().Config.NATSStreamStorageType
+				return e.Spec.Backend.Config.NATSStreamStorageType
 			}, gomega.Equal(bc.NATSStreamStorageType)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
-				return e.GetNATSBackend().Config.NATSStreamReplicas
+				return e.Spec.Backend.Config.NATSStreamReplicas
 			}, gomega.Equal(bc.NATSStreamReplicas)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) resource.Quantity {
-				return e.GetNATSBackend().Config.NATSStreamMaxSize
+				return e.Spec.Backend.Config.NATSStreamMaxSize
 			}, gomega.Equal(bc.NATSStreamMaxSize)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
-				return e.GetNATSBackend().Config.NATSMaxMsgsPerTopic
+				return e.Spec.Backend.Config.NATSMaxMsgsPerTopic
 			}, gomega.Equal(bc.NATSMaxMsgsPerTopic)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
-				return e.GetNATSBackend().Config.EventTypePrefix
+				return e.Spec.Backend.Config.EventTypePrefix
 			}, gomega.Equal(bc.EventTypePrefix)),
 	)
 }
