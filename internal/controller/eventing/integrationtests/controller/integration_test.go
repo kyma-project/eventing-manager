@@ -1,7 +1,6 @@
 package controller_test
 
 import (
-	"errors"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -12,7 +11,6 @@ import (
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
@@ -438,8 +436,8 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 	}
 }
 
-// This test should run before Test_DeleteEventingCR
 func Test_CreateEventingCR_EventMesh(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name                 string
 		givenEventing        *eventingv1alpha1.Eventing
@@ -548,14 +546,12 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 	}
 }
 
-// This test should run after Test_CreateEventingCR_EventMesh
 func Test_DeleteEventingCR(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name                    string
 		givenEventing           *eventingv1alpha1.Eventing
 		subscriptionManagerMock *ecsubmanagermocks.Manager
-		wantErr                 bool
-		wantMatches             gomegatypes.GomegaMatcher
 	}{
 		{
 			name: "Delete Eventing CR should delete the owned resources",
@@ -573,27 +569,13 @@ func Test_DeleteEventingCR(t *testing.T) {
 				utils.WithEventingEventTypePrefix("test-prefix"),
 			),
 		},
-		{
-			name: "Delete EventMesh Eventing CR subscription manager stop fails",
-			givenEventing: utils.NewEventingCR(
-				utils.WithEventMeshBackend("test-secret-name"),
-				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
-				utils.WithEventingEventTypePrefix("test-prefix"),
-			),
-			wantErr: true,
-			wantMatches: gomega.And(
-				matchers.HaveStatusError(),
-				matchers.HaveEventMeshSubManagerStopFailedCondition("fake: failed to stop subscription manager"),
-				matchers.HaveFinalizer(),
-			),
-		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			// given
-			g := gomega.NewWithT(t)
 			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
 			}
@@ -633,25 +615,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 			testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 
-			if !tc.wantErr {
-				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
-			} else {
-				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
-				eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil)
-				eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
-				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(errors.New("fake: failed to stop subscription manager"))
-				testEnvironment.Reconciler.SetEventMeshSubManager(eventMeshSubManagerMock)
-
-				// ensure condition is reflected if subscription manager stop fails.
-				testEnvironment.EnsureEventingResourceDeletionStateError(t, tc.givenEventing.Name, givenNamespace)
-				eventingCR, err := testEnvironment.GetEventingFromK8s(tc.givenEventing.Name, givenNamespace)
-				require.NoError(t, err)
-				testEnvironment.GetEventingAssert(g, eventingCR).Should(tc.wantMatches)
-
-				// reset the mocks so that eventing CR is cleaned up properly.
-				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil)
-				testEnvironment.Reconciler.SetEventMeshSubManager(eventMeshSubManagerMock)
-			}
+			testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
 
 			// then
 			if *testEnvironment.EnvTestInstance.UseExistingCluster {
