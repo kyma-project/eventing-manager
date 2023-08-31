@@ -1,86 +1,237 @@
 package eventing
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/object"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (r *Reconciler) startEventMeshSubscriptionController(ctx context.Context, eventing *v1alpha1.Eventing) error {
+const (
+	secretKeyClientID     = "client_id"
+	secretKeyClientSecret = "client_secret"
+	secretKeyTokenURL     = "token_url"
+	secretKeyCertsURL     = "certs_url"
+)
+
+type oauth2Credentials struct {
+	clientID     []byte
+	clientSecret []byte
+	tokenURL     []byte
+	certsURL     []byte
+}
+
+func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing) error {
+	// gets oauth2ClientID and secret and stops the EventMesh subscription manager if changed
+	err := r.syncOauth2ClientIDAndSecret(ctx, eventing)
+	if err != nil {
+		return errors.Errorf("failed to sync OAuth secret: %v", err)
+	}
+
 	// retrieve secret to authenticate with EventMesh
 	eventMeshSecret, err := r.kubeClient.GetSecret(ctx, eventing.Spec.Backend.Config.EventMeshSecret)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to get EventMesh secret: %v", err)
 	}
 	// CreateOrUpdate deployment for publisher proxy secret
 	secretForPublisher, err := r.SyncPublisherProxySecret(ctx, eventMeshSecret)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to sync Publisher Proxy secret: %v", err)
 	}
 
-	// Set environment with secrets for BEB subscription controller
-	err = setUpEnvironmentForEventMesh(secretForPublisher)
+	// Set environment with secrets for EventMesh subscription controller
+	err = setUpEnvironmentForEventMesh(secretForPublisher, eventing)
 	if err != nil {
 		return fmt.Errorf("failed to setup environment variables for EventMesh controller: %v", err)
 	}
 
-	// TODO: start subscription controller
+	if r.eventMeshSubManager == nil {
+		// create instance of EventMesh subscription manager
+		eventMeshSubManager, err := r.subManagerFactory.NewEventMeshManager()
+		if err != nil {
+			return err
+		}
+
+		// init it
+		if err = eventMeshSubManager.Init(r.ctrlManager); err != nil {
+			return err
+		}
+
+		r.namedLogger().Info("EventMesh subscription-manager initialized")
+		// save instance only when init is successful.
+		r.eventMeshSubManager = eventMeshSubManager
+	}
+
+	if r.isEventMeshSubManagerStarted {
+		r.namedLogger().Info("EventMesh subscription-manager is already started")
+		return nil
+	}
+
+	defaultSubsConfig := r.eventingManager.GetBackendConfig().
+		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
+	eventMeshSubMgrParams := ecsubscriptionmanager.Params{
+		ecsubscriptionmanager.ParamNameClientID:     r.oauth2credentials.clientID,
+		ecsubscriptionmanager.ParamNameClientSecret: r.oauth2credentials.clientSecret,
+		ecsubscriptionmanager.ParamNameTokenURL:     r.oauth2credentials.tokenURL,
+		ecsubscriptionmanager.ParamNameCertsURL:     r.oauth2credentials.certsURL,
+	}
+	if err = r.eventMeshSubManager.Start(defaultSubsConfig, eventMeshSubMgrParams); err != nil {
+		return err
+	}
+	r.namedLogger().Info("EventMesh subscription-manager started")
+	r.isEventMeshSubManagerStarted = true
+
+	return nil
+}
+
+func (r *Reconciler) stopEventMeshSubManager(runCleanup bool, log *zap.SugaredLogger) error {
+	log.Debug("stopping EventMesh subscription-manager")
+	if r.eventMeshSubManager == nil || !r.isEventMeshSubManagerStarted {
+		log.Info("EventMesh subscription-manager is already stopped!")
+		return nil
+	}
+
+	// stop the subscription manager.
+	if err := r.eventMeshSubManager.Stop(runCleanup); err != nil {
+		return err
+	}
+
+	log.Info("EventMesh subscription-manager stopped!")
+	// update flags so it does not try to stop the manager again.
+	r.isEventMeshSubManagerStarted = false
+	r.eventMeshSubManager = nil
 
 	return nil
 }
 
 func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *corev1.Secret) (*corev1.Secret, error) {
-	secretNamespacedName := types.NamespacedName{
-		Namespace: secret.Namespace,
-		Name:      deployment.PublisherName,
-	}
-	currentSecret := new(corev1.Secret)
-
 	desiredSecret, err := getSecretForPublisher(secret)
 	if err != nil {
 		return nil, fmt.Errorf("invalid secret for Event Publisher: %v", err)
 	}
-	err = r.Get(ctx, secretNamespacedName, currentSecret)
+
+	err = r.kubeClient.PatchApply(ctx, desiredSecret)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			// Create secret
-			r.namedLogger().Debug("Creating secret for BEB publisher")
-			err := r.Create(ctx, desiredSecret)
-			if err != nil {
-				return nil, fmt.Errorf("create secret for Event Publisher failed: %v", err)
-			}
-			return desiredSecret, nil
-		}
-		return nil, fmt.Errorf("failed to get Event Publisher secret failed: %v", err)
+		return nil, err
 	}
-
-	if object.Semantic.DeepEqual(currentSecret, desiredSecret) {
-		r.namedLogger().Debug("No need to update secret for BEB Event Publisher")
-		return currentSecret, nil
-	}
-
-	// Update secret
-	desiredSecret.ResourceVersion = currentSecret.ResourceVersion
-	if err := r.Update(ctx, desiredSecret); err != nil {
-		return nil, fmt.Errorf("failed to update Event Publisher secret: %v", err)
-	}
-
 	return desiredSecret, nil
+}
+
+func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, eventing *v1alpha1.Eventing) error {
+	credentials, err := r.getOAuth2ClientCredentials(ctx, eventing.Namespace)
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+	oauth2CredentialsNotFound := k8serrors.IsNotFound(err)
+	oauth2CredentialsChanged := false
+	if err == nil && r.isOauth2CredentialsInitialized() {
+		oauth2CredentialsChanged = !bytes.Equal(r.oauth2credentials.clientID, credentials.clientID) ||
+			!bytes.Equal(r.oauth2credentials.clientSecret, credentials.clientSecret) ||
+			!bytes.Equal(r.oauth2credentials.tokenURL, credentials.tokenURL) ||
+			!bytes.Equal(r.oauth2credentials.certsURL, credentials.certsURL)
+	}
+	if oauth2CredentialsNotFound || oauth2CredentialsChanged {
+		// Stop the controller and mark all subs as not ready
+		message := "Stopping the EventMesh subscription manager due to change in OAuth2 oauth2credentials"
+		r.namedLogger().Info(message)
+		if stopErr := r.stopEventMeshSubManager(true, r.namedLogger()); stopErr != nil {
+			return stopErr
+		}
+		// update eventing status to reflect that the EventMesh sub manager is not ready
+		if updateErr := r.syncStatusWithSubscriptionManagerFailedCondition(ctx, eventing,
+			errors.New(message), r.namedLogger()); updateErr != nil {
+			return updateErr
+		}
+
+	}
+	if oauth2CredentialsNotFound {
+		return err
+	}
+	if oauth2CredentialsChanged || !r.isOauth2CredentialsInitialized() {
+		r.oauth2credentials.clientID = credentials.clientID
+		r.oauth2credentials.clientSecret = credentials.clientSecret
+		r.oauth2credentials.tokenURL = credentials.tokenURL
+		r.oauth2credentials.certsURL = credentials.certsURL
+	}
+	return nil
+}
+
+func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context, secretNamespace string) (*oauth2Credentials, error) {
+	var err error
+	var exists bool
+	var clientID, clientSecret, tokenURL, certsURL []byte
+
+	oauth2Secret := new(corev1.Secret)
+	oauth2SecretNamespacedName := types.NamespacedName{
+		Namespace: secretNamespace,
+		Name:      r.backendConfig.EventingWebhookAuthSecretName,
+	}
+
+	r.namedLogger().Infof("Reading secret %s", oauth2SecretNamespacedName.String())
+
+	if getErr := r.Get(ctx, oauth2SecretNamespacedName, oauth2Secret); getErr != nil {
+		return nil, getErr
+	}
+
+	if clientID, exists = oauth2Secret.Data[secretKeyClientID]; !exists {
+		err = errors.Errorf("key '%s' not found in secret %s",
+			secretKeyClientID, oauth2SecretNamespacedName.String())
+		return nil, err
+	}
+
+	if clientSecret, exists = oauth2Secret.Data[secretKeyClientSecret]; !exists {
+		err = errors.Errorf("key '%s' not found in secret %s",
+			secretKeyClientSecret, oauth2SecretNamespacedName.String())
+		return nil, err
+	}
+
+	if tokenURL, exists = oauth2Secret.Data[secretKeyTokenURL]; !exists {
+		err = errors.Errorf("key '%s' not found in secret %s",
+			secretKeyTokenURL, oauth2SecretNamespacedName.String())
+		return nil, err
+	}
+
+	if certsURL, exists = oauth2Secret.Data[secretKeyCertsURL]; !exists {
+		err = errors.Errorf("key '%s' not found in secret %s",
+			secretKeyCertsURL, oauth2SecretNamespacedName.String())
+		return nil, err
+	}
+
+	credentials := oauth2Credentials{
+		clientID:     clientID,
+		clientSecret: clientSecret,
+		tokenURL:     tokenURL,
+		certsURL:     certsURL,
+	}
+
+	return &credentials, nil
+}
+
+func (r *Reconciler) isOauth2CredentialsInitialized() bool {
+	return len(r.oauth2credentials.clientID) > 0 &&
+		len(r.oauth2credentials.clientSecret) > 0 &&
+		len(r.oauth2credentials.tokenURL) > 0 &&
+		len(r.oauth2credentials.certsURL) > 0
 }
 
 func newSecret(name, namespace string) *corev1.Secret {
 	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: corev1.SchemeGroupVersion.String(),
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -148,7 +299,7 @@ func getSecretStringData(clientID, clientSecret, tokenEndpoint, grantType, publi
 	}
 }
 
-func setUpEnvironmentForEventMesh(secret *corev1.Secret) error {
+func setUpEnvironmentForEventMesh(secret *corev1.Secret, eventing *v1alpha1.Eventing) error {
 	err := os.Setenv("BEB_API_URL", fmt.Sprintf("%s%s", string(secret.Data[PublisherSecretEMSHostKey]), EventMeshPublishEndpointForSubscriber))
 	if err != nil {
 		return fmt.Errorf("set BEB_API_URL env var failed: %v", err)
@@ -172,6 +323,10 @@ func setUpEnvironmentForEventMesh(secret *corev1.Secret) error {
 	err = os.Setenv("BEB_NAMESPACE", fmt.Sprintf("%s%s", NamespacePrefix, string(secret.Data[deployment.PublisherSecretBEBNamespaceKey])))
 	if err != nil {
 		return fmt.Errorf("set BEB_NAMESPACE env var failed: %v", err)
+	}
+
+	if err := os.Setenv("EVENT_TYPE_PREFIX", eventing.Spec.Backend.Config.EventTypePrefix); err != nil {
+		return fmt.Errorf("set EVENT_TYPE_PREFIX env var failed: %v", err)
 	}
 
 	return nil
