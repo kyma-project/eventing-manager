@@ -649,7 +649,7 @@ func Test_isOauth2CredentialsInitialized(t *testing.T) {
 		wantResult       bool
 	}{
 		{
-			name:             "should return false when credentials are not initialized",
+			name:             "should return false when oauth2credentials are not initialized",
 			givenCredentials: nil,
 			wantResult:       false,
 		},
@@ -682,7 +682,7 @@ func Test_isOauth2CredentialsInitialized(t *testing.T) {
 			wantResult: false,
 		},
 		{
-			name: "hould return true when credentials are initialized",
+			name: "hould return true when oauth2credentials are initialized",
 			givenCredentials: &oauth2Credentials{
 				clientID:     []byte("test"),
 				clientSecret: []byte("test"),
@@ -699,7 +699,7 @@ func Test_isOauth2CredentialsInitialized(t *testing.T) {
 			// given
 			r := Reconciler{}
 			if tc.givenCredentials != nil {
-				r.credentials = *tc.givenCredentials
+				r.oauth2credentials = *tc.givenCredentials
 			}
 
 			// when
@@ -917,7 +917,7 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t)
-			testEnv.Reconciler.credentials = oauth2Credentials{}
+			testEnv.Reconciler.oauth2credentials = oauth2Credentials{}
 			eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
 			eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
 			testEnv.Reconciler.eventMeshSubManager = eventMeshSubManagerMock
@@ -936,10 +936,10 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 			}
 
 			if tc.givenCredentials != nil {
-				testEnv.Reconciler.credentials.clientID = tc.givenCredentials.clientID
-				testEnv.Reconciler.credentials.clientSecret = tc.givenCredentials.clientSecret
-				testEnv.Reconciler.credentials.tokenURL = tc.givenCredentials.tokenURL
-				testEnv.Reconciler.credentials.certsURL = tc.givenCredentials.certsURL
+				testEnv.Reconciler.oauth2credentials.clientID = tc.givenCredentials.clientID
+				testEnv.Reconciler.oauth2credentials.clientSecret = tc.givenCredentials.clientSecret
+				testEnv.Reconciler.oauth2credentials.tokenURL = tc.givenCredentials.tokenURL
+				testEnv.Reconciler.oauth2credentials.certsURL = tc.givenCredentials.certsURL
 			}
 			// when
 			err := testEnv.Reconciler.syncOauth2ClientIDAndSecret(ctx, tc.givenEventing)
@@ -955,7 +955,7 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tc.givenSubManagerStarted, testEnv.Reconciler.isEventMeshSubManagerStarted)
 			require.Equal(t, tc.shouldEventMeshSubManagerExist, testEnv.Reconciler.eventMeshSubManager != nil)
-			require.Equal(t, *tc.wantCredentials, testEnv.Reconciler.credentials)
+			require.Equal(t, *tc.wantCredentials, testEnv.Reconciler.oauth2credentials)
 		})
 	}
 }

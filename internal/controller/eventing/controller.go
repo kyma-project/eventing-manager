@@ -74,7 +74,7 @@ type Reconciler struct {
 	isNATSSubManagerStarted      bool
 	isEventMeshSubManagerStarted bool
 	natsConfigHandler            NatsConfigHandler
-	credentials                  oauth2Credentials
+	oauth2credentials            oauth2Credentials
 	backendConfig                env.BackendConfig
 }
 

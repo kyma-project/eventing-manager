@@ -52,14 +52,14 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	}
 
 	// Set environment with secrets for EventMesh subscription controller
-	err = setUpEnvironmentForEventMesh(secretForPublisher)
+	err = setUpEnvironmentForEventMesh(secretForPublisher, eventing)
 	if err != nil {
 		return fmt.Errorf("failed to setup environment variables for EventMesh controller: %v", err)
 	}
 
 	if r.eventMeshSubManager == nil {
 		// create instance of EventMesh subscription manager
-		eventMeshSubManager, err := r.subManagerFactory.NewEventMeshManager(*eventing)
+		eventMeshSubManager, err := r.subManagerFactory.NewEventMeshManager()
 		if err != nil {
 			return err
 		}
@@ -82,10 +82,10 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	defaultSubsConfig := r.eventingManager.GetBackendConfig().
 		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
 	eventMeshSubMgrParams := ecsubscriptionmanager.Params{
-		ecsubscriptionmanager.ParamNameClientID:     r.credentials.clientID,
-		ecsubscriptionmanager.ParamNameClientSecret: r.credentials.clientSecret,
-		ecsubscriptionmanager.ParamNameTokenURL:     r.credentials.tokenURL,
-		ecsubscriptionmanager.ParamNameCertsURL:     r.credentials.certsURL,
+		ecsubscriptionmanager.ParamNameClientID:     r.oauth2credentials.clientID,
+		ecsubscriptionmanager.ParamNameClientSecret: r.oauth2credentials.clientSecret,
+		ecsubscriptionmanager.ParamNameTokenURL:     r.oauth2credentials.tokenURL,
+		ecsubscriptionmanager.ParamNameCertsURL:     r.oauth2credentials.certsURL,
 	}
 	if err = r.eventMeshSubManager.Start(defaultSubsConfig, eventMeshSubMgrParams); err != nil {
 		return err
@@ -137,34 +137,33 @@ func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, eventing *
 	oauth2CredentialsNotFound := k8serrors.IsNotFound(err)
 	oauth2CredentialsChanged := false
 	if err == nil && r.isOauth2CredentialsInitialized() {
-		oauth2CredentialsChanged = !bytes.Equal(r.credentials.clientID, credentials.clientID) ||
-			!bytes.Equal(r.credentials.clientSecret, credentials.clientSecret) ||
-			!bytes.Equal(r.credentials.tokenURL, credentials.tokenURL) ||
-			!bytes.Equal(r.credentials.certsURL, credentials.certsURL)
+		oauth2CredentialsChanged = !bytes.Equal(r.oauth2credentials.clientID, credentials.clientID) ||
+			!bytes.Equal(r.oauth2credentials.clientSecret, credentials.clientSecret) ||
+			!bytes.Equal(r.oauth2credentials.tokenURL, credentials.tokenURL) ||
+			!bytes.Equal(r.oauth2credentials.certsURL, credentials.certsURL)
 	}
 	if oauth2CredentialsNotFound || oauth2CredentialsChanged {
 		// Stop the controller and mark all subs as not ready
-		message := "Stopping the EventMesh subscription manager due to change in OAuth2 credentials"
+		message := "Stopping the EventMesh subscription manager due to change in OAuth2 oauth2credentials"
 		r.namedLogger().Info(message)
-		if err := r.eventMeshSubManager.Stop(false); err != nil {
-			return err
+		if stopErr := r.stopEventMeshSubManager(true, r.namedLogger()); stopErr != nil {
+			return stopErr
 		}
-		r.isEventMeshSubManagerStarted = false
-		r.eventMeshSubManager = nil
 		// update eventing status to reflect that the EventMesh sub manager is not ready
 		if updateErr := r.syncStatusWithSubscriptionManagerFailedCondition(ctx, eventing,
 			errors.New(message), r.namedLogger()); updateErr != nil {
 			return updateErr
 		}
+
 	}
 	if oauth2CredentialsNotFound {
 		return err
 	}
 	if oauth2CredentialsChanged || !r.isOauth2CredentialsInitialized() {
-		r.credentials.clientID = credentials.clientID
-		r.credentials.clientSecret = credentials.clientSecret
-		r.credentials.tokenURL = credentials.tokenURL
-		r.credentials.certsURL = credentials.certsURL
+		r.oauth2credentials.clientID = credentials.clientID
+		r.oauth2credentials.clientSecret = credentials.clientSecret
+		r.oauth2credentials.tokenURL = credentials.tokenURL
+		r.oauth2credentials.certsURL = credentials.certsURL
 	}
 	return nil
 }
@@ -221,10 +220,10 @@ func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context, secretNames
 }
 
 func (r *Reconciler) isOauth2CredentialsInitialized() bool {
-	return len(r.credentials.clientID) > 0 &&
-		len(r.credentials.clientSecret) > 0 &&
-		len(r.credentials.tokenURL) > 0 &&
-		len(r.credentials.certsURL) > 0
+	return len(r.oauth2credentials.clientID) > 0 &&
+		len(r.oauth2credentials.clientSecret) > 0 &&
+		len(r.oauth2credentials.tokenURL) > 0 &&
+		len(r.oauth2credentials.certsURL) > 0
 }
 
 func newSecret(name, namespace string) *corev1.Secret {
@@ -300,7 +299,7 @@ func getSecretStringData(clientID, clientSecret, tokenEndpoint, grantType, publi
 	}
 }
 
-func setUpEnvironmentForEventMesh(secret *corev1.Secret) error {
+func setUpEnvironmentForEventMesh(secret *corev1.Secret, eventing *v1alpha1.Eventing) error {
 	err := os.Setenv("BEB_API_URL", fmt.Sprintf("%s%s", string(secret.Data[PublisherSecretEMSHostKey]), EventMeshPublishEndpointForSubscriber))
 	if err != nil {
 		return fmt.Errorf("set BEB_API_URL env var failed: %v", err)
@@ -324,6 +323,10 @@ func setUpEnvironmentForEventMesh(secret *corev1.Secret) error {
 	err = os.Setenv("BEB_NAMESPACE", fmt.Sprintf("%s%s", NamespacePrefix, string(secret.Data[deployment.PublisherSecretBEBNamespaceKey])))
 	if err != nil {
 		return fmt.Errorf("set BEB_NAMESPACE env var failed: %v", err)
+	}
+
+	if err := os.Setenv("EVENT_TYPE_PREFIX", eventing.Spec.Backend.Config.EventTypePrefix); err != nil {
+		return fmt.Errorf("set EVENT_TYPE_PREFIX env var failed: %v", err)
 	}
 
 	return nil

@@ -24,25 +24,25 @@ func (_m *ManagerFactory) EXPECT() *ManagerFactory_Expecter {
 	return &ManagerFactory_Expecter{mock: &_m.Mock}
 }
 
-// NewEventMeshManager provides a mock function with given fields: _a0
-func (_m *ManagerFactory) NewEventMeshManager(_a0 v1alpha1.Eventing) (subscriptionmanager.Manager, error) {
-	ret := _m.Called(_a0)
+// NewEventMeshManager provides a mock function with given fields:
+func (_m *ManagerFactory) NewEventMeshManager() (subscriptionmanager.Manager, error) {
+	ret := _m.Called()
 
 	var r0 subscriptionmanager.Manager
 	var r1 error
-	if rf, ok := ret.Get(0).(func(v1alpha1.Eventing) (subscriptionmanager.Manager, error)); ok {
-		return rf(_a0)
+	if rf, ok := ret.Get(0).(func() (subscriptionmanager.Manager, error)); ok {
+		return rf()
 	}
-	if rf, ok := ret.Get(0).(func(v1alpha1.Eventing) subscriptionmanager.Manager); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func() subscriptionmanager.Manager); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(subscriptionmanager.Manager)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(v1alpha1.Eventing) error); ok {
-		r1 = rf(_a0)
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -56,14 +56,13 @@ type ManagerFactory_NewEventMeshManager_Call struct {
 }
 
 // NewEventMeshManager is a helper method to define mock.On call
-//   - _a0 v1alpha1.Eventing
-func (_e *ManagerFactory_Expecter) NewEventMeshManager(_a0 interface{}) *ManagerFactory_NewEventMeshManager_Call {
-	return &ManagerFactory_NewEventMeshManager_Call{Call: _e.mock.On("NewEventMeshManager", _a0)}
+func (_e *ManagerFactory_Expecter) NewEventMeshManager() *ManagerFactory_NewEventMeshManager_Call {
+	return &ManagerFactory_NewEventMeshManager_Call{Call: _e.mock.On("NewEventMeshManager")}
 }
 
-func (_c *ManagerFactory_NewEventMeshManager_Call) Run(run func(_a0 v1alpha1.Eventing)) *ManagerFactory_NewEventMeshManager_Call {
+func (_c *ManagerFactory_NewEventMeshManager_Call) Run(run func()) *ManagerFactory_NewEventMeshManager_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(v1alpha1.Eventing))
+		run()
 	})
 	return _c
 }
@@ -73,7 +72,7 @@ func (_c *ManagerFactory_NewEventMeshManager_Call) Return(_a0 subscriptionmanage
 	return _c
 }
 
-func (_c *ManagerFactory_NewEventMeshManager_Call) RunAndReturn(run func(v1alpha1.Eventing) (subscriptionmanager.Manager, error)) *ManagerFactory_NewEventMeshManager_Call {
+func (_c *ManagerFactory_NewEventMeshManager_Call) RunAndReturn(run func() (subscriptionmanager.Manager, error)) *ManagerFactory_NewEventMeshManager_Call {
 	_c.Call.Return(run)
 	return _c
 }

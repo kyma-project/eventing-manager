@@ -176,7 +176,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 	// define subscription manager factory mock.
 	subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
 	subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(jetStreamSubManagerMock)
-	subManagerFactoryMock.On("NewEventMeshManager", mock.Anything).Return(eventMeshSubManagerMock, nil)
+	subManagerFactoryMock.On("NewEventMeshManager").Return(eventMeshSubManagerMock, nil)
 
 	eventingReconciler := eventingctrl.NewReconciler(
 		k8sClient,
