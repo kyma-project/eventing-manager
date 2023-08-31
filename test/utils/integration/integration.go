@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -524,6 +525,20 @@ func (env TestEnvironment) EnsureEventingResourceDeletion(t *testing.T, name, na
 	}, BigTimeOut, BigPollingInterval, "failed to ensure deletion of Eventing")
 }
 
+func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T, name, namespace string) {
+	eventing := &eventingv1alpha1.Eventing{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	env.EnsureK8sResourceDeleted(t, eventing)
+	require.Eventually(t, func() bool {
+		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: name, Namespace: namespace}, eventing)
+		return err == nil && eventing.Status.State == eventingv1alpha1.StateError
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure deletion of Eventing")
+}
+
 func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *natsv1alpha1.NATS) {
 	env.makeNatsCrReady(t, nats)
 	require.Eventually(t, func() bool {
@@ -741,13 +756,14 @@ func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure correctness of CABundle in Webhooks")
 }
 
-func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, name, namespace string) {
-	secret := evnttestutils.NewEventMeshSecret(name, namespace)
+func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
+	subarr := strings.Split(eventing.Spec.Backend.Config.EventMeshSecret, "/")
+	secret := evnttestutils.NewEventMeshSecret(subarr[1], subarr[0])
 	env.EnsureK8sResourceCreated(t, secret)
 }
 
-func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, name, namespace string) {
-	secret := evnttestutils.NewOAuthSecret(name, namespace)
+func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
+	secret := evnttestutils.NewOAuthSecret("eventing-webhook-auth", eventing.Namespace)
 	env.EnsureK8sResourceCreated(t, secret)
 }
 
@@ -876,6 +892,16 @@ func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*eventing
 		Namespace: namespace,
 	}, eventing)
 	return eventing, err
+}
+
+func (env TestEnvironment) DeleteEventingFromK8s(name, namespace string) error {
+	cr := &eventingv1alpha1.Eventing{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	return env.k8sClient.Delete(env.Context, cr)
 }
 
 func (env TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*v1.Deployment, error) {

@@ -192,7 +192,7 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 	}
 
 	log.Info("handling Eventing deletion...")
-	if eventing.Spec.Backends[0].Type == eventingv1alpha1.NatsBackendType {
+	if eventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType {
 		if err := r.stopNATSSubManager(true, log); err != nil {
 			return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 		}
@@ -310,6 +310,14 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *ev
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
 	return r.handleEventingState(ctx, deployment, eventing, log)
+}
+
+func (r *Reconciler) GetEventMeshSubManager() ecsubscriptionmanager.Manager {
+	return r.eventMeshSubManager
+}
+
+func (r *Reconciler) SetEventMeshSubManager(eventMeshSubManager ecsubscriptionmanager.Manager) {
+	r.eventMeshSubManager = eventMeshSubManager
 }
 
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {

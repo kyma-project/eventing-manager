@@ -1,21 +1,21 @@
 package controller_test
 
 import (
-	"os"
-	"testing"
-
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-
+	"errors"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
-
 	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"os"
+	"testing"
 
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	v1 "k8s.io/api/apps/v1"
@@ -172,120 +172,6 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 	}
 }
 
-func Test_CreateEventingCR_EventMesh(t *testing.T) {
-	t.Parallel()
-
-	testCases := []struct {
-		name                 string
-		givenEventing        *eventingv1alpha1.Eventing
-		givenDeploymentReady bool
-		shouldFailSubManager bool
-		wantMatches          gomegatypes.GomegaMatcher
-		wantEnsureK8sObjects bool
-	}{
-		{
-			name: "Eventing CR should have error state when subscription manager is not ready",
-			givenEventing: utils.NewEventingCR(
-				utils.WithEventingCRNamespace("test-namespace1"),
-				utils.WithEventMeshBackend("test-namespace1/test-secret-name"),
-				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
-				utils.WithEventingEventTypePrefix("test-prefix"),
-			),
-			wantMatches: gomega.And(
-				matchers.HaveStatusError(),
-				matchers.HaveEventMeshSubManagerNotReadyCondition(
-					"failed to get EventMesh secret: Secret \"test-secret-name\" not found"),
-				matchers.HaveFinalizer(),
-			),
-			shouldFailSubManager: true,
-		},
-		{
-			name: "Eventing CR should have ready state when all deployment replicas are ready",
-			givenEventing: utils.NewEventingCR(
-				utils.WithEventingCRNamespace("test-namespace2"),
-				utils.WithEventMeshBackend("test-namespace2/test-secret-name"),
-				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
-				utils.WithEventingEventTypePrefix("test-prefix"),
-			),
-			givenDeploymentReady: true,
-			wantMatches: gomega.And(
-				matchers.HaveStatusReady(),
-				matchers.HaveEventMeshSubManagerReadyCondition(),
-				matchers.HavePublisherProxyReadyConditionDeployed(),
-				matchers.HaveFinalizer(),
-			),
-			wantEnsureK8sObjects: true,
-		},
-		{
-			name: "Eventing CR should have processing state when deployment is not ready yet",
-			givenEventing: utils.NewEventingCR(
-				utils.WithEventingCRNamespace("test-namespace3"),
-				utils.WithEventMeshBackend("test-namespace3/test-secret-name"),
-				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
-				utils.WithEventingEventTypePrefix("test-prefix"),
-			),
-			wantMatches: gomega.And(
-				matchers.HaveStatusProcessing(),
-				matchers.HaveEventMeshSubManagerReadyCondition(),
-				matchers.HavePublisherProxyReadyConditionProcessing(),
-				matchers.HaveFinalizer(),
-			),
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			g := gomega.NewWithT(t)
-
-			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
-				return tc.givenDeploymentReady
-			}
-
-			// create unique namespace for this test run.
-			givenNamespace := tc.givenEventing.Namespace
-
-			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
-
-			// create eventing-webhook-auth secret.
-			testEnvironment.EnsureOAuthSecretCreated(t, "eventing-webhook-auth", tc.givenEventing.Namespace)
-
-			if !tc.shouldFailSubManager {
-				// create EventMesh secret.
-				testEnvironment.EnsureEventMeshSecretCreated(t, "test-secret-name", tc.givenEventing.Namespace)
-			}
-
-			// when
-			// create Eventing CR.
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
-
-			defer func() {
-				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
-				if !*testEnvironment.EnvTestInstance.UseExistingCluster && !tc.shouldFailSubManager {
-					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				}
-			}()
-
-			// then
-			// check Eventing CR status.
-			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
-			if tc.givenDeploymentReady {
-				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
-				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
-				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
-			}
-
-			if tc.wantEnsureK8sObjects {
-				// check if other EPP resources exists and values are reflected.
-				ensureK8sResources(t, tc.givenEventing, testEnvironment)
-				// check if webhook configurations are updated with correct CABundle.
-				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
-			}
-		})
-	}
-}
-
 func Test_UpdateEventingCR(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
@@ -356,81 +242,6 @@ func Test_UpdateEventingCR(t *testing.T) {
 			testEnvironment.EnsureEventingSpecPublisherReflected(t, newEventing)
 			testEnvironment.EnsureEventingReplicasReflected(t, newEventing)
 			testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenExistingEventing)
-		})
-	}
-}
-
-func Test_DeleteEventingCR(t *testing.T) {
-	t.Parallel()
-	testCases := []struct {
-		name          string
-		givenEventing *eventingv1alpha1.Eventing
-	}{
-		{
-			name: "Delete Eventing CR should delete the owned resources",
-			givenEventing: utils.NewEventingCR(
-				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", 1, 1),
-				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
-			),
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
-				return true
-			}
-			// create unique namespace for this test run.
-			givenNamespace := tc.givenEventing.GetNamespace()
-
-			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
-
-			// when
-			nats := natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRNamespace(tc.givenEventing.Namespace),
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateReady(),
-			)
-			testEnvironment.EnsureK8sResourceCreated(t, nats)
-			testEnvironment.EnsureNATSResourceStateReady(t, nats)
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
-
-			defer func() {
-				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				}
-				testEnvironment.EnsureK8sResourceDeleted(t, nats)
-			}()
-
-			testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-			testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-			testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
-
-			// then
-			if *testEnvironment.EnvTestInstance.UseExistingCluster {
-				testEnvironment.EnsureDeploymentNotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureHPANotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetPublisherPublishServiceName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetPublisherMetricsServiceName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetPublisherHealthServiceName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceAccountNotFound(t,
-					eventing.GetPublisherServiceAccountName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sClusterRoleNotFound(t,
-					eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
-					eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
-			} else {
-				// check if the owner reference is set.
-				// if owner reference is set then these resources would be garbage collected in real k8s cluster.
-				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
-			}
 		})
 	}
 }
@@ -623,6 +434,246 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			// then
 			// ensure all k8s objects exists again.
 			testEnvironment.EnsureEPPK8sResourcesExists(t, *tc.givenEventing)
+		})
+	}
+}
+
+// This test should run before Test_DeleteEventingCR
+func Test_CreateEventingCR_EventMesh(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		givenEventing        *eventingv1alpha1.Eventing
+		givenDeploymentReady bool
+		shouldFailSubManager bool
+		wantMatches          gomegatypes.GomegaMatcher
+		wantEnsureK8sObjects bool
+	}{
+		{
+			name: "Eventing CR should have error state when subscription manager is not ready",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventMeshBackend("test-secret-name1"),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			wantMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveEventMeshSubManagerNotReadyCondition(
+					"failed to get EventMesh secret: Secret \"test-secret-name1\" not found"),
+				matchers.HaveFinalizer(),
+			),
+			shouldFailSubManager: true,
+		},
+		{
+			name: "Eventing CR should have ready state when all deployment replicas are ready",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventMeshBackend("test-secret-name2"),
+				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			givenDeploymentReady: true,
+			wantMatches: gomega.And(
+				matchers.HaveStatusReady(),
+				matchers.HaveEventMeshSubManagerReadyCondition(),
+				matchers.HavePublisherProxyReadyConditionDeployed(),
+				matchers.HaveFinalizer(),
+			),
+			wantEnsureK8sObjects: true,
+		},
+		{
+			name: "Eventing CR should have processing state when deployment is not ready yet",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventMeshBackend("test-secret-name3"),
+				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			wantMatches: gomega.And(
+				matchers.HaveStatusProcessing(),
+				matchers.HaveEventMeshSubManagerReadyCondition(),
+				matchers.HavePublisherProxyReadyConditionProcessing(),
+				matchers.HaveFinalizer(),
+			),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			g := gomega.NewWithT(t)
+
+			// given
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+				return tc.givenDeploymentReady
+			}
+
+			// create unique namespace for this test run.
+			givenNamespace := tc.givenEventing.Namespace
+
+			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
+
+			// create eventing-webhook-auth secret.
+			testEnvironment.EnsureOAuthSecretCreated(t, tc.givenEventing)
+
+			if !tc.shouldFailSubManager {
+				// create EventMesh secret.
+				testEnvironment.EnsureEventMeshSecretCreated(t, tc.givenEventing)
+			}
+
+			// when
+			// create Eventing CR.
+			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+
+			defer func() {
+				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+				if !*testEnvironment.EnvTestInstance.UseExistingCluster && !tc.shouldFailSubManager {
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+				}
+			}()
+
+			// then
+			// check Eventing CR status.
+			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
+			if tc.givenDeploymentReady {
+				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
+				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
+				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
+			}
+
+			if tc.wantEnsureK8sObjects {
+				// check if other EPP resources exists and values are reflected.
+				ensureK8sResources(t, tc.givenEventing, testEnvironment)
+				// check if webhook configurations are updated with correct CABundle.
+				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
+			}
+		})
+	}
+}
+
+// This test should run after Test_CreateEventingCR_EventMesh
+func Test_DeleteEventingCR(t *testing.T) {
+	testCases := []struct {
+		name                    string
+		givenEventing           *eventingv1alpha1.Eventing
+		subscriptionManagerMock *ecsubmanagermocks.Manager
+		wantErr                 bool
+		wantMatches             gomegatypes.GomegaMatcher
+	}{
+		{
+			name: "Delete Eventing CR should delete the owned resources",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+		},
+		{
+			name: "Delete EventMesh Eventing CR should delete the owned resources",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventMeshBackend("test-secret-name"),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+		},
+		{
+			name: "Delete EventMesh Eventing CR subscription manager stop fails",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventMeshBackend("test-secret-name"),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			wantErr: true,
+			wantMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveEventMeshSubManagerStopFailedCondition("fake: failed to stop subscription manager"),
+				matchers.HaveFinalizer(),
+			),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			g := gomega.NewWithT(t)
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+				return true
+			}
+
+			// create unique namespace for this test run.
+			givenNamespace := tc.givenEventing.GetNamespace()
+
+			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
+
+			// when
+			var nats *natsv1alpha1.NATS
+			if tc.givenEventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType {
+				nats = natstestutils.NewNATSCR(
+					natstestutils.WithNATSCRNamespace(tc.givenEventing.Namespace),
+					natstestutils.WithNATSCRDefaults(),
+					natstestutils.WithNATSStateReady(),
+				)
+
+				testEnvironment.EnsureK8sResourceCreated(t, nats)
+				testEnvironment.EnsureNATSResourceStateReady(t, nats)
+			} else {
+				// create eventing-webhook-auth secret.
+				testEnvironment.EnsureOAuthSecretCreated(t, tc.givenEventing)
+				testEnvironment.EnsureEventMeshSecretCreated(t, tc.givenEventing)
+			}
+			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+
+			defer func() {
+				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+				}
+				if tc.givenEventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType {
+					testEnvironment.EnsureK8sResourceDeleted(t, nats)
+				}
+			}()
+
+			testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+			testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+
+			if !tc.wantErr {
+				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+			} else {
+				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil)
+				eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
+				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(errors.New("fake: failed to stop subscription manager"))
+				testEnvironment.Reconciler.SetEventMeshSubManager(eventMeshSubManagerMock)
+
+				// ensure condition is reflected if subscription manager stop fails.
+				testEnvironment.EnsureEventingResourceDeletionStateError(t, tc.givenEventing.Name, givenNamespace)
+				eventingCR, err := testEnvironment.GetEventingFromK8s(tc.givenEventing.Name, givenNamespace)
+				require.NoError(t, err)
+				testEnvironment.GetEventingAssert(g, eventingCR).Should(tc.wantMatches)
+
+				// reset the mocks so that eventing CR is cleaned up properly.
+				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil)
+				testEnvironment.Reconciler.SetEventMeshSubManager(eventMeshSubManagerMock)
+			}
+
+			// then
+			if *testEnvironment.EnvTestInstance.UseExistingCluster {
+				testEnvironment.EnsureDeploymentNotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureHPANotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sServiceNotFound(t,
+					eventing.GetPublisherPublishServiceName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sServiceNotFound(t,
+					eventing.GetPublisherMetricsServiceName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sServiceNotFound(t,
+					eventing.GetPublisherHealthServiceName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sServiceAccountNotFound(t,
+					eventing.GetPublisherServiceAccountName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sClusterRoleNotFound(t,
+					eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
+					eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
+			} else {
+				// check if the owner reference is set.
+				// if owner reference is set then these resources would be garbage collected in real k8s cluster.
+				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
+			}
 		})
 	}
 }

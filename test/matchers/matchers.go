@@ -107,6 +107,15 @@ func HaveEventMeshSubManagerNotReadyCondition(message string) gomegatypes.Gomega
 	})
 }
 
+func HaveEventMeshSubManagerStopFailedCondition(message string) gomegatypes.GomegaMatcher {
+	return HaveCondition(metav1.Condition{
+		Type:    string(v1alpha1.ConditionSubscriptionManagerReady),
+		Status:  metav1.ConditionFalse,
+		Reason:  string(v1alpha1.ConditionReasonEventMeshSubManagerStopFailed),
+		Message: message,
+	})
+}
+
 func HaveBackendTypeNats(bc v1alpha1.BackendConfig) gomegatypes.GomegaMatcher {
 	return gomega.And(
 		gomega.WithTransform(

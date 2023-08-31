@@ -60,7 +60,7 @@ func (f Factory) NewEventMeshManager(eventing v1alpha1.Eventing) (ecsubscription
 
 func setUpEventMeshSubManagerEnvironment(eventing v1alpha1.Eventing) error {
 	// Set the EVENT_TYPE_PREFIX env variable as it is read in the NewSubscriptionManager() function.
-	if err := os.Setenv("EVENT_TYPE_PREFIX", eventing.GetEventMeshBackend().Config.EventTypePrefix); err != nil {
+	if err := os.Setenv("EVENT_TYPE_PREFIX", eventing.Spec.Backend.Config.EventTypePrefix); err != nil {
 		return err
 	}
 	return nil
