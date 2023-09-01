@@ -71,6 +71,15 @@ func HavePublisherProxyReadyConditionProcessing() gomegatypes.GomegaMatcher {
 	})
 }
 
+func HavePublisherProxyConditionForbiddenWithMsg(msg string) gomegatypes.GomegaMatcher {
+	return HaveCondition(metav1.Condition{
+		Type:    string(v1alpha1.ConditionPublisherProxyReady),
+		Status:  metav1.ConditionFalse,
+		Reason:  string(v1alpha1.ConditionReasonForbidden),
+		Message: msg,
+	})
+}
+
 func HaveNATSAvailableConditionAvailable() gomegatypes.GomegaMatcher {
 	return HaveCondition(metav1.Condition{
 		Type:    string(v1alpha1.ConditionNATSAvailable),

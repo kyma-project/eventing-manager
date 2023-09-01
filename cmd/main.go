@@ -22,6 +22,8 @@ import (
 	"log"
 	"os"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	subscriptionv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
@@ -151,6 +153,12 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		backendConfig,
 		subManagerFactory,
 		opts,
+		&eventingv1alpha1.Eventing{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      backendConfig.EventingCRName,
+				Namespace: backendConfig.EventingCRNamespace,
+			},
+		},
 	)
 
 	if err = (eventingReconciler).SetupWithManager(mgr); err != nil {

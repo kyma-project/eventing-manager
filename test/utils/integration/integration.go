@@ -84,7 +84,8 @@ type TestEnvironment struct {
 }
 
 //nolint:funlen // Used in testing
-func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*TestEnvironment, error) {
+func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
+	allowedEventingCR *eventingv1alpha1.Eventing) (*TestEnvironment, error) {
 	var err error
 	// setup context
 	ctx := context.Background()
@@ -180,6 +181,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool) (*Test
 		backendConfig,
 		subManagerFactoryMock,
 		opts,
+		allowedEventingCR,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(ctrlMgr); err != nil {

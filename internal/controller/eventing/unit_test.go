@@ -86,6 +86,7 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 		backendConfig,
 		nil,
 		opts,
+		nil,
 	)
 	reconciler.ctrlManager = mockManager
 

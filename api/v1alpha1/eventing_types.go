@@ -42,6 +42,7 @@ const (
 	ConditionReasonDeploymentStatusSyncFailed ConditionReason = "DeploymentStatusSyncFailed"
 	ConditionReasonNATSAvailable              ConditionReason = "Available"
 	ConditionReasonNATSNotAvailable           ConditionReason = "NotAvailable"
+	ConditionReasonForbidden                  ConditionReason = "Forbidden"
 	ConditionReasonWebhookFailed              ConditionReason = "WebhookFailed"
 	ConditionReasonWebhookReady               ConditionReason = "Ready"
 
