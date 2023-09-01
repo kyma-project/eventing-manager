@@ -62,17 +62,20 @@ const (
 //go:generate mockery --name=Manager --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/manager --outpkg=mocks --case=underscore
 type Reconciler struct {
 	client.Client
-	logger                  *logger.Logger
-	ctrlManager             ctrl.Manager
-	eventingManager         eventing.Manager
-	kubeClient              k8s.Client
-	scheme                  *runtime.Scheme
-	recorder                record.EventRecorder
-	subManagerFactory       subscriptionmanager.ManagerFactory
-	natsSubManager          ecsubscriptionmanager.Manager
-	isNATSSubManagerStarted bool
-	natsConfigHandler       NatsConfigHandler
-	backendConfig           env.BackendConfig
+	logger                       *logger.Logger
+	ctrlManager                  ctrl.Manager
+	eventingManager              eventing.Manager
+	kubeClient                   k8s.Client
+	scheme                       *runtime.Scheme
+	recorder                     record.EventRecorder
+	subManagerFactory            subscriptionmanager.ManagerFactory
+	natsSubManager               ecsubscriptionmanager.Manager
+	eventMeshSubManager          ecsubscriptionmanager.Manager
+	isNATSSubManagerStarted      bool
+	isEventMeshSubManagerStarted bool
+	natsConfigHandler            NatsConfigHandler
+	oauth2credentials            oauth2Credentials
+	backendConfig                env.BackendConfig
 	allowedEventingCR       *eventingv1alpha1.Eventing
 }
 
@@ -99,6 +102,7 @@ func NewReconciler(
 		backendConfig:           backendConfig,
 		subManagerFactory:       subManagerFactory,
 		natsSubManager:          nil,
+		eventMeshSubManager:     nil,
 		isNATSSubManagerStarted: false,
 		natsConfigHandler:       NewNatsConfigHandler(kubeClient, opts),
 		allowedEventingCR:       allowedEventingCR,
@@ -218,11 +222,17 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 	}
 
 	log.Info("handling Eventing deletion...")
-	if err := r.stopNATSSubManager(true, log); err != nil {
-		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+	if eventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType {
+		if err := r.stopNATSSubManager(true, log); err != nil {
+			return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+		}
+	} else {
+		if err := r.stopEventMeshSubManager(true, log); err != nil {
+			return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErrWithReason(ctx,
+				eventingv1alpha1.ConditionReasonEventMeshSubManagerStopFailed,
+				eventing, err, log)
+		}
 	}
-
-	// TODO: Implement me, this is a dummy implementation for testing.
 
 	return r.removeFinalizer(ctx, eventing)
 }
@@ -319,17 +329,25 @@ func (r *Reconciler) handlePublisherProxy(
 
 func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
 	// Start the EventMesh subscription controller
-	err := r.startEventMeshSubscriptionController(ctx, eventing)
+	err := r.reconcileEventMeshSubManager(ctx, eventing)
 	if err != nil {
-		// TODO: implement status handling
-		return ctrl.Result{}, err
+		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}
+	eventing.Status.SetSubscriptionManagerReadyConditionToTrue()
 
 	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.Spec.Backend.Type)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
 	return r.handleEventingState(ctx, deployment, eventing, log)
+}
+
+func (r *Reconciler) GetEventMeshSubManager() ecsubscriptionmanager.Manager {
+	return r.eventMeshSubManager
+}
+
+func (r *Reconciler) SetEventMeshSubManager(eventMeshSubManager ecsubscriptionmanager.Manager) {
+	r.eventMeshSubManager = eventMeshSubManager
 }
 
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {

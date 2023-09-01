@@ -98,12 +98,12 @@ func WithEventingLogLevel(logLevel string) EventingOption {
 	}
 }
 
-func WithEventMeshBackend(eventMeshSecret string) EventingOption {
-	return func(nats *v1alpha1.Eventing) error {
-		nats.Spec.Backend = v1alpha1.Backend{
+func WithEventMeshBackend(eventMeshSecretName string) EventingOption {
+	return func(eventing *v1alpha1.Eventing) error {
+		eventing.Spec.Backend = v1alpha1.Backend{
 			Type: v1alpha1.EventMeshBackendType,
 			Config: v1alpha1.BackendConfig{
-				EventMeshSecret: eventMeshSecret,
+				EventMeshSecret: eventing.Namespace + "/" + eventMeshSecretName,
 			},
 		}
 		return nil

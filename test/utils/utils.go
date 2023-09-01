@@ -209,6 +209,86 @@ func NewDeployment(name, namespace string, annotations map[string]string) *appsv
 	}
 }
 
+func NewEventMeshSecret(name, namespace string) *v1.Secret {
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+		Data: map[string][]byte{
+			"management": []byte("foo"),
+			"messaging": []byte(`[
+			  {
+				"broker": {
+				  "type": "bar"
+				},
+				"oa2": {
+				  "clientid": "foo",
+				  "clientsecret": "foo",
+				  "granttype": "client_credentials",
+				  "tokenendpoint": "bar"
+				},
+				"protocol": [
+				  "amqp10ws"
+				],
+				"uri": "foo"
+			  },
+			  {
+				"broker": {
+				  "type": "foo"
+				},
+				"oa2": {
+				  "clientid": "bar",
+				  "clientsecret": "bar",
+				  "granttype": "client_credentials",
+				  "tokenendpoint": "foo"
+				},
+				"protocol": [
+				  "bar"
+				],
+				"uri": "bar"
+			  },
+			  {
+				"broker": {
+				  "type": "foo"
+				},
+				"oa2": {
+				  "clientid": "foo",
+				  "clientsecret": "bar",
+				  "granttype": "client_credentials",
+				  "tokenendpoint": "foo"
+				},
+				"protocol": [
+				  "httprest"
+				],
+				"uri": "bar"
+			  }
+			]`),
+			"namespace":         []byte("bar"),
+			"serviceinstanceid": []byte("foo"),
+			"xsappname":         []byte("bar"),
+		},
+		Type: "Opaque",
+	}
+}
+
+func NewOAuthSecret(name, namespace string) *v1.Secret {
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+		Data: map[string][]byte{
+			"client_id":     []byte("foo"),
+			"client_secret": []byte("bar"),
+			"token_url":     []byte("token-url"),
+			"certs_url":     []byte("certs-url"),
+		},
+		Type: "Opaque",
+	}
+	return secret
+}
+
 func FindObjectByKind(kind string, objects []client.Object) (client.Object, error) {
 	for _, obj := range objects {
 		if obj.GetObjectKind().GroupVersionKind().Kind == kind {

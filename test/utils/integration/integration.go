@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -167,9 +168,16 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
 	jetStreamSubManagerMock.On("Stop", mock.Anything).Return(nil)
 
+	// define EventMesh subscription manager mock.
+	eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+	eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil)
+	eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
+	eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil)
+
 	// define subscription manager factory mock.
 	subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
 	subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(jetStreamSubManagerMock)
+	subManagerFactoryMock.On("NewEventMeshManager").Return(eventMeshSubManagerMock, nil)
 
 	eventingReconciler := eventingctrl.NewReconciler(
 		k8sClient,
@@ -519,6 +527,20 @@ func (env TestEnvironment) EnsureEventingResourceDeletion(t *testing.T, name, na
 	}, BigTimeOut, BigPollingInterval, "failed to ensure deletion of Eventing")
 }
 
+func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T, name, namespace string) {
+	eventing := &eventingv1alpha1.Eventing{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	env.EnsureK8sResourceDeleted(t, eventing)
+	require.Eventually(t, func() bool {
+		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: name, Namespace: namespace}, eventing)
+		return err == nil && eventing.Status.State == eventingv1alpha1.StateError
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure deletion of Eventing")
+}
+
 func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *natsv1alpha1.NATS) {
 	env.makeNatsCrReady(t, nats)
 	require.Eventually(t, func() bool {
@@ -736,67 +758,14 @@ func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure correctness of CABundle in Webhooks")
 }
 
-func (env TestEnvironment) EnsureSecretCreated(t *testing.T, name, namespace string) {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      name,
-		},
-		Data: map[string][]byte{
-			"management": []byte("foo"),
-			"messaging": []byte(`[
-			  {
-				"broker": {
-				  "type": "bar"
-				},
-				"oa2": {
-				  "clientid": "foo",
-				  "clientsecret": "foo",
-				  "granttype": "client_credentials",
-				  "tokenendpoint": "bar"
-				},
-				"protocol": [
-				  "amqp10ws"
-				],
-				"uri": "foo"
-			  },
-			  {
-				"broker": {
-				  "type": "foo"
-				},
-				"oa2": {
-				  "clientid": "bar",
-				  "clientsecret": "bar",
-				  "granttype": "client_credentials",
-				  "tokenendpoint": "foo"
-				},
-				"protocol": [
-				  "bar"
-				],
-				"uri": "bar"
-			  },
-			  {
-				"broker": {
-				  "type": "foo"
-				},
-				"oa2": {
-				  "clientid": "foo",
-				  "clientsecret": "bar",
-				  "granttype": "client_credentials",
-				  "tokenendpoint": "foo"
-				},
-				"protocol": [
-				  "httprest"
-				],
-				"uri": "bar"
-			  }
-			]`),
-			"namespace":         []byte("bar"),
-			"serviceinstanceid": []byte("foo"),
-			"xsappname":         []byte("bar"),
-		},
-		Type: "Opaque",
-	}
+func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
+	subarr := strings.Split(eventing.Spec.Backend.Config.EventMeshSecret, "/")
+	secret := evnttestutils.NewEventMeshSecret(subarr[1], subarr[0])
+	env.EnsureK8sResourceCreated(t, secret)
+}
+
+func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
+	secret := evnttestutils.NewOAuthSecret("eventing-webhook-auth", eventing.Namespace)
 	env.EnsureK8sResourceCreated(t, secret)
 }
 
@@ -925,6 +894,16 @@ func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*eventing
 		Namespace: namespace,
 	}, eventing)
 	return eventing, err
+}
+
+func (env TestEnvironment) DeleteEventingFromK8s(name, namespace string) error {
+	cr := &eventingv1alpha1.Eventing{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	return env.k8sClient.Delete(env.Context, cr)
 }
 
 func (env TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*v1.Deployment, error) {

@@ -50,6 +50,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
@@ -65,6 +66,7 @@ func init() {
 
 	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(natsv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
 
 	utilruntime.Must(jetstream.AddToScheme(scheme))
 	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
@@ -139,6 +141,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		k8sRestCfg,
 		":8080",
 		metricsCollector,
+		opts.ReconcilePeriod,
 		ctrLogger,
 	)
 

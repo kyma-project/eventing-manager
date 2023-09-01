@@ -24,6 +24,59 @@ func (_m *ManagerFactory) EXPECT() *ManagerFactory_Expecter {
 	return &ManagerFactory_Expecter{mock: &_m.Mock}
 }
 
+// NewEventMeshManager provides a mock function with given fields:
+func (_m *ManagerFactory) NewEventMeshManager() (subscriptionmanager.Manager, error) {
+	ret := _m.Called()
+
+	var r0 subscriptionmanager.Manager
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (subscriptionmanager.Manager, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() subscriptionmanager.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(subscriptionmanager.Manager)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ManagerFactory_NewEventMeshManager_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewEventMeshManager'
+type ManagerFactory_NewEventMeshManager_Call struct {
+	*mock.Call
+}
+
+// NewEventMeshManager is a helper method to define mock.On call
+func (_e *ManagerFactory_Expecter) NewEventMeshManager() *ManagerFactory_NewEventMeshManager_Call {
+	return &ManagerFactory_NewEventMeshManager_Call{Call: _e.mock.On("NewEventMeshManager")}
+}
+
+func (_c *ManagerFactory_NewEventMeshManager_Call) Run(run func()) *ManagerFactory_NewEventMeshManager_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ManagerFactory_NewEventMeshManager_Call) Return(_a0 subscriptionmanager.Manager, _a1 error) *ManagerFactory_NewEventMeshManager_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ManagerFactory_NewEventMeshManager_Call) RunAndReturn(run func() (subscriptionmanager.Manager, error)) *ManagerFactory_NewEventMeshManager_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewJetStreamManager provides a mock function with given fields: _a0, _a1
 func (_m *ManagerFactory) NewJetStreamManager(_a0 v1alpha1.Eventing, _a1 env.NATSConfig) subscriptionmanager.Manager {
 	ret := _m.Called(_a0, _a1)
