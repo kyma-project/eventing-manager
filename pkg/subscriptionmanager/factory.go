@@ -1,6 +1,8 @@
 package subscriptionmanager
 
 import (
+	"time"
+
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	eclogger "github.com/kyma-project/kyma/components/eventing-controller/logger"
@@ -9,7 +11,6 @@ import (
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager/eventmesh"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager/jetstream"
 	"k8s.io/client-go/rest"
-	"time"
 )
 
 // Perform a compile-time check.
