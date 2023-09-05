@@ -72,11 +72,6 @@ spec:
                 fieldPath: metadata.namespace
           - name: NATS_URL
             value: eventing-nats.kyma-system.svc.cluster.local
-          - name: EVENT_TYPE_PREFIX
-            valueFrom:
-              configMapKeyRef:
-                name: eventing
-                key: eventTypePrefix
           - name: DOMAIN
             value: kyma.example.com
           - name: WEBHOOK_TOKEN_ENDPOINT
