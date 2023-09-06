@@ -14,7 +14,9 @@ type BackendConfig struct {
 	PublisherConfig PublisherConfig
 
 	// namespace where eventing-manager is deployed.
-	Namespace string `envconfig:"NAMESPACE" default:"kyma-system"`
+	Namespace           string `envconfig:"NAMESPACE" default:"kyma-system"`
+	EventingCRName      string `envconfig:"EVENTING_CR_NAME" default:"eventing"`
+	EventingCRNamespace string `envconfig:"EVENTING_CR_NAMESPACE" default:"kyma-system"`
 
 	WebhookSecretName   string `envconfig:"WEBHOOK_SECRET_NAME" default:"eventing-manager-webhook-server-cert"`
 	MutatingWebhookName string `envconfig:"MUTATING_WEBHOOK_NAME" default:"subscription-mutating-webhook-configuration"`
