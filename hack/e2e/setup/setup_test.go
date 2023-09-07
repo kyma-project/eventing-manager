@@ -2,8 +2,8 @@
 // +build e2e
 
 // Package setup_test is part of the end-to-end-tests. This package contains tests that evaluate the creation of a
-// NATS-server CR and the creation of all correlated Kubernetes resources.
-// To run the tests a Kubernetes cluster and a NATS-CR need to be available and configured. For this reason, the tests
+// eventing CR and the creation of all correlated Kubernetes resources.
+// To run the tests a Kubernetes cluster and Eventing-CR need to be available and configured. For this reason, the tests
 // are seperated via the `e2e` buildtags. For more information please consult the `readme.md`.
 package setup_test
 
@@ -30,7 +30,6 @@ import (
 
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common"
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 )
 
 // Constants for retries.
@@ -42,7 +41,7 @@ const (
 // clientSet is what is used to access K8s build-in resources like Pods, Namespaces and so on.
 var clientSet *kubernetes.Clientset //nolint:gochecknoglobals // This will only be accessible in e2e tests.
 
-// k8sClient is what is used to access the NATS CR.
+// k8sClient is what is used to access the Eventing CR.
 var k8sClient client.Client //nolint:gochecknoglobals // This will only be accessible in e2e tests.
 
 var logger *zap.Logger
@@ -324,7 +323,7 @@ func Test_PublisherProxyPods(t *testing.T) {
 
 	ctx := context.TODO()
 	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
-	// RetryGet the NATS Pods and test them.
+	// RetryGet the Pods and test them.
 	err := Retry(attempts, interval, func() error {
 		// get publisher deployment
 		gotDeployment, getErr := getDeployment(ctx, eventing.GetPublisherDeploymentName(*eventingCR), NamespaceName)
@@ -332,7 +331,7 @@ func Test_PublisherProxyPods(t *testing.T) {
 			return getErr
 		}
 
-		// RetryGet the NATS Pods via labels.
+		// RetryGet the Pods via labels.
 		pods, err := clientSet.CoreV1().Pods(NamespaceName).List(ctx, metav1.ListOptions{
 			LabelSelector: ConvertSelectorLabelsToString(gotDeployment.Spec.Selector.MatchLabels)})
 		if err != nil {
@@ -411,7 +410,7 @@ func getDeployment(ctx context.Context, name, namespace string) (*appsv1.Deploym
 
 // Wait for Eventing CR to get ready.
 func waitForEventingCRReady() error {
-	// RetryGet the NATS CR and test status.
+	// RetryGet the Eventing CR and test status.
 	return Retry(attempts, interval, func() error {
 		logger.Debug(fmt.Sprintf("waiting for Eventing CR to get ready. "+
 			"CR name: %s, namespace: %s", CRName, NamespaceName))
@@ -431,7 +430,7 @@ func waitForEventingCRReady() error {
 			return err
 		}
 
-		if gotEventingCR.Status.State != natsv1alpha1.StateReady {
+		if gotEventingCR.Status.State != eventingv1alpha1.StateReady {
 			err := fmt.Errorf("waiting for Eventing CR to get ready state")
 			logger.Debug(err.Error())
 			return err
