@@ -17,6 +17,8 @@ const (
 	PublisherContainerName      = "eventing-publisher-proxy"
 	WebhookServerCertSecretName = "eventing-manager-webhook-server-cert" //nolint:gosec // This is used for test purposes only.
 	WebhookServerCertJobName    = "eventing-manager-cert-handler"
+	EventMeshSecretNamespace    = "kyma-system"
+	EventMeshSecretName         = "eventing-backend"
 )
 
 func EventingCR(backendType eventingv1alpha1.BackendType) *eventingv1alpha1.Eventing {
@@ -52,8 +54,25 @@ func EventingNATSCR() *eventingv1alpha1.Eventing {
 }
 
 func EventingEventMeshCR() *eventingv1alpha1.Eventing {
-	// TODO: define spec
-	return &eventingv1alpha1.Eventing{}
+	return &eventingv1alpha1.Eventing{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Eventing",
+			APIVersion: "operator.kyma-project.io/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      CRName,
+			Namespace: NamespaceName,
+		},
+		Spec: eventingv1alpha1.EventingSpec{
+			Backend: eventingv1alpha1.Backend{
+				Type: "EventMesh",
+				Config: eventingv1alpha1.BackendConfig{
+					EventMeshSecret: fmt.Sprintf("%s/%s", EventMeshSecretNamespace, EventMeshSecretName),
+				},
+			},
+			Publisher: PublisherSpec(),
+		},
+	}
 }
 
 func PublisherSpec() eventingv1alpha1.Publisher {

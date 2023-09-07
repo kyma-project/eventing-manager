@@ -7,9 +7,8 @@ import (
 
 // E2EConfig represents the environment config for the end-to-end tests for eventing-manager.
 type E2EConfig struct {
-	EventTypePrefix string `envconfig:"EVENT_TYPE_PREFIX" default:"sap.kyma.custom"`
-	BackendType     string `envconfig:"BACKEND_TYPE" default:"NATS"` // NATS or EventMesh
-	ManagerImage    string `envconfig:"MANAGER_IMAGE" default:""`
+	BackendType  string `envconfig:"BACKEND_TYPE" default:"NATS"` // NATS or EventMesh
+	ManagerImage string `envconfig:"MANAGER_IMAGE" default:""`
 }
 
 func (cfg E2EConfig) IsNATSBackend() bool {

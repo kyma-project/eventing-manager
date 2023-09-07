@@ -101,9 +101,22 @@ func TestMain(m *testing.M) {
 		eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
 		errEvnt := k8sClient.Create(ctx, eventingCR)
 		if k8serrors.IsAlreadyExists(errEvnt) {
-			logger.Warn(
-				"error while creating Eventing CR, resource already exist; test will continue with existing CR",
-			)
+			gotEventingCR, getErr := getEventingCR(ctx, eventingCR.Name, eventingCR.Namespace)
+			if getErr != nil {
+				return err
+			}
+
+			// If Backend type is changed then update the CR.
+			if gotEventingCR.Spec.Backend.Type != eventingCR.Spec.Backend.Type {
+				eventingCR.ObjectMeta = gotEventingCR.ObjectMeta
+				if errEvnt = k8sClient.Update(ctx, eventingCR); getErr != nil {
+					return err
+				}
+			} else {
+				logger.Warn(
+					"error while creating Eventing CR, resource already exist; test will continue with existing CR",
+				)
+			}
 			return nil
 		}
 		return errEvnt
@@ -411,6 +424,12 @@ func waitForEventingCRReady() error {
 		if err != nil {
 			return err
 		}
+
+		//if gotEventingCR.Spec.Backend.Type != gotEventingCR.Status.ActiveBackend {
+		//	err := fmt.Errorf("waiting for Eventing CR to switch backend")
+		//	logger.Debug(err.Error())
+		//	return err
+		//}
 
 		if gotEventingCR.Status.State != natsv1alpha1.StateReady {
 			err := fmt.Errorf("waiting for Eventing CR to get ready state")
