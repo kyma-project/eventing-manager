@@ -1,20 +1,20 @@
 package fixtures
 
 import (
+	"fmt"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 const (
 	NamespaceName               = "kyma-system"
 	ManagerDeploymentName       = "eventing-manager"
 	CRName                      = "eventing"
-	ContainerName               = "manager"              // TODO: check
-	SecretName                  = "eventing-nats-secret" //nolint:gosec // This is used for test purposes only.
-	True                        = "true"
-	podLabel                    = "nats_cluster=eventing-nats"           // TODO: check
+	ManagerContainerName        = "manager"
+	PublisherContainerName      = "eventing-publisher-proxy"
 	WebhookServerCertSecretName = "eventing-manager-webhook-server-cert" //nolint:gosec // This is used for test purposes only.
 	WebhookServerCertJobName    = "eventing-manager-cert-handler"
 )
@@ -83,6 +83,19 @@ func Namespace() *corev1.Namespace {
 	}
 }
 
-func PodListOpts() metav1.ListOptions {
-	return metav1.ListOptions{LabelSelector: podLabel}
+func FindContainerInPod(pod corev1.Pod, name string) *corev1.Container {
+	for _, container := range pod.Spec.Containers {
+		if container.Name == name {
+			return &container
+		}
+	}
+	return nil
+}
+
+func ConvertSelectorLabelsToString(labels map[string]string) string {
+	var result []string
+	for k, v := range labels {
+		result = append(result, fmt.Sprintf("%s=%s", k, v))
+	}
+	return strings.Join(result, ",")
 }

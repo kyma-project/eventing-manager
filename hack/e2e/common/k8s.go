@@ -1,6 +1,7 @@
 package common
 
 import (
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"os"
 	"path/filepath"
 
@@ -40,6 +41,12 @@ func GetK8sClients() (*kubernetes.Clientset, client.Client, error) {
 
 	// We need to add the NATS CRD to the scheme, so we can create a client that can access NATS objects.
 	err = natsv1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// We need to add the Eventing CRD to the scheme, so we can create a client that can access Eventing objects.
+	err = eventingv1alpha1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, nil, err
 	}

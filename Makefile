@@ -186,3 +186,8 @@ fmt-local: ## Reformat files using `go fmt`
 
 imports-local: ## Optimize imports
 	goimports -w -l $$($(FILES_TO_CHECK))
+
+# e2e testing is done here
+.PHONY: e2e-setup
+e2e-setup:
+	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e

@@ -13,9 +13,9 @@ import (
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/hack/e2e/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	"github.com/pkg/errors"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -98,7 +98,8 @@ func TestMain(m *testing.M) {
 
 	// Create the Eventing CR used for testing.
 	err = Retry(attempts, interval, func() error {
-		errEvnt := k8sClient.Create(ctx, EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType)))
+		eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
+		errEvnt := k8sClient.Create(ctx, eventingCR)
 		if k8serrors.IsAlreadyExists(errEvnt) {
 			logger.Warn(
 				"error while creating Eventing CR, resource already exist; test will continue with existing CR",
@@ -125,40 +126,6 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 	os.Exit(code)
 }
-
-// Test_CR checks if the CR in the cluster is equal to what we defined.
-func Test_CR(t *testing.T) {
-	want := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
-
-	ctx := context.TODO()
-	// Get the Eventing CR from the cluster.
-	actual, err := RetryGet(attempts, interval, func() (*eventingv1alpha1.Eventing, error) {
-		return getEventingCR(ctx, want.Name, want.Namespace)
-	})
-	require.NoError(t, err)
-
-	require.True(t,
-		reflect.DeepEqual(want.Spec, actual.Spec),
-		fmt.Sprintf("wanted spec.cluster to be \n\t%v\n but got \n\t%v", want.Spec, actual.Spec),
-	)
-}
-
-/// Checklist of resources to check:
-// Webhook secret
-// Webhook job and cronjob
-// Manager deployment
-// CR: Publisher deployment
-// CR: Publisher pods
-// - check if the ENVs are correctly defined for active backend
-// - check if number of pods are between spec min and max
-// - check if resources are as defined in eventing CR spec
-// CR: ServiceAccount // exists
-// CR: ClusterRole // exists
-// CR: ClusterRoleBinding // exists
-// CR: Service to expose event publishing endpoint of EPP.
-// CR: Service to expose metrics endpoint of EPP.
-// CR: Service to expose health endpoint of EPP.
-// CR: HPA to auto-scale publisher proxy. // spec min and max
 
 // Test_WebhookServerCertSecret tests if the Secret exists.
 func Test_WebhookServerCertSecret(t *testing.T) {
@@ -202,6 +169,115 @@ func Test_WebhookServerCertCronJob(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Test_PublisherServiceAccount tests if the publisher-proxy ServiceAccount exists.
+func Test_PublisherServiceAccount(t *testing.T) {
+	t.Parallel()
+	ctx := context.TODO()
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
+	err := Retry(attempts, interval, func() error {
+		_, secErr := clientSet.CoreV1().ServiceAccounts(NamespaceName).Get(ctx,
+			eventing.GetPublisherServiceAccountName(*eventingCR), metav1.GetOptions{})
+		if secErr != nil {
+			return secErr
+		}
+		return nil
+	})
+	require.NoError(t, err)
+}
+
+// Test_PublisherClusterRole tests if the publisher-proxy ClusterRole exists.
+func Test_PublisherClusterRole(t *testing.T) {
+	t.Parallel()
+	ctx := context.TODO()
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
+	err := Retry(attempts, interval, func() error {
+		_, secErr := clientSet.RbacV1().ClusterRoles().Get(ctx,
+			eventing.GetPublisherClusterRoleName(*eventingCR), metav1.GetOptions{})
+		if secErr != nil {
+			return secErr
+		}
+		return nil
+	})
+	require.NoError(t, err)
+}
+
+// Test_PublisherClusterRoleBinding tests if the publisher-proxy ClusterRoleBinding exists.
+func Test_PublisherClusterRoleBinding(t *testing.T) {
+	t.Parallel()
+	ctx := context.TODO()
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
+	err := Retry(attempts, interval, func() error {
+		_, secErr := clientSet.RbacV1().ClusterRoleBindings().Get(ctx,
+			eventing.GetPublisherClusterRoleBindingName(*eventingCR), metav1.GetOptions{})
+		if secErr != nil {
+			return secErr
+		}
+		return nil
+	})
+	require.NoError(t, err)
+}
+
+// Test_PublisherServices tests if the publisher-proxy Services exists.
+func Test_PublisherServices(t *testing.T) {
+	t.Parallel()
+	ctx := context.TODO()
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
+	err := Retry(attempts, interval, func() error {
+		// check service to expose event publishing endpoint.
+		_, secErr := clientSet.CoreV1().Services(NamespaceName).Get(ctx,
+			eventing.GetPublisherPublishServiceName(*eventingCR), metav1.GetOptions{})
+		if secErr != nil {
+			return errors.Wrap(secErr, "failed to ensure existence of publish service")
+		}
+
+		// check service to expose metrics endpoint.
+		_, secErr = clientSet.CoreV1().Services(NamespaceName).Get(ctx,
+			eventing.GetPublisherMetricsServiceName(*eventingCR), metav1.GetOptions{})
+		if secErr != nil {
+			return errors.Wrap(secErr, "failed to ensure existence of metrics service")
+		}
+
+		// check service to expose health endpoint.
+		_, secErr = clientSet.CoreV1().Services(NamespaceName).Get(ctx,
+			eventing.GetPublisherHealthServiceName(*eventingCR), metav1.GetOptions{})
+		if secErr != nil {
+			return errors.Wrap(secErr, "failed to ensure existence of health service")
+		}
+
+		return nil
+	})
+	require.NoError(t, err)
+}
+
+// Test_PublisherHPA tests the publisher-proxy HorizontalPodAutoscaler.
+func Test_PublisherHPA(t *testing.T) {
+	t.Parallel()
+	ctx := context.TODO()
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
+	err := Retry(attempts, interval, func() error {
+		gotHPA, secErr := clientSet.AutoscalingV2().HorizontalPodAutoscalers(NamespaceName).Get(ctx,
+			eventing.GetPublisherDeploymentName(*eventingCR), metav1.GetOptions{})
+		if secErr != nil {
+			return secErr
+		}
+
+		// check if the MinReplicas is correct.
+		if int(*gotHPA.Spec.MinReplicas) != eventingCR.Spec.Min {
+			return fmt.Errorf("HPA MinReplicas do not match. Want: %v, Got: %v",
+				eventingCR.Spec.Min, int(*gotHPA.Spec.MinReplicas))
+		}
+
+		// check if the MaxReplicas is correct.
+		if int(gotHPA.Spec.MaxReplicas) != eventingCR.Spec.Max {
+			return fmt.Errorf("HPA MinReplicas do not match. Want: %v, Got: %v",
+				eventingCR.Spec.Max, gotHPA.Spec.MaxReplicas)
+		}
+
+		return nil
+	})
+	require.NoError(t, err)
+}
+
 // Test_PublisherProxyDeployment checks the publisher-proxy deployment.
 func Test_PublisherProxyDeployment(t *testing.T) {
 	t.Parallel()
@@ -226,129 +302,86 @@ func Test_PublisherProxyDeployment(t *testing.T) {
 	require.NoError(t, err)
 }
 
-//// Test_PodsResources checks if the number of Pods is the same as defined in the NATS CR and that all Pods have the resources,
-//// that are defined in the CRD.
-//func Test_PodsResources(t *testing.T) {
-//	t.Parallel()
-//
-//	ctx := context.TODO()
-//	// RetryGet the NATS Pods and test them.
-//	err := Retry(attempts, interval, func() error {
-//		// RetryGet the NATS Pods via labels.
-//		pods, err := clientSet.CoreV1().Pods(NamespaceName).List(ctx, PodListOpts())
-//		if err != nil {
-//			return err
-//		}
-//
-//		// The number of Pods must be equal NATS.spec.cluster.size. We check this in the retry, because it may take
-//		// some time for all Pods to be there.
-//		if len(pods.Items) != NATSCR().Spec.Cluster.Size {
-//			return fmt.Errorf(
-//				"error while fetching Pods; wanted %v Pods but got %v",
-//				NATSCR().Spec.Cluster.Size,
-//				pods.Items,
-//			)
-//		}
-//
-//		// Go through all Pods, find the natsCR container in each and compare its Resources with what is defined in
-//		// the NATS CR.
-//		foundContainers := 0
-//		for _, pod := range pods.Items {
-//			for _, container := range pod.Spec.Containers {
-//				if !(container.Name == ContainerName) {
-//					continue
-//				}
-//				foundContainers += 1
-//				if !reflect.DeepEqual(NATSCR().Spec.Resources, container.Resources) {
-//					return fmt.Errorf(
-//						"error when checking pod %s resources:\n\twanted: %s\n\tgot: %s",
-//						pod.GetName(),
-//						NATSCR().Spec.Resources.String(),
-//						container.Resources.String(),
-//					)
-//				}
-//			}
-//		}
-//		if foundContainers != NATSCR().Spec.Cluster.Size {
-//			return fmt.Errorf(
-//				"error while fethching 'natsCR' Containers: expected %v but found %v",
-//				NATSCR().Spec.Cluster.Size,
-//				foundContainers,
-//			)
-//		}
-//
-//		// Everything is fine.
-//		return nil
-//	})
-//	require.NoError(t, err)
-//}
-//
-//// Test_PodsReady checks if the number of Pods is the same as defined in the NATS CR and that all Pods are ready.
-//func Test_PodsReady(t *testing.T) {
-//	t.Parallel()
-//
-//	ctx := context.TODO()
-//	// RetryGet the NATS CR. It will tell us how many Pods we should expect.
-//	natsCR, err := RetryGet(attempts, interval, func() (*natsv1alpha1.NATS, error) {
-//		return getNATSCR(ctx, CRName, NamespaceName)
-//	})
-//	require.NoError(t, err)
-//
-//	// RetryGet the NATS Pods and test them.
-//	err = Retry(attempts, interval, func() error {
-//		var pods *v1.PodList
-//		// RetryGet the NATS Pods via labels.
-//		pods, err = clientSet.CoreV1().Pods(NamespaceName).List(ctx, PodListOpts())
-//		if err != nil {
-//			return err
-//		}
-//
-//		// The number of Pods must be equal NATS.spec.cluster.size. We check this in the retry, because it may take
-//		// some time for all Pods to be there.
-//		if len(pods.Items) != natsCR.Spec.Cluster.Size {
-//			return fmt.Errorf(
-//				"Error while fetching pods; wanted %v Pods but got %v", natsCR.Spec.Cluster.Size, pods.Items,
-//			)
-//		}
-//
-//		// Check if all Pods are ready (the status.conditions array has an entry with .type="Ready" and .status="True").
-//		for _, pod := range pods.Items {
-//			foundReadyCondition := false
-//			for _, cond := range pod.Status.Conditions {
-//				if cond.Type != "Ready" {
-//					continue
-//				}
-//				foundReadyCondition = true
-//				if cond.Status != "True" {
-//					return fmt.Errorf(
-//						"Pod %s has 'Ready' conditon '%s' but wanted 'True'", pod.GetName(), cond.Status,
-//					)
-//				}
-//			}
-//			if !foundReadyCondition {
-//				return fmt.Errorf("Could not find 'Ready' condition for Pod %s", pod.GetName())
-//			}
-//		}
-//
-//		// Everything is fine.
-//		return nil
-//	})
-//	require.NoError(t, err)
-//}
-//
-//// Test_Secret tests if the Secret was created.
-//func Test_Secret(t *testing.T) {
-//	t.Parallel()
-//	ctx := context.TODO()
-//	err := Retry(attempts, interval, func() error {
-//		_, secErr := clientSet.CoreV1().Secrets(NamespaceName).Get(ctx, SecretName, metav1.GetOptions{})
-//		if secErr != nil {
-//			return secErr
-//		}
-//		return nil
-//	})
-//	require.NoError(t, err)
-//}
+// Test_PublisherProxyPods checks the publisher-proxy pods.
+// - checks if number of pods are between spec min and max.
+// - checks if the ENV `BACKEND` is correctly defined for active backend.
+// - checks if container resources are as defined in eventing CR spec.
+func Test_PublisherProxyPods(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.TODO()
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
+	// RetryGet the NATS Pods and test them.
+	err := Retry(attempts, interval, func() error {
+		// get publisher deployment
+		gotDeployment, getErr := getDeployment(ctx, eventing.GetPublisherDeploymentName(*eventingCR), NamespaceName)
+		if getErr != nil {
+			return getErr
+		}
+
+		// RetryGet the NATS Pods via labels.
+		pods, err := clientSet.CoreV1().Pods(NamespaceName).List(ctx, metav1.ListOptions{
+			LabelSelector: ConvertSelectorLabelsToString(gotDeployment.Spec.Selector.MatchLabels)})
+		if err != nil {
+			return err
+		}
+
+		// check number of replicas of Publisher pods.
+		if len(pods.Items) < eventingCR.Spec.Publisher.Min || len(pods.Items) > eventingCR.Spec.Publisher.Max {
+			return fmt.Errorf(
+				"the number of replicas for Publisher pods do not match with Eventing CR spec. "+
+					"Wanted replicas to be between: %v and %v, but got %v",
+				eventingCR.Spec.Publisher.Min,
+				eventingCR.Spec.Publisher.Max,
+				len(pods.Items),
+			)
+		}
+
+		// Go through all Pods, check its spec. It should be same as defined in Eventing CR
+		for _, pod := range pods.Items {
+			// find the container.
+			container := FindContainerInPod(pod, PublisherContainerName)
+			if container == nil {
+				return fmt.Errorf("Container: %v not found in publisher pod.", PublisherContainerName)
+			}
+			// compare the Resources with what is defined in the Eventing CR.
+			if !reflect.DeepEqual(eventingCR.Spec.Publisher.Resources, container.Resources) {
+				return fmt.Errorf(
+					"error when checking pod %s resources:\n\twanted: %s\n\tgot: %s",
+					pod.GetName(),
+					eventingCR.Spec.Publisher.Resources.String(),
+					container.Resources.String(),
+				)
+			}
+
+			// check if the ENV `BACKEND` is defined correctly.
+			wantBackendENVValue := "nats"
+			if eventingv1alpha1.BackendType(testConfigs.BackendType) == eventingv1alpha1.EventMeshBackendType {
+				wantBackendENVValue = "beb"
+			}
+
+			// get value of ENV `BACKEND`
+			gotBackendENVValue := ""
+			for _, envVar := range container.Env {
+				if envVar.Name == "BACKEND" {
+					gotBackendENVValue = envVar.Value
+				}
+			}
+			// compare value
+			if wantBackendENVValue != gotBackendENVValue {
+				return fmt.Errorf(
+					`error when checking ENV [BACKEND], wanted: %s, got: %s`,
+					wantBackendENVValue,
+					gotBackendENVValue,
+				)
+			}
+		}
+
+		// Everything is fine.
+		return nil
+	})
+	require.NoError(t, err)
+}
 
 func getEventingCR(ctx context.Context, name, namespace string) (*eventingv1alpha1.Eventing, error) {
 	var eventingCR eventingv1alpha1.Eventing
@@ -361,36 +394,6 @@ func getEventingCR(ctx context.Context, name, namespace string) (*eventingv1alph
 
 func getDeployment(ctx context.Context, name, namespace string) (*appsv1.Deployment, error) {
 	return clientSet.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
-}
-
-func cmToMap(cm string) map[string]string {
-	lines := strings.Split(cm, "\n")
-
-	cmMap := make(map[string]string)
-	for _, line := range lines {
-		l := strings.Split(line, ": ")
-		if len(l) < 2 {
-			continue
-		}
-		key := strings.TrimSpace(l[0])
-		val := strings.TrimSpace(l[1])
-		cmMap[key] = val
-	}
-
-	return cmMap
-}
-
-func checkValueInCMMap(cmm map[string]string, key, expectedValue string) error {
-	val, ok := cmm[key]
-	if !ok {
-		return fmt.Errorf("could net get '%s' from Configmap", key)
-	}
-
-	if val != expectedValue {
-		return fmt.Errorf("expected value for '%s' to be '%s' but was '%s'", key, expectedValue, val)
-	}
-
-	return nil
 }
 
 // Wait for Eventing CR to get ready.
