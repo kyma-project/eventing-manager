@@ -10,14 +10,15 @@ package setup_test
 import (
 	"context"
 	"fmt"
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	"github.com/kyma-project/eventing-manager/hack/e2e/env"
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	"github.com/pkg/errors"
 	"os"
 	"reflect"
 	"testing"
 	"time"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/hack/e2e/env"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -144,9 +145,9 @@ func Test_WebhookServerCertSecret(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
 	err := Retry(attempts, interval, func() error {
-		_, secErr := clientSet.CoreV1().Secrets(NamespaceName).Get(ctx, WebhookServerCertSecretName, metav1.GetOptions{})
-		if secErr != nil {
-			return secErr
+		_, getErr := clientSet.CoreV1().Secrets(NamespaceName).Get(ctx, WebhookServerCertSecretName, metav1.GetOptions{})
+		if getErr != nil {
+			return getErr
 		}
 		return nil
 	})
@@ -158,9 +159,9 @@ func Test_WebhookServerCertJob(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
 	err := Retry(attempts, interval, func() error {
-		_, secErr := clientSet.BatchV1().Jobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
-		if secErr != nil {
-			return secErr
+		_, getErr := clientSet.BatchV1().Jobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
+		if getErr != nil {
+			return getErr
 		}
 		return nil
 	})
@@ -172,9 +173,9 @@ func Test_WebhookServerCertCronJob(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
 	err := Retry(attempts, interval, func() error {
-		_, secErr := clientSet.BatchV1().CronJobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
-		if secErr != nil {
-			return secErr
+		_, getErr := clientSet.BatchV1().CronJobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
+		if getErr != nil {
+			return getErr
 		}
 		return nil
 	})
@@ -187,10 +188,10 @@ func Test_PublisherServiceAccount(t *testing.T) {
 	ctx := context.TODO()
 	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
 	err := Retry(attempts, interval, func() error {
-		_, secErr := clientSet.CoreV1().ServiceAccounts(NamespaceName).Get(ctx,
+		_, getErr := clientSet.CoreV1().ServiceAccounts(NamespaceName).Get(ctx,
 			eventing.GetPublisherServiceAccountName(*eventingCR), metav1.GetOptions{})
-		if secErr != nil {
-			return secErr
+		if getErr != nil {
+			return getErr
 		}
 		return nil
 	})
@@ -203,10 +204,10 @@ func Test_PublisherClusterRole(t *testing.T) {
 	ctx := context.TODO()
 	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
 	err := Retry(attempts, interval, func() error {
-		_, secErr := clientSet.RbacV1().ClusterRoles().Get(ctx,
+		_, getErr := clientSet.RbacV1().ClusterRoles().Get(ctx,
 			eventing.GetPublisherClusterRoleName(*eventingCR), metav1.GetOptions{})
-		if secErr != nil {
-			return secErr
+		if getErr != nil {
+			return getErr
 		}
 		return nil
 	})
@@ -219,10 +220,10 @@ func Test_PublisherClusterRoleBinding(t *testing.T) {
 	ctx := context.TODO()
 	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
 	err := Retry(attempts, interval, func() error {
-		_, secErr := clientSet.RbacV1().ClusterRoleBindings().Get(ctx,
+		_, getErr := clientSet.RbacV1().ClusterRoleBindings().Get(ctx,
 			eventing.GetPublisherClusterRoleBindingName(*eventingCR), metav1.GetOptions{})
-		if secErr != nil {
-			return secErr
+		if getErr != nil {
+			return getErr
 		}
 		return nil
 	})
@@ -236,24 +237,24 @@ func Test_PublisherServices(t *testing.T) {
 	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
 	err := Retry(attempts, interval, func() error {
 		// check service to expose event publishing endpoint.
-		_, secErr := clientSet.CoreV1().Services(NamespaceName).Get(ctx,
+		_, getErr := clientSet.CoreV1().Services(NamespaceName).Get(ctx,
 			eventing.GetPublisherPublishServiceName(*eventingCR), metav1.GetOptions{})
-		if secErr != nil {
-			return errors.Wrap(secErr, "failed to ensure existence of publish service")
+		if getErr != nil {
+			return errors.Wrap(getErr, "failed to ensure existence of publish service")
 		}
 
 		// check service to expose metrics endpoint.
-		_, secErr = clientSet.CoreV1().Services(NamespaceName).Get(ctx,
+		_, getErr = clientSet.CoreV1().Services(NamespaceName).Get(ctx,
 			eventing.GetPublisherMetricsServiceName(*eventingCR), metav1.GetOptions{})
-		if secErr != nil {
-			return errors.Wrap(secErr, "failed to ensure existence of metrics service")
+		if getErr != nil {
+			return errors.Wrap(getErr, "failed to ensure existence of metrics service")
 		}
 
 		// check service to expose health endpoint.
-		_, secErr = clientSet.CoreV1().Services(NamespaceName).Get(ctx,
+		_, getErr = clientSet.CoreV1().Services(NamespaceName).Get(ctx,
 			eventing.GetPublisherHealthServiceName(*eventingCR), metav1.GetOptions{})
-		if secErr != nil {
-			return errors.Wrap(secErr, "failed to ensure existence of health service")
+		if getErr != nil {
+			return errors.Wrap(getErr, "failed to ensure existence of health service")
 		}
 
 		return nil
@@ -267,10 +268,10 @@ func Test_PublisherHPA(t *testing.T) {
 	ctx := context.TODO()
 	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
 	err := Retry(attempts, interval, func() error {
-		gotHPA, secErr := clientSet.AutoscalingV2().HorizontalPodAutoscalers(NamespaceName).Get(ctx,
+		gotHPA, getErr := clientSet.AutoscalingV2().HorizontalPodAutoscalers(NamespaceName).Get(ctx,
 			eventing.GetPublisherDeploymentName(*eventingCR), metav1.GetOptions{})
-		if secErr != nil {
-			return secErr
+		if getErr != nil {
+			return getErr
 		}
 
 		// check if the MinReplicas is correct.

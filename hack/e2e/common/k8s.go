@@ -1,9 +1,10 @@
 package common
 
 import (
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"os"
 	"path/filepath"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"

@@ -191,3 +191,7 @@ imports-local: ## Optimize imports
 .PHONY: e2e-setup
 e2e-setup:
 	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e
+
+.PHONY: e2e-cleanup
+e2e-cleanup:
+	go test -v ./hack/e2e/cleanup/cleanup_test.go --tags=e2e
