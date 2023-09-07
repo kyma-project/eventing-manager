@@ -425,11 +425,11 @@ func waitForEventingCRReady() error {
 			return err
 		}
 
-		//if gotEventingCR.Spec.Backend.Type != gotEventingCR.Status.ActiveBackend {
-		//	err := fmt.Errorf("waiting for Eventing CR to switch backend")
-		//	logger.Debug(err.Error())
-		//	return err
-		//}
+		if gotEventingCR.Spec.Backend.Type != gotEventingCR.Status.ActiveBackend {
+			err := fmt.Errorf("waiting for Eventing CR to switch backend")
+			logger.Debug(err.Error())
+			return err
+		}
 
 		if gotEventingCR.Status.State != natsv1alpha1.StateReady {
 			err := fmt.Errorf("waiting for Eventing CR to get ready state")
