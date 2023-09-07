@@ -1,10 +1,9 @@
 resources:
 - manager.yaml
-- configmap.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
   newName: europe-docker.pkg.dev/kyma-project/dev/eventing-manager
-  newTag: PR-70
+  newTag: PR-78

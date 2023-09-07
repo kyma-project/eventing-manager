@@ -46,6 +46,7 @@ const (
 	ConditionReasonDeploymentStatusSyncFailed ConditionReason = "DeploymentStatusSyncFailed"
 	ConditionReasonNATSAvailable              ConditionReason = "Available"
 	ConditionReasonNATSNotAvailable           ConditionReason = "NotAvailable"
+	ConditionReasonForbidden                  ConditionReason = "Forbidden"
 	ConditionReasonWebhookFailed              ConditionReason = "WebhookFailed"
 	ConditionReasonWebhookReady               ConditionReason = "Ready"
 
@@ -80,8 +81,9 @@ type Eventing struct {
 
 // EventingStatus defines the observed state of Eventing
 type EventingStatus struct {
-	State      string             `json:"state"`
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	ActiveBackend BackendType        `json:"activeBackend"`
+	State         string             `json:"state"`
+	Conditions    []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // EventingSpec defines the desired state of Eventing
@@ -195,4 +197,12 @@ type Logging struct {
 
 func init() {
 	SchemeBuilder.Register(&Eventing{}, &EventingList{})
+}
+
+func (e *Eventing) SyncStatusActiveBackend() {
+	e.Status.ActiveBackend = e.Spec.Backend.Type
+}
+
+func (e *Eventing) IsSpecBackendTypeChanged() bool {
+	return e.Status.ActiveBackend != e.Spec.Backend.Type
 }

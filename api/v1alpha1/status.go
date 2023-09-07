@@ -88,6 +88,10 @@ func (es *EventingStatus) SetStateError() {
 	es.State = StateError
 }
 
+func (es *EventingStatus) ClearConditions() {
+	es.Conditions = []metav1.Condition{}
+}
+
 func (es *EventingStatus) IsEqual(status EventingStatus) bool {
 	thisWithoutCond := es.DeepCopy()
 	statusWithoutCond := status.DeepCopy()

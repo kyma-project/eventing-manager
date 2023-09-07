@@ -20,9 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
-
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
@@ -35,6 +34,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -76,6 +76,7 @@ type Reconciler struct {
 	natsConfigHandler            NatsConfigHandler
 	oauth2credentials            oauth2Credentials
 	backendConfig                env.BackendConfig
+	allowedEventingCR            *eventingv1alpha1.Eventing
 }
 
 func NewReconciler(
@@ -88,6 +89,7 @@ func NewReconciler(
 	backendConfig env.BackendConfig,
 	subManagerFactory subscriptionmanager.ManagerFactory,
 	opts *options.Options,
+	allowedEventingCR *eventingv1alpha1.Eventing,
 ) *Reconciler {
 	return &Reconciler{
 		Client:                  client,
@@ -103,6 +105,7 @@ func NewReconciler(
 		eventMeshSubManager:     nil,
 		isNATSSubManagerStarted: false,
 		natsConfigHandler:       NewNatsConfigHandler(kubeClient, opts),
+		allowedEventingCR:       allowedEventingCR,
 	}
 }
 
@@ -125,6 +128,7 @@ func NewReconciler(
 //+kubebuilder:rbac:groups="admissionregistration.k8s.io",resources=mutatingwebhookconfigurations,verbs=get;list;watch;update;patch;create;delete
 //+kubebuilder:rbac:groups="admissionregistration.k8s.io",resources=validatingwebhookconfigurations,verbs=get;list;watch;update;patch;create;delete
 //+kubebuilder:rbac:groups="applicationconnector.kyma-project.io",resources=applications,verbs=get;list;watch;update;patch;create;delete
+//+kubebuilder:rbac:groups=gateway.kyma-project.io,resources=apirules,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="eventing.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
 // +kubebuilder:rbac:groups=eventing.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="operator.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
@@ -153,8 +157,35 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return r.handleEventingDeletion(ctx, eventing, log)
 	}
 
+	// check if the Eveting CR is allowed to be created.
+	if r.allowedEventingCR != nil {
+		if result, err := r.handleEventingCRAllowedCheck(ctx, eventing, log); !result || err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	// handle reconciliation
 	return r.handleEventingReconcile(ctx, eventing, log)
+}
+
+// handleEventingCRAllowedCheck checks if Eventing CR is allowed to be created or not.
+// returns true if the Eventing CR is allowed.
+func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing *eventingv1alpha1.Eventing,
+	log *zap.SugaredLogger) (bool, error) {
+	// if the name and namespace matches with allowed NATS CR then allow the CR to be reconciled.
+	if eventing.Name == r.allowedEventingCR.Name && eventing.Namespace == r.allowedEventingCR.Namespace {
+		return true, nil
+	}
+
+	// set error state in status.
+	eventing.Status.SetStateError()
+	// update conditions in status.
+	errorMessage := fmt.Sprintf("Only a single Eventing CR with name: %s and namespace: %s "+
+		"is allowed to be created in a Kyma cluster.", r.allowedEventingCR.Name, r.allowedEventingCR.Namespace)
+	eventing.Status.UpdateConditionPublisherProxyReady(metav1.ConditionFalse,
+		eventingv1alpha1.ConditionReasonForbidden, errorMessage)
+
+	return false, r.syncEventingStatus(ctx, eventing, log)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -226,6 +257,17 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// set webhook condition to true.
 	eventing.Status.SetWebhookReadyConditionToTrue()
 
+	// handle switching of backend.
+	if eventing.Status.ActiveBackend != "" {
+		if err := r.handleBackendSwitching(eventing, log); err != nil {
+			return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
+		}
+	}
+
+	// update ActiveBackend in status.
+	eventing.SyncStatusActiveBackend()
+
+	// reconcile for specified backend.
 	switch eventing.Spec.Backend.Type {
 	case eventingv1alpha1.NatsBackendType:
 		return r.reconcileNATSBackend(ctx, eventing, log)
@@ -234,6 +276,30 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	default:
 		return ctrl.Result{Requeue: false}, fmt.Errorf("not supported backend type %s", eventing.Spec.Backend.Type)
 	}
+}
+
+func (r *Reconciler) handleBackendSwitching(
+	eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) error {
+	// check if the backend was changed.
+	if !eventing.IsSpecBackendTypeChanged() {
+		return nil
+	}
+
+	// stop the previously active backend.
+	if eventing.Status.ActiveBackend == eventingv1alpha1.NatsBackendType {
+		if err := r.stopNATSSubManager(true, log); err != nil {
+			return err
+		}
+	} else if eventing.Status.ActiveBackend == eventingv1alpha1.EventMeshBackendType {
+		if err := r.stopEventMeshSubManager(true, log); err != nil {
+			return err
+		}
+	}
+
+	// update the Eventing CR status.
+	eventing.Status.SetStateProcessing()
+	eventing.Status.ClearConditions()
+	return nil
 }
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
