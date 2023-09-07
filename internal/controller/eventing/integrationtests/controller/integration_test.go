@@ -1,6 +1,9 @@
 package controller_test
 
 import (
+	"os"
+	"testing"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -12,8 +15,6 @@ import (
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
-	"os"
-	"testing"
 
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	v1 "k8s.io/api/apps/v1"

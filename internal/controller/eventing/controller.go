@@ -76,7 +76,7 @@ type Reconciler struct {
 	natsConfigHandler            NatsConfigHandler
 	oauth2credentials            oauth2Credentials
 	backendConfig                env.BackendConfig
-	allowedEventingCR       *eventingv1alpha1.Eventing
+	allowedEventingCR            *eventingv1alpha1.Eventing
 }
 
 func NewReconciler(
@@ -128,6 +128,7 @@ func NewReconciler(
 //+kubebuilder:rbac:groups="admissionregistration.k8s.io",resources=mutatingwebhookconfigurations,verbs=get;list;watch;update;patch;create;delete
 //+kubebuilder:rbac:groups="admissionregistration.k8s.io",resources=validatingwebhookconfigurations,verbs=get;list;watch;update;patch;create;delete
 //+kubebuilder:rbac:groups="applicationconnector.kyma-project.io",resources=applications,verbs=get;list;watch;update;patch;create;delete
+//+kubebuilder:rbac:groups=gateway.kyma-project.io,resources=apirules,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="eventing.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
 // +kubebuilder:rbac:groups=eventing.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="operator.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
@@ -256,6 +257,17 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// set webhook condition to true.
 	eventing.Status.SetWebhookReadyConditionToTrue()
 
+	// handle switching of backend.
+	if eventing.Status.ActiveBackend != "" {
+		if err := r.handleBackendSwitching(eventing, log); err != nil {
+			return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
+		}
+	}
+
+	// update ActiveBackend in status.
+	eventing.SyncStatusActiveBackend()
+
+	// reconcile for specified backend.
 	switch eventing.Spec.Backend.Type {
 	case eventingv1alpha1.NatsBackendType:
 		return r.reconcileNATSBackend(ctx, eventing, log)
@@ -264,6 +276,30 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	default:
 		return ctrl.Result{Requeue: false}, fmt.Errorf("not supported backend type %s", eventing.Spec.Backend.Type)
 	}
+}
+
+func (r *Reconciler) handleBackendSwitching(
+	eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) error {
+	// check if the backend was changed.
+	if !eventing.IsSpecBackendTypeChanged() {
+		return nil
+	}
+
+	// stop the previously active backend.
+	if eventing.Status.ActiveBackend == eventingv1alpha1.NatsBackendType {
+		if err := r.stopNATSSubManager(true, log); err != nil {
+			return err
+		}
+	} else if eventing.Status.ActiveBackend == eventingv1alpha1.EventMeshBackendType {
+		if err := r.stopEventMeshSubManager(true, log); err != nil {
+			return err
+		}
+	}
+
+	// update the Eventing CR status.
+	eventing.Status.SetStateProcessing()
+	eventing.Status.ClearConditions()
+	return nil
 }
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {

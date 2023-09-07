@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -106,6 +107,34 @@ func WithEventMeshBackend(eventMeshSecretName string) EventingOption {
 				EventMeshSecret: eventing.Namespace + "/" + eventMeshSecretName,
 			},
 		}
+		return nil
+	}
+}
+
+func WithNATSBackend() EventingOption {
+	return func(eventing *v1alpha1.Eventing) error {
+		eventing.Spec.Backend.Type = v1alpha1.NatsBackendType
+		return nil
+	}
+}
+
+func WithStatusActiveBackend(activeBackend v1alpha1.BackendType) EventingOption {
+	return func(eventing *v1alpha1.Eventing) error {
+		eventing.Status.ActiveBackend = activeBackend
+		return nil
+	}
+}
+
+func WithStatusState(state string) EventingOption {
+	return func(eventing *v1alpha1.Eventing) error {
+		eventing.Status.State = state
+		return nil
+	}
+}
+
+func WithStatusConditions(conditions []metav1.Condition) EventingOption {
+	return func(eventing *v1alpha1.Eventing) error {
+		eventing.Status.Conditions = conditions
 		return nil
 	}
 }
