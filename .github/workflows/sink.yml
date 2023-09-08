@@ -1,4 +1,4 @@
-name: Build E2E Sink
+name: E2E Tests Sink
 
 env:
   # Use docker.io for Docker Hub if empty
