@@ -17,7 +17,7 @@ on:
     branches:
     - main
     paths:
-    - 'e2e/sink/**/**'
+    - 'e2e/sink/**'
 
 jobs:
   build:
