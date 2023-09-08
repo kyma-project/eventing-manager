@@ -13,10 +13,10 @@ on:
     tags: [ '*.*.*' ]
     paths:
     - 'e2e/sink/**'
-  pull_request:
+  pull_request_target:
     branches: [ "main" ]
-    # paths:
-    # - 'e2e/sink/**'
+    paths:
+    - 'e2e/sink/**'
 
 defaults:
   run:
