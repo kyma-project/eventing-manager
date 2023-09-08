@@ -12,6 +12,7 @@ import (
 	cev2http "github.com/cloudevents/sdk-go/v2/protocol/http"
 )
 
+// Handler interface for the SinkHandler.
 type Handler interface {
 	Start() error
 }
