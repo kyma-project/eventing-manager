@@ -69,9 +69,9 @@ jobs:
       uses: docker/build-push-action@v4
       with:
         context: e2e/sink
-        push: ${{ github.event_name != 'pull_request' }}
+        push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        load: ${{ github.event_name == 'pull_request' }}
+        load: true
         cache-from: type=gha
         cache-to: type=gha,mode=max
