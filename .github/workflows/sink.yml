@@ -1,4 +1,5 @@
-name: E2E Tests Sink
+name: Build E2E Sink
+
 env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
