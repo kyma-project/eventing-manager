@@ -18,15 +18,14 @@ on:
     paths:
     - 'e2e/sink/**'
 
-defaults:
-  run:
-    working-directory: e2e/sink
-
 jobs:
-
   build:
     runs-on: ubuntu-latest
     permissions: write-all
+
+    defaults:
+      run:
+        working-directory: e2e/sink
 
     steps:
     - uses: actions/checkout@v3
