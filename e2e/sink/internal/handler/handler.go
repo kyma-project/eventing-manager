@@ -30,8 +30,8 @@ func NewSinkHandler(logger *zap.Logger) *SinkHandler {
 
 func (h *SinkHandler) Start() error {
 	router := mux.NewRouter()
-	router.HandleFunc("/event", h.StoreEvent).Methods(http.MethodPost)
-	router.HandleFunc("/event/{eventID}", h.GetEvent).Methods(http.MethodGet)
+	router.HandleFunc("/events", h.StoreEvent).Methods(http.MethodPost)
+	router.HandleFunc("/events/{eventID}", h.GetEvent).Methods(http.MethodGet)
 
 	return http.ListenAndServe(":8080", router)
 }
@@ -96,10 +96,6 @@ func extractCloudEventFromRequest(r *http.Request) (*cev2event.Event, error) {
 		return nil, err
 	}
 
-	err = event.Validate()
-	if err != nil {
-		return nil, err
-	}
 	return event, nil
 }
 
