@@ -5,20 +5,19 @@ env:
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}
-  E2E_SINK_PATH: e2e/sink
 
 on:
   push:
     branches:
-      - 'main'
+    - 'main'
     tags: [ '*.*.*' ]
     paths:
     - 'e2e/sink/**'
   pull_request:
     branches:
-      - 'main'
+    - 'main'
     paths:
-      - 'e2e/sink/**'
+    - 'e2e/sink/**'
 
 jobs:
   build:
