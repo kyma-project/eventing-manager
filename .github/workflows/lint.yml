@@ -1,5 +1,8 @@
 name: golangci-lint
-on: [pull_request]
+on: 
+  pull_request:
+    paths-ignore:
+    - 'e2e/sink/**'
 permissions:
   contents: read
   # Optional: allow read access to pull request. Use with `only-new-issues` option.
