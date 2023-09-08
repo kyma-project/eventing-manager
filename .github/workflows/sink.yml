@@ -9,15 +9,15 @@ env:
 on:
   push:
     branches:
-    - 'main'
+    - main
     tags: [ '*.*.*' ]
     paths:
     - 'e2e/sink/**'
   pull_request:
     branches:
-    - 'main'
+    - main
     paths:
-    - 'e2e/sink/**'
+    - 'e2e/sink/**/**'
 
 jobs:
   build:
