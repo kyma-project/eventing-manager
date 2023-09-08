@@ -75,3 +75,4 @@ jobs:
         load: ${{ github.event_name == 'pull_request' }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        working-directory: e2e/sink
