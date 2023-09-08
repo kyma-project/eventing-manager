@@ -20,6 +20,7 @@ type Handler interface {
 type SinkHandler struct {
 	logger *zap.Logger
 	events map[string]*cev2event.Event
+	cache  map[string]*cev2event.Event
 }
 
 func NewSinkHandler(logger *zap.Logger) *SinkHandler {
