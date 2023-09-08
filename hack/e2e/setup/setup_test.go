@@ -77,7 +77,7 @@ func TestMain(m *testing.M) {
 	// Create the Namespace used for testing.
 	err = Retry(attempts, interval, func() error {
 		// It's fine if the Namespace already exists.
-		return client.IgnoreAlreadyExists(k8sClient.Create(ctx, Namespace()))
+		return client.IgnoreAlreadyExists(k8sClient.Create(ctx, Namespace(NamespaceName)))
 	})
 	if err != nil {
 		logger.Error(err.Error())

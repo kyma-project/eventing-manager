@@ -7,8 +7,13 @@ import (
 
 // E2EConfig represents the environment config for the end-to-end tests for eventing-manager.
 type E2EConfig struct {
-	BackendType  string `envconfig:"BACKEND_TYPE" default:"NATS"` // NATS or EventMesh
-	ManagerImage string `envconfig:"MANAGER_IMAGE" default:""`
+	BackendType           string `envconfig:"BACKEND_TYPE" default:"NATS"` // NATS or EventMesh
+	ManagerImage          string `envconfig:"MANAGER_IMAGE" default:""`
+	EventMeshNamespace    string `envconfig:"EVENTMESH_NAMESPACE" default:"xxxxxx"`
+	SubscriptionSinkImage string `envconfig:"SUBSCRIPTION_SINK_IMAGE" default:"xxxxx"`
+	SubscriptionSinkName  string `envconfig:"SUBSCRIPTION_SINK_Name" default:"test-sink"`
+	SubscriptionSinkURL   string `envconfig:"SUBSCRIPTION_SINK_URL" default:"http://test.eventing-tests.svc.cluster.local"`
+	TestNamespace         string `envconfig:"TEST_NAMESPACE" default:"eventing-tests"`
 }
 
 func (cfg E2EConfig) IsNATSBackend() bool {

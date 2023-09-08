@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -95,10 +97,54 @@ func PublisherSpec() eventingv1alpha1.Publisher {
 	}
 }
 
-func Namespace() *corev1.Namespace {
+func V1Alpha1SubscriptionsToTest() []eventing.TestSubscriptionInfo {
+	return []eventing.TestSubscriptionInfo{
+		{
+			Name:  "test-sub-1-v1alpha1",
+			Types: []string{"sap.kyma.custom.noapp.order.tested.v1"},
+		},
+		{
+			Name:  "test-sub-2-v1alpha1",
+			Types: []string{"sap.kyma.custom.test-app.order-$.second.R-e-c-e-i-v-e-d.v1"},
+		},
+		{
+			Name: "test-sub-3-with-multiple-types-v1alpha1",
+			Types: []string{
+				"sap.kyma.custom.connected-app.order.tested.v1",
+				"sap.kyma.custom.connected-app2.or-der.crea-ted.one.two.three.v4",
+			},
+		},
+	}
+}
+
+func V1Alpha2SubscriptionsToTest() []eventing.TestSubscriptionInfo {
+	return []eventing.TestSubscriptionInfo{
+		{
+			Name:        "test-sub-1-v1alpha2",
+			Description: "Test event type and source without any alpha-numeric characters",
+			Source:      "noapp",
+			Types:       []string{"order.modified.v1"},
+		},
+		{
+			Name:        "test-sub-2-v1alpha2",
+			Description: "Test event type and source with any alpha-numeric characters",
+			Source:      "test-app",
+			Types:       []string{"Order-$.third.R-e-c-e-i-v-e-d.v1"},
+		},
+		{
+			Name: "test-sub-3-with-multiple-types-v1alpha2",
+			Types: []string{
+				"or-der.crea-ted.one.two.three.four.v4",
+				"order.testing.v1",
+			},
+		},
+	}
+}
+
+func Namespace(name string) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: NamespaceName,
+			Name: name,
 		},
 	}
 }

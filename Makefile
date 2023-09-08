@@ -193,5 +193,16 @@ e2e-setup:
 	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e
 
 .PHONY: e2e-cleanup
-e2e-cleanup:
+e2e-cleanup: e2e-eventing-cleanup
 	go test -v ./hack/e2e/cleanup/cleanup_test.go --tags=e2e
+
+.PHONY: e2e-eventing
+e2e-eventing:
+	go test -v ./hack/e2e/eventing/eventing_test.go --tags=e2e
+
+.PHONY: e2e-eventing-cleanup
+e2e-eventing-cleanup:
+	go test -v ./hack/e2e/eventing/cleanup/cleanup_test.go --tags=e2e
+
+.PHONY: e2e
+e2e: e2e-setup e2e-eventing e2e-cleanup
