@@ -4,7 +4,7 @@ env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
-  IMAGE_NAME: ${{ github.repository }}/e2e-tests-sink
+  IMAGE_NAME: 'kyma-project/e2e-tests-sink'
 
 on:
   push:
