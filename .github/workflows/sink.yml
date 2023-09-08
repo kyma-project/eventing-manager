@@ -68,11 +68,10 @@ jobs:
       id: build-and-push
       uses: docker/build-push-action@v4
       with:
-        context: .
+        context: e2e/sink
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         load: ${{ github.event_name == 'pull_request' }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        working-directory: e2e/sink
