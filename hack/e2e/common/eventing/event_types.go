@@ -8,7 +8,6 @@ import (
 
 type TestSubscriptionInfo struct {
 	Name        string
-	Namespace   string
 	Description string
 	Source      string
 	Types       []string

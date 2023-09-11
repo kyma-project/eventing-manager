@@ -132,7 +132,8 @@ func V1Alpha2SubscriptionsToTest() []eventing.TestSubscriptionInfo {
 			Types:       []string{"Order-$.third.R-e-c-e-i-v-e-d.v1"},
 		},
 		{
-			Name: "test-sub-3-with-multiple-types-v1alpha2",
+			Name:   "test-sub-3-with-multiple-types-v1alpha2",
+			Source: "test-evnt",
 			Types: []string{
 				"or-der.crea-ted.one.two.three.four.v4",
 				"order.testing.v1",

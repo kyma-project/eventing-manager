@@ -97,6 +97,22 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func Test_StructuredCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
+	t.Parallel()
+	for _, subToTest := range V1Alpha1SubscriptionsToTest() {
+		subToTest := subToTest
+		testName := fmt.Sprintf("Structured CE should work for subscription: %s", subToTest.Name)
+		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
+			// TODO
+			// Publish an event
+			// verify if the event was received
+
+		})
+	}
+}
+
 func setupSubscriptions() error {
 	ctx := context.TODO()
 	// create v1alpha1 subscriptions if not exists.
@@ -166,18 +182,18 @@ func waitForSubscription(ctx context.Context, subsToTest eventing.TestSubscripti
 		gotSub := ecv1alpha2.Subscription{}
 		err := k8sClient.Get(ctx, k8stypes.NamespacedName{
 			Name:      subsToTest.Name,
-			Namespace: subsToTest.Namespace,
+			Namespace: testConfigs.TestNamespace,
 		}, &gotSub)
 		if err != nil {
 			logger.Debug(fmt.Sprintf("failed to check readiness; failed to fetch subscription: %s "+
-				"in namespace: %s", subsToTest.Name, subsToTest.Namespace))
+				"in namespace: %s", subsToTest.Name, testConfigs.TestNamespace))
 			return err
 		}
 
 		// check if subscription is reconciled by correct backend.
 		if !IsSubscriptionReconcileByBackend(gotSub, testConfigs.BackendType) {
 			errMsg := fmt.Sprintf("waiting subscription: %s "+
-				"in namespace: %s to get recocniled by backend: %s", subsToTest.Name, subsToTest.Namespace,
+				"in namespace: %s to get recocniled by backend: %s", subsToTest.Name, testConfigs.TestNamespace,
 				testConfigs.BackendType)
 			logger.Debug(errMsg)
 			return errors.New(errMsg)
@@ -186,7 +202,7 @@ func waitForSubscription(ctx context.Context, subsToTest eventing.TestSubscripti
 		// check if subscription is ready.
 		if !gotSub.Status.Ready {
 			errMsg := fmt.Sprintf("waiting subscription: %s "+
-				"in namespace: %s to get ready", subsToTest.Name, subsToTest.Namespace)
+				"in namespace: %s to get ready", subsToTest.Name, testConfigs.TestNamespace)
 			logger.Debug(errMsg)
 			return errors.New(errMsg)
 		}

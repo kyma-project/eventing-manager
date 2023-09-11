@@ -122,7 +122,7 @@ func deleteSubscription(ctx context.Context, subToTest eventing.TestSubscription
 		err := k8sClient.Delete(ctx, subToTest.ToSubscriptionV1Alpha2("", testConfigs.TestNamespace))
 		if err != nil && !k8serrors.IsNotFound(err) {
 			logger.Debug(fmt.Sprintf("failed to delete subscription: %s "+
-				"in namespace: %s", subToTest.Name, subToTest.Namespace))
+				"in namespace: %s", subToTest.Name, testConfigs.TestNamespace))
 			return err
 		}
 		return nil
