@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"os"
 	"strings"
@@ -115,34 +114,53 @@ func TestMain(m *testing.M) {
 
 func Test_LegacyEvents_SubscriptionV1Alpha1(t *testing.T) {
 	t.Parallel()
-
 	for _, subToTest := range V1Alpha1SubscriptionsToTest() {
 		subToTest := subToTest
 		for _, eventTypeToTest := range subToTest.Types {
 			eventTypeToTest := eventTypeToTest
-			testName := fmt.Sprintf("Legacy event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
+			testName := fmt.Sprintf("legacy event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
 			// run test for the eventType.
 			t.Run(testName, func(t *testing.T) {
 				t.Parallel()
 
-				// Publishing an event...
-				// define event
-				eventID := uuid.New().String()
-				eventSource := eventing.ExtractSourceFromSubscriptionV1Alpha1Type(eventTypeToTest)
-				eventVersion := eventing.ExtractEventVersionSubscriptionType(eventTypeToTest)
-				legacyEventType := eventing.ExtractLegacyTypeFromSubscriptionV1Alpha1Type(testConfigs.EventTypePrefix,
-					eventSource, eventVersion, eventTypeToTest)
-				eventData := eventing.LegacyEventData(eventSource, legacyEventType)
-				payload := eventing.LegacyEventPayload(eventID, eventVersion, legacyEventType, eventData)
+				// given: define the event
+				eventID, eventSource, legacyEventType, payload := eventing.NewLegacyEventForV1Alpha1(eventTypeToTest, testConfigs.EventTypePrefix)
 
-				// When
-				// publish the data
+				// When: publish the event
 				err := eventPublisher.SendLegacyEvent(eventSource, legacyEventType, payload)
+
+				// then
 				require.NoError(t, err)
-
-				// Verify if the event was received
+				// verify if the event was received
 				// TODO: implement me
+				require.NotEmpty(t, eventID)
+			})
+		}
+	}
+}
 
+func Test_LegacyEvents_SubscriptionV1Alpha2(t *testing.T) {
+	t.Parallel()
+	for _, subToTest := range V1Alpha2SubscriptionsToTest() {
+		subToTest := subToTest
+		for _, eventTypeToTest := range subToTest.Types {
+			eventTypeToTest := eventTypeToTest
+			testName := fmt.Sprintf("legacy event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
+			// run test for the eventType.
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
+
+				// given: define the event
+				eventID, eventSource, legacyEventType, payload := eventing.NewLegacyEventForV1Alpha2(subToTest.Source, eventTypeToTest)
+
+				// When: publish the event
+				err := eventPublisher.SendLegacyEvent(eventSource, legacyEventType, payload)
+
+				// then
+				require.NoError(t, err)
+				// verify if the event was received
+				// TODO: implement me
+				require.NotEmpty(t, eventID)
 			})
 		}
 	}
