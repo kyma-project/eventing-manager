@@ -46,7 +46,7 @@ var k8sClient client.Client //nolint:gochecknoglobals // This will only be acces
 
 var logger *zap.Logger
 
-var testConfigs env.E2EConfig
+var testConfigs *env.E2EConfig
 
 // TestMain runs before all the other test functions. It sets up all the resources that are shared between the different
 // test functions. It will then run the tests and finally shuts everything down.
@@ -54,22 +54,19 @@ func TestMain(m *testing.M) {
 	var err error
 	logger, err = SetupLogger()
 	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 
 	testConfigs, err = env.GetE2EConfig()
 	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+		logger.Fatal(err.Error())
 
 	}
 	logger.Info(fmt.Sprintf("##### NOTE: Tests will run w.r.t. backend: %s", testConfigs.BackendType))
 
 	clientSet, k8sClient, err = GetK8sClients()
 	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 
 	ctx := context.TODO()
@@ -78,8 +75,7 @@ func TestMain(m *testing.M) {
 		return k8sClient.Delete(ctx, EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType)))
 	})
 	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 
 	// Run the tests and exit.

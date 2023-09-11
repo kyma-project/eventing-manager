@@ -187,11 +187,12 @@ fmt-local: ## Reformat files using `go fmt`
 imports-local: ## Optimize imports
 	goimports -w -l $$($(FILES_TO_CHECK))
 
-# e2e testing is done here
+# e2e-setup will create an Eventing CR and check if the required resources are provisioned or not.
 .PHONY: e2e-setup
 e2e-setup:
 	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e
 
+# e2e-setup will delete the Eventing CR and check if the required resources are de-provisioned or not.
 .PHONY: e2e-cleanup
 e2e-cleanup:
 	go test -v ./hack/e2e/cleanup/cleanup_test.go --tags=e2e

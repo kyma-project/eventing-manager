@@ -19,10 +19,10 @@ func (cfg E2EConfig) IsEventMeshBackend() bool {
 	return eventingv1alpha1.BackendType(cfg.BackendType) == eventingv1alpha1.EventMeshBackendType
 }
 
-func GetE2EConfig() (E2EConfig, error) {
+func GetE2EConfig() (*E2EConfig, error) {
 	cfg := E2EConfig{}
 	if err := envconfig.Process("", &cfg); err != nil {
-		return E2EConfig{}, err
+		return nil, err
 	}
-	return cfg, nil
+	return &cfg, nil
 }
