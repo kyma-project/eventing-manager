@@ -43,7 +43,7 @@ var k8sClient client.Client //nolint:gochecknoglobals // This will only be acces
 
 var logger *zap.Logger
 
-var testConfigs env.E2EConfig
+var testConfigs *env.E2EConfig
 
 var eventPublisher *eventing.Publisher
 

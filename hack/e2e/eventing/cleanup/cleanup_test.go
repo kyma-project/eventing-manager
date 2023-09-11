@@ -39,7 +39,7 @@ var k8sClient client.Client //nolint:gochecknoglobals // This will only be acces
 
 var logger *zap.Logger
 
-var testConfigs env.E2EConfig
+var testConfigs *env.E2EConfig
 
 // TestMain runs before all the other test functions. It sets up all the resources that are shared between the different
 // test functions. It will then run the tests and finally shuts everything down.

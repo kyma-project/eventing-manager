@@ -47,7 +47,7 @@ var k8sClient client.Client //nolint:gochecknoglobals // This will only be acces
 
 var logger *zap.Logger
 
-var testConfigs env.E2EConfig
+var testConfigs *env.E2EConfig
 
 // TestMain runs before all the other test functions. It sets up all the resources that are shared between the different
 // test functions. It will then run the tests and finally shuts everything down.
@@ -55,33 +55,28 @@ func TestMain(m *testing.M) {
 	var err error
 	logger, err = SetupLogger()
 	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 
 	testConfigs, err = env.GetE2EConfig()
 	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
-
+		logger.Fatal(err.Error())
 	}
 	logger.Info(fmt.Sprintf("##### NOTE: Tests will run w.r.t. backend: %s", testConfigs.BackendType))
 
 	clientSet, k8sClient, err = GetK8sClients()
 	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 
 	ctx := context.TODO()
 	// Create the Namespace used for testing.
 	err = Retry(attempts, interval, func() error {
 		// It's fine if the Namespace already exists.
-		return client.IgnoreAlreadyExists(k8sClient.Create(ctx, Namespace(NamespaceName)))
+		return client.IgnoreAlreadyExists(k8sClient.Create(ctx, Namespace(testConfigs.TestNamespace)))
 	})
 	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 
 	// Wait for eventing-manager deployment to get ready.
@@ -92,8 +87,7 @@ func TestMain(m *testing.M) {
 		)
 	}
 	if err := waitForEventingManagerDeploymentReady(testConfigs.ManagerImage); err != nil {
-		logger.Error(err.Error())
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 
 	// Create the Eventing CR used for testing.
@@ -122,8 +116,7 @@ func TestMain(m *testing.M) {
 		return errEvnt
 	})
 	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 
 	// wait for an interval for reconciliation to update status.
@@ -131,8 +124,7 @@ func TestMain(m *testing.M) {
 
 	// Wait for Eventing CR to get ready.
 	if err := waitForEventingCRReady(); err != nil {
-		logger.Error(err.Error())
-		panic(err)
+		logger.Fatal(err.Error())
 	}
 
 	// Run the tests and exit.
