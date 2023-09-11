@@ -192,7 +192,7 @@ imports-local: ## Optimize imports
 e2e-setup:
 	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e
 
-# e2e-setup will delete the Eventing CR and check if the required resources are de-provisioned or not.
+# e2e-cleanup will delete the Eventing CR and check if the required resources are de-provisioned or not.
 .PHONY: e2e-cleanup
 e2e-cleanup:
 	go test -v ./hack/e2e/cleanup/cleanup_test.go --tags=e2e
