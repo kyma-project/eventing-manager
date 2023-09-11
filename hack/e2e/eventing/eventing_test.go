@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 	"os"
 	"strings"
 	"testing"
@@ -42,6 +44,8 @@ var k8sClient client.Client //nolint:gochecknoglobals // This will only be acces
 var logger *zap.Logger
 
 var testConfigs env.E2EConfig
+
+var eventPublisher *eventing.Publisher
 
 // TestMain runs before all the other test functions. It sets up all the resources that are shared between the different
 // test functions. It will then run the tests and finally shuts everything down.
@@ -97,19 +101,32 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func Test_StructuredCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
+func Test_LegacyEvents_SubscriptionV1Alpha1(t *testing.T) {
 	t.Parallel()
+
 	for _, subToTest := range V1Alpha1SubscriptionsToTest() {
 		subToTest := subToTest
-		testName := fmt.Sprintf("Structured CE should work for subscription: %s", subToTest.Name)
-		t.Run(testName, func(t *testing.T) {
-			t.Parallel()
+		for _, eventTypeToTest := range subToTest.Types {
+			eventTypeToTest := eventTypeToTest
+			testName := fmt.Sprintf("Legacy event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
+			// run test for the eventType.
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
 
-			// TODO
-			// Publish an event
-			// verify if the event was received
+				// Publishing an event...
+				// define event
+				eventID := uuid.New().String()
+				eventData := eventing.LegacyEventData(subToTest.Source, eventTypeToTest)
+				payload := eventing.LegacyEventPayload(subToTest.Source, eventID, eventTypeToTest, eventData)
+				// publish the data
+				err := eventPublisher.SendLegacyEvent(subToTest.Source, eventTypeToTest, payload)
+				require.NoError(t, err)
 
-		})
+				// verify if the event was received
+				// TODO: implement me
+
+			})
+		}
 	}
 }
 

@@ -14,6 +14,7 @@ type E2EConfig struct {
 	SubscriptionSinkName  string `envconfig:"SUBSCRIPTION_SINK_Name" default:"test-sink"`
 	SubscriptionSinkURL   string `envconfig:"SUBSCRIPTION_SINK_URL" default:"http://test.eventing-tests.svc.cluster.local"`
 	TestNamespace         string `envconfig:"TEST_NAMESPACE" default:"eventing-tests"`
+	PublisherURL          string `envconfig:"PUBLISHER_URL" default:"http://localhost:308081"`
 }
 
 func (cfg E2EConfig) IsNATSBackend() bool {
