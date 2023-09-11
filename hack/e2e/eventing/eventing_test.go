@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
+	pkghttp "github.com/kyma-project/eventing-manager/hack/e2e/common/http"
 	ecv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 
@@ -64,6 +65,7 @@ func TestMain(m *testing.M) {
 
 	}
 	logger.Info(fmt.Sprintf("##### NOTE: Tests will run w.r.t. backend: %s", testConfigs.BackendType))
+	logger.Info(fmt.Sprintf("Setting up resources for the tests!"))
 
 	clientSet, k8sClient, err = GetK8sClients()
 	if err != nil {
@@ -96,7 +98,17 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	// initialize event publisher.
+	maxIdleConns := 10
+	maxConnsPerHost := 10
+	maxIdleConnsPerHost := 10
+	idleConnTimeout := 1 * time.Minute
+	t := pkghttp.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	clientHTTP := pkghttp.NewClient(t.Clone())
+	eventPublisher = eventing.NewPublisher(context.Background(), nil, clientHTTP, testConfigs.PublisherURL, logger)
+
 	// Run the tests and exit.
+	logger.Info(fmt.Sprintf("Starting the tests!"))
 	code := m.Run()
 	os.Exit(code)
 }
@@ -116,19 +128,27 @@ func Test_LegacyEvents_SubscriptionV1Alpha1(t *testing.T) {
 				// Publishing an event...
 				// define event
 				eventID := uuid.New().String()
-				eventData := eventing.LegacyEventData(subToTest.Source, eventTypeToTest)
-				payload := eventing.LegacyEventPayload(subToTest.Source, eventID, eventTypeToTest, eventData)
+				eventSource := eventing.ExtractSourceFromSubscriptionV1Alpha1Type(eventTypeToTest)
+				eventVersion := eventing.ExtractEventVersionSubscriptionType(eventTypeToTest)
+				legacyEventType := eventing.ExtractLegacyTypeFromSubscriptionV1Alpha1Type(testConfigs.EventTypePrefix,
+					eventSource, eventVersion, eventTypeToTest)
+				eventData := eventing.LegacyEventData(eventSource, legacyEventType)
+				payload := eventing.LegacyEventPayload(eventID, eventVersion, legacyEventType, eventData)
+
+				// When
 				// publish the data
-				err := eventPublisher.SendLegacyEvent(subToTest.Source, eventTypeToTest, payload)
+				err := eventPublisher.SendLegacyEvent(eventSource, legacyEventType, payload)
 				require.NoError(t, err)
 
-				// verify if the event was received
+				// Verify if the event was received
 				// TODO: implement me
 
 			})
 		}
 	}
 }
+
+//++ Helper functions
 
 func setupSubscriptions() error {
 	ctx := context.TODO()

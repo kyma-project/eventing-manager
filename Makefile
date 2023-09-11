@@ -199,7 +199,7 @@ e2e-cleanup:
 
 .PHONY: e2e-eventing
 e2e-eventing:
-	go test -v ./hack/e2e/eventing/eventing_test.go --tags=e2e
+	./hack/e2e/scripts/event_delivery_tests.sh
 
 .PHONY: e2e-eventing-cleanup
 e2e-eventing-cleanup:

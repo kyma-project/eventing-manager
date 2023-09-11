@@ -47,7 +47,7 @@ func EventingNATSCR() *eventingv1alpha1.Eventing {
 				Config: eventingv1alpha1.BackendConfig{
 					NATSStreamStorageType: "File",
 					NATSStreamReplicas:    3,
-					NATSStreamMaxSize:     resource.MustParse("700m"),
+					NATSStreamMaxSize:     resource.MustParse("700Mi"),
 					NATSMaxMsgsPerTopic:   1000000,
 				},
 			},

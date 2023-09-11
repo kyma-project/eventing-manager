@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	LegacyPublishEndpointFormat     = "http://%s/%s/v1/events"
-	CloudEventPublishEndpointFormat = "http://%s/%s/v1/events"
+	LegacyPublishEndpointFormat     = "%s/%s/v1/events"
+	CloudEventPublishEndpointFormat = "%s/%s/v1/events"
 )
 
 type Publisher struct {
@@ -55,6 +55,13 @@ func (p *Publisher) SendLegacyEvent(source, eventType, payload string) error {
 		p.logger.Debug(err.Error())
 		return err
 	}
+
+	p.logger.Debug(fmt.Sprintf("Publishing legacy event:"+
+		" URL: %s,"+
+		" EventSource: %s,"+
+		" EventType: %s,"+
+		" Payload: %s",
+		url, source, eventType, payload))
 
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := p.clientHTTP.Do(req)

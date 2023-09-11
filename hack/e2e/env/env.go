@@ -9,12 +9,13 @@ import (
 type E2EConfig struct {
 	BackendType           string `envconfig:"BACKEND_TYPE" default:"NATS"` // NATS or EventMesh
 	ManagerImage          string `envconfig:"MANAGER_IMAGE" default:""`
+	EventTypePrefix       string `envconfig:"EVENT_TYPE_PREFIX" default:"sap.kyma.custom"`
 	EventMeshNamespace    string `envconfig:"EVENTMESH_NAMESPACE" default:"xxxxxx"`
 	SubscriptionSinkImage string `envconfig:"SUBSCRIPTION_SINK_IMAGE" default:"xxxxx"`
 	SubscriptionSinkName  string `envconfig:"SUBSCRIPTION_SINK_Name" default:"test-sink"`
 	SubscriptionSinkURL   string `envconfig:"SUBSCRIPTION_SINK_URL" default:"http://test.eventing-tests.svc.cluster.local"`
 	TestNamespace         string `envconfig:"TEST_NAMESPACE" default:"eventing-tests"`
-	PublisherURL          string `envconfig:"PUBLISHER_URL" default:"http://localhost:308081"`
+	PublisherURL          string `envconfig:"PUBLISHER_URL" default:"http://localhost:38081"`
 }
 
 func (cfg E2EConfig) IsNATSBackend() bool {
