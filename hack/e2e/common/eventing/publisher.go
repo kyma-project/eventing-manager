@@ -53,6 +53,12 @@ func (p *Publisher) SendLegacyEventWithRetries(source, eventType, payload string
 	})
 }
 
+func (p *Publisher) SendCloudEventWithRetries(event *cloudevents.Event, encoding binding.Encoding, attempts int, interval time.Duration) error {
+	return common.Retry(attempts, interval, func() error {
+		return p.SendCloudEvent(event, encoding)
+	})
+}
+
 func (p *Publisher) SendLegacyEvent(source, eventType, payload string) error {
 	url := p.LegacyPublishEndpoint(source)
 

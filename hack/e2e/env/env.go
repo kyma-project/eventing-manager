@@ -13,11 +13,12 @@ type E2EConfig struct {
 	ManagerImage          string `envconfig:"MANAGER_IMAGE" default:""`
 	EventTypePrefix       string `envconfig:"EVENT_TYPE_PREFIX" default:"sap.kyma.custom"`
 	EventMeshNamespace    string `envconfig:"EVENTMESH_NAMESPACE" default:"/default/sap.kyma/tunas-develop"`
-	SubscriptionSinkImage string `envconfig:"SUBSCRIPTION_SINK_IMAGE" default:"docker.io/muralov/sink:v2"`
+	SubscriptionSinkImage string `envconfig:"SUBSCRIPTION_SINK_IMAGE" default:"ghcr.io/kyma-project/eventing-manager/e2e-tests-sink:sha-5faa6ba"`
 	SubscriptionSinkName  string `envconfig:"SUBSCRIPTION_SINK_Name" default:"test-sink"`
 	SubscriptionSinkURL   string `envconfig:"SUBSCRIPTION_SINK_URL" default:""`
 	TestNamespace         string `envconfig:"TEST_NAMESPACE" default:"eventing-tests"`
 	PublisherURL          string `envconfig:"PUBLISHER_URL" default:"http://localhost:38081"`
+	SinkPortForwardedURL  string `envconfig:"SINK_PORT_FORWARDED_URL" default:"http://localhost:38071"`
 }
 
 func (cfg E2EConfig) IsNATSBackend() bool {

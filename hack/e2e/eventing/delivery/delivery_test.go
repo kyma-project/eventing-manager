@@ -1,7 +1,4 @@
-//go:build e2e
-// +build e2e
-
-package eventing
+package delivery
 
 import (
 	"fmt"
@@ -22,21 +19,6 @@ var testEnvironment *testenvironment.TestEnvironment
 func TestMain(m *testing.M) {
 	testEnvironment = testenvironment.NewTestEnvironment()
 
-	// create test namespace,
-	if err := testEnvironment.CreateTestNamespace(); err != nil {
-		testEnvironment.Logger.Fatal(err.Error())
-	}
-
-	// setup sink for subscriptions.
-	if err := testEnvironment.SetupSink(); err != nil {
-		testEnvironment.Logger.Fatal(err.Error())
-	}
-
-	// create subscriptions.
-	if err := testEnvironment.CreateAllSubscriptions(); err != nil {
-		testEnvironment.Logger.Fatal(err.Error())
-	}
-
 	// wait for subscriptions.
 	if err := testEnvironment.WaitForAllSubscriptions(); err != nil {
 		testEnvironment.Logger.Fatal(err.Error())
@@ -46,6 +28,9 @@ func TestMain(m *testing.M) {
 	if err := testEnvironment.InitEventPublisherClient(); err != nil {
 		testEnvironment.Logger.Fatal(err.Error())
 	}
+
+	// initialize sink client for fetching events.
+	testEnvironment.InitSinkClient()
 
 	// Run the tests and exit.
 	code := m.Run()

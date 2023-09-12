@@ -85,8 +85,10 @@ func NewLegacyEvent(eventSource, eventType string) (string, string, string, stri
 }
 
 func NewCloudEvent(eventSource, eventType string, encoding binding.Encoding) (*cloudevents.Event, error) {
+	eventID := uuid.New().String()
 	ce := cloudevents.NewEvent()
 	data := CloudEventData(eventSource, eventType, encoding)
+	ce.SetID(eventID)
 	ce.SetType(eventType)
 	ce.SetSource(eventSource)
 	if err := ce.SetData(cloudevents.ApplicationJSON, data); err != nil {
