@@ -5,7 +5,7 @@ env:
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}/e2e-tests-sink
-  E2E_SINK_DIR: e2e/sink
+  E2E_SINK_DIR: hack/e2e/sink
 
 on:
   push:
@@ -13,13 +13,13 @@ on:
     - main
     tags: [ '*.*.*' ]
     paths:
-    - 'e2e/sink/**'
+    - 'hack/e2e/sink/**'
     - '.github/workflows/sink.yml'
   pull_request:
     branches:
     - main
     paths:
-    - 'e2e/sink/**'
+    - 'hack/e2e/sink/**'
     - '.github/workflows/sink.yml'
 
 jobs:

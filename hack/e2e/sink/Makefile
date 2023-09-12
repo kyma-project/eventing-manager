@@ -103,15 +103,3 @@ vet: ## Run go vet against code.
 .PHONY: fmt
 fmt: ## Reformat files using `go fmt`
 	go fmt $$($(DIRS_TO_CHECK))
-
-imports: ## Optimize imports
-	goimports -w -l $$($(FILES_TO_CHECK))
-
-lint-thoroughly:
-	golangci-lint run
-	
-fmt-local: ## Reformat files using `go fmt`
-	go fmt $$($(DIRS_TO_CHECK))
-
-imports-local: ## Optimize imports
-	goimports -w -l $$($(FILES_TO_CHECK))
