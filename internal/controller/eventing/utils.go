@@ -31,7 +31,7 @@ func (r *Reconciler) removeFinalizer(ctx context.Context, eventing *eventingv1al
 }
 
 func (r *Reconciler) getNATSBackendConfigHash() (int64, error) {
-	hash, err := hashstructure.Hash(r.backendConfig, hashstructure.FormatV2, nil)
+	hash, err := hashstructure.Hash(r.backendConfig.DefaultSubscriptionConfig, hashstructure.FormatV2, nil)
 	if err != nil {
 		return 0, err
 	}
