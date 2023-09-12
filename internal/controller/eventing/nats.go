@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -26,9 +27,43 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 			return err
 		}
 
+		// set the hash of current config
+		specHash, err := r.getNATSBackendConfigHash()
+		if err != nil {
+			return err
+		}
+		eventing.Status.BackendConfigHash = specHash
+
 		log.Info("NATS subscription-manager initialized")
 		// save instance only when init is successful.
 		r.natsSubManager = natsSubManager
+	} else {
+		// get current hash of config
+		specHash, err := r.getNATSBackendConfigHash()
+		if err != nil {
+			return err
+		}
+		// set the hash in the reconciler if empty
+		if eventing.Status.BackendConfigHash == 0 {
+			eventing.Status.BackendConfigHash = specHash
+		}
+		// update the config if hashes differ
+		if eventing.Status.BackendConfigHash != specHash {
+			// get the new config
+			defaultSubsConfig := r.getDefaultSubscriptionConfig()
+			// stop the subsManager without cleanup
+			if err := r.stopNATSSubManager(false, log); err != nil {
+				return err
+			}
+			// use the new config and start
+			err := r.startNATSSubManager(defaultSubsConfig, log)
+			if err != nil {
+				return err
+			}
+			// update the hash
+			eventing.Status.BackendConfigHash = specHash
+		}
+
 	}
 
 	if r.isNATSSubManagerStarted {
@@ -37,9 +72,17 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 	}
 
 	// start the subscription manager.
-	defaultSubsConfig := r.eventingManager.GetBackendConfig().
-		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
+	defaultSubsConfig := r.getDefaultSubscriptionConfig()
 
+	err := r.startNATSSubManager(defaultSubsConfig, log)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Reconciler) startNATSSubManager(defaultSubsConfig ecenv.DefaultSubscriptionConfig, log *zap.SugaredLogger) error {
 	if err := r.natsSubManager.Start(defaultSubsConfig, ecsubscriptionmanager.Params{}); err != nil {
 		return err
 	}
@@ -47,8 +90,13 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 	log.Info("NATS subscription-manager started")
 	// update flag so it do not try to start the manager again.
 	r.isNATSSubManagerStarted = true
-
 	return nil
+}
+
+func (r *Reconciler) getDefaultSubscriptionConfig() ecenv.DefaultSubscriptionConfig {
+	defaultSubsConfig := r.eventingManager.GetBackendConfig().
+		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
+	return defaultSubsConfig
 }
 
 func (r *Reconciler) stopNATSSubManager(runCleanup bool, log *zap.SugaredLogger) error {
@@ -66,7 +114,9 @@ func (r *Reconciler) stopNATSSubManager(runCleanup bool, log *zap.SugaredLogger)
 	log.Info("NATS subscription-manager stopped!")
 	// update flags so it does not try to stop the manager again.
 	r.isNATSSubManagerStarted = false
-	r.natsSubManager = nil
+	if runCleanup {
+		r.natsSubManager = nil
+	}
 
 	return nil
 }

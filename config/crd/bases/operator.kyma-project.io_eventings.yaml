@@ -325,10 +325,14 @@ spec:
                   - type
                   type: object
                 type: array
+              specHash:
+                format: int64
+                type: integer
               state:
                 type: string
             required:
             - activeBackend
+            - specHash
             - state
             type: object
         type: object
