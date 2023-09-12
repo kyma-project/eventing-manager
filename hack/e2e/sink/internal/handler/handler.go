@@ -49,9 +49,6 @@ type sinkEvent struct {
 }
 
 func (h *SinkHandler) StoreEvent(w http.ResponseWriter, r *http.Request) {
-
-	// TODO: event received information with headers and body
-
 	event, err := extractCloudEventFromRequest(r)
 	if err != nil {
 		h.namedLogger().With().Error("failed to extract CloudEvent from request", zap.Error(err))
@@ -61,6 +58,7 @@ func (h *SinkHandler) StoreEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	h.namedLogger().With().Info("received", zap.String("event", event.String()))
 
 	// store the event in memory
 	h.events[event.ID()] = &sinkEvent{

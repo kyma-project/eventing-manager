@@ -22,6 +22,6 @@ func main() {
 	sHandler := handler.NewSinkHandler(logger)
 	err = sHandler.Start(port)
 	if err != nil {
-		logger.Error("failed to start SinkHandler", zap.Error(err))
+		logger.Fatal("failed to start SinkHandler", zap.Error(err))
 	}
 }
