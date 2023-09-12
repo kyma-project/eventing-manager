@@ -409,8 +409,7 @@ func (te *TestEnvironment) TestDeliveryOfCloudEvent(eventSource, eventType strin
 
 	// verify if the event was received by the sink.
 	te.Logger.Debug(fmt.Sprintf("Verifying if CloudEvent (ID: %s) was received by the sink", ceEvent.ID()))
-	//return te.VerifyCloudEventReceivedBySink(*ceEvent)
-	return nil
+	return te.VerifyCloudEventReceivedBySink(*ceEvent)
 }
 
 func (te *TestEnvironment) VerifyCloudEventReceivedBySink(expectedEvent cloudevents.Event) error {
@@ -422,7 +421,7 @@ func (te *TestEnvironment) VerifyCloudEventReceivedBySink(expectedEvent cloudeve
 	}
 
 	// verify if the event was received by the sink.
-	te.Logger.Debug(fmt.Sprintf("Got event (ID: %s) from sink, checking if the encoding and payload is correct", gotSinkEvent.ID()))
+	te.Logger.Debug(fmt.Sprintf("Got event (ID: %s) from sink, checking if the payload is correct", gotSinkEvent.ID()))
 	return te.CompareCloudEvents(expectedEvent, gotSinkEvent.Event)
 }
 
@@ -435,8 +434,10 @@ func (te *TestEnvironment) CompareCloudEvents(expectedEvent cloudevents.Event, g
 		return fmt.Errorf("expected event Source: %s, got event Source: %s", expectedEvent.Source(), gotEvent.Source())
 	}
 
-	if expectedEvent.Type() != gotEvent.Type() {
-		return fmt.Errorf("expected event Type: %s, got event Type: %s", expectedEvent.Type(), gotEvent.Type())
+	if originalType, ok := gotEvent.Extensions()["originaltype"]; ok {
+		if expectedEvent.Type() != originalType {
+			return fmt.Errorf("expected event Type: %s, got event Type: %s", expectedEvent.Type(), originalType)
+		}
 	}
 
 	if string(expectedEvent.Data()) != string(gotEvent.Data()) {

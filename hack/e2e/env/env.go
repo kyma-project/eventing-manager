@@ -13,7 +13,7 @@ type E2EConfig struct {
 	ManagerImage          string `envconfig:"MANAGER_IMAGE" default:""`
 	EventTypePrefix       string `envconfig:"EVENT_TYPE_PREFIX" default:"sap.kyma.custom"`
 	EventMeshNamespace    string `envconfig:"EVENTMESH_NAMESPACE" default:"/default/sap.kyma/tunas-develop"`
-	SubscriptionSinkImage string `envconfig:"SUBSCRIPTION_SINK_IMAGE" default:"ghcr.io/kyma-project/eventing-manager/e2e-tests-sink:sha-5faa6ba"`
+	SubscriptionSinkImage string `envconfig:"SUBSCRIPTION_SINK_IMAGE" default:"ghcr.io/kyma-project/eventing-manager/e2e-tests-sink:sha-8e81aae"`
 	SubscriptionSinkName  string `envconfig:"SUBSCRIPTION_SINK_Name" default:"test-sink"`
 	SubscriptionSinkURL   string `envconfig:"SUBSCRIPTION_SINK_URL" default:""`
 	TestNamespace         string `envconfig:"TEST_NAMESPACE" default:"eventing-tests"`

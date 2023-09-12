@@ -81,76 +81,76 @@ func TestMain(m *testing.M) {
 //	}
 //}
 
-//func Test_StructuredCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
-//	t.Parallel()
-//	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
-//		subToTest := subToTest
-//		for _, eventTypeToTest := range subToTest.Types {
-//			eventTypeToTest := eventTypeToTest
-//			testName := fmt.Sprintf("structured cloud event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
-//			// run test for the eventType.
-//			t.Run(testName, func(t *testing.T) {
-//				t.Parallel()
-//
-//				// when
-//				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-//					// For EventMesh with Subscription v1alpha1, the eventSource should be EventMesh NameSpace.
-//					return testEnvironment.TestDeliveryOfCloudEvent(testEnvironment.TestConfigs.EventMeshNamespace, eventTypeToTest, binding.EncodingStructured)
-//				})
-//
-//				// then
-//				require.NoError(t, err)
-//			})
-//		}
-//	}
-//}
+func Test_StructuredCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
+	t.Parallel()
+	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
+		subToTest := subToTest
+		for _, eventTypeToTest := range subToTest.Types {
+			eventTypeToTest := eventTypeToTest
+			testName := fmt.Sprintf("structured cloud event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
+			// run test for the eventType.
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
 
-//func Test_BinaryCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
-//	t.Parallel()
-//	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
-//		subToTest := subToTest
-//		for _, eventTypeToTest := range subToTest.Types {
-//			eventTypeToTest := eventTypeToTest
-//			testName := fmt.Sprintf("structured cloud event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
-//			// run test for the eventType.
-//			t.Run(testName, func(t *testing.T) {
-//				t.Parallel()
-//
-//				// when
-//				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-//					// For EventMesh with Subscription v1alpha1, the eventSource should be EventMesh NameSpace.
-//					return testEnvironment.TestDeliveryOfCloudEvent(testEnvironment.TestConfigs.EventMeshNamespace, eventTypeToTest, binding.EncodingBinary)
-//				})
-//
-//				// then
-//				require.NoError(t, err)
-//			})
-//		}
-//	}
-//}
+				// when
+				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
+					// For EventMesh with Subscription v1alpha1, the eventSource should be EventMesh NameSpace.
+					return testEnvironment.TestDeliveryOfCloudEvent(testEnvironment.TestConfigs.EventMeshNamespace, eventTypeToTest, binding.EncodingStructured)
+				})
 
-//func Test_StructuredCloudEvents(t *testing.T) {
-//	t.Parallel()
-//	for _, subToTest := range fixtures.V1Alpha2SubscriptionsToTest() {
-//		subToTest := subToTest
-//		for _, eventTypeToTest := range subToTest.Types {
-//			eventTypeToTest := eventTypeToTest
-//			testName := fmt.Sprintf("structured cloud event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
-//			// run test for the eventType.
-//			t.Run(testName, func(t *testing.T) {
-//				t.Parallel()
-//
-//				// when
-//				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-//					return testEnvironment.TestDeliveryOfCloudEvent(subToTest.Source, eventTypeToTest, binding.EncodingStructured)
-//				})
-//
-//				// then
-//				require.NoError(t, err)
-//			})
-//		}
-//	}
-//}
+				// then
+				require.NoError(t, err)
+			})
+		}
+	}
+}
+
+func Test_BinaryCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
+	t.Parallel()
+	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
+		subToTest := subToTest
+		for _, eventTypeToTest := range subToTest.Types {
+			eventTypeToTest := eventTypeToTest
+			testName := fmt.Sprintf("structured cloud event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
+			// run test for the eventType.
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
+
+				// when
+				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
+					// For EventMesh with Subscription v1alpha1, the eventSource should be EventMesh NameSpace.
+					return testEnvironment.TestDeliveryOfCloudEvent(testEnvironment.TestConfigs.EventMeshNamespace, eventTypeToTest, binding.EncodingBinary)
+				})
+
+				// then
+				require.NoError(t, err)
+			})
+		}
+	}
+}
+
+func Test_StructuredCloudEvents(t *testing.T) {
+	t.Parallel()
+	for _, subToTest := range fixtures.V1Alpha2SubscriptionsToTest() {
+		subToTest := subToTest
+		for _, eventTypeToTest := range subToTest.Types {
+			eventTypeToTest := eventTypeToTest
+			testName := fmt.Sprintf("structured cloud event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
+			// run test for the eventType.
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
+
+				// when
+				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
+					return testEnvironment.TestDeliveryOfCloudEvent(subToTest.Source, eventTypeToTest, binding.EncodingStructured)
+				})
+
+				// then
+				require.NoError(t, err)
+			})
+		}
+	}
+}
 
 func Test_BinaryCloudEvents(t *testing.T) {
 	t.Parallel()
