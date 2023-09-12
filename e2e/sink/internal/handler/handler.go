@@ -34,12 +34,12 @@ func NewSinkHandler(logger *zap.Logger) *SinkHandler {
 	}
 }
 
-func (h *SinkHandler) Start() error {
+func (h *SinkHandler) Start(port string) error {
 	router := mux.NewRouter()
 	router.HandleFunc("/events", h.StoreEvent).Methods(http.MethodPost)
 	router.HandleFunc("/events/{eventID}", h.GetEvent).Methods(http.MethodGet)
 
-	return http.ListenAndServe(":8080", router)
+	return http.ListenAndServe(":"+port, router)
 }
 
 type sinkEvent struct {
