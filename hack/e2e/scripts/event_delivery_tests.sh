@@ -6,7 +6,7 @@ echo "Port-forwarding to the eventing-publisher-proxy using port: 38081"
 kubectl -n kyma-system port-forward svc/eventing-publisher-proxy 38081:80 &
 PID1=$!
 
-# This will will all the port-forwarding. We need this to be in a function so we can even call it, if our tests fails
+# This will kill all the port-forwarding. We need this to be in a function so we can even call it, if our tests fails
 # since `set -e` would stop the script in case of an failing test.
 function kill_port_forward() {
   echo "Killing the port-forwarding for port: 38081"
