@@ -4,6 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
+	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
+	ecv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 
 	"k8s.io/client-go/kubernetes"
@@ -42,6 +45,18 @@ func GetK8sClients() (*kubernetes.Clientset, client.Client, error) {
 
 	// We need to add the NATS CRD to the scheme, so we can create a client that can access NATS objects.
 	err = natsv1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// add Subscription v1alpha1 CRD to the scheme.
+	err = ecv1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// add Subscription v1alpha2 CRD to the scheme.
+	err = ecv1alpha2.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, nil, err
 	}

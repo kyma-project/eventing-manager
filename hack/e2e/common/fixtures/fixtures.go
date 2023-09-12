@@ -4,6 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -11,6 +16,7 @@ import (
 )
 
 const (
+	FieldManager                = "eventing-tests"
 	NamespaceName               = "kyma-system"
 	ManagerDeploymentName       = "eventing-manager"
 	CRName                      = "eventing"
@@ -45,7 +51,7 @@ func EventingNATSCR() *eventingv1alpha1.Eventing {
 				Config: eventingv1alpha1.BackendConfig{
 					NATSStreamStorageType: "File",
 					NATSStreamReplicas:    3,
-					NATSStreamMaxSize:     resource.MustParse("700m"),
+					NATSStreamMaxSize:     resource.MustParse("700Mi"),
 					NATSMaxMsgsPerTopic:   1000000,
 				},
 			},
@@ -95,10 +101,141 @@ func PublisherSpec() eventingv1alpha1.Publisher {
 	}
 }
 
-func Namespace() *corev1.Namespace {
+func V1Alpha1SubscriptionsToTest() []eventing.TestSubscriptionInfo {
+	return []eventing.TestSubscriptionInfo{
+		{
+			Name:  "test-sub-1-v1alpha1",
+			Types: []string{"sap.kyma.custom.noapp.order.tested.v1"},
+		},
+		{
+			Name:  "test-sub-2-v1alpha1",
+			Types: []string{"sap.kyma.custom.test-app.order-$.second.R-e-c-e-i-v-e-d.v1"},
+		},
+		{
+			Name: "test-sub-3-with-multiple-types-v1alpha1",
+			Types: []string{
+				"sap.kyma.custom.connected-app.order.tested.v1",
+				"sap.kyma.custom.connected-app2.or-der.crea-ted.one.two.three.v4",
+			},
+		},
+	}
+}
+
+func V1Alpha2SubscriptionsToTest() []eventing.TestSubscriptionInfo {
+	return []eventing.TestSubscriptionInfo{
+		{
+			Name:        "test-sub-1-v1alpha2",
+			Description: "Test event type and source without any alpha-numeric characters",
+			Source:      "noapp",
+			Types:       []string{"order.modified.v1"},
+		},
+		{
+			Name:        "test-sub-2-v1alpha2",
+			Description: "Test event type and source with any alpha-numeric characters",
+			Source:      "test-app",
+			Types:       []string{"Order-$.third.R-e-c-e-i-v-e-d.v1"},
+		},
+		{
+			Name:   "test-sub-3-with-multiple-types-v1alpha2",
+			Source: "test-evnt",
+			Types: []string{
+				"or-der.crea-ted.one.two.three.four.v4",
+				"order.testing.v1",
+			},
+		},
+	}
+}
+
+func Namespace(name string) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: NamespaceName,
+			Name: name,
+		},
+	}
+}
+
+func NewSinkDeployment(name, namespace, image string) *appsv1.Deployment {
+	labels := map[string]string{
+		"source": "eventing-tests",
+		"name":   name,
+	}
+	return &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: metav1.SetAsLabelSelector(labels),
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   name,
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyAlways,
+					Containers: []corev1.Container{
+						{
+							Name:  name,
+							Image: image,
+							Args: []string{
+								"subscriber",
+								"--listen-port=8080",
+							},
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "http",
+									ContainerPort: 8080,
+								},
+							},
+							ImagePullPolicy: corev1.PullAlways,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("300m"),
+									"memory": resource.MustParse("312Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("156Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func NewSinkService(name, namespace string) *corev1.Service {
+	labels := map[string]string{
+		"source": "eventing-tests",
+		"name":   name,
+	}
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromString("http"),
+				},
+			},
 		},
 	}
 }

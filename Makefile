@@ -196,3 +196,17 @@ e2e-setup:
 .PHONY: e2e-cleanup
 e2e-cleanup:
 	go test -v ./hack/e2e/cleanup/cleanup_test.go --tags=e2e
+
+# e2e-eventing will setup subscriptions and tests end-to-end deliver of events.
+.PHONY: e2e-eventing
+e2e-eventing:
+	./hack/e2e/scripts/event_delivery_tests.sh
+
+# e2e-eventing-cleanup will delete all subscriptions and other resources created for event delivery tests.
+.PHONY: e2e-eventing-cleanup
+e2e-eventing-cleanup:
+	go test -v ./hack/e2e/eventing/cleanup/cleanup_test.go --tags=e2e
+
+# e2e will run the whole suite of end-to-end tests for eventing-manager.
+.PHONY: e2e
+e2e: e2e-setup e2e-eventing e2e-cleanup
