@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
@@ -13,6 +16,7 @@ import (
 )
 
 const (
+	FieldManager                = "eventing-tests"
 	NamespaceName               = "kyma-system"
 	ManagerDeploymentName       = "eventing-manager"
 	CRName                      = "eventing"
@@ -146,6 +150,92 @@ func Namespace(name string) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+		},
+	}
+}
+
+func NewSinkDeployment(name, namespace, image string) *appsv1.Deployment {
+	labels := map[string]string{
+		"source": "eventing-tests",
+		"name":   name,
+	}
+	return &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: metav1.SetAsLabelSelector(labels),
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   name,
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyAlways,
+					Containers: []corev1.Container{
+						{
+							Name:  name,
+							Image: image,
+							Args: []string{
+								"subscriber",
+								"--listen-port=8080",
+							},
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "http",
+									ContainerPort: 8080,
+								},
+							},
+							ImagePullPolicy: corev1.PullAlways,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("300m"),
+									"memory": resource.MustParse("312Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("156Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func NewSinkService(name, namespace string) *corev1.Service {
+	labels := map[string]string{
+		"source": "eventing-tests",
+		"name":   name,
+	}
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromString("http"),
+				},
+			},
 		},
 	}
 }

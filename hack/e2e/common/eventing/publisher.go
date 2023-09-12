@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"time"
+
 	"github.com/cloudevents/sdk-go/v2/client"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"io"
-	"net/http"
-	"time"
 )
 
 const (
@@ -94,56 +95,3 @@ func (p *Publisher) SendLegacyEvent(source, eventType, payload string) error {
 		return err2
 	}
 }
-
-//func (p *Publisher) sendCloudEvent(application, eventType string, encoding binding.Encoding) {
-//	ce := cloudevents.NewEvent()
-//	eventType = format.CloudEventType(p.conf.EventTypePrefix, application, eventType)
-//	data := format.CloudEventData(application, eventType, encoding)
-//	ce.SetType(eventType)
-//	ce.SetSource(p.conf.EventSource)
-//	if err := ce.SetData(cloudevents.ApplicationJSON, data); err != nil {
-//		log.Printf("Failed to set cloudevent-%s data with error:[%s]", encoding.String(), err)
-//		return
-//	}
-//
-//	ctx := cloudevents.ContextWithTarget(p.ctx, p.conf.PublishEndpointCloudEvents)
-//	switch encoding {
-//	case binding.EncodingBinary:
-//		{
-//			ctx = binding.WithForceBinary(ctx)
-//		}
-//	case binding.EncodingStructured:
-//		{
-//			ctx = binding.WithForceStructured(ctx)
-//		}
-//	default:
-//		{
-//			log.Printf("Failed to use unsupported cloudevent encoding:[%s]", encoding.String())
-//			return
-//		}
-//	}
-//
-//	result := p.clientCE.Send(ctx, ce)
-//	switch {
-//	case cloudevents.IsUndelivered(result):
-//		{
-//			log.Printf("Failed to send cloudevent-%s undelivered:[%s] response:[%s]", encoding.String(), eventType, result)
-//			return
-//		}
-//	case cloudevents.IsNACK(result):
-//		{
-//			log.Printf("Failed to send cloudevent-%s nack:[%s] response:[%s]", encoding.String(), eventType, result)
-//			return
-//		}
-//	case cloudevents.IsACK(result):
-//		{
-//			log.Printf("Sent cloudevent-%s [%s]", encoding.String(), eventType)
-//			return
-//		}
-//	default:
-//		{
-//			log.Printf("Failed to send cloudevent-%s unknown:[%s] response:[%s]", encoding.String(), eventType, result)
-//			return
-//		}
-//	}
-//}

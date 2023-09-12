@@ -4,117 +4,54 @@
 package eventing
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"os"
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
-	pkghttp "github.com/kyma-project/eventing-manager/hack/e2e/common/http"
-	ecv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	k8stypes "k8s.io/apimachinery/pkg/types"
-
-	"github.com/kyma-project/eventing-manager/hack/e2e/env"
-	"go.uber.org/zap"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	. "github.com/kyma-project/eventing-manager/hack/e2e/common"
-	. "github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
+	"github.com/stretchr/testify/require"
 )
 
-// Constants for retries.
-const (
-	interval      = 2 * time.Second
-	attempts      = 60
-	smallInterval = 200 * time.Millisecond
-	fewAttempts   = 5
-)
-
-// clientSet is what is used to access K8s build-in resources like Pods, Namespaces and so on.
-var clientSet *kubernetes.Clientset //nolint:gochecknoglobals // This will only be accessible in e2e tests.
-
-// k8sClient is what is used to access the Eventing CR.
-var k8sClient client.Client //nolint:gochecknoglobals // This will only be accessible in e2e tests.
-
-var logger *zap.Logger
-
-var testConfigs *env.E2EConfig
-
-var eventPublisher *eventing.Publisher
+var testEnvironment *testenvironment.TestEnvironment
 
 // TestMain runs before all the other test functions. It sets up all the resources that are shared between the different
 // test functions. It will then run the tests and finally shuts everything down.
 func TestMain(m *testing.M) {
-	var err error
-	logger, err = SetupLogger()
-	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+	testEnvironment = testenvironment.NewTestEnvironment()
+
+	// create test namespace,
+	if err := testEnvironment.CreateTestNamespace(); err != nil {
+		testEnvironment.Logger.Fatal(err.Error())
 	}
 
-	testConfigs, err = env.GetE2EConfig()
-	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
-
-	}
-	logger.Info(fmt.Sprintf("##### NOTE: Tests will run w.r.t. backend: %s", testConfigs.BackendType))
-	logger.Info(fmt.Sprintf("Setting up resources for the tests!"))
-
-	clientSet, k8sClient, err = GetK8sClients()
-	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+	// setup sink for subscriptions.
+	if err := testEnvironment.SetupSink(); err != nil {
+		testEnvironment.Logger.Fatal(err.Error())
 	}
 
-	ctx := context.TODO()
-	// Create the Namespace used for testing.
-	err = Retry(attempts, interval, func() error {
-		// It's fine if the Namespace already exists.
-		return client.IgnoreAlreadyExists(k8sClient.Create(ctx, Namespace(testConfigs.TestNamespace)))
-	})
-	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+	// create subscriptions.
+	if err := testEnvironment.CreateAllSubscriptions(); err != nil {
+		testEnvironment.Logger.Fatal(err.Error())
 	}
 
-	// verify if the sink is ready!
-	err = waitForSubscriptionSink()
-	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
+	// wait for subscriptions.
+	if err := testEnvironment.WaitForAllSubscriptions(); err != nil {
+		testEnvironment.Logger.Fatal(err.Error())
 	}
 
-	// setup subscriptions.
-	err = setupSubscriptions()
-	if err != nil {
-		logger.Error(err.Error())
-		panic(err)
-	}
-
-	// initialize event publisher.
-	maxIdleConns := 10
-	maxConnsPerHost := 10
-	maxIdleConnsPerHost := 10
-	idleConnTimeout := 1 * time.Minute
-	t := pkghttp.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
-	clientHTTP := pkghttp.NewClient(t.Clone())
-	eventPublisher = eventing.NewPublisher(context.Background(), nil, clientHTTP, testConfigs.PublisherURL, logger)
+	// initialize event publisher client.
+	testEnvironment.InitEventPublisherClient()
 
 	// Run the tests and exit.
-	logger.Info(fmt.Sprintf("Starting the tests!"))
 	code := m.Run()
 	os.Exit(code)
 }
 
 func Test_LegacyEvents_SubscriptionV1Alpha1(t *testing.T) {
 	t.Parallel()
-	for _, subToTest := range V1Alpha1SubscriptionsToTest() {
+	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
 		subToTest := subToTest
 		for _, eventTypeToTest := range subToTest.Types {
 			eventTypeToTest := eventTypeToTest
@@ -123,25 +60,21 @@ func Test_LegacyEvents_SubscriptionV1Alpha1(t *testing.T) {
 			t.Run(testName, func(t *testing.T) {
 				t.Parallel()
 
-				// given: define the event
-				eventID, eventSource, legacyEventType, payload := eventing.NewLegacyEventForV1Alpha1(eventTypeToTest, testConfigs.EventTypePrefix)
-
-				// When: publish the event
-				err := eventPublisher.SendLegacyEvent(eventSource, legacyEventType, payload)
+				// when
+				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
+					return testEnvironment.TestDeliveryOfLegacyEventForSubV1Alpha1(eventTypeToTest)
+				})
 
 				// then
 				require.NoError(t, err)
-				// verify if the event was received
-				// TODO: implement me
-				require.NotEmpty(t, eventID)
 			})
 		}
 	}
 }
 
-func Test_LegacyEvents_SubscriptionV1Alpha2(t *testing.T) {
+func Test_LegacyEvents(t *testing.T) {
 	t.Parallel()
-	for _, subToTest := range V1Alpha2SubscriptionsToTest() {
+	for _, subToTest := range fixtures.V1Alpha2SubscriptionsToTest() {
 		subToTest := subToTest
 		for _, eventTypeToTest := range subToTest.Types {
 			eventTypeToTest := eventTypeToTest
@@ -150,130 +83,12 @@ func Test_LegacyEvents_SubscriptionV1Alpha2(t *testing.T) {
 			t.Run(testName, func(t *testing.T) {
 				t.Parallel()
 
-				// given: define the event
-				eventID, eventSource, legacyEventType, payload := eventing.NewLegacyEventForV1Alpha2(subToTest.Source, eventTypeToTest)
-
-				// When: publish the event
-				err := eventPublisher.SendLegacyEvent(eventSource, legacyEventType, payload)
-
-				// then
+				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
+					// It's fine if the Namespace already exists.
+					return testEnvironment.TestDeliveryOfLegacyEvent(subToTest.Source, eventTypeToTest)
+				})
 				require.NoError(t, err)
-				// verify if the event was received
-				// TODO: implement me
-				require.NotEmpty(t, eventID)
 			})
 		}
 	}
-}
-
-//++ Helper functions
-
-func setupSubscriptions() error {
-	ctx := context.TODO()
-	// create v1alpha1 subscriptions if not exists.
-	err := createV1Alpha1Subscriptions(ctx, V1Alpha1SubscriptionsToTest())
-	if err != nil {
-		return err
-	}
-
-	// create v1alpha2 subscriptions if not exists.
-	err = createV1Alpha2Subscriptions(ctx, V1Alpha2SubscriptionsToTest())
-	if err != nil {
-		return err
-	}
-
-	// wait for v1alpha1 subscriptions to get ready.
-	err = waitForSubscriptions(ctx, V1Alpha1SubscriptionsToTest())
-	if err != nil {
-		return err
-	}
-
-	// wait for v1alpha2 subscriptions to get ready
-	err = waitForSubscriptions(ctx, V1Alpha1SubscriptionsToTest())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func createV1Alpha1Subscriptions(ctx context.Context, subList []eventing.TestSubscriptionInfo) error {
-	for _, subInfo := range subList {
-		err := Retry(fewAttempts, smallInterval, func() error {
-			newSub := subInfo.ToSubscriptionV1Alpha1(testConfigs.SubscriptionSinkURL, testConfigs.TestNamespace)
-			return client.IgnoreAlreadyExists(k8sClient.Create(ctx, newSub))
-		})
-		// return error if all retries are exhausted.
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func createV1Alpha2Subscriptions(ctx context.Context, subList []eventing.TestSubscriptionInfo) error {
-	for _, subInfo := range subList {
-		err := Retry(fewAttempts, smallInterval, func() error {
-			newSub := subInfo.ToSubscriptionV1Alpha2(testConfigs.SubscriptionSinkURL, testConfigs.TestNamespace)
-			return client.IgnoreAlreadyExists(k8sClient.Create(ctx, newSub))
-		})
-		// return error if all retries are exhausted.
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func waitForSubscriptions(ctx context.Context, subsToTest []eventing.TestSubscriptionInfo) error {
-	for _, subToTest := range subsToTest {
-		return waitForSubscription(ctx, subToTest)
-	}
-	return nil
-}
-
-func waitForSubscription(ctx context.Context, subsToTest eventing.TestSubscriptionInfo) error {
-	return Retry(attempts, interval, func() error {
-		// get subscription from cluster.
-		gotSub := ecv1alpha2.Subscription{}
-		err := k8sClient.Get(ctx, k8stypes.NamespacedName{
-			Name:      subsToTest.Name,
-			Namespace: testConfigs.TestNamespace,
-		}, &gotSub)
-		if err != nil {
-			logger.Debug(fmt.Sprintf("failed to check readiness; failed to fetch subscription: %s "+
-				"in namespace: %s", subsToTest.Name, testConfigs.TestNamespace))
-			return err
-		}
-
-		// check if subscription is reconciled by correct backend.
-		if !IsSubscriptionReconcileByBackend(gotSub, testConfigs.BackendType) {
-			errMsg := fmt.Sprintf("waiting subscription: %s "+
-				"in namespace: %s to get recocniled by backend: %s", subsToTest.Name, testConfigs.TestNamespace,
-				testConfigs.BackendType)
-			logger.Debug(errMsg)
-			return errors.New(errMsg)
-		}
-
-		// check if subscription is ready.
-		if !gotSub.Status.Ready {
-			errMsg := fmt.Sprintf("waiting subscription: %s "+
-				"in namespace: %s to get ready", subsToTest.Name, testConfigs.TestNamespace)
-			logger.Debug(errMsg)
-			return errors.New(errMsg)
-		}
-		return nil
-	})
-}
-
-func waitForSubscriptionSink() error {
-	// TODO: implement me
-	return nil
-}
-
-func IsSubscriptionReconcileByBackend(sub ecv1alpha2.Subscription, activeBackend string) bool {
-	condition := sub.Status.FindCondition(ecv1alpha2.ConditionSubscriptionActive)
-	if condition == nil {
-		return false
-	}
-	return strings.Contains(strings.ToLower(string(condition.Reason)), strings.ToLower(activeBackend))
 }

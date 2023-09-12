@@ -2,9 +2,10 @@ package eventing
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -23,18 +24,6 @@ func LegacyEventData(source, eventType string) string {
 func LegacyEventPayload(eventId, eventVersion, eventType, data string) string {
 	return `{"data":"` + data + `","event-id":"` + eventId + `","event-type":"` + eventType + `","event-time":"2020-04-02T21:37:00Z","event-type-version":"` + eventVersion + `"}`
 }
-
-//func CloudEventMode(encoding binding.Encoding) string {
-//	return fmt.Sprintf("ce-%s", encoding.String())
-//}
-
-//func CloudEventData(application, eventType string, encoding binding.Encoding) map[string]interface{} {
-//	return map[string]interface{}{keyApp: application, keyMode: CloudEventMode(encoding), keyType: eventType}
-//}
-
-//func CloudEventType(prefix, application, eventType string) string {
-//	return fmt.Sprintf("%s.%s.%s.%s", prefix, application, eventType, version)
-//}
 
 func ExtractSourceFromSubscriptionV1Alpha1Type(eventType string) string {
 	segments := strings.Split(eventType, ".")
@@ -56,6 +45,10 @@ func ExtractVersionFromEventType(eventType string) string {
 }
 
 func NewLegacyEventForV1Alpha1(eventType, eventTypePrefix string) (string, string, string, string) {
+	// If the eventType is sap.kyma.custom.noapp.order.created.v1, then for legacy event:
+	// eventSource should be: noapp
+	// eventType should be: order.created
+	// eventVersion should be: v1
 	eventID := uuid.New().String()
 	eventSource := ExtractSourceFromSubscriptionV1Alpha1Type(eventType)
 	eventVersion := ExtractVersionFromEventType(eventType)
@@ -67,7 +60,11 @@ func NewLegacyEventForV1Alpha1(eventType, eventTypePrefix string) (string, strin
 	return eventID, eventSource, legacyEventType, payload
 }
 
-func NewLegacyEventForV1Alpha2(eventSource, eventType string) (string, string, string, string) {
+func NewLegacyEvent(eventSource, eventType string) (string, string, string, string) {
+	// If the eventType is order.created.v1 and source is noapp, then for legacy event:
+	// eventSource should be: noapp
+	// eventType should be: order.created
+	// eventVersion should be: v1
 	eventID := uuid.New().String()
 	eventVersion := ExtractVersionFromEventType(eventType)
 	legacyEventType := ExtractLegacyTypeFromSubscriptionV1Alpha2Type(eventVersion, eventType)
