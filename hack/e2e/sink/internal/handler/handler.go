@@ -36,6 +36,7 @@ func NewSinkHandler(logger *zap.Logger) *SinkHandler {
 
 func (h *SinkHandler) Start(port string) error {
 	router := mux.NewRouter()
+	router.HandleFunc("/", h.StoreEvent).Methods(http.MethodPost)
 	router.HandleFunc("/events", h.StoreEvent).Methods(http.MethodPost)
 	router.HandleFunc("/events/{eventID}", h.GetEvent).Methods(http.MethodGet)
 
