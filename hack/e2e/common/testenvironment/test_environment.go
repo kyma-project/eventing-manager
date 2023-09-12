@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/cloudevents/sdk-go/v2/binding"
 	"strings"
 	"time"
 
@@ -87,14 +88,19 @@ func (te *TestEnvironment) DeleteTestNamespace() error {
 	})
 }
 
-func (te *TestEnvironment) InitEventPublisherClient() {
+func (te *TestEnvironment) InitEventPublisherClient() error {
 	maxIdleConns := 10
 	maxConnsPerHost := 10
 	maxIdleConnsPerHost := 10
 	idleConnTimeout := 1 * time.Minute
 	t := pkghttp.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
-	clientHTTP := pkghttp.NewClient(t.Clone())
-	te.EventPublisher = eventing.NewPublisher(context.Background(), nil, clientHTTP, te.TestConfigs.PublisherURL, te.Logger)
+	clientHTTP := pkghttp.NewHttpClient(t.Clone())
+	clientCE, err := pkghttp.NewCloudEventsClient(t.Clone())
+	if err != nil {
+		return err
+	}
+	te.EventPublisher = eventing.NewPublisher(context.Background(), *clientCE, clientHTTP, te.TestConfigs.PublisherURL, te.Logger)
+	return nil
 }
 
 func (te *TestEnvironment) CreateAllSubscriptions() error {
@@ -371,6 +377,26 @@ func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType stri
 
 	// verify if the event was received by the sink.
 	te.Logger.Debug(eventID)
+	// TODO: implement me!
+
+	return nil
+}
+
+func (te *TestEnvironment) TestDeliveryOfCloudEvent(eventSource, eventType string, encoding binding.Encoding) error {
+	// define the event
+	ceEvent, err := eventing.NewCloudEvent(eventSource, eventType, encoding)
+	if err != nil {
+		return err
+	}
+
+	// publish the event
+	if err := te.EventPublisher.SendCloudEvent(ceEvent, encoding); err != nil {
+		te.Logger.Debug(err.Error())
+		return err
+	}
+
+	// verify if the event was received by the sink.
+	te.Logger.Debug(ceEvent.ID())
 	// TODO: implement me!
 
 	return nil

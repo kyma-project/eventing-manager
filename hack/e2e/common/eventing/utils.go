@@ -2,6 +2,8 @@ package eventing
 
 import (
 	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/cloudevents/sdk-go/v2/binding"
 	"net/http"
 	"strings"
 
@@ -23,6 +25,14 @@ func LegacyEventData(source, eventType string) string {
 }
 func LegacyEventPayload(eventId, eventVersion, eventType, data string) string {
 	return `{"data":"` + data + `","event-id":"` + eventId + `","event-type":"` + eventType + `","event-time":"2020-04-02T21:37:00Z","event-type-version":"` + eventVersion + `"}`
+}
+
+func CloudEventMode(encoding binding.Encoding) string {
+	return fmt.Sprintf("ce-%s", encoding.String())
+}
+
+func CloudEventData(source, eventType string, encoding binding.Encoding) map[string]interface{} {
+	return map[string]interface{}{keyApp: source, keyMode: CloudEventMode(encoding), keyType: eventType}
 }
 
 func ExtractSourceFromSubscriptionV1Alpha1Type(eventType string) string {
@@ -72,4 +82,15 @@ func NewLegacyEvent(eventSource, eventType string) (string, string, string, stri
 	payload := LegacyEventPayload(eventID, eventVersion, legacyEventType, eventData)
 
 	return eventID, eventSource, legacyEventType, payload
+}
+
+func NewCloudEvent(eventSource, eventType string, encoding binding.Encoding) (*cloudevents.Event, error) {
+	ce := cloudevents.NewEvent()
+	data := CloudEventData(eventSource, eventType, encoding)
+	ce.SetType(eventType)
+	ce.SetSource(eventSource)
+	if err := ce.SetData(cloudevents.ApplicationJSON, data); err != nil {
+		return nil, fmt.Errorf("failed to set cloudevent-%s data with error:[%s]", encoding.String(), err)
+	}
+	return &ce, nil
 }

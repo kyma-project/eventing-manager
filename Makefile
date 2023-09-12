@@ -197,7 +197,7 @@ e2e-setup:
 e2e-cleanup:
 	go test -v ./hack/e2e/cleanup/cleanup_test.go --tags=e2e
 
-# e2e-eventing will setup subscriptions and tests end-to-end deliver of events.
+# e2e-eventing will setup subscriptions and tests end-to-end delivery of events.
 .PHONY: e2e-eventing
 e2e-eventing:
 	./hack/e2e/scripts/event_delivery_tests.sh

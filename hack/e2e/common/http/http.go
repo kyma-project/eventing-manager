@@ -1,12 +1,28 @@
 package http
 
 import (
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	cloudeventsclient "github.com/cloudevents/sdk-go/v2/client"
 	"net/http"
 	"time"
 )
 
-func NewClient(transport *http.Transport) *http.Client {
+func NewHttpClient(transport *http.Transport) *http.Client {
 	return &http.Client{Transport: transport}
+}
+
+func NewCloudEventsClient(transport *http.Transport) (*cloudeventsclient.Client, error) {
+	p, err := cloudevents.NewHTTP(cloudevents.WithRoundTripper(transport))
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := cloudevents.NewClient(p, cloudevents.WithTimeNow(), cloudevents.WithUUIDs())
+	if err != nil {
+		return nil, err
+	}
+
+	return &client, nil
 }
 
 func NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost int, idleConnTimeout time.Duration) *http.Transport {

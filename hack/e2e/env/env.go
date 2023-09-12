@@ -12,8 +12,8 @@ type E2EConfig struct {
 	BackendType           string `envconfig:"BACKEND_TYPE" default:"NATS"` // NATS or EventMesh
 	ManagerImage          string `envconfig:"MANAGER_IMAGE" default:""`
 	EventTypePrefix       string `envconfig:"EVENT_TYPE_PREFIX" default:"sap.kyma.custom"`
-	EventMeshNamespace    string `envconfig:"EVENTMESH_NAMESPACE" default:"xxxxxx"`
-	SubscriptionSinkImage string `envconfig:"SUBSCRIPTION_SINK_IMAGE" default:"eu.gcr.io/kyma-project/eventing-tools:v20230329-fc309b92"`
+	EventMeshNamespace    string `envconfig:"EVENTMESH_NAMESPACE" default:"/default/sap.kyma/tunas-develop"`
+	SubscriptionSinkImage string `envconfig:"SUBSCRIPTION_SINK_IMAGE" default:"docker.io/muralov/sink:v2"`
 	SubscriptionSinkName  string `envconfig:"SUBSCRIPTION_SINK_Name" default:"test-sink"`
 	SubscriptionSinkURL   string `envconfig:"SUBSCRIPTION_SINK_URL" default:""`
 	TestNamespace         string `envconfig:"TEST_NAMESPACE" default:"eventing-tests"`
