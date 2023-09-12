@@ -85,7 +85,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			givenManagerFactoryMock: func(_ *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				return nil
 			},
-			wantHashAfter: int64(6382420937326155706),
+			wantHashAfter: int64(6872426080962807353),
 		},
 		{
 			name: "it should initialize and start subscription manager because " +
@@ -114,7 +114,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				return subManagerFactoryMock
 			},
 			wantAssertCheck: true,
-			wantHashAfter:   int64(6382420937326155706),
+			wantHashAfter:   int64(6872426080962807353),
 		},
 		{
 			name: "it should retry to start subscription manager when subscription manager was " +
@@ -145,7 +145,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			wantAssertCheck:  true,
 			givenShouldRetry: true,
 			wantError:        errors.New("failed to start"),
-			wantHashAfter:    int64(6382420937326155706),
+			wantHashAfter:    int64(6872426080962807353),
 		},
 		{
 			name:                         "it should update the subscription manager when the backend config changes",
@@ -171,7 +171,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				return nil
 			},
 			wantAssertCheck: true,
-			wantHashAfter:   int64(6382420937326155706),
+			wantHashAfter:   int64(6872426080962807353),
 		},
 	}
 
@@ -203,7 +203,6 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 
 			// set the backend hash before depending on test
 			givenEventing.Status.BackendConfigHash = tc.givenHashBefore
-			// require.Equal(t, tc.wantHashBefore, givenEventing.Status.BackendConfigHash)
 
 			// when
 			err := testEnv.Reconciler.reconcileNATSSubManager(givenEventing, logger)

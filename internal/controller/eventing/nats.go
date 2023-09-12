@@ -49,6 +49,8 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 		}
 		// update the config if hashes differ
 		if eventing.Status.BackendConfigHash != specHash {
+			// set the eventing CR status to processing
+			eventing.Status.SetStateProcessing()
 			// get the new config
 			defaultSubsConfig := r.getDefaultSubscriptionConfig()
 			// stop the subsManager without cleanup
@@ -62,6 +64,9 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 			}
 			// update the hash
 			eventing.Status.BackendConfigHash = specHash
+
+			log.Info(fmt.Sprintf("NATS subscription-manager has been updated to the config: %+v, hash: %d",
+				defaultSubsConfig, specHash))
 		}
 
 	}
