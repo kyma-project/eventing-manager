@@ -3,6 +3,7 @@ on:
   pull_request:
     paths-ignore:
     - 'e2e/sink/**'
+    - '.github/workflows/sink.yml'
 permissions:
   contents: read
   # Optional: allow read access to pull request. Use with `only-new-issues` option.

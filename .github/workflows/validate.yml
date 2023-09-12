@@ -5,10 +5,12 @@ on:
     branches: [ "main" ]
     paths-ignore:
       - 'e2e/sink/**'
+      - '.github/workflows/sink.yml'
   pull_request:
     branches: [ "main" ]
     paths-ignore:
       - 'e2e/sink/**'
+      - '.github/workflows/sink.yml'
 
 jobs:
   unit-tests:

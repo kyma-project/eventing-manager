@@ -14,13 +14,13 @@ on:
     tags: [ '*.*.*' ]
     paths:
     - 'e2e/sink/**'
-    - .github/workflows/sink.yml
+    - '.github/workflows/sink.yml'
   pull_request:
     branches:
     - main
     paths:
     - 'e2e/sink/**'
-    - .github/workflows/sink.yml
+    - '.github/workflows/sink.yml'
 
 jobs:
   build:
