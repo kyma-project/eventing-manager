@@ -88,7 +88,7 @@ func (te *TestEnvironment) CreateTestNamespace() error {
 func (te *TestEnvironment) DeleteTestNamespace() error {
 	return common.Retry(FewAttempts, Interval, func() error {
 		// It's fine if the Namespace already exists.
-		return client.IgnoreAlreadyExists(te.K8sClient.Delete(te.Context, fixtures.Namespace(te.TestConfigs.TestNamespace)))
+		return client.IgnoreNotFound(te.K8sClient.Delete(te.Context, fixtures.Namespace(te.TestConfigs.TestNamespace)))
 	})
 }
 
@@ -436,41 +436,49 @@ func (te *TestEnvironment) VerifyCloudEventReceivedBySink(expectedEvent cloudeve
 }
 
 func (te *TestEnvironment) CompareCloudEvents(expectedEvent cloudevents.Event, gotEvent cloudevents.Event) error {
+	var resultError error
 	// check if its a valid CloudEvent.
 	if err := gotEvent.Validate(); err != nil {
-		return fmt.Errorf("expected valid cloud event, but got invalid cloud event. Error: %s", err.Error())
+		msg := fmt.Sprintf("expected valid cloud event, but got invalid cloud event. Error: %s", err.Error())
+		resultError = fixtures.AppendMsgToError(resultError, msg)
 	}
 
 	if expectedEvent.ID() != gotEvent.ID() {
-		return fmt.Errorf("expected event ID: %s, got event ID: %s", expectedEvent.ID(), gotEvent.ID())
+		msg := fmt.Sprintf("expected event ID: %s, got event ID: %s", expectedEvent.ID(), gotEvent.ID())
+		resultError = fixtures.AppendMsgToError(resultError, msg)
 	}
 
 	if string(expectedEvent.Data()) != string(gotEvent.Data()) {
-		return fmt.Errorf("expected event data: %s, got event data: %s",
+		msg := fmt.Sprintf("expected event data: %s, got event data: %s",
 			string(expectedEvent.Data()), string(gotEvent.Data()))
+		resultError = fixtures.AppendMsgToError(resultError, msg)
 	}
 
 	// if it is a v1alpha1 Subscription event, then we do not check further.
 	if strings.HasPrefix(gotEvent.Type(), te.TestConfigs.EventTypePrefix) {
-		return nil
+		return resultError
 	}
 
 	// check in detail further the source and type.
 	if expectedEvent.Source() != gotEvent.Source() {
-		return fmt.Errorf("expected event Source: %s, got event Source: %s", expectedEvent.Source(), gotEvent.Source())
+		msg := fmt.Sprintf("expected event Source: %s, got event Source: %s", expectedEvent.Source(), gotEvent.Source())
+		resultError = fixtures.AppendMsgToError(resultError, msg)
 	}
 
 	if expectedEvent.Type() != gotEvent.Type() {
-		return fmt.Errorf("expected event Type: %s, got event Type: %s", expectedEvent.Type(), gotEvent.Type())
+		msg := fmt.Sprintf("expected event Type: %s, got event Type: %s", expectedEvent.Type(), gotEvent.Type())
+		resultError = fixtures.AppendMsgToError(resultError, msg)
 	}
 
 	originalType, ok := gotEvent.Extensions()[fixtures.EventOriginalTypeHeader]
 	if !ok {
-		return fmt.Errorf("expected event to have header: %s, but its missing", fixtures.EventOriginalTypeHeader)
+		msg := fmt.Sprintf("expected event to have header: %s, but its missing", fixtures.EventOriginalTypeHeader)
+		resultError = fixtures.AppendMsgToError(resultError, msg)
 	}
 	if expectedEvent.Type() != originalType {
-		return fmt.Errorf("expected originaltype header to have value: %s, but got: %s", expectedEvent.Type(), originalType)
+		msg := fmt.Sprintf("expected originaltype header to have value: %s, but got: %s", expectedEvent.Type(), originalType)
+		resultError = fixtures.AppendMsgToError(resultError, msg)
 	}
 
-	return nil
+	return resultError
 }

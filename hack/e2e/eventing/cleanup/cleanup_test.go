@@ -13,8 +13,7 @@ import (
 
 var testEnvironment *testenvironment.TestEnvironment
 
-// TestMain runs before all the other test functions. It sets up all the resources that are shared between the different
-// test functions. It will then run the tests and finally shuts everything down.
+// TestMain runs before all the other test functions.
 func TestMain(m *testing.M) {
 	testEnvironment = testenvironment.NewTestEnvironment()
 

@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
+
 	"github.com/cloudevents/sdk-go/v2/binding"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
@@ -15,8 +17,15 @@ import (
 
 var testEnvironment *testenvironment.TestEnvironment
 
-// TestMain runs before all the other test functions. It sets up all the resources that are shared between the different
-// test functions. It will then run the tests and finally shuts everything down.
+type EventTestCase string
+
+const (
+	LegacyEventCase          EventTestCase = "legacy event"
+	StructuredCloudEventCase EventTestCase = "structured cloud event"
+	BinaryCloudEventCase     EventTestCase = "binary cloud event"
+)
+
+// TestMain runs before all the other test functions.
 func TestMain(m *testing.M) {
 	testEnvironment = testenvironment.NewTestEnvironment()
 
@@ -38,112 +47,74 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// ++ Tests
+
 func Test_LegacyEvents_SubscriptionV1Alpha1(t *testing.T) {
 	t.Parallel()
-	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
-		subToTest := subToTest
-		for _, eventTypeToTest := range subToTest.Types {
-			eventTypeToTest := eventTypeToTest
-			testName := fmt.Sprintf("legacy event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
-			// run test for the eventType.
-			t.Run(testName, func(t *testing.T) {
-				t.Parallel()
-
-				// when
-				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-					return testEnvironment.TestDeliveryOfLegacyEvent("", eventTypeToTest, fixtures.V1Alpha1SubscriptionCRVersion)
-				})
-
-				// then
-				require.NoError(t, err)
-			})
-		}
-	}
+	// binding.EncodingUnknown means legacy event.
+	testEventDelivery(t, LegacyEventCase, fixtures.V1Alpha1SubscriptionsToTest(), binding.EncodingUnknown, fixtures.V1Alpha1SubscriptionCRVersion)
 }
 
 func Test_LegacyEvents(t *testing.T) {
 	t.Parallel()
-	for _, subToTest := range fixtures.V1Alpha2SubscriptionsToTest() {
-		subToTest := subToTest
-		for _, eventTypeToTest := range subToTest.Types {
-			eventTypeToTest := eventTypeToTest
-			testName := fmt.Sprintf("legacy event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
-			// run test for the eventType.
-			t.Run(testName, func(t *testing.T) {
-				t.Parallel()
-
-				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-					// It's fine if the Namespace already exists.
-					return testEnvironment.TestDeliveryOfLegacyEvent(subToTest.Source, eventTypeToTest, fixtures.V1Alpha2SubscriptionCRVersion)
-				})
-				require.NoError(t, err)
-			})
-		}
-	}
+	// binding.EncodingUnknown means legacy event.
+	testEventDelivery(t, LegacyEventCase, fixtures.V1Alpha2SubscriptionsToTest(), binding.EncodingUnknown, fixtures.V1Alpha2SubscriptionCRVersion)
 }
 
 func Test_StructuredCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
 	t.Parallel()
-	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
-		subToTest := subToTest
-		for _, eventTypeToTest := range subToTest.Types {
-			eventTypeToTest := eventTypeToTest
-			testName := fmt.Sprintf("structured cloud event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
-			// run test for the eventType.
-			t.Run(testName, func(t *testing.T) {
-				t.Parallel()
-
-				// when
-				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-					// For EventMesh with Subscription v1alpha1, the eventSource should be EventMesh NameSpace.
-					return testEnvironment.TestDeliveryOfCloudEvent(testEnvironment.TestConfigs.EventMeshNamespace, eventTypeToTest, binding.EncodingStructured)
-				})
-
-				// then
-				require.NoError(t, err)
-			})
-		}
-	}
+	testEventDelivery(t, StructuredCloudEventCase, fixtures.V1Alpha1SubscriptionsToTest(), binding.EncodingStructured, fixtures.V1Alpha1SubscriptionCRVersion)
 }
 
 func Test_BinaryCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
 	t.Parallel()
-	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
-		subToTest := subToTest
-		for _, eventTypeToTest := range subToTest.Types {
-			eventTypeToTest := eventTypeToTest
-			testName := fmt.Sprintf("structured cloud event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
-			// run test for the eventType.
-			t.Run(testName, func(t *testing.T) {
-				t.Parallel()
-
-				// when
-				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-					// For EventMesh with Subscription v1alpha1, the eventSource should be EventMesh NameSpace.
-					return testEnvironment.TestDeliveryOfCloudEvent(testEnvironment.TestConfigs.EventMeshNamespace, eventTypeToTest, binding.EncodingBinary)
-				})
-
-				// then
-				require.NoError(t, err)
-			})
-		}
-	}
+	testEventDelivery(t, BinaryCloudEventCase, fixtures.V1Alpha1SubscriptionsToTest(), binding.EncodingBinary, fixtures.V1Alpha1SubscriptionCRVersion)
 }
 
 func Test_StructuredCloudEvents(t *testing.T) {
 	t.Parallel()
-	for _, subToTest := range fixtures.V1Alpha2SubscriptionsToTest() {
+	testEventDelivery(t, StructuredCloudEventCase, fixtures.V1Alpha2SubscriptionsToTest(), binding.EncodingStructured, fixtures.V1Alpha2SubscriptionCRVersion)
+}
+
+func Test_BinaryCloudEvents(t *testing.T) {
+	t.Parallel()
+	testEventDelivery(t, BinaryCloudEventCase, fixtures.V1Alpha2SubscriptionsToTest(), binding.EncodingBinary, fixtures.V1Alpha2SubscriptionCRVersion)
+}
+
+// ++ Helper functions
+
+func testEventDelivery(t *testing.T,
+	testCase EventTestCase,
+	subsToTest []eventing.TestSubscriptionInfo,
+	encoding binding.Encoding,
+	subCRVersion fixtures.SubscriptionCRVersion) {
+	// In each subscription, we need to run the tests for each event type.
+	// loop over each subscription.
+	for _, subToTest := range subsToTest {
 		subToTest := subToTest
-		for _, eventTypeToTest := range subToTest.Types {
+		// loop over each event type in the subscription.
+		for id, eventTypeToTest := range subToTest.Types {
 			eventTypeToTest := eventTypeToTest
-			testName := fmt.Sprintf("structured cloud event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
+			// define the test name.
+			testName := getTestName(testCase, subToTest, id)
 			// run test for the eventType.
 			t.Run(testName, func(t *testing.T) {
 				t.Parallel()
 
+				// given
+				eventSourceToUse := subToTest.Source
+				if subCRVersion == fixtures.V1Alpha1SubscriptionCRVersion {
+					// For EventMesh with Subscription v1alpha1, the eventSource should be EventMesh NameSpace.
+					eventSourceToUse = testEnvironment.TestConfigs.EventMeshNamespace
+				}
+
 				// when
 				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-					return testEnvironment.TestDeliveryOfCloudEvent(subToTest.Source, eventTypeToTest, binding.EncodingStructured)
+					if encoding == binding.EncodingUnknown {
+						// binding.EncodingUnknown means legacy event.
+						return testEnvironment.TestDeliveryOfLegacyEvent(eventSourceToUse, eventTypeToTest, subCRVersion)
+					}
+					return testEnvironment.TestDeliveryOfCloudEvent(eventSourceToUse, eventTypeToTest, encoding)
 				})
 
 				// then
@@ -153,25 +124,6 @@ func Test_StructuredCloudEvents(t *testing.T) {
 	}
 }
 
-func Test_BinaryCloudEvents(t *testing.T) {
-	t.Parallel()
-	for _, subToTest := range fixtures.V1Alpha2SubscriptionsToTest() {
-		subToTest := subToTest
-		for _, eventTypeToTest := range subToTest.Types {
-			eventTypeToTest := eventTypeToTest
-			testName := fmt.Sprintf("structured cloud event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
-			// run test for the eventType.
-			t.Run(testName, func(t *testing.T) {
-				t.Parallel()
-
-				// when
-				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-					return testEnvironment.TestDeliveryOfCloudEvent(subToTest.Source, eventTypeToTest, binding.EncodingBinary)
-				})
-
-				// then
-				require.NoError(t, err)
-			})
-		}
-	}
+func getTestName(testCase EventTestCase, subToTest eventing.TestSubscriptionInfo, typeIndex int) string {
+	return fmt.Sprintf("%s should work for subscription(%s) (typeIndex[%v]) %s", testCase, subToTest.Name, typeIndex, subToTest.Description)
 }
