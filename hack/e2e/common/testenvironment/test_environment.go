@@ -362,21 +362,6 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 	})
 }
 
-//func (te *TestEnvironment) TestDeliveryOfLegacyEventForSubV1Alpha1(eventType string) error {
-//	// define the event
-//	eventId, eventSource, legacyEventType, payload := eventing.NewLegacyEventForV1Alpha1(eventType, te.TestConfigs.EventTypePrefix)
-//
-//	// publish the event
-//	if err := te.EventPublisher.SendLegacyEventWithRetries(eventSource, legacyEventType, payload, FewAttempts, Interval); err != nil {
-//		te.Logger.Debug(err.Error())
-//		return err
-//	}
-//
-//	// verify if the event was received by the sink.
-//	te.Logger.Debug(fmt.Sprintf("Verifying if LegacyEvent (ID: %s) was received by the sink", eventId))
-//	return te.VerifyLegacyEventReceivedBySink(eventId, eventType, eventSource, payload)
-//}
-
 func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string, subCRVersion fixtures.SubscriptionCRVersion) error {
 	// define the event
 	var eventId, legacyEventSource, legacyEventType, payload string
