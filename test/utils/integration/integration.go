@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -326,9 +327,14 @@ func (env TestEnvironment) TearDown() error {
 		env.TestCancelFn()
 	}
 
+	// clean-up created resources
+	err := env.DeleteSecretFromK8s(getTestBackendConfig().WebhookSecretName, getTestBackendConfig().Namespace)
+	if err != nil {
+		fmt.Printf("couldn't clean the webhook secret: %s", err)
+	}
+
 	// retry to stop the api-server
 	sleepTime := 1 * time.Second
-	var err error
 	const retries = 20
 	for i := 0; i < retries; i++ {
 		if err = env.EnvTestInstance.Stop(); err == nil {
@@ -389,8 +395,6 @@ func (env TestEnvironment) EnsureEPPK8sResourcesHaveOwnerReference(t *testing.T,
 	env.EnsureEPPMetricsServiceOwnerReferenceSet(t, eventingCR)
 	env.EnsureEPPHealthServiceOwnerReferenceSet(t, eventingCR)
 	env.EnsureEPPServiceAccountOwnerReferenceSet(t, eventingCR)
-	env.EnsureEPPClusterRoleOwnerReferenceSet(t, eventingCR)
-	env.EnsureEPPClusterRoleBindingOwnerReferenceSet(t, eventingCR)
 }
 
 func (env TestEnvironment) EnsureDeploymentExists(t *testing.T, name, namespace string) {
@@ -418,14 +422,14 @@ func (env TestEnvironment) EnsureK8sClusterRoleExists(t *testing.T, name, namesp
 	require.Eventually(t, func() bool {
 		result, err := env.GetClusterRoleFromK8s(name, namespace)
 		return err == nil && result != nil
-	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of ClusterRole")
+	}, BigTimeOut, BigPollingInterval, "failed to ensure existence of ClusterRole")
 }
 
 func (env TestEnvironment) EnsureK8sClusterRoleBindingExists(t *testing.T, name, namespace string) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetClusterRoleBindingFromK8s(name, namespace)
 		return err == nil && result != nil
-	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of ClusterRoleBinding")
+	}, BigTimeOut, BigPollingInterval, "failed to ensure existence of ClusterRoleBinding")
 }
 
 func (env TestEnvironment) EnsureHPAExists(t *testing.T, name, namespace string) {
@@ -441,6 +445,14 @@ func (env TestEnvironment) EnsureK8sResourceUpdated(t *testing.T, obj client.Obj
 
 func (env TestEnvironment) EnsureK8sResourceDeleted(t *testing.T, obj client.Object) {
 	require.NoError(t, env.k8sClient.Delete(env.Context, obj))
+}
+
+func (env TestEnvironment) EnsureNamespaceDeleted(t *testing.T, namespace string) {
+	require.NoError(t, env.k8sClient.Delete(env.Context, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace,
+		},
+	}))
 }
 
 func (env TestEnvironment) EnsureDeploymentDeletion(t *testing.T, name, namespace string) {
@@ -904,6 +916,15 @@ func (env TestEnvironment) DeleteEventingFromK8s(name, namespace string) error {
 		},
 	}
 	return env.k8sClient.Delete(env.Context, cr)
+}
+
+func (env TestEnvironment) DeleteSecretFromK8s(name, namespace string) error {
+	return env.k8sClient.Delete(env.Context, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
 }
 
 func (env TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*v1.Deployment, error) {

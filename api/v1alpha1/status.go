@@ -71,6 +71,16 @@ func (es *EventingStatus) SetNATSAvailableConditionToTrue() {
 	es.UpdateConditionNATSAvailable(metav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
 }
 
+func (es *EventingStatus) SetSubscriptionManagerConditionToFalse(reason ConditionReason, message string) {
+	es.UpdateConditionSubscriptionManagerReady(metav1.ConditionFalse, reason,
+		message)
+}
+
+func (es *EventingStatus) SetPublisherProxyConditionToFalse(reason ConditionReason, message string) {
+	es.UpdateConditionPublisherProxyReady(metav1.ConditionFalse, reason,
+		message)
+}
+
 func (es *EventingStatus) SetPublisherProxyReadyToTrue() {
 	es.State = StateReady
 	es.UpdateConditionPublisherProxyReady(metav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)

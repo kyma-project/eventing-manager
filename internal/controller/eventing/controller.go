@@ -19,7 +19,6 @@ package eventing
 import (
 	"context"
 	"fmt"
-
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -234,8 +233,30 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 				eventing, err, log)
 		}
 	}
+	eventing.Status.SetSubscriptionManagerConditionToFalse(
+		eventingv1alpha1.ConditionReasonEventMeshSubManagerStop,
+		eventingv1alpha1.ConditionSubscriptionManagerStoppedMessage)
+
+	// delete cluster-scoped resources, such as clusterrole and clusterrolebinding.
+	if err := r.deleteClusterScopedResources(ctx, eventing); err != nil {
+		return ctrl.Result{}, r.syncStatusWithPublisherProxyErrWithReason(ctx,
+			eventingv1alpha1.ConditionReasonDeletedFailed, eventing, err, log)
+	}
+	eventing.Status.SetPublisherProxyConditionToFalse(
+		eventingv1alpha1.ConditionReasonDeleted,
+		eventingv1alpha1.ConditionPublisherProxyDeletedMessage)
 
 	return r.removeFinalizer(ctx, eventing)
+}
+
+// deleteClusterScopedResources deletes cluster-scoped resources, such as clusterrole and clusterrolebinding.
+// K8s doesn't support cleaning cluster-scoped resources owned by namespace-scoped resources:
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/#owner-references-in-object-specifications
+func (r *Reconciler) deleteClusterScopedResources(ctx context.Context, eventingCR *eventingv1alpha1.Eventing) error {
+	if err := r.kubeClient.DeleteClusterRole(ctx, eventing.GetPublisherClusterRoleName(*eventingCR), eventingCR.Namespace); err != nil {
+		return err
+	}
+	return r.kubeClient.DeleteClusterRoleBinding(ctx, eventing.GetPublisherClusterRoleBindingName(*eventingCR), eventingCR.Namespace)
 }
 
 func (r *Reconciler) handleEventingReconcile(ctx context.Context,
