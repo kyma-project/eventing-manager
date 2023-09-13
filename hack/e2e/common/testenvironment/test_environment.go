@@ -251,9 +251,9 @@ func (te *TestEnvironment) SetupSink() error {
 
 func (te *TestEnvironment) DeleteSinkResources() error {
 	if err := te.DeleteDeployment(te.TestConfigs.SubscriptionSinkName, te.TestConfigs.TestNamespace); err != nil {
-		return err
+		return client.IgnoreNotFound(err)
 	}
-	return te.DeleteService(te.TestConfigs.SubscriptionSinkName, te.TestConfigs.TestNamespace)
+	return client.IgnoreNotFound(te.DeleteService(te.TestConfigs.SubscriptionSinkName, te.TestConfigs.TestNamespace))
 }
 
 func (te *TestEnvironment) CreateSinkDeployment(name, namespace, image string) error {
@@ -404,7 +404,9 @@ func (te *TestEnvironment) VerifyLegacyEventReceivedBySink(eventId, eventType, e
 	// publisher-proxy converts LegacyEvent to CloudEvent, so the sink should have received a CloudEvent.
 	// extract data from payload of legacy event.
 	result := make(map[string]interface{})
-	json.Unmarshal([]byte(payload), &result)
+	if err := json.Unmarshal([]byte(payload), &result); err != nil {
+		return err
+	}
 	data := result["data"]
 
 	// define the expected CloudEvent.
@@ -412,7 +414,9 @@ func (te *TestEnvironment) VerifyLegacyEventReceivedBySink(eventId, eventType, e
 	expectedCEEvent.SetID(eventId)
 	expectedCEEvent.SetType(eventType)
 	expectedCEEvent.SetSource(eventSource)
-	expectedCEEvent.SetData(cloudevents.ApplicationJSON, data)
+	if err := expectedCEEvent.SetData(cloudevents.ApplicationJSON, data); err != nil {
+		return err
+	}
 
 	// verify if the event was received.
 	return te.VerifyCloudEventReceivedBySink(expectedCEEvent)
