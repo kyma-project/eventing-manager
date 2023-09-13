@@ -1,9 +1,10 @@
 package setup
 
 import (
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
 )

@@ -5,14 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"time"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cev2event "github.com/cloudevents/sdk-go/v2/event"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"io"
-	"net/http"
-	"time"
 )
 
 const (

@@ -2,12 +2,14 @@ package testenvironment
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/cloudevents/sdk-go/v2/binding"
 	"strings"
 	"time"
+
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/cloudevents/sdk-go/v2/binding"
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
@@ -360,38 +362,39 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 	})
 }
 
-func (te *TestEnvironment) TestDeliveryOfLegacyEventForSubV1Alpha1(eventType string) error {
+//func (te *TestEnvironment) TestDeliveryOfLegacyEventForSubV1Alpha1(eventType string) error {
+//	// define the event
+//	eventId, eventSource, legacyEventType, payload := eventing.NewLegacyEventForV1Alpha1(eventType, te.TestConfigs.EventTypePrefix)
+//
+//	// publish the event
+//	if err := te.EventPublisher.SendLegacyEventWithRetries(eventSource, legacyEventType, payload, FewAttempts, Interval); err != nil {
+//		te.Logger.Debug(err.Error())
+//		return err
+//	}
+//
+//	// verify if the event was received by the sink.
+//	te.Logger.Debug(fmt.Sprintf("Verifying if LegacyEvent (ID: %s) was received by the sink", eventId))
+//	return te.VerifyLegacyEventReceivedBySink(eventId, eventType, eventSource, payload)
+//}
+
+func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string, subCRVersion fixtures.SubscriptionCRVersion) error {
 	// define the event
-	eventID, eventSource, legacyEventType, payload := eventing.NewLegacyEventForV1Alpha1(eventType, te.TestConfigs.EventTypePrefix)
+	var eventId, legacyEventSource, legacyEventType, payload string
+	if subCRVersion == fixtures.V1Alpha1SubscriptionCRVersion {
+		eventId, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEventForV1Alpha1(eventType, te.TestConfigs.EventTypePrefix)
+	} else {
+		eventId, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEvent(eventSource, eventType)
+	}
 
 	// publish the event
-	if err := te.EventPublisher.SendLegacyEventWithRetries(eventSource, legacyEventType, payload, FewAttempts, Interval); err != nil {
+	if err := te.EventPublisher.SendLegacyEventWithRetries(legacyEventSource, legacyEventType, payload, FewAttempts, Interval); err != nil {
 		te.Logger.Debug(err.Error())
 		return err
 	}
 
 	// verify if the event was received by the sink.
-	te.Logger.Debug(eventID)
-	// TODO: implement me!
-
-	return nil
-}
-
-func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string) error {
-	// define the event
-	eventID, eventSource, legacyEventType, payload := eventing.NewLegacyEvent(eventSource, eventType)
-
-	// publish the event
-	if err := te.EventPublisher.SendLegacyEventWithRetries(eventSource, legacyEventType, payload, FewAttempts, Interval); err != nil {
-		te.Logger.Debug(err.Error())
-		return err
-	}
-
-	// verify if the event was received by the sink.
-	te.Logger.Debug(eventID)
-	// TODO: implement me!
-
-	return nil
+	te.Logger.Debug(fmt.Sprintf("Verifying if LegacyEvent (ID: %s) was received by the sink", eventId))
+	return te.VerifyLegacyEventReceivedBySink(eventId, eventType, eventSource, payload)
 }
 
 func (te *TestEnvironment) TestDeliveryOfCloudEvent(eventSource, eventType string, encoding binding.Encoding) error {
@@ -412,6 +415,24 @@ func (te *TestEnvironment) TestDeliveryOfCloudEvent(eventSource, eventType strin
 	return te.VerifyCloudEventReceivedBySink(*ceEvent)
 }
 
+func (te *TestEnvironment) VerifyLegacyEventReceivedBySink(eventId, eventType, eventSource, payload string) error {
+	// publisher-proxy converts LegacyEvent to CloudEvent, so the sink should have received a CloudEvent.
+	// extract data from payload of legacy event.
+	result := make(map[string]interface{})
+	json.Unmarshal([]byte(payload), &result)
+	data := result["data"]
+
+	// define the expected CloudEvent.
+	expectedCEEvent := cloudevents.NewEvent()
+	expectedCEEvent.SetID(eventId)
+	expectedCEEvent.SetType(eventType)
+	expectedCEEvent.SetSource(eventSource)
+	expectedCEEvent.SetData(cloudevents.ApplicationJSON, data)
+
+	// verify if the event was received.
+	return te.VerifyCloudEventReceivedBySink(expectedCEEvent)
+}
+
 func (te *TestEnvironment) VerifyCloudEventReceivedBySink(expectedEvent cloudevents.Event) error {
 	// define the event
 	gotSinkEvent, err := te.SinkClient.GetEventFromSinkWithRetries(expectedEvent.ID(), Attempts, Interval)
@@ -426,26 +447,40 @@ func (te *TestEnvironment) VerifyCloudEventReceivedBySink(expectedEvent cloudeve
 }
 
 func (te *TestEnvironment) CompareCloudEvents(expectedEvent cloudevents.Event, gotEvent cloudevents.Event) error {
+	// check if its a valid CloudEvent.
+	if err := gotEvent.Validate(); err != nil {
+		return fmt.Errorf("expected valid cloud event, but got invalid cloud event. Error: %s", err.Error())
+	}
+
 	if expectedEvent.ID() != gotEvent.ID() {
 		return fmt.Errorf("expected event ID: %s, got event ID: %s", expectedEvent.ID(), gotEvent.ID())
 	}
 
+	if string(expectedEvent.Data()) != string(gotEvent.Data()) {
+		return fmt.Errorf("expected event data: %s, got event data: %s",
+			string(expectedEvent.Data()), string(gotEvent.Data()))
+	}
+
+	// if it is a v1alpha1 Subscription event, then we do not check further.
+	if strings.HasPrefix(gotEvent.Type(), te.TestConfigs.EventTypePrefix) {
+		return nil
+	}
+
+	// check in detail further the source and type.
 	if expectedEvent.Source() != gotEvent.Source() {
 		return fmt.Errorf("expected event Source: %s, got event Source: %s", expectedEvent.Source(), gotEvent.Source())
 	}
 
-	if originalType, ok := gotEvent.Extensions()["originaltype"]; ok {
-		if expectedEvent.Type() != originalType {
-			return fmt.Errorf("expected event Type: %s, got event Type: %s", expectedEvent.Type(), originalType)
-		}
-	}
-
-	if string(expectedEvent.Data()) != string(gotEvent.Data()) {
+	if expectedEvent.Type() != gotEvent.Type() {
 		return fmt.Errorf("expected event Type: %s, got event Type: %s", expectedEvent.Type(), gotEvent.Type())
 	}
 
-	if err := gotEvent.Validate(); err != nil {
-		return fmt.Errorf("expected valid cloud event, but got invalid cloud event. Error: %s", err.Error())
+	originalType, ok := gotEvent.Extensions()[fixtures.EventOriginalTypeHeader]
+	if !ok {
+		return fmt.Errorf("expected event to have header: %s, but its missing", fixtures.EventOriginalTypeHeader)
+	}
+	if expectedEvent.Type() != originalType {
+		return fmt.Errorf("expected originaltype header to have value: %s, but got: %s", expectedEvent.Type(), originalType)
 	}
 
 	return nil

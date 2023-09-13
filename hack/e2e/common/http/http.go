@@ -1,10 +1,11 @@
 package http
 
 import (
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	cloudeventsclient "github.com/cloudevents/sdk-go/v2/client"
 	"net/http"
 	"time"
+
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	cloudeventsclient "github.com/cloudevents/sdk-go/v2/client"
 )
 
 func NewHttpClient(transport *http.Transport) *http.Client {

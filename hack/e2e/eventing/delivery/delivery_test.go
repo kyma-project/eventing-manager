@@ -2,12 +2,13 @@ package delivery
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/cloudevents/sdk-go/v2/binding"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
 	"github.com/stretchr/testify/require"
-	"os"
-	"testing"
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
 )
@@ -37,49 +38,49 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-//func Test_LegacyEvents_SubscriptionV1Alpha1(t *testing.T) {
-//	t.Parallel()
-//	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
-//		subToTest := subToTest
-//		for _, eventTypeToTest := range subToTest.Types {
-//			eventTypeToTest := eventTypeToTest
-//			testName := fmt.Sprintf("legacy event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
-//			// run test for the eventType.
-//			t.Run(testName, func(t *testing.T) {
-//				t.Parallel()
-//
-//				// when
-//				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-//					return testEnvironment.TestDeliveryOfLegacyEventForSubV1Alpha1(eventTypeToTest)
-//				})
-//
-//				// then
-//				require.NoError(t, err)
-//			})
-//		}
-//	}
-//}
-//
-//func Test_LegacyEvents(t *testing.T) {
-//	t.Parallel()
-//	for _, subToTest := range fixtures.V1Alpha2SubscriptionsToTest() {
-//		subToTest := subToTest
-//		for _, eventTypeToTest := range subToTest.Types {
-//			eventTypeToTest := eventTypeToTest
-//			testName := fmt.Sprintf("legacy event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
-//			// run test for the eventType.
-//			t.Run(testName, func(t *testing.T) {
-//				t.Parallel()
-//
-//				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
-//					// It's fine if the Namespace already exists.
-//					return testEnvironment.TestDeliveryOfLegacyEvent(subToTest.Source, eventTypeToTest)
-//				})
-//				require.NoError(t, err)
-//			})
-//		}
-//	}
-//}
+func Test_LegacyEvents_SubscriptionV1Alpha1(t *testing.T) {
+	t.Parallel()
+	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
+		subToTest := subToTest
+		for _, eventTypeToTest := range subToTest.Types {
+			eventTypeToTest := eventTypeToTest
+			testName := fmt.Sprintf("legacy event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
+			// run test for the eventType.
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
+
+				// when
+				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
+					return testEnvironment.TestDeliveryOfLegacyEvent("", eventTypeToTest, fixtures.V1Alpha1SubscriptionCRVersion)
+				})
+
+				// then
+				require.NoError(t, err)
+			})
+		}
+	}
+}
+
+func Test_LegacyEvents(t *testing.T) {
+	t.Parallel()
+	for _, subToTest := range fixtures.V1Alpha2SubscriptionsToTest() {
+		subToTest := subToTest
+		for _, eventTypeToTest := range subToTest.Types {
+			eventTypeToTest := eventTypeToTest
+			testName := fmt.Sprintf("legacy event should work for subscription: %s with type: %s", subToTest.Name, eventTypeToTest)
+			// run test for the eventType.
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
+
+				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
+					// It's fine if the Namespace already exists.
+					return testEnvironment.TestDeliveryOfLegacyEvent(subToTest.Source, eventTypeToTest, fixtures.V1Alpha2SubscriptionCRVersion)
+				})
+				require.NoError(t, err)
+			})
+		}
+	}
+}
 
 func Test_StructuredCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
 	t.Parallel()

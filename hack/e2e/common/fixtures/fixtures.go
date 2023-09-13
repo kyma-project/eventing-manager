@@ -26,6 +26,14 @@ const (
 	WebhookServerCertJobName    = "eventing-manager-cert-handler"
 	EventMeshSecretNamespace    = "kyma-system"
 	EventMeshSecretName         = "eventing-backend"
+	EventOriginalTypeHeader     = "originaltype"
+)
+
+type SubscriptionCRVersion string
+
+const (
+	V1Alpha1SubscriptionCRVersion SubscriptionCRVersion = "v1alpha1"
+	V1Alpha2SubscriptionCRVersion SubscriptionCRVersion = "v1alpha2"
 )
 
 func EventingCR(backendType eventingv1alpha1.BackendType) *eventingv1alpha1.Eventing {

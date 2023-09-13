@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/cloudevents/sdk-go/v2/binding"
 	"io"
 	"net/http"
 	"time"
+
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/cloudevents/sdk-go/v2/binding"
 
 	"github.com/cloudevents/sdk-go/v2/client"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
