@@ -271,6 +271,5 @@ func ConvertSelectorLabelsToString(labels map[string]string) string {
 }
 
 func AppendMsgToError(err error, msg string) error {
-	newErr := errors.New(fmt.Sprintf("\n==> %s", msg))
-	return errors.Join(err, newErr)
+	return errors.Join(err, fmt.Errorf("\n==> %s", msg))
 }
