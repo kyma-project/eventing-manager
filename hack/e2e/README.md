@@ -7,7 +7,7 @@ This test covers the end-to-end flow for Eventing. It tests the creation of an E
 
 ## Usage
 
-### Pre-requisites
+### Prerequisites
 
 - [Go](https://go.dev/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
