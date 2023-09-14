@@ -1,5 +1,3 @@
-[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/eventing-manager)](https://api.reuse.software/info/github.com/kyma-project/eventing-manager)
-
 # Eventing End-to-End Tests
 Tests the end-to-end flow for eventing-manager.
 
