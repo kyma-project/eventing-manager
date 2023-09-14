@@ -11,7 +11,7 @@ This test covers the end-to-end flow for Eventing. It tests the creation of an E
 
 - [Go](https://go.dev/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- Access to Kubernetes cluster ([k3d](https://k3d.io/) / k8s)
+- Access to Kubernetes cluster (k8s)
 - Eventing manager deployed to the cluster without any Eventing CR.
 - For EventMesh backend, the following secrets must exist in the cluster:
   - Event Mesh credentials secret by name: `eventing-backend` in namespace: `kyma-system`.
