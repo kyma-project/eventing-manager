@@ -515,7 +515,8 @@ func (te *TestEnvironment) SetupEventingCR() error {
 
 func (te *TestEnvironment) DeleteEventingCR() error {
 	return common.Retry(Attempts, Interval, func() error {
-		return te.K8sClient.Delete(te.Context, fixtures.EventingCR(eventingv1alpha1.BackendType(te.TestConfigs.BackendType)))
+		return client.IgnoreNotFound(te.K8sClient.Delete(te.Context,
+			fixtures.EventingCR(eventingv1alpha1.BackendType(te.TestConfigs.BackendType))))
 	})
 }
 
