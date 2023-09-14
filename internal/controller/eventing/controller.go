@@ -19,6 +19,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -233,8 +234,8 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 				eventing, err, log)
 		}
 	}
-	eventing.Status.SetSubscriptionManagerConditionToFalse(
-		eventingv1alpha1.ConditionReasonEventMeshSubManagerStop,
+	eventing.Status.SetSubscriptionManagerReadyConditionToFalse(
+		eventingv1alpha1.ConditionReasonEventMeshSubManagerStopped,
 		eventingv1alpha1.ConditionSubscriptionManagerStoppedMessage)
 
 	// delete cluster-scoped resources, such as clusterrole and clusterrolebinding.

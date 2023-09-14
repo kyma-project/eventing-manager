@@ -71,7 +71,7 @@ func (es *EventingStatus) SetNATSAvailableConditionToTrue() {
 	es.UpdateConditionNATSAvailable(metav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
 }
 
-func (es *EventingStatus) SetSubscriptionManagerConditionToFalse(reason ConditionReason, message string) {
+func (es *EventingStatus) SetSubscriptionManagerReadyConditionToFalse(reason ConditionReason, message string) {
 	es.UpdateConditionSubscriptionManagerReady(metav1.ConditionFalse, reason,
 		message)
 }

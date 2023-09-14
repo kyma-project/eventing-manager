@@ -65,7 +65,7 @@ const (
 	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"
 	ConditionReasonEventMeshSubManagerFailed     ConditionReason = "EventMeshSubscriptionManagerFailed"
 	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
-	ConditionReasonEventMeshSubManagerStop       ConditionReason = "Stopped"
+	ConditionReasonEventMeshSubManagerStopped    ConditionReason = "Stopped"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
