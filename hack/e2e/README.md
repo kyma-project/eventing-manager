@@ -40,9 +40,9 @@ This test covers the end-to-end flow for Eventing. It tests the creation of an E
    make e2e
    ```
 
-### Make targets
+### Run a single test phase
 
-The following make targets are also available to run a single test phase:
+If you want to run only a single test phase, use the following make targets:
 
 - `make e2e-setup` - creates an Eventing CR and verifies that all the required resources are provisioned by the eventing-manager. If an Eventing CR already exists in the cluster, then it will only update the CR if the `spec.backend.type` is different from the backend configured for tests.
 - `make e2e-eventing-setup` - prepares Subscription CR(s) and deploys a subscriber to be used in subscriptions as a sink. It does not update the Subscription CR(s) if they already exist.
