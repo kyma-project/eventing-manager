@@ -14,7 +14,8 @@ This test covers the end-to-end flow for Eventing. It is divided in three parts:
 
 - [Go](https://go.dev/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- Access to Kubernetes cluster ([k3d](https://k3d.io/) / k8s) with eventing-manager deployed.
+- Access to Kubernetes cluster ([k3d](https://k3d.io/) / k8s)
+- Eventing-manager deployed to the cluster without any Eventing CR.
 - For EventMesh backend, the following secrets should exist in the cluster:
   - Event Mesh credentials secret by name: `eventing-backend` in namespace: `kyma-system`.
   - OAuth client secret by name: `eventing-webhook-auth` in namespace: `kyma-system`.
@@ -24,7 +25,7 @@ This test covers the end-to-end flow for Eventing. It is divided in three parts:
 1. Prepare the `.env` file based on the `.env.template`.
 
 ```
-KUBECONFIG=                  # Kyma cluster kubeconfig file path
+KUBECONFIG=                  # Kubernetes cluster kubeconfig file path
 BACKEND_TYPE=NATS            # NATS or EventMesh
 MANAGER_IMAGE=               # [Optional] Container image of eventing-manager
 EVENTMESH_NAMESPACE=         # [Optional] Default is: "/default/sap.kyma/tunas-develop"
@@ -35,7 +36,7 @@ EVENTMESH_NAMESPACE=         # [Optional] Default is: "/default/sap.kyma/tunas-d
 export $(xargs < .env)
 ```
 
-3. Run the following make target to run the whole ent-to-end test suite.
+3. Run the following make target to run the whole end-to-end test suite.
 ```bash
 make e2e
 ```
