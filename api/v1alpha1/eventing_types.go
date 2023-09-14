@@ -40,6 +40,7 @@ const (
 	// common reasons
 	ConditionReasonProcessing ConditionReason = "Processing"
 	ConditionReasonDeleted    ConditionReason = "Deleted"
+	ConditionReasonStopped    ConditionReason = "Stopped"
 
 	// publisher proxy reasons
 	ConditionReasonDeployed                   ConditionReason = "Deployed"
@@ -65,7 +66,6 @@ const (
 	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"
 	ConditionReasonEventMeshSubManagerFailed     ConditionReason = "EventMeshSubscriptionManagerFailed"
 	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
-	ConditionReasonEventMeshSubManagerStopped    ConditionReason = "Stopped"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.

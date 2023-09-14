@@ -235,7 +235,7 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 		}
 	}
 	eventing.Status.SetSubscriptionManagerReadyConditionToFalse(
-		eventingv1alpha1.ConditionReasonEventMeshSubManagerStopped,
+		eventingv1alpha1.ConditionReasonStopped,
 		eventingv1alpha1.ConditionSubscriptionManagerStoppedMessage)
 
 	// delete cluster-scoped resources, such as clusterrole and clusterrolebinding.
