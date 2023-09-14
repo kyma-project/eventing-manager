@@ -187,7 +187,17 @@ fmt-local: ## Reformat files using `go fmt`
 imports-local: ## Optimize imports
 	goimports -w -l $$($(FILES_TO_CHECK))
 
+.PHONY: kyma
+kyma: $(LOCALBIN) $(KYMA) ## Download kyma CLI locally if necessary.
+$(KYMA):
+	#################################################################
+	$(if $(KYMA_FILE_NAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
+	## Downloading Kyma CLI: https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILE_NAME)
+	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILE_NAME)
+	chmod 0100 $(KYMA)
+	${KYMA} version -c
 # e2e-setup will create an Eventing CR and check if the required resources are provisioned or not.
+
 .PHONY: e2e-setup
 e2e-setup:
 	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e
