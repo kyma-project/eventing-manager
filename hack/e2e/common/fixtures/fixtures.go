@@ -1,6 +1,7 @@
 package fixtures
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -112,15 +113,18 @@ func PublisherSpec() eventingv1alpha1.Publisher {
 func V1Alpha1SubscriptionsToTest() []eventing.TestSubscriptionInfo {
 	return []eventing.TestSubscriptionInfo{
 		{
-			Name:  "test-sub-1-v1alpha1",
-			Types: []string{"sap.kyma.custom.noapp.order.tested.v1"},
+			Name:        "test-sub-1-v1alpha1",
+			Description: "event type and source without any alpha-numeric characters",
+			Types:       []string{"sap.kyma.custom.noapp.order.tested.v1"},
 		},
 		{
-			Name:  "test-sub-2-v1alpha1",
-			Types: []string{"sap.kyma.custom.test-app.order-$.second.R-e-c-e-i-v-e-d.v1"},
+			Name:        "test-sub-2-v1alpha1",
+			Description: "event type and source with alpha-numeric characters",
+			Types:       []string{"sap.kyma.custom.test-app.order-$.second.R-e-c-e-i-v-e-d.v1"},
 		},
 		{
-			Name: "test-sub-3-with-multiple-types-v1alpha1",
+			Name:        "test-sub-3-with-multiple-types-v1alpha1",
+			Description: "multiple types in same subscription",
 			Types: []string{
 				"sap.kyma.custom.connected-app.order.tested.v1",
 				"sap.kyma.custom.connected-app2.or-der.crea-ted.one.two.three.v4",
@@ -133,19 +137,20 @@ func V1Alpha2SubscriptionsToTest() []eventing.TestSubscriptionInfo {
 	return []eventing.TestSubscriptionInfo{
 		{
 			Name:        "test-sub-1-v1alpha2",
-			Description: "Test event type and source without any alpha-numeric characters",
+			Description: "event type and source without any alpha-numeric characters",
 			Source:      "noapp",
 			Types:       []string{"order.modified.v1"},
 		},
 		{
 			Name:        "test-sub-2-v1alpha2",
-			Description: "Test event type and source with any alpha-numeric characters",
+			Description: "event type and source with alpha-numeric characters",
 			Source:      "test-app",
 			Types:       []string{"Order-$.third.R-e-c-e-i-v-e-d.v1"},
 		},
 		{
-			Name:   "test-sub-3-with-multiple-types-v1alpha2",
-			Source: "test-evnt",
+			Name:        "test-sub-3-with-multiple-types-v1alpha2",
+			Description: "multiple types in same subscription",
+			Source:      "test-evnt",
 			Types: []string{
 				"or-der.crea-ted.one.two.three.four.v4",
 				"order.testing.v1",
@@ -263,4 +268,8 @@ func ConvertSelectorLabelsToString(labels map[string]string) string {
 		result = append(result, fmt.Sprintf("%s=%s", k, v))
 	}
 	return strings.Join(result, ",")
+}
+
+func AppendMsgToError(err error, msg string) error {
+	return errors.Join(err, fmt.Errorf("\n==> %s", msg))
 }
