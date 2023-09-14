@@ -9,8 +9,6 @@ This test covers the end-to-end flow for Eventing. It is divided in three parts:
 3. `cleanup` - removes the test resources and namespaces from the cluster.
 
 ## Usage
-You’ll need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
 ### Pre-requisites
 
