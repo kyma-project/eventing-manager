@@ -9,73 +9,31 @@ package cleanup_test
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	"github.com/kyma-project/eventing-manager/hack/e2e/env"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"go.uber.org/zap"
-	k8stypes "k8s.io/apimachinery/pkg/types"
-
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common"
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
 )
 
-// Constants for retries.
-const (
-	interval = 2 * time.Second
-	attempts = 60
-)
-
-// clientSet is what is used to access K8s build-in resources like Pods, Namespaces and so on.
-var clientSet *kubernetes.Clientset //nolint:gochecknoglobals // This will only be accessible in e2e tests.
-
-// k8sClient is what is used to access the Eventing CR.
-var k8sClient client.Client //nolint:gochecknoglobals // This will only be accessible in e2e tests.
-
-var logger *zap.Logger
-
-var testConfigs *env.E2EConfig
+var testEnvironment *testenvironment.TestEnvironment
 
 // TestMain runs before all the other test functions. It sets up all the resources that are shared between the different
 // test functions. It will then run the tests and finally shuts everything down.
 func TestMain(m *testing.M) {
-	var err error
-	logger, err = SetupLogger()
-	if err != nil {
-		logger.Fatal(err.Error())
-	}
+	testEnvironment = testenvironment.NewTestEnvironment()
 
-	testConfigs, err = env.GetE2EConfig()
-	if err != nil {
-		logger.Fatal(err.Error())
-
-	}
-	logger.Info(fmt.Sprintf("##### NOTE: Tests will run w.r.t. backend: %s", testConfigs.BackendType))
-
-	clientSet, k8sClient, err = GetK8sClients()
-	if err != nil {
-		logger.Fatal(err.Error())
-	}
-
-	ctx := context.TODO()
 	// Delete the Eventing CR used for testing.
-	err = Retry(attempts, interval, func() error {
-		return k8sClient.Delete(ctx, EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType)))
-	})
-	if err != nil {
-		logger.Fatal(err.Error())
+	if err := testEnvironment.DeleteEventingCR(); err != nil {
+		testEnvironment.Logger.Fatal(err.Error())
 	}
 
 	// Run the tests and exit.
@@ -86,9 +44,8 @@ func TestMain(m *testing.M) {
 func Test_NoEventingCRExists(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.TODO()
-	err := Retry(attempts, interval, func() error {
-		_, crErr := getEventingCR(ctx, CRName, NamespaceName)
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, crErr := testEnvironment.GetEventingCRFromK8s(CRName, NamespaceName)
 		// This is what we want here.
 		if k8serrors.IsNotFound(crErr) {
 			return nil
@@ -107,9 +64,9 @@ func Test_NoEventingCRExists(t *testing.T) {
 func Test_NoPublisherServiceAccountExists(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
-	err := Retry(attempts, interval, func() error {
-		_, getErr := clientSet.CoreV1().ServiceAccounts(NamespaceName).Get(ctx,
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.CoreV1().ServiceAccounts(NamespaceName).Get(ctx,
 			eventing.GetPublisherServiceAccountName(*eventingCR), metav1.GetOptions{})
 		if getErr == nil {
 			return errors.New("PublisherServiceAccount should have been deleted")
@@ -122,14 +79,14 @@ func Test_NoPublisherServiceAccountExists(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Enable this test once https://github.com/kyma-project/eventing-manager/issues/34 is done!
+//// Enable this test once https://github.com/kyma-project/eventing-manager/issues/34 is done!
 //// Test_NoPublisherClusterRoleExists tests if the publisher-proxy ClusterRole was deleted.
 //func Test_NoPublisherClusterRoleExists(t *testing.T) {
 //	t.Parallel()
 //	ctx := context.TODO()
-//	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
-//	err := Retry(attempts, interval, func() error {
-//		_, getErr := clientSet.RbacV1().ClusterRoles().Get(ctx,
+//	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+//	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+//		_, getErr := testEnvironment.K8sClientset.RbacV1().ClusterRoles().Get(ctx,
 //			eventing.GetPublisherClusterRoleName(*eventingCR), metav1.GetOptions{})
 //		if getErr == nil {
 //			return errors.New("PublisherClusterRole should have been deleted")
@@ -141,15 +98,15 @@ func Test_NoPublisherServiceAccountExists(t *testing.T) {
 //	})
 //	require.NoError(t, err)
 //}
-
-// Enable this test once https://github.com/kyma-project/eventing-manager/issues/34 is done!
+//
+//// Enable this test once https://github.com/kyma-project/eventing-manager/issues/34 is done!
 //// Test_NoPublisherClusterRoleBindingExists tests if the publisher-proxy ClusterRoleBinding was deleted.
 //func Test_NoPublisherClusterRoleBindingExists(t *testing.T) {
 //	t.Parallel()
 //	ctx := context.TODO()
-//	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
-//	err := Retry(attempts, interval, func() error {
-//		_, getErr := clientSet.RbacV1().ClusterRoleBindings().Get(ctx,
+//	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+//	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+//		_, getErr := testEnvironment.K8sClientset.RbacV1().ClusterRoleBindings().Get(ctx,
 //			eventing.GetPublisherClusterRoleBindingName(*eventingCR), metav1.GetOptions{})
 //		if getErr == nil {
 //			return errors.New("PublisherClusterRoleBinding should have been deleted")
@@ -166,10 +123,10 @@ func Test_NoPublisherServiceAccountExists(t *testing.T) {
 func Test_NoPublisherServicesExists(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
-	err := Retry(attempts, interval, func() error {
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
 		// check service to expose event publishing endpoint, was deleted.
-		_, getErr := clientSet.CoreV1().Services(NamespaceName).Get(ctx,
+		_, getErr := testEnvironment.K8sClientset.CoreV1().Services(NamespaceName).Get(ctx,
 			eventing.GetPublisherPublishServiceName(*eventingCR), metav1.GetOptions{})
 		if getErr == nil {
 			return errors.New("Publisher PublishService should have been deleted")
@@ -179,7 +136,7 @@ func Test_NoPublisherServicesExists(t *testing.T) {
 		}
 
 		// check service to expose metrics endpoint, was deleted.
-		_, getErr = clientSet.CoreV1().Services(NamespaceName).Get(ctx,
+		_, getErr = testEnvironment.K8sClientset.CoreV1().Services(NamespaceName).Get(ctx,
 			eventing.GetPublisherMetricsServiceName(*eventingCR), metav1.GetOptions{})
 		if getErr == nil {
 			return errors.New("Publisher MetricsService should have been deleted")
@@ -189,7 +146,7 @@ func Test_NoPublisherServicesExists(t *testing.T) {
 		}
 
 		// check service to expose health endpoint, was deleted.
-		_, getErr = clientSet.CoreV1().Services(NamespaceName).Get(ctx,
+		_, getErr = testEnvironment.K8sClientset.CoreV1().Services(NamespaceName).Get(ctx,
 			eventing.GetPublisherHealthServiceName(*eventingCR), metav1.GetOptions{})
 		if getErr == nil {
 			return errors.New("Publisher HealthService should have been deleted")
@@ -206,9 +163,9 @@ func Test_NoPublisherServicesExists(t *testing.T) {
 func Test_NoPublisherHPAExists(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
-	err := Retry(attempts, interval, func() error {
-		_, getErr := clientSet.AutoscalingV2().HorizontalPodAutoscalers(NamespaceName).Get(ctx,
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.AutoscalingV2().HorizontalPodAutoscalers(NamespaceName).Get(ctx,
 			eventing.GetPublisherDeploymentName(*eventingCR), metav1.GetOptions{})
 		if !k8serrors.IsNotFound(getErr) {
 			return getErr
@@ -222,9 +179,9 @@ func Test_NoPublisherHPAExists(t *testing.T) {
 func Test_NoPublisherProxyDeploymentExists(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(testConfigs.BackendType))
-	err := Retry(attempts, interval, func() error {
-		_, getErr := clientSet.AppsV1().Deployments(NamespaceName).Get(ctx,
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.AppsV1().Deployments(NamespaceName).Get(ctx,
 			eventing.GetPublisherDeploymentName(*eventingCR), metav1.GetOptions{})
 		if !k8serrors.IsNotFound(getErr) {
 			return getErr
@@ -232,13 +189,4 @@ func Test_NoPublisherProxyDeploymentExists(t *testing.T) {
 		return nil
 	})
 	require.NoError(t, err)
-}
-
-func getEventingCR(ctx context.Context, name, namespace string) (*eventingv1alpha1.Eventing, error) {
-	var eventingCR eventingv1alpha1.Eventing
-	err := k8sClient.Get(ctx, k8stypes.NamespacedName{
-		Name:      name,
-		Namespace: namespace,
-	}, &eventingCR)
-	return &eventingCR, err
 }

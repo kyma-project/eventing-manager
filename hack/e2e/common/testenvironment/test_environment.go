@@ -11,6 +11,8 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
 
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
@@ -481,4 +483,85 @@ func (te *TestEnvironment) CompareCloudEvents(expectedEvent cloudevents.Event, g
 	}
 
 	return resultError
+}
+
+func (te *TestEnvironment) SetupEventingCR() error {
+	return common.Retry(Attempts, Interval, func() error {
+		ctx := context.TODO()
+		eventingCR := fixtures.EventingCR(eventingv1alpha1.BackendType(te.TestConfigs.BackendType))
+		errEvnt := te.K8sClient.Create(ctx, eventingCR)
+		if k8serrors.IsAlreadyExists(errEvnt) {
+			gotEventingCR, getErr := te.GetEventingCRFromK8s(eventingCR.Name, eventingCR.Namespace)
+			if getErr != nil {
+				return getErr
+			}
+
+			// If Backend type is changed then update the CR.
+			if gotEventingCR.Spec.Backend.Type != eventingCR.Spec.Backend.Type {
+				eventingCR.ObjectMeta = gotEventingCR.ObjectMeta
+				if errEvnt = te.K8sClient.Update(ctx, eventingCR); errEvnt != nil {
+					return errEvnt
+				}
+			} else {
+				te.Logger.Warn(
+					"error while creating Eventing CR, resource already exist; test will continue with existing CR",
+				)
+			}
+			return nil
+		}
+		return errEvnt
+	})
+}
+
+func (te *TestEnvironment) DeleteEventingCR() error {
+	return common.Retry(Attempts, Interval, func() error {
+		return client.IgnoreNotFound(te.K8sClient.Delete(te.Context,
+			fixtures.EventingCR(eventingv1alpha1.BackendType(te.TestConfigs.BackendType))))
+	})
+}
+
+func (te *TestEnvironment) GetEventingCRFromK8s(name, namespace string) (*eventingv1alpha1.Eventing, error) {
+	var eventingCR eventingv1alpha1.Eventing
+	err := te.K8sClient.Get(te.Context, k8stypes.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}, &eventingCR)
+	return &eventingCR, err
+}
+
+func (te *TestEnvironment) GetDeployment(name, namespace string) (*appsv1.Deployment, error) {
+	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, metav1.GetOptions{})
+}
+
+func (te *TestEnvironment) WaitForEventingCRReady() error {
+	// RetryGet the Eventing CR and test status.
+	return common.Retry(Attempts, Interval, func() error {
+		te.Logger.Debug(fmt.Sprintf("waiting for Eventing CR to get ready. "+
+			"CR name: %s, namespace: %s", fixtures.CRName, fixtures.NamespaceName))
+
+		// Get the Eventing CR from the cluster.
+		gotEventingCR, err := common.RetryGet(Attempts, Interval, func() (*eventingv1alpha1.Eventing, error) {
+			return te.GetEventingCRFromK8s(fixtures.CRName, fixtures.NamespaceName)
+		})
+		if err != nil {
+			return err
+		}
+
+		if gotEventingCR.Spec.Backend.Type != gotEventingCR.Status.ActiveBackend {
+			err := fmt.Errorf("waiting for Eventing CR to switch backend")
+			te.Logger.Debug(err.Error())
+			return err
+		}
+
+		if gotEventingCR.Status.State != eventingv1alpha1.StateReady {
+			err := fmt.Errorf("waiting for Eventing CR to get ready state")
+			te.Logger.Debug(err.Error())
+			return err
+		}
+
+		// Everything is fine.
+		te.Logger.Debug(fmt.Sprintf("Eventing CR is ready. "+
+			"CR name: %s, namespace: %s", fixtures.CRName, fixtures.NamespaceName))
+		return nil
+	})
 }
