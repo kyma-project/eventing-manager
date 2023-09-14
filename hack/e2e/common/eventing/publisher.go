@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"time"
 
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/cloudevents/sdk-go/v2/binding"
+
 	"github.com/cloudevents/sdk-go/v2/client"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/pkg/errors"
@@ -16,7 +19,7 @@ import (
 
 const (
 	LegacyPublishEndpointFormat     = "%s/%s/v1/events"
-	CloudEventPublishEndpointFormat = "%s/%s/v1/events"
+	CloudEventPublishEndpointFormat = "%s/publish"
 )
 
 type Publisher struct {
@@ -41,9 +44,19 @@ func (p *Publisher) LegacyPublishEndpoint(source string) string {
 	return fmt.Sprintf(LegacyPublishEndpointFormat, p.publisherURL, source)
 }
 
+func (p *Publisher) PublishEndpoint() string {
+	return fmt.Sprintf(CloudEventPublishEndpointFormat, p.publisherURL)
+}
+
 func (p *Publisher) SendLegacyEventWithRetries(source, eventType, payload string, attempts int, interval time.Duration) error {
 	return common.Retry(attempts, interval, func() error {
 		return p.SendLegacyEvent(source, eventType, payload)
+	})
+}
+
+func (p *Publisher) SendCloudEventWithRetries(event *cloudevents.Event, encoding binding.Encoding, attempts int, interval time.Duration) error {
+	return common.Retry(attempts, interval, func() error {
+		return p.SendCloudEvent(event, encoding)
 	})
 }
 
@@ -93,5 +106,55 @@ func (p *Publisher) SendLegacyEvent(source, eventType, payload string) error {
 			resp.StatusCode, string(body)))
 		p.logger.Debug(err2.Error())
 		return err2
+	}
+}
+
+func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.Encoding) error {
+	ce := *event
+	newCtx := context.Background()
+	ctx := cloudevents.ContextWithTarget(newCtx, p.PublishEndpoint())
+	switch encoding {
+	case binding.EncodingBinary:
+		{
+			ctx = binding.WithForceBinary(ctx)
+		}
+	case binding.EncodingStructured:
+		{
+			ctx = binding.WithForceStructured(ctx)
+		}
+	default:
+		{
+			return fmt.Errorf("failed to use unsupported cloudevent encoding:[%s]", encoding.String())
+		}
+	}
+
+	p.logger.Debug(fmt.Sprintf("Publishing cloud event:"+
+		" URL: %s,"+
+		" Encoding: %s,"+
+		" EventID: %s,"+
+		" EventSource: %s,"+
+		" EventType: %s,"+
+		" Payload: %s",
+		p.PublishEndpoint(), encoding.String(), ce.ID(), ce.Source(), ce.Type(), ce.Data()))
+
+	result := p.clientCE.Send(ctx, ce)
+	switch {
+	case cloudevents.IsUndelivered(result):
+		{
+			return fmt.Errorf("failed to send cloudevent-%s undelivered:[%s] response:[%s]", encoding.String(), ce.Type(), result)
+		}
+	case cloudevents.IsNACK(result):
+		{
+			return fmt.Errorf("failed to send cloudevent-%s nack:[%s] response:[%s]", encoding.String(), ce.Type(), result)
+		}
+	case cloudevents.IsACK(result):
+		{
+			p.logger.Debug(fmt.Sprintf("successfully sent cloudevent-%s [%s]", encoding.String(), ce.Type()))
+			return nil
+		}
+	default:
+		{
+			return fmt.Errorf("failed to send cloudevent-%s unknown:[%s] response:[%s]", encoding.String(), ce.Type(), result)
+		}
 	}
 }

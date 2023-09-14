@@ -194,10 +194,15 @@ e2e-setup:
 
 # e2e-cleanup will delete the Eventing CR and check if the required resources are de-provisioned or not.
 .PHONY: e2e-cleanup
-e2e-cleanup:
+e2e-cleanup: e2e-eventing-cleanup
 	go test -v ./hack/e2e/cleanup/cleanup_test.go --tags=e2e
 
-# e2e-eventing will setup subscriptions and tests end-to-end deliver of events.
+# e2e-eventing-setup will setup subscriptions and sink required for tests to check end-to-end delivery of events.
+.PHONY: e2e-eventing-setup
+e2e-eventing-setup:
+	go test -v ./hack/e2e/eventing/setup/setup_test.go --tags=e2e
+
+# e2e-eventing will tests end-to-end delivery of events.
 .PHONY: e2e-eventing
 e2e-eventing:
 	./hack/e2e/scripts/event_delivery_tests.sh
@@ -209,4 +214,4 @@ e2e-eventing-cleanup:
 
 # e2e will run the whole suite of end-to-end tests for eventing-manager.
 .PHONY: e2e
-e2e: e2e-setup e2e-eventing e2e-cleanup
+e2e: e2e-setup e2e-eventing-setup e2e-eventing e2e-cleanup
