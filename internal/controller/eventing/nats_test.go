@@ -80,7 +80,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 		{
 			name:                         "it should do nothing because subscription manager is already started",
 			givenIsNATSSubManagerStarted: true,
-			givenHashBefore:              uint64(15336350153614350417),
+			givenHashBefore:              uint64(10896066536699660582),
 			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
 				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
 				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
@@ -93,12 +93,14 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				return emMock
 			},
 			givenNatsConfigHandlerMock: func() *mocks.NatsConfigHandler {
-				return nil
+				nchMock := new(mocks.NatsConfigHandler)
+				nchMock.On("GetNatsConfig", mock.Anything, mock.Anything).Return(givenNATSConfig, nil)
+				return nchMock
 			},
 			givenManagerFactoryMock: func(_ *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				return nil
 			},
-			wantHashAfter: uint64(15336350153614350417),
+			wantHashAfter: uint64(10896066536699660582),
 		},
 		{
 			name: "it should initialize and start subscription manager because " +
@@ -127,7 +129,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				return subManagerFactoryMock
 			},
 			wantAssertCheck: true,
-			wantHashAfter:   uint64(15336350153614350417),
+			wantHashAfter:   uint64(10896066536699660582),
 		},
 		{
 			name: "it should retry to start subscription manager when subscription manager was " +
@@ -189,7 +191,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			},
 			wantAssertCheck:  true,
 			givenShouldRetry: true,
-			wantHashAfter:    uint64(3759880008750379466),
+			wantHashAfter:    uint64(17644964695675018020),
 		},
 	}
 
@@ -230,7 +232,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			if err == nil && tc.givenShouldRetry {
 				// This is to test the scenario where the natsSubManager is updated with a new config.
 				// Hash of the givenBackendConfig equals value in status:
-				require.Equal(t, uint64(15336350153614350417), givenEventing.Status.BackendConfigHash)
+				require.Equal(t, uint64(10896066536699660582), givenEventing.Status.BackendConfigHash)
 				// Run reconcile again with newBackendConfig:
 				err = testEnv.Reconciler.reconcileNATSSubManager(givenEventing, logger)
 				require.NoError(t, err)

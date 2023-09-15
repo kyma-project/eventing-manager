@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	"github.com/mitchellh/hashstructure/v2"
 
@@ -31,8 +32,12 @@ func (r *Reconciler) removeFinalizer(ctx context.Context, eventing *eventingv1al
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) getNATSBackendConfigHash(defaultSubscriptionConfig ecenv.DefaultSubscriptionConfig) (uint64, error) {
-	hash, err := hashstructure.Hash(defaultSubscriptionConfig, hashstructure.FormatV2, nil)
+func (r *Reconciler) getNATSBackendConfigHash(defaultSubscriptionConfig ecenv.DefaultSubscriptionConfig, natsConfig env.NATSConfig) (uint64, error) {
+	natsBackendConfig := struct {
+		ecenv.DefaultSubscriptionConfig
+		env.NATSConfig
+	}{defaultSubscriptionConfig, natsConfig}
+	hash, err := hashstructure.Hash(natsBackendConfig, hashstructure.FormatV2, nil)
 	if err != nil {
 		return 0, err
 	}

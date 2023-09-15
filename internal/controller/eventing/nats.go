@@ -14,19 +14,20 @@ import (
 )
 
 func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
-	// get the new config
+	// get the subscription config
 	defaultSubsConfig := r.getDefaultSubscriptionConfig()
+	// get the nats config
+	natsConfig, err := r.natsConfigHandler.GetNatsConfig(context.Background(), *eventing)
+	if err != nil {
+		return err
+	}
 	// get the hash of current config
-	specHash, err := r.getNATSBackendConfigHash(defaultSubsConfig)
+	specHash, err := r.getNATSBackendConfigHash(defaultSubsConfig, *natsConfig)
 	if err != nil {
 		return err
 	}
 
 	if r.natsSubManager == nil {
-		natsConfig, err := r.natsConfigHandler.GetNatsConfig(context.Background(), *eventing)
-		if err != nil {
-			return err
-		}
 		// create instance of NATS subscription manager
 		natsSubManager := r.subManagerFactory.NewJetStreamManager(*eventing, *natsConfig)
 
