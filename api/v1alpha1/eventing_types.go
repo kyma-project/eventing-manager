@@ -32,10 +32,11 @@ const (
 	StateError      string = "Error"
 	StateProcessing string = "Processing"
 
-	ConditionNATSAvailable            ConditionType = "NATSAvailable"
-	ConditionPublisherProxyReady      ConditionType = "PublisherProxyReady"
-	ConditionWebhookReady             ConditionType = "WebhookReady"
-	ConditionSubscriptionManagerReady ConditionType = "SubscriptionManagerReady"
+	ConditionNATSAvailable                 ConditionType = "NATSAvailable"
+	ConditionPublisherProxyReady           ConditionType = "PublisherProxyReady"
+	ConditionWebhookReady                  ConditionType = "WebhookReady"
+	ConditionSubscriptionManagerReady      ConditionType = "SubscriptionManagerReady"
+	ConditionSubscriptionManagerProcessing ConditionType = "SubscriptionManagerProcessing"
 
 	// common reasons
 	ConditionReasonProcessing ConditionReason = "Processing"
@@ -51,16 +52,18 @@ const (
 	ConditionReasonWebhookReady               ConditionReason = "Ready"
 
 	// message for conditions
-	ConditionPublisherProxyReadyMessage      = "Publisher proxy is deployed"
-	ConditionNATSAvailableMessage            = "NATS is available"
-	ConditionWebhookReadyMessage             = "Webhook is available"
-	ConditionPublisherProxyProcessingMessage = "Eventing publisher proxy deployment is in progress"
-	ConditionSubscriptionManagerReadyMessage = "Subscription manager is ready"
+	ConditionPublisherProxyReadyMessage           = "Publisher proxy is deployed"
+	ConditionNATSAvailableMessage                 = "NATS is available"
+	ConditionWebhookReadyMessage                  = "Webhook is available"
+	ConditionPublisherProxyProcessingMessage      = "Eventing publisher proxy deployment is in progress"
+	ConditionSubscriptionManagerReadyMessage      = "Subscription manager is ready"
+	ConditionSubscriptionManagerProcessingMessage = "Subscription manager is ready"
 
 	// subscription manager reasons
 	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"
 	ConditionReasonEventMeshSubManagerFailed     ConditionReason = "EventMeshSubscriptionManagerFailed"
 	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
+	ConditionReasonSubManagerProcessing          ConditionReason = "SubscriptionManagerProcessing"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -82,7 +85,7 @@ type Eventing struct {
 // EventingStatus defines the observed state of Eventing
 type EventingStatus struct {
 	ActiveBackend     BackendType        `json:"activeBackend"`
-	BackendConfigHash int64              `json:"specHash"`
+	BackendConfigHash uint64             `json:"specHash"`
 	State             string             `json:"state"`
 	Conditions        []metav1.Condition `json:"conditions,omitempty"`
 }

@@ -14,6 +14,14 @@ import (
 )
 
 func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
+	// get the new config
+	defaultSubsConfig := r.getDefaultSubscriptionConfig()
+	// get the hash of current config
+	specHash, err := r.getNATSBackendConfigHash(defaultSubsConfig)
+	if err != nil {
+		return err
+	}
+
 	if r.natsSubManager == nil {
 		natsConfig, err := r.natsConfigHandler.GetNatsConfig(context.Background(), *eventing)
 		if err != nil {
@@ -27,48 +35,27 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 			return err
 		}
 
-		// set the hash of current config
-		specHash, err := r.getNATSBackendConfigHash()
-		if err != nil {
-			return err
-		}
-		eventing.Status.BackendConfigHash = specHash
-
 		log.Info("NATS subscription-manager initialized")
 		// save instance only when init is successful.
 		r.natsSubManager = natsSubManager
 	} else {
-		// get current hash of config
-		specHash, err := r.getNATSBackendConfigHash()
-		if err != nil {
-			return err
-		}
-		// set the hash in the reconciler if empty
-		if eventing.Status.BackendConfigHash == 0 {
-			eventing.Status.BackendConfigHash = specHash
-		}
 		// update the config if hashes differ
 		if eventing.Status.BackendConfigHash != specHash {
 			// set the eventing CR status to processing
-			eventing.Status.SetStateProcessing()
-			// get the new config
-			defaultSubsConfig := r.getDefaultSubscriptionConfig()
+			// if err = r.syncStatusWithSubscriptionManagerProcessingWithReason(ctx,
+			//	eventingv1alpha1.ConditionReasonProcessing,
+			//	eventing, "Updating NATS subscription-manager with new config.", log); err != nil {
+			//	return err
+			//}
+
 			// stop the subsManager without cleanup
-			if err := r.stopNATSSubManager(false, log); err != nil {
-				return err
+			if r.isNATSSubManagerStarted {
+				if err := r.stopNATSSubManager(false, log); err != nil {
+					return err
+				}
+				return nil
 			}
-			// use the new config and start
-			err := r.startNATSSubManager(defaultSubsConfig, log)
-			if err != nil {
-				return err
-			}
-			// update the hash
-			eventing.Status.BackendConfigHash = specHash
-
-			log.Info(fmt.Sprintf("NATS subscription-manager has been updated to the config: %+v, hash: %d",
-				defaultSubsConfig, specHash))
 		}
-
 	}
 
 	if r.isNATSSubManagerStarted {
@@ -76,13 +63,15 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 		return nil
 	}
 
-	// start the subscription manager.
-	defaultSubsConfig := r.getDefaultSubscriptionConfig()
-
-	err := r.startNATSSubManager(defaultSubsConfig, log)
+	err = r.startNATSSubManager(defaultSubsConfig, log)
 	if err != nil {
 		return err
 	}
+
+	// update the hash of the current config only once subManager is started
+	eventing.Status.BackendConfigHash = specHash
+	log.Info(fmt.Sprintf("NATS subscription-manager has been updated to the config: %+v, hash: %d",
+		defaultSubsConfig, specHash))
 
 	return nil
 }
@@ -99,9 +88,8 @@ func (r *Reconciler) startNATSSubManager(defaultSubsConfig ecenv.DefaultSubscrip
 }
 
 func (r *Reconciler) getDefaultSubscriptionConfig() ecenv.DefaultSubscriptionConfig {
-	defaultSubsConfig := r.eventingManager.GetBackendConfig().
+	return r.eventingManager.GetBackendConfig().
 		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
-	return defaultSubsConfig
 }
 
 func (r *Reconciler) stopNATSSubManager(runCleanup bool, log *zap.SugaredLogger) error {
@@ -119,9 +107,7 @@ func (r *Reconciler) stopNATSSubManager(runCleanup bool, log *zap.SugaredLogger)
 	log.Info("NATS subscription-manager stopped!")
 	// update flags so it does not try to stop the manager again.
 	r.isNATSSubManagerStarted = false
-	if runCleanup {
-		r.natsSubManager = nil
-	}
+	r.natsSubManager = nil
 
 	return nil
 }
