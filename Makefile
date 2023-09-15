@@ -1,3 +1,8 @@
+# Operating system architecture
+OS_ARCH ?= $(shell uname -m)
+
+# Operating system type
+OS_TYPE ?= $(shell uname)
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
@@ -196,8 +201,8 @@ $(KYMA):
 	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILE_NAME)
 	chmod 0100 $(KYMA)
 	${KYMA} version -c
-# e2e-setup will create an Eventing CR and check if the required resources are provisioned or not.
 
+# e2e-setup will create an Eventing CR and check if the required resources are provisioned or not.
 .PHONY: e2e-setup
 e2e-setup:
 	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e
