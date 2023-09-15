@@ -38,9 +38,16 @@ func (r *Reconciler) syncStatusWithNATSErr(ctx context.Context,
 // Returns the relevant error.
 func (r *Reconciler) syncStatusWithPublisherProxyErr(ctx context.Context,
 	eventing *eventingv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	return r.syncStatusWithPublisherProxyErrWithReason(ctx, eventingv1alpha1.ConditionReasonDeployedFailed,
+		eventing, err, log)
+}
+
+func (r *Reconciler) syncStatusWithPublisherProxyErrWithReason(ctx context.Context,
+	reason eventingv1alpha1.ConditionReason,
+	eventing *eventingv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
-	eventing.Status.UpdateConditionPublisherProxyReady(metav1.ConditionFalse, eventingv1alpha1.ConditionReasonDeployedFailed,
+	eventing.Status.UpdateConditionPublisherProxyReady(metav1.ConditionFalse, reason,
 		err.Error())
 
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))

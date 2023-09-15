@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -154,6 +155,112 @@ func Test_DeleteDeployment(t *testing.T) {
 			err = fakeClient.Get(ctx,
 				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &appsv1.Deployment{})
 			require.True(t, apierrors.IsNotFound(err), "DeleteDeployment did not delete deployment")
+		})
+	}
+}
+
+func Test_DeleteClusterRole(t *testing.T) {
+	t.Parallel()
+	// Define test cases
+	testCases := []struct {
+		name         string
+		noDeployment bool
+	}{
+		{
+			name: "ClusterRole exists",
+		},
+		{
+			name:         "ClusterRole does not exist",
+			noDeployment: true,
+		},
+	}
+
+	// Run tests
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			fakeClient := fake.NewClientBuilder().Build()
+			kubeClient := &KubeClient{
+				client: fakeClient,
+			}
+			clusterRole := &rbac.ClusterRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-clusterrole",
+					Namespace: "test-namespace",
+				},
+			}
+			// Create the deployment if it should exist
+			if !tc.noDeployment {
+				if err := fakeClient.Create(ctx, clusterRole); err != nil {
+					t.Fatalf("failed to create ClusterRole: %v", err)
+				}
+			}
+
+			// when
+			err := kubeClient.DeleteClusterRole(ctx, clusterRole.Name, clusterRole.Namespace)
+
+			// then
+			require.Nil(t, err)
+			// Check that the deployment was deleted
+			err = fakeClient.Get(ctx,
+				types.NamespacedName{Name: clusterRole.Name, Namespace: clusterRole.Namespace}, &rbac.ClusterRole{})
+			require.True(t, apierrors.IsNotFound(err), "DeleteClusterRole did not delete ClusterRole")
+		})
+	}
+}
+
+func Test_DeleteClusterRoleBinding(t *testing.T) {
+	t.Parallel()
+	// Define test cases
+	testCases := []struct {
+		name         string
+		noDeployment bool
+	}{
+		{
+			name: "ClusterRoleBinding exists",
+		},
+		{
+			name:         "ClusterRoleBinding does not exist",
+			noDeployment: true,
+		},
+	}
+
+	// Run tests
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			fakeClient := fake.NewClientBuilder().Build()
+			kubeClient := &KubeClient{
+				client: fakeClient,
+			}
+			clusterRoleBinding := &rbac.ClusterRoleBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-clusterrolebinding",
+					Namespace: "test-namespace",
+				},
+			}
+			// Create the deployment if it should exist
+			if !tc.noDeployment {
+				if err := fakeClient.Create(ctx, clusterRoleBinding); err != nil {
+					t.Fatalf("failed to create ClusterRoleBinding: %v", err)
+				}
+			}
+
+			// when
+			err := kubeClient.DeleteClusterRoleBinding(ctx, clusterRoleBinding.Name, clusterRoleBinding.Namespace)
+
+			// then
+			require.Nil(t, err)
+			// Check that the deployment was deleted
+			err = fakeClient.Get(ctx,
+				types.NamespacedName{Name: clusterRoleBinding.Name, Namespace: clusterRoleBinding.Namespace}, &rbac.ClusterRoleBinding{})
+			require.True(t, apierrors.IsNotFound(err), "DeleteClusterRoleBinding did not delete ClusterRoleBinding")
 		})
 	}
 }

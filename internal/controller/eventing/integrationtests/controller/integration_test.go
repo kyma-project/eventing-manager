@@ -150,6 +150,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenNATS)
+				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
 			// then
@@ -225,6 +226,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 					testEnvironment.EnsureDeploymentDeletion(t, givenEPPDeploymentName, givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, nats)
+				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
 			// get Eventing CR.
@@ -288,6 +290,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 		name                 string
 		givenEventing        *eventingv1alpha1.Eventing
 		wantResourceDeletion []deletionFunc
+		runForRealCluster    bool
 	}{
 		{
 			name: "should recreate Publish Service",
@@ -344,29 +347,30 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 				deleteHPAFromK8s,
 			},
 		},
-		// @TODO: Fix the watching of ClusterRoles and ClusterRoleBindings
-		//{
-		//	name: "should recreate ClusterRole",
-		//	givenEventing: utils.NewEventingCR(
-		//		utils.WithEventingCRMinimal(),
-		//		utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
-		//		utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
-		//	),
-		//	wantResourceDeletion: []deletionFunc{
-		//		deleteClusterRoleFromK8s,
-		//	},
-		//},
-		//{
-		//	name: "should recreate ClusterRoleBinding",
-		//	givenEventing: utils.NewEventingCR(
-		//		utils.WithEventingCRMinimal(),
-		//		utils.WithEventingStreamData("Memory", "1M", "1M", 1, 1),
-		//		utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
-		//	),
-		//	wantResourceDeletion: []deletionFunc{
-		//		deleteClusterRoleBindingFromK8s,
-		//	},
-		//},
+		{
+			name: "should recreate ClusterRole",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			wantResourceDeletion: []deletionFunc{
+				deleteClusterRoleFromK8s,
+			},
+			runForRealCluster: true,
+		},
+		{
+			name: "should recreate ClusterRoleBinding",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			wantResourceDeletion: []deletionFunc{
+				deleteClusterRoleBindingFromK8s,
+			},
+			runForRealCluster: true,
+		},
 		{
 			name: "should recreate all objects",
 			givenEventing: utils.NewEventingCR(
@@ -389,6 +393,10 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
+			if !*testEnvironment.EnvTestInstance.UseExistingCluster && tc.runForRealCluster {
+				t.Skip("Skipping test case as it can only be run on real cluster")
+			}
 
 			// given
 			g := gomega.NewWithT(t)
@@ -417,6 +425,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, nats)
+				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
 			// check Eventing CR status.
@@ -526,6 +535,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster && !tc.shouldFailSubManager {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
+				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
 			// then
@@ -611,6 +621,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 				if tc.givenEventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType {
 					testEnvironment.EnsureK8sResourceDeleted(t, nats)
 				}
+				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
 			testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
@@ -630,15 +641,16 @@ func Test_DeleteEventingCR(t *testing.T) {
 					eventing.GetPublisherHealthServiceName(*tc.givenEventing), givenNamespace)
 				testEnvironment.EnsureK8sServiceAccountNotFound(t,
 					eventing.GetPublisherServiceAccountName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sClusterRoleNotFound(t,
-					eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
-					eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
 			} else {
 				// check if the owner reference is set.
 				// if owner reference is set then these resources would be garbage collected in real k8s cluster.
 				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
+				// ensure clusterrole and clusterrolebindings are deleted.
 			}
+			testEnvironment.EnsureK8sClusterRoleNotFound(t,
+				eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
+			testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
+				eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
 		})
 	}
 }
