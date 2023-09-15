@@ -1,3 +1,6 @@
+//go:build e2e
+// +build e2e
+
 package delivery
 
 import (
@@ -8,9 +11,10 @@ import (
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
 
 	"github.com/cloudevents/sdk-go/v2/binding"
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
-	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
 )
