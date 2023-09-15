@@ -1,5 +1,9 @@
 name: validate
 
+env:
+  KYMA_STABILITY: "unstable"
+  KYMA: "./hack/kyma"
+
 on:
   push:
     branches: [ "main" ]
