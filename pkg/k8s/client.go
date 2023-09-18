@@ -5,11 +5,11 @@ import (
 	"errors"
 	"strings"
 
-	admissionv1 "k8s.io/api/admissionregistration/v1"
-
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,6 +19,8 @@ import (
 type Client interface {
 	GetDeployment(context.Context, string, string) (*v1.Deployment, error)
 	DeleteDeployment(context.Context, string, string) error
+	DeleteClusterRole(context.Context, string, string) error
+	DeleteClusterRoleBinding(context.Context, string, string) error
 	GetNATSResources(context.Context, string) (*natsv1alpha1.NATSList, error)
 	PatchApply(context.Context, client.Object) error
 	GetSecret(context.Context, string) (*corev1.Secret, error)
@@ -56,6 +58,32 @@ func (c *KubeClient) DeleteDeployment(ctx context.Context, name, namespace strin
 		},
 	}
 	if err := c.client.Delete(ctx, deployment); err != nil {
+		return client.IgnoreNotFound(err)
+	}
+	return nil
+}
+
+func (c *KubeClient) DeleteClusterRole(ctx context.Context, name, namespace string) error {
+	role := &rbac.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	if err := c.client.Delete(ctx, role); err != nil {
+		return client.IgnoreNotFound(err)
+	}
+	return nil
+}
+
+func (c *KubeClient) DeleteClusterRoleBinding(ctx context.Context, name, namespace string) error {
+	binding := &rbac.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	if err := c.client.Delete(ctx, binding); err != nil {
 		return client.IgnoreNotFound(err)
 	}
 	return nil

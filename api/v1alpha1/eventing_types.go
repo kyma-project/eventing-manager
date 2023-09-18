@@ -40,6 +40,8 @@ const (
 
 	// common reasons
 	ConditionReasonProcessing ConditionReason = "Processing"
+	ConditionReasonDeleted    ConditionReason = "Deleted"
+	ConditionReasonStopped    ConditionReason = "Stopped"
 
 	// publisher proxy reasons
 	ConditionReasonDeployed                   ConditionReason = "Deployed"
@@ -50,14 +52,16 @@ const (
 	ConditionReasonForbidden                  ConditionReason = "Forbidden"
 	ConditionReasonWebhookFailed              ConditionReason = "WebhookFailed"
 	ConditionReasonWebhookReady               ConditionReason = "Ready"
+	ConditionReasonDeletedFailed              ConditionReason = "DeletionFailed"
 
 	// message for conditions
-	ConditionPublisherProxyReadyMessage           = "Publisher proxy is deployed"
-	ConditionNATSAvailableMessage                 = "NATS is available"
-	ConditionWebhookReadyMessage                  = "Webhook is available"
-	ConditionPublisherProxyProcessingMessage      = "Eventing publisher proxy deployment is in progress"
-	ConditionSubscriptionManagerReadyMessage      = "Subscription manager is ready"
-	ConditionSubscriptionManagerProcessingMessage = "Subscription manager is ready"
+	ConditionPublisherProxyReadyMessage        = "Publisher proxy is deployed"
+	ConditionPublisherProxyDeletedMessage      = "Publisher proxy is deleted"
+	ConditionNATSAvailableMessage              = "NATS is available"
+	ConditionWebhookReadyMessage               = "Webhook is available"
+	ConditionPublisherProxyProcessingMessage   = "Eventing publisher proxy deployment is in progress"
+	ConditionSubscriptionManagerReadyMessage   = "Subscription manager is ready"
+	ConditionSubscriptionManagerStoppedMessage = "Subscription manager is stopped"
 
 	// subscription manager reasons
 	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"

@@ -214,6 +214,10 @@ kubectl get pods -n eventing-manager-system
 kubectl get -n kyma-system eventing
 ```
 
+## End-to-End Tests
+
+See [hack/e2e/README.md](hack/e2e/README.md)
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)

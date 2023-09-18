@@ -186,3 +186,32 @@ fmt-local: ## Reformat files using `go fmt`
 
 imports-local: ## Optimize imports
 	goimports -w -l $$($(FILES_TO_CHECK))
+
+# e2e-setup will create an Eventing CR and check if the required resources are provisioned or not.
+.PHONY: e2e-setup
+e2e-setup:
+	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e
+
+# e2e-cleanup will delete the Eventing CR and check if the required resources are de-provisioned or not.
+.PHONY: e2e-cleanup
+e2e-cleanup: e2e-eventing-cleanup
+	go test -v ./hack/e2e/cleanup/cleanup_test.go --tags=e2e
+
+# e2e-eventing-setup will setup subscriptions and sink required for tests to check end-to-end delivery of events.
+.PHONY: e2e-eventing-setup
+e2e-eventing-setup:
+	go test -v ./hack/e2e/eventing/setup/setup_test.go --tags=e2e
+
+# e2e-eventing will tests end-to-end delivery of events.
+.PHONY: e2e-eventing
+e2e-eventing:
+	./hack/e2e/scripts/event_delivery_tests.sh
+
+# e2e-eventing-cleanup will delete all subscriptions and other resources created for event delivery tests.
+.PHONY: e2e-eventing-cleanup
+e2e-eventing-cleanup:
+	go test -v ./hack/e2e/eventing/cleanup/cleanup_test.go --tags=e2e
+
+# e2e will run the whole suite of end-to-end tests for eventing-manager.
+.PHONY: e2e
+e2e: e2e-setup e2e-eventing-setup e2e-eventing e2e-cleanup
