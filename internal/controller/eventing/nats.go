@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
@@ -13,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
 	// get the subscription config
 	defaultSubsConfig := r.getDefaultSubscriptionConfig()
 	// get the nats config
@@ -43,11 +44,11 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 		// update the config if hashes differ
 		if eventing.Status.BackendConfigHash != specHash {
 			// set the eventing CR status to processing
-			// if err = r.syncStatusWithSubscriptionManagerProcessingWithReason(ctx,
-			//	eventingv1alpha1.ConditionReasonProcessing,
-			//	eventing, "Updating NATS subscription-manager with new config.", log); err != nil {
-			//	return err
-			//}
+			if err = r.syncStatusWithSubscriptionManagerProcessingWithReason(ctx,
+				eventingv1alpha1.ConditionReasonProcessing,
+				eventing, "Updating NATS subscription-manager with new config.", log); err != nil {
+				return err
+			}
 
 			// stop the subsManager without cleanup
 			if r.isNATSSubManagerStarted {
@@ -71,8 +72,7 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 
 	// update the hash of the current config only once subManager is started
 	eventing.Status.BackendConfigHash = specHash
-	log.Info(fmt.Sprintf("NATS subscription-manager has been updated to the config: %+v, hash: %d",
-		defaultSubsConfig, specHash))
+	log.Info(fmt.Sprintf("NATS subscription-manager has been updated, new hash: %d", specHash))
 
 	return nil
 }
