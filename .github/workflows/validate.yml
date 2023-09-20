@@ -1,5 +1,9 @@
 name: validate
 
+env:
+  KYMA_STABILITY: "unstable"
+  KYMA: "./hack/kyma"
+
 on:
   push:
     branches: [ "main" ]
@@ -23,9 +27,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: nolar/setup-k3d-k3s@v1
-        with:
-          # This is the Kubernetes version used by k3d. See https://kubernetes.io/releases/
-          version: v1.26.5
+      
+      - name: Install k3d tools
+        run: |
+          make -C hack/ci/ install-k3d-tools
+
+      - name: Install Kyma CLI & setup k3d cluster using kyma CLI
+        run: |
+          make kyma
+          make -C hack/ci/ create-k3d
+          kubectl version
+          kubectl cluster-info
+      
       - name: apply crd
         run: kubectl apply -f config/crd/bases/operator.kyma-project.io_eventings.yaml
