@@ -36,9 +36,16 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -62,21 +69,23 @@ const (
 //go:generate mockery --name=Manager --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/manager --outpkg=mocks --case=underscore
 type Reconciler struct {
 	client.Client
-	logger                       *logger.Logger
-	ctrlManager                  ctrl.Manager
-	eventingManager              eventing.Manager
-	kubeClient                   k8s.Client
-	scheme                       *runtime.Scheme
-	recorder                     record.EventRecorder
-	subManagerFactory            subscriptionmanager.ManagerFactory
-	natsSubManager               ecsubscriptionmanager.Manager
-	eventMeshSubManager          ecsubscriptionmanager.Manager
-	isNATSSubManagerStarted      bool
-	isEventMeshSubManagerStarted bool
-	natsConfigHandler            NatsConfigHandler
-	oauth2credentials            oauth2Credentials
-	backendConfig                env.BackendConfig
-	allowedEventingCR            *eventingv1alpha1.Eventing
+	logger                        *logger.Logger
+	ctrlManager                   ctrl.Manager
+	controller                    controller.Controller
+	eventingManager               eventing.Manager
+	kubeClient                    k8s.Client
+	scheme                        *runtime.Scheme
+	recorder                      record.EventRecorder
+	subManagerFactory             subscriptionmanager.ManagerFactory
+	natsSubManager                ecsubscriptionmanager.Manager
+	eventMeshSubManager           ecsubscriptionmanager.Manager
+	isNATSSubManagerStarted       bool
+	isEventMeshSubManagerStarted  bool
+	natsConfigHandler             NatsConfigHandler
+	oauth2credentials             oauth2Credentials
+	backendConfig                 env.BackendConfig
+	allowedEventingCR             *eventingv1alpha1.Eventing
+	clusterScopedResourcesWatched bool
 }
 
 func NewReconciler(
@@ -149,6 +158,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// copy the object, so we don't modify the source object
 	eventing := currentEventing.DeepCopy()
 
+	// watch cluster-scoped resources, such as clusterrole and clusterrolebinding.
+	if !r.clusterScopedResourcesWatched {
+		if err := r.watchResource(&rbacv1.ClusterRole{}, eventing); err != nil {
+			return ctrl.Result{}, err
+		}
+		if err := r.watchResource(&rbacv1.ClusterRoleBinding{}, eventing); err != nil {
+			return ctrl.Result{}, err
+		}
+		r.clusterScopedResourcesWatched = true
+	}
+
 	// logger with eventing details
 	log := r.loggerWithEventing(eventing)
 
@@ -192,15 +212,39 @@ func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing 
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.ctrlManager = mgr
 
-	return ctrl.NewControllerManagedBy(mgr).
+	var err error
+	r.controller, err = ctrl.NewControllerManagedBy(mgr).
 		For(&eventingv1alpha1.Eventing{}).
 		Owns(&v1.Deployment{}).
 		Owns(&corev1.Service{}).
-		Owns(&rbacv1.ClusterRole{}).
-		Owns(&rbacv1.ClusterRoleBinding{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
-		Complete(r)
+		Build(r)
+
+	return err
+}
+
+func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha1.Eventing) error {
+	err := r.controller.Watch(
+		source.NewKindWithCache(kind, r.ctrlManager.GetCache()),
+		handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+			// Enqueue a reconcile request for the eventing resource
+			return []reconcile.Request{
+				{NamespacedName: types.NamespacedName{
+					Namespace: eventing.Namespace,
+					Name:      eventing.Name,
+				}},
+			}
+		}),
+		predicate.ResourceVersionChangedPredicate{},
+		predicate.Funcs{
+			// don't reconcile for create events
+			CreateFunc: func(e event.CreateEvent) bool {
+				return false
+			},
+		},
+	)
+	return err
 }
 
 // loggerWithEventing returns a logger with the given Eventing CR details.
