@@ -32,11 +32,10 @@ const (
 	StateError      string = "Error"
 	StateProcessing string = "Processing"
 
-	ConditionNATSAvailable                 ConditionType = "NATSAvailable"
-	ConditionPublisherProxyReady           ConditionType = "PublisherProxyReady"
-	ConditionWebhookReady                  ConditionType = "WebhookReady"
-	ConditionSubscriptionManagerReady      ConditionType = "SubscriptionManagerReady"
-	ConditionSubscriptionManagerProcessing ConditionType = "SubscriptionManagerProcessing"
+	ConditionNATSAvailable            ConditionType = "NATSAvailable"
+	ConditionPublisherProxyReady      ConditionType = "PublisherProxyReady"
+	ConditionWebhookReady             ConditionType = "WebhookReady"
+	ConditionSubscriptionManagerReady ConditionType = "SubscriptionManagerReady"
 
 	// common reasons
 	ConditionReasonProcessing ConditionReason = "Processing"
@@ -67,7 +66,7 @@ const (
 	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"
 	ConditionReasonEventMeshSubManagerFailed     ConditionReason = "EventMeshSubscriptionManagerFailed"
 	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
-	ConditionReasonSubManagerProcessing          ConditionReason = "SubscriptionManagerProcessing"
+	ConditionReasonSubscriptionManagerProcessing ConditionReason = "SubscriptionManagerProcessing"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.

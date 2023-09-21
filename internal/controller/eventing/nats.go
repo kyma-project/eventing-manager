@@ -45,7 +45,7 @@ func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1al
 		if eventing.Status.BackendConfigHash != specHash {
 			// set the eventing CR status to processing
 			if err = r.syncStatusWithSubscriptionManagerProcessingWithReason(ctx,
-				eventingv1alpha1.ConditionReasonProcessing,
+				eventingv1alpha1.ConditionReasonSubscriptionManagerProcessing,
 				eventing, "Updating NATS subscription-manager with new config.", log); err != nil {
 				return err
 			}
