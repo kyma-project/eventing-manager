@@ -125,13 +125,6 @@ func WithStatusActiveBackend(activeBackend v1alpha1.BackendType) EventingOption 
 	}
 }
 
-func WithStatusBackendConfigHash(configHash uint64) EventingOption {
-	return func(eventing *v1alpha1.Eventing) error {
-		eventing.Status.BackendConfigHash = configHash
-		return nil
-	}
-}
-
 func WithStatusState(state string) EventingOption {
 	return func(eventing *v1alpha1.Eventing) error {
 		eventing.Status.State = state
