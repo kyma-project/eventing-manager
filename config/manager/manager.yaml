@@ -130,8 +130,6 @@ spec:
             value: "subscription-mutating-webhook-configuration"
           - name: VALIDATING_WEBHOOK_NAME
             value: "subscription-validating-webhook-configuration"
-          - name: EVENTING_WEBHOOK_AUTH_ENABLED
-            value: "true"
           - name: EVENTING_WEBHOOK_AUTH_SECRET_NAME
             value: "eventing-webhook-auth"
           - name: EVENTING_WEBHOOK_AUTH_SECRET_NAMESPACE
