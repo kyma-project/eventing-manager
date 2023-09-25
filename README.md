@@ -111,7 +111,7 @@ You’ll need a Kubernetes cluster to run against. You can use [k3d](https://k3d
     ```sh
     kubectl apply -f config/samples/eventing-eval.yaml
     ```
-5. [Optional] For EventMesh backend, env var `DOMAIN` has to be set to cluster domain in the deployment resource. For example:
+5. [Optional] For EventMesh backend, set env var `DOMAIN` to the cluster domain in the deployment resource. For example:
     ```   
     - name: DOMAIN
       value: {CLUSTER_NAME}.kymatunas.shoot.canary.k8s-hana.ondemand.com
