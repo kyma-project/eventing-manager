@@ -52,5 +52,5 @@ func (f Factory) NewJetStreamManager(eventing v1alpha1.Eventing, natsConfig env.
 }
 
 func (f Factory) NewEventMeshManager() (ecsubscriptionmanager.Manager, error) {
-	return eventmesh.NewSubscriptionManager(f.k8sRestCfg, f.metricsAddress, f.resyncPeriod, f.logger), nil
+	return eventmesh.NewSubscriptionManager(f.k8sRestCfg, f.metricsAddress, f.resyncPeriod, f.logger, f.metricsCollector), nil
 }
