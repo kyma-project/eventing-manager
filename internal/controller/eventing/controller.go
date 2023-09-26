@@ -29,6 +29,7 @@ import (
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -86,6 +87,7 @@ type Reconciler struct {
 	backendConfig                 env.BackendConfig
 	allowedEventingCR             *eventingv1alpha1.Eventing
 	clusterScopedResourcesWatched bool
+	natsResourceWatched           bool
 }
 
 func NewReconciler(
@@ -247,6 +249,42 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 	return err
 }
 
+func (r *Reconciler) syncNATSWatch(eventing *eventingv1alpha1.Eventing) error {
+	err := r.controller.Watch(
+		source.NewKindWithCache(&natsv1alpha1.NATS{}, r.ctrlManager.GetCache()),
+		handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+			// Enqueue a reconcile request for the eventing resource
+			return []reconcile.Request{
+				{NamespacedName: types.NamespacedName{
+					Namespace: eventing.Namespace,
+					Name:      eventing.Name,
+				}},
+			}
+		}),
+		predicate.ResourceVersionChangedPredicate{},
+		// filter out NATS events for EventMesh backend
+		predicate.Funcs{
+			CreateFunc: func(e event.CreateEvent) bool {
+				return eventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType
+			},
+			UpdateFunc: func(e event.UpdateEvent) bool {
+				return eventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType
+			},
+			DeleteFunc: func(e event.DeleteEvent) bool {
+				return eventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType
+			},
+			GenericFunc: func(e event.GenericEvent) bool {
+				return eventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType
+			},
+		},
+	)
+
+	//TODO: implement special handling in case switch to EventMesh backend and no NATS module (i.e. no NATS CRD).
+	// os.Exit(1) forces to restart.
+	// Or, just ignore the error?
+	return err
+}
+
 // loggerWithEventing returns a logger with the given Eventing CR details.
 func (r *Reconciler) loggerWithEventing(eventing *eventingv1alpha1.Eventing) *zap.SugaredLogger {
 	return r.namedLogger().With(
@@ -336,6 +374,12 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// reconcile for specified backend.
 	switch eventing.Spec.Backend.Type {
 	case eventingv1alpha1.NatsBackendType:
+		if !r.natsResourceWatched {
+			if err := r.syncNATSWatch(eventing); err != nil {
+				return ctrl.Result{}, err
+			}
+			r.natsResourceWatched = true
+		}
 		return r.reconcileNATSBackend(ctx, eventing, log)
 	case eventingv1alpha1.EventMeshBackendType:
 		return r.reconcileEventMeshBackend(ctx, eventing, log)
@@ -349,6 +393,11 @@ func (r *Reconciler) handleBackendSwitching(
 	// check if the backend was changed.
 	if !eventing.IsSpecBackendTypeChanged() {
 		return nil
+	}
+
+	//update NATS watch predicates. For example, receive no event after EventMesh switch.
+	if err := r.syncNATSWatch(eventing); err != nil {
+		return err
 	}
 
 	// stop the previously active backend.
