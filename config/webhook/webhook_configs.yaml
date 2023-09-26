@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/part-of: eventing-manager
 webhooks:
 - admissionReviewVersions:
-  - v1beta1
+    - v1
   clientConfig:
     service:
       name: eventing-manager-webhook-service
@@ -20,14 +20,14 @@ webhooks:
   name: msubscription.kb.io
   rules:
   - apiGroups:
-    - eventing.kyma-project.io
+      - eventing.kyma-project.io
     apiVersions:
-    - v1alpha2
+      - v1alpha2
     operations:
-    - CREATE
-    - UPDATE
+      - CREATE
+      - UPDATE
     resources:
-    - subscriptions
+      - subscriptions
   sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -42,7 +42,7 @@ metadata:
     app.kubernetes.io/part-of: eventing-manager
 webhooks:
 - admissionReviewVersions:
-  - v1beta1
+    - v1
   clientConfig:
     service:
       name: eventing-manager-webhook-service
@@ -52,12 +52,12 @@ webhooks:
   name: vsubscription.kb.io
   rules:
   - apiGroups:
-    - eventing.kyma-project.io
+      - eventing.kyma-project.io
     apiVersions:
-    - v1alpha2
+      - v1alpha2
     operations:
-    - CREATE
-    - UPDATE
+      - CREATE
+      - UPDATE
     resources:
-    - subscriptions
+      - subscriptions
   sideEffects: None
