@@ -11,7 +11,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-incubator/api-gateway v0.0.0-20220819093753-296e6704d413
 	github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20230921090956-f27b81d3d8cb
-	github.com/kyma-project/nats-manager v0.0.0-20230718133808-9241d3b926bd
+	github.com/kyma-project/nats-manager v0.1.4
 	github.com/onsi/gomega v1.27.10
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
