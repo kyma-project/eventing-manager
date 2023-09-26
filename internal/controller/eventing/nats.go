@@ -40,23 +40,24 @@ func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1al
 		log.Info("NATS subscription-manager initialized")
 		// save instance only when init is successful.
 		r.natsSubManager = natsSubManager
-	}
-	// update the config if hashes differ
-	if eventing.Status.BackendConfigHash != specHash && r.isNATSSubManagerStarted {
-		// set the eventing CR status to processing
-		if err = r.syncStatusWithSubscriptionManagerProcessingWithReason(ctx,
-			eventingv1alpha1.ConditionReasonSubscriptionManagerProcessing,
-			eventing, "Updating NATS subscription-manager with new config.", log); err != nil {
-			return err
+	} else {
+		// update the config if hashes differ
+		if eventing.Status.BackendConfigHash != specHash && r.isNATSSubManagerStarted {
+			// set the eventing CR status to processing
+			if err = r.syncStatusWithSubscriptionManagerProcessingWithReason(ctx,
+				eventingv1alpha1.ConditionReasonSubscriptionManagerProcessing,
+				eventing, "Updating NATS subscription-manager with new config.", log); err != nil {
+				return err
+			}
+
+			// stop the subsManager without cleanup
+
+			if err := r.stopNATSSubManager(false, log); err != nil {
+				return err
+			}
+			return nil
+
 		}
-
-		// stop the subsManager without cleanup
-
-		if err := r.stopNATSSubManager(false, log); err != nil {
-			return err
-		}
-		return nil
-
 	}
 
 	if r.isNATSSubManagerStarted {
