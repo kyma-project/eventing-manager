@@ -57,19 +57,12 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 		},
 	}
 
-	newBackendConfig := &env.BackendConfig{
-		DefaultSubscriptionConfig: env.DefaultSubscriptionConfig{
-			MaxInFlightMessages:   5,
-			DispatcherRetryPeriod: 10,
-			DispatcherMaxRetries:  200,
-		},
-	}
-
 	// define test cases
 	testCases := []struct {
 		name                         string
 		givenIsNATSSubManagerStarted bool
 		givenShouldRetry             bool
+		givenUpdateTest              bool
 		givenHashBefore              uint64
 		givenNATSSubManagerMock      func() *ecsubmanagermocks.Manager
 		givenEventingManagerMock     func() *managermocks.Manager
@@ -166,19 +159,19 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 		},
 		{
 			name:                         "it should update the subscription manager when the backend config changes",
-			givenIsNATSSubManagerStarted: false,
-			givenHashBefore:              uint64(0),
+			givenIsNATSSubManagerStarted: true,
+			givenHashBefore:              uint64(17644964695675018020),
+			givenUpdateTest:              true,
 			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
 				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
-				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Twice()
-				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Twice()
+				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
+				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
 				jetStreamSubManagerMock.On("Stop", mock.Anything, mock.Anything).Return(nil).Once()
 				return jetStreamSubManagerMock
 			},
 			givenEventingManagerMock: func() *managermocks.Manager {
 				emMock := new(managermocks.Manager)
-				emMock.On("GetBackendConfig").Return(givenBackendConfig).Once()
-				emMock.On("GetBackendConfig").Return(newBackendConfig).Twice()
+				emMock.On("GetBackendConfig").Return(givenBackendConfig).Twice()
 				return emMock
 			},
 			givenNatsConfigHandlerMock: func() *mocks.NatsConfigHandler {
@@ -188,12 +181,12 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			},
 			givenManagerFactoryMock: func(subManager *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
-				subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(subManager).Twice()
+				subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(subManager).Once()
 				return subManagerFactoryMock
 			},
 			wantAssertCheck:  true,
 			givenShouldRetry: true,
-			wantHashAfter:    uint64(17644964695675018020),
+			wantHashAfter:    uint64(10896066536699660582),
 		},
 	}
 
@@ -217,7 +210,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			testEnv.Reconciler.natsConfigHandler = givenNatConfigHandlerMock
 			testEnv.Reconciler.subManagerFactory = givenManagerFactoryMock
 			testEnv.Reconciler.natsSubManager = nil
-			if givenManagerFactoryMock == nil {
+			if givenManagerFactoryMock == nil || tc.givenUpdateTest {
 				testEnv.Reconciler.natsSubManager = givenNATSSubManagerMock
 			}
 
@@ -232,14 +225,9 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				err = testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
 			}
 			if err == nil && tc.givenShouldRetry {
-				// This is to test the scenario where the natsSubManager is updated with a new config.
-				// Hash of the givenBackendConfig equals value in status:
-				require.Equal(t, uint64(10896066536699660582), givenEventing.Status.BackendConfigHash)
 				// Run reconcile again with newBackendConfig:
 				err = testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
 				require.NoError(t, err)
-				// To trigger reconciliation loop, this has to be run again:
-				err = testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
 			}
 
 			// check for backend hash after
