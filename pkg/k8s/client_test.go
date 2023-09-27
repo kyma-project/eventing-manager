@@ -6,6 +6,8 @@ import (
 	"errors"
 	"testing"
 
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
+
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 
 	"github.com/stretchr/testify/require"
@@ -99,6 +101,64 @@ func Test_PatchApply(t *testing.T) {
 			require.Equal(t, tc.givenUpdateDeployment.GetName(), gotSTS.Name)
 			require.Equal(t, tc.givenUpdateDeployment.GetNamespace(), gotSTS.Namespace)
 			require.Equal(t, *tc.givenUpdateDeployment.Spec.Replicas, *gotSTS.Spec.Replicas)
+		})
+	}
+}
+
+func Test_UpdateDeployment(t *testing.T) {
+	t.Parallel()
+
+	// Define test cases
+	testCases := []struct {
+		name                   string
+		namespace              string
+		givenNewDeploymentSpec appsv1.DeploymentSpec
+		givenDeploymentExists  bool
+	}{
+		{
+			name:                  "should update the deployment",
+			namespace:             "test-namespace-1",
+			givenDeploymentExists: true,
+		},
+		{
+			name:                  "should give error that deployment does not exist",
+			namespace:             "test-namespace-2",
+			givenDeploymentExists: false,
+		},
+	}
+
+	// Run tests
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			fakeClient := fake.NewClientBuilder().Build()
+			kubeClient := &KubeClient{
+				client: fakeClient,
+			}
+			givenDeployment := testutils.NewDeployment("test-deployment", tc.namespace, map[string]string{})
+			// Create the deployment if it should exist
+			if tc.givenDeploymentExists {
+				require.NoError(t, fakeClient.Create(ctx, givenDeployment))
+			}
+
+			givenUpdatedDeployment := givenDeployment.DeepCopy()
+			givenUpdatedDeployment.Spec = tc.givenNewDeploymentSpec
+
+			// when
+			err := kubeClient.UpdateDeployment(ctx, givenUpdatedDeployment)
+
+			// then
+			if !tc.givenDeploymentExists {
+				require.Error(t, err)
+				require.True(t, apierrors.IsNotFound(err))
+			} else {
+				gotDeploy, err := kubeClient.GetDeployment(ctx, givenDeployment.Name, givenDeployment.Namespace)
+				require.NoError(t, err)
+				require.Equal(t, tc.givenNewDeploymentSpec, gotDeploy.Spec)
+			}
 		})
 	}
 }

@@ -6,6 +6,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/kyma-project/kyma/components/eventing-controller/logger"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	apiv1 "k8s.io/api/core/v1"
@@ -15,6 +17,10 @@ import (
 const (
 	charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 )
+
+func NewEventingLogger() (*logger.Logger, error) {
+	return logger.New("json", "info")
+}
 
 func NewLogger() (*zap.Logger, error) {
 	loggerConfig := zap.NewDevelopmentConfig()

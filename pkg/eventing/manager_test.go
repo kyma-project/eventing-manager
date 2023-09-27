@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-project/eventing-manager/test"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -93,17 +97,27 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
+			if tc.givenDeployment != nil {
+				tc.givenDeployment.Namespace = tc.givenEventing.Namespace
+			}
+			// define mocks.
 			kubeClient := new(k8smocks.Client)
 			kubeClient.On("GetDeployment", ctx, mock.Anything, mock.Anything).Return(tc.givenDeployment, nil)
+			kubeClient.On("UpdateDeployment", ctx, mock.Anything).Return(nil)
 			kubeClient.On("Create", ctx, mock.Anything).Return(nil)
 			kubeClient.On("PatchApply", ctx, mock.Anything).Return(tc.patchApplyErr)
 
 			mockClient := new(mocks.Client)
 			mockClient.On("Scheme").Return(newScheme)
+
+			logger, err := test.NewEventingLogger()
+			require.NoError(t, err)
+
 			em := &EventingManager{
 				Client:        mockClient,
 				kubeClient:    kubeClient,
 				backendConfig: env.BackendConfig{},
+				logger:        logger,
 			}
 
 			// when
@@ -116,6 +130,111 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 				require.Equal(t, tc.wantedDeployment.Spec.Template.ObjectMeta.Annotations,
 					deployment.Spec.Template.ObjectMeta.Annotations)
 			}
+		})
+	}
+}
+
+func Test_migratePublisherDeploymentFromEC(t *testing.T) {
+	// given
+	newScheme := runtime.NewScheme()
+	require.NoError(t, v1alpha1.AddToScheme(newScheme))
+
+	// Define test cases
+	testCases := []struct {
+		name                       string
+		givenEventing              *v1alpha1.Eventing
+		givenCurrentDeploymentFunc func() *appsv1.Deployment
+		givenDesiredDeploymentFunc func() *appsv1.Deployment
+		givenKubeClientFunc        func() *k8smocks.Client
+	}{
+		{
+			name: "should update deployment when the owner reference is not correct",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRMinimal(),
+			),
+			givenCurrentDeploymentFunc: func() *appsv1.Deployment {
+				oldPublisher := testutils.NewDeployment(
+					"test-eventing-nats-publisher",
+					"test-namespace",
+					map[string]string{})
+				oldPublisher.OwnerReferences = []metav1.OwnerReference{{
+					APIVersion:         "apps/v1",
+					Kind:               "Deployment",
+					Name:               "eventing-controller",
+					UID:                "a3cdcc7b-6853-4772-99cc-fc1511399d63",
+					Controller:         pointer.Bool(true),
+					BlockOwnerDeletion: pointer.Bool(true),
+				}}
+				return oldPublisher
+			},
+			givenKubeClientFunc: func() *k8smocks.Client {
+				kubeClient := new(k8smocks.Client)
+				// UpdateDeployment method must have been called once.
+				kubeClient.On("UpdateDeployment", mock.Anything,
+					mock.Anything).Return(nil).Once()
+				return kubeClient
+			},
+		},
+		{
+			name: "should not update deployment when the owner reference is correct",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRMinimal(),
+			),
+			givenCurrentDeploymentFunc: func() *appsv1.Deployment {
+				oldPublisher := testutils.NewDeployment(
+					"test-eventing-nats-publisher",
+					"test-namespace",
+					map[string]string{})
+				oldPublisher.OwnerReferences = []metav1.OwnerReference{{
+					APIVersion:         "apps/v1",
+					Kind:               "Deployment",
+					Name:               "eventing-manager",
+					UID:                "a3cdcc7b-6853-4772-99cc-fc1511399d63",
+					Controller:         pointer.Bool(true),
+					BlockOwnerDeletion: pointer.Bool(true),
+				}}
+				return oldPublisher
+			},
+			givenKubeClientFunc: func() *k8smocks.Client {
+				kubeClient := new(k8smocks.Client)
+				// mock is empty, because we do not want the UpdateDeployment method to have been called.
+				return kubeClient
+			},
+		},
+	}
+
+	ctx := context.Background()
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			tc.givenEventing.Name = "eventing-manager"
+			existingPublisher := tc.givenCurrentDeploymentFunc()
+			existingPublisher.Namespace = tc.givenEventing.Namespace
+			desiredPublisher := testutils.NewDeployment(existingPublisher.Name,
+				tc.givenEventing.Namespace, map[string]string{})
+
+			// define mocks.
+			mockClient := new(mocks.Client)
+			mockClient.On("Scheme").Return(newScheme)
+			kubeClientMock := tc.givenKubeClientFunc()
+
+			// define logger.
+			logger, err := test.NewEventingLogger()
+			require.NoError(t, err)
+
+			// create eventing manager instance.
+			em := &EventingManager{
+				Client:     mockClient,
+				kubeClient: kubeClientMock,
+				logger:     logger,
+			}
+
+			// when
+			err = em.migratePublisherDeploymentFromEC(ctx, tc.givenEventing, *existingPublisher, *desiredPublisher)
+
+			// then
+			require.NoError(t, err)
+			kubeClientMock.AssertExpectations(t)
 		})
 	}
 }
