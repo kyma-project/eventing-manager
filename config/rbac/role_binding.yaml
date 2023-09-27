@@ -15,5 +15,5 @@ roleRef:
   name: eventing-manager
 subjects:
 - kind: ServiceAccount
-  name: eventing-controller-manager
+  name: eventing-manager
   namespace: system
