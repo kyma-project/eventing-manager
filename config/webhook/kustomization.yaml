@@ -9,4 +9,4 @@ kind: Kustomization
 images:
 - name: api-gateway
   newName: europe-docker.pkg.dev/kyma-project/prod/eventing-webhook-certificates
-  newTag: v20230808-29d8ce01
+  newTag: 1.7.0
