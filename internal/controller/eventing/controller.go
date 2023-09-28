@@ -384,7 +384,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	}
 
 	// start NATS subscription manager
-	if err := r.reconcileNATSSubManager(eventing, log); err != nil {
+	if err := r.reconcileNATSSubManager(ctx, eventing, log); err != nil {
 		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 

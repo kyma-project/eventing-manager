@@ -27,6 +27,8 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 
 	// given - common for all test cases.
 	givenEventing := utils.NewEventingCR(
+		utils.WithEventingCRName("eventing"),
+		utils.WithEventingCRNamespace("kyma-system"),
 		utils.WithEventingStreamData("Memory", "650M", 99, 98),
 		utils.WithEventingEventTypePrefix("one.two.three"),
 	)
@@ -60,33 +62,46 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 		name                         string
 		givenIsNATSSubManagerStarted bool
 		givenShouldRetry             bool
+		givenUpdateTest              bool
+		givenHashBefore              uint64
 		givenNATSSubManagerMock      func() *ecsubmanagermocks.Manager
 		givenEventingManagerMock     func() *managermocks.Manager
 		givenNatsConfigHandlerMock   func() *mocks.NatsConfigHandler
 		givenManagerFactoryMock      func(*ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory
 		wantAssertCheck              bool
 		wantError                    error
+		wantHashAfter                uint64
 	}{
 		{
 			name:                         "it should do nothing because subscription manager is already started",
 			givenIsNATSSubManagerStarted: true,
+			givenHashBefore:              uint64(10896066536699660582),
 			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
+				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
+				jetStreamSubManagerMock.On("Stop", mock.Anything, mock.Anything).Return(nil).Once()
+				return jetStreamSubManagerMock
 			},
 			givenEventingManagerMock: func() *managermocks.Manager {
-				return nil
+				emMock := new(managermocks.Manager)
+				emMock.On("GetBackendConfig").Return(givenBackendConfig)
+				return emMock
 			},
 			givenNatsConfigHandlerMock: func() *mocks.NatsConfigHandler {
-				return nil
+				nchMock := new(mocks.NatsConfigHandler)
+				nchMock.On("GetNatsConfig", mock.Anything, mock.Anything).Return(givenNATSConfig, nil)
+				return nchMock
 			},
 			givenManagerFactoryMock: func(_ *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				return nil
 			},
+			wantHashAfter: uint64(10896066536699660582),
 		},
 		{
 			name: "it should initialize and start subscription manager because " +
 				"subscription manager is not started",
 			givenIsNATSSubManagerStarted: false,
+			givenHashBefore:              uint64(0),
 			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
 				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
 				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
@@ -109,11 +124,13 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				return subManagerFactoryMock
 			},
 			wantAssertCheck: true,
+			wantHashAfter:   uint64(10896066536699660582),
 		},
 		{
 			name: "it should retry to start subscription manager when subscription manager was " +
 				"successfully initialized but failed to start",
 			givenIsNATSSubManagerStarted: false,
+			givenHashBefore:              uint64(0),
 			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
 				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
 				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
@@ -138,6 +155,38 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			wantAssertCheck:  true,
 			givenShouldRetry: true,
 			wantError:        errors.New("failed to start"),
+			wantHashAfter:    uint64(0),
+		},
+		{
+			name:                         "it should update the subscription manager when the backend config changes",
+			givenIsNATSSubManagerStarted: true,
+			givenHashBefore:              uint64(17644964695675018020),
+			givenUpdateTest:              true,
+			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
+				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
+				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
+				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
+				jetStreamSubManagerMock.On("Stop", mock.Anything, mock.Anything).Return(nil).Once()
+				return jetStreamSubManagerMock
+			},
+			givenEventingManagerMock: func() *managermocks.Manager {
+				emMock := new(managermocks.Manager)
+				emMock.On("GetBackendConfig").Return(givenBackendConfig).Twice()
+				return emMock
+			},
+			givenNatsConfigHandlerMock: func() *mocks.NatsConfigHandler {
+				nchMock := new(mocks.NatsConfigHandler)
+				nchMock.On("GetNatsConfig", mock.Anything, mock.Anything).Return(givenNATSConfig, nil)
+				return nchMock
+			},
+			givenManagerFactoryMock: func(subManager *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
+				subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
+				subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(subManager).Once()
+				return subManagerFactoryMock
+			},
+			wantAssertCheck:  true,
+			givenShouldRetry: true,
+			wantHashAfter:    uint64(10896066536699660582),
 		},
 	}
 
@@ -145,10 +194,8 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
 			// given
-			testEnv := NewMockedUnitTestEnvironment(t)
+			testEnv := NewMockedUnitTestEnvironment(t, givenEventing)
 			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
 			// get mocks from test-case.
@@ -163,17 +210,28 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			testEnv.Reconciler.natsConfigHandler = givenNatConfigHandlerMock
 			testEnv.Reconciler.subManagerFactory = givenManagerFactoryMock
 			testEnv.Reconciler.natsSubManager = nil
-			if givenManagerFactoryMock == nil {
+			if givenManagerFactoryMock == nil || tc.givenUpdateTest {
 				testEnv.Reconciler.natsSubManager = givenNATSSubManagerMock
 			}
 
+			// set the backend hash before depending on test
+			givenEventing.Status.BackendConfigHash = tc.givenHashBefore
+
 			// when
-			err := testEnv.Reconciler.reconcileNATSSubManager(givenEventing, logger)
+			err := testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
 			if err != nil && tc.givenShouldRetry {
 				// This is to test the scenario where initialization of natsSubManager was successful but
 				// starting the natsSubManager failed. So on next try it should again try to start the natsSubManager.
-				err = testEnv.Reconciler.reconcileNATSSubManager(givenEventing, logger)
+				err = testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
 			}
+			if err == nil && tc.givenShouldRetry {
+				// Run reconcile again with newBackendConfig:
+				err = testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
+				require.NoError(t, err)
+			}
+
+			// check for backend hash after
+			require.Equal(t, tc.wantHashAfter, givenEventing.Status.BackendConfigHash)
 
 			// then
 			if tc.wantError != nil {
@@ -187,9 +245,11 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 
 			if tc.wantAssertCheck {
 				givenNATSSubManagerMock.AssertExpectations(t)
-				givenManagerFactoryMock.AssertExpectations(t)
 				givenEventingManagerMock.AssertExpectations(t)
-				givenNATSSubManagerMock.AssertExpectations(t)
+				givenNatConfigHandlerMock.AssertExpectations(t)
+			}
+			if !tc.givenIsNATSSubManagerStarted {
+				givenManagerFactoryMock.AssertExpectations(t)
 			}
 		})
 	}

@@ -71,6 +71,16 @@ func (r *Reconciler) syncStatusWithSubscriptionManagerErrWithReason(ctx context.
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
+func (r *Reconciler) syncStatusWithSubscriptionManagerProcessingWithReason(ctx context.Context,
+	reason eventingv1alpha1.ConditionReason,
+	eventing *eventingv1alpha1.Eventing,
+	message string, log *zap.SugaredLogger) error {
+	// Set processing state in status
+	eventing.Status.SetStateProcessing()
+	eventing.Status.UpdateConditionSubscriptionManagerReady(metav1.ConditionFalse, reason, message)
+	return r.syncEventingStatus(ctx, eventing, log)
+}
+
 // syncStatusWithSubscriptionManagerFailedCondition updates subscription manager condition and
 // sets an error state. It doesn't return the incoming error.
 func (r *Reconciler) syncStatusWithSubscriptionManagerFailedCondition(ctx context.Context,
