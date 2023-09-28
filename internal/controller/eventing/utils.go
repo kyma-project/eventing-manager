@@ -5,7 +5,9 @@ import (
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"github.com/mitchellh/hashstructure/v2"
+	v1 "k8s.io/api/core/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -42,4 +44,22 @@ func (r *Reconciler) getNATSBackendConfigHash(defaultSubscriptionConfig ecenv.De
 		return 0, err
 	}
 	return hash, nil
+}
+
+func (r *Reconciler) getEventMeshBackendConfigHash(eventMeshSecret *v1.Secret, params subscriptionmanager.Params) (uint64, error) {
+	eventMeshBackendConfig := struct {
+		*v1.Secret
+		subscriptionmanager.Params
+	}{eventMeshSecret, params}
+
+	hash, err := hashstructure.Hash(eventMeshBackendConfig, hashstructure.FormatV2, nil)
+	if err != nil {
+		return 0, err
+	}
+	return hash, nil
+}
+
+func (r *Reconciler) getDefaultSubscriptionConfig() ecenv.DefaultSubscriptionConfig {
+	return r.eventingManager.GetBackendConfig().
+		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
 }

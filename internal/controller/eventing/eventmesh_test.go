@@ -35,6 +35,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 
 	// given - common for all test cases.
 	givenEventing := utils.NewEventingCR(
+		utils.WithEventingCRName("eventing"),
 		utils.WithEventingCRNamespace("test-namespace"),
 		utils.WithEventMeshBackend("test-namespace/test-secret-name"),
 		utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
@@ -51,6 +52,8 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 		name                              string
 		givenIsEventMeshSubManagerStarted bool
 		givenShouldRetry                  bool
+		givenUpdateTest                   bool
+		givenHashBefore                   uint64
 		givenEventMeshSubManagerMock      func() *ecsubmanagermocks.Manager
 		givenEventingManagerMock          func() *managermocks.Manager
 		givenManagerFactoryMock           func(*ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory
@@ -58,10 +61,12 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 		givenKubeClientMock               func() k8s.Client
 		wantAssertCheck                   bool
 		wantError                         error
+		wantHashAfter                     uint64
 	}{
 		{
 			name:                              "it should do nothing because syncing OAuth secret failed",
 			givenIsEventMeshSubManagerStarted: true,
+			givenHashBefore:                   uint64(0),
 			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
 				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
 				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
@@ -73,11 +78,13 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenManagerFactoryMock: func(_ *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				return nil
 			},
-			wantError: errors.New("failed to sync OAuth secret"),
+			wantError:     errors.New("failed to sync OAuth secret"),
+			wantHashAfter: uint64(0),
 		},
 		{
 			name:                              "it should do nothing because failed syncing EventMesh secret",
 			givenIsEventMeshSubManagerStarted: true,
+			givenHashBefore:                   uint64(0),
 			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
 				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
 				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
@@ -101,11 +108,13 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 					errors.New("failed getting secret")).Once()
 				return mockKubeClient
 			},
-			wantError: errors.New("failed to get EventMesh secret"),
+			wantError:     errors.New("failed to get EventMesh secret"),
+			wantHashAfter: uint64(0),
 		},
 		{
 			name:                              "it should do nothing because failed sync Publisher Proxy secret",
 			givenIsEventMeshSubManagerStarted: true,
+			givenHashBefore:                   uint64(0),
 			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
 				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
 				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
@@ -130,18 +139,22 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed to apply patch")).Once()
 				return mockKubeClient
 			},
-			wantError: errors.New("failed to sync Publisher Proxy secret"),
+			wantError:     errors.New("failed to sync Publisher Proxy secret"),
+			wantHashAfter: uint64(0),
 		},
 		{
 			name:                              "it should do nothing because subscription manager is already started",
 			givenIsEventMeshSubManagerStarted: true,
+			givenHashBefore:                   uint64(18025097866324376090),
 			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
 				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
 				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
 				return eventMeshSubManagerMock
 			},
 			givenEventingManagerMock: func() *managermocks.Manager {
-				return nil
+				emMock := new(managermocks.Manager)
+				emMock.On("GetBackendConfig").Return(givenBackendConfig)
+				return emMock
 			},
 			givenManagerFactoryMock: func(_ *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				return nil
@@ -159,11 +172,13 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
 				return mockKubeClient
 			},
+			wantHashAfter: uint64(18025097866324376090),
 		},
 		{
 			name: "it should initialize and start subscription manager because " +
 				"subscription manager is not started",
 			givenIsEventMeshSubManagerStarted: false,
+			givenHashBefore:                   uint64(0),
 			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
 				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
 				eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
@@ -194,11 +209,13 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				return mockKubeClient
 			},
 			wantAssertCheck: true,
+			wantHashAfter:   uint64(18025097866324376090),
 		},
 		{
 			name: "it should retry to start subscription manager when subscription manager was " +
 				"successfully initialized but failed to start",
 			givenIsEventMeshSubManagerStarted: false,
+			givenHashBefore:                   uint64(0),
 			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
 				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
 				eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
@@ -231,6 +248,46 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			wantAssertCheck:  true,
 			givenShouldRetry: true,
 			wantError:        errors.New("failed to start"),
+			wantHashAfter:    uint64(0),
+		},
+		{
+			name:                              "it should update the subscription manager when the backend config changes",
+			givenIsEventMeshSubManagerStarted: true,
+			givenHashBefore:                   uint64(17644964695675018020),
+			givenUpdateTest:                   true,
+			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
+				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
+				eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
+				eventMeshSubManagerMock.On("Stop", mock.Anything, mock.Anything).Return(nil).Once()
+				return eventMeshSubManagerMock
+			},
+			givenEventingManagerMock: func() *managermocks.Manager {
+				emMock := new(managermocks.Manager)
+				emMock.On("GetBackendConfig").Return(givenBackendConfig).Twice()
+				return emMock
+			},
+			givenManagerFactoryMock: func(subManager *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
+				subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
+				subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(subManager).Once()
+				return subManagerFactoryMock
+			},
+			givenClientMock: func() client.Client {
+				mockClient := fake.NewClientBuilder().WithObjects().Build()
+				oauthSecret := utils.NewOAuthSecret("eventing-webhook-auth", givenEventing.Namespace)
+				require.NoError(t, mockClient.Create(ctx, oauthSecret))
+				return mockClient
+			},
+			givenKubeClientMock: func() k8s.Client {
+				mockKubeClient := new(k8smocks.Client)
+				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Twice()
+				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
+					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Twice()
+				return mockKubeClient
+			},
+			wantAssertCheck:  true,
+			givenShouldRetry: true,
+			wantHashAfter:    uint64(18025097866324376090),
 		},
 	}
 
@@ -238,18 +295,16 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig
+
 			// get mocks from test-case.
 			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
 			givenManagerFactoryMock := tc.givenManagerFactoryMock(givenEventMeshSubManagerMock)
 			givenEventingManagerMock := tc.givenEventingManagerMock()
 
 			// connect mocks with reconciler.
-
 			if tc.givenKubeClientMock != nil {
 				testEnv.Reconciler.kubeClient = tc.givenKubeClientMock()
 			}
@@ -261,17 +316,28 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			testEnv.Reconciler.eventingManager = givenEventingManagerMock
 			testEnv.Reconciler.subManagerFactory = givenManagerFactoryMock
 			testEnv.Reconciler.eventMeshSubManager = nil
-			if givenManagerFactoryMock == nil {
+			if givenManagerFactoryMock == nil || tc.givenUpdateTest {
 				testEnv.Reconciler.eventMeshSubManager = givenEventMeshSubManagerMock
 			}
 
+			// set the backend hash before depending on test
+			givenEventing.Status.BackendConfigHash = tc.givenHashBefore
+
 			// when
-			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing)
+			err := testEnv.Reconciler.reconcileEventMeshSubManager(testEnv.Context, givenEventing)
 			if err != nil && tc.givenShouldRetry {
 				// This is to test the scenario where initialization of eventMeshSubManager was successful but
 				// starting the eventMeshSubManager failed. So on next try it should again try to start the eventMeshSubManager.
-				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing)
+				err = testEnv.Reconciler.reconcileEventMeshSubManager(testEnv.Context, givenEventing)
 			}
+			if err == nil && tc.givenShouldRetry {
+				// Run reconcile again with newBackendConfig:
+				err = testEnv.Reconciler.reconcileEventMeshSubManager(testEnv.Context, givenEventing)
+				require.NoError(t, err)
+			}
+
+			// check for backend hash after
+			require.Equal(t, tc.wantHashAfter, givenEventing.Status.BackendConfigHash)
 
 			// then
 			if tc.wantError != nil {

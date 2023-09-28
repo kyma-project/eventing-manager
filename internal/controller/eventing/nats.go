@@ -51,7 +51,6 @@ func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1al
 			}
 
 			// stop the subsManager without cleanup
-
 			if err := r.stopNATSSubManager(false, log); err != nil {
 				return err
 			}
@@ -86,11 +85,6 @@ func (r *Reconciler) startNATSSubManager(defaultSubsConfig ecenv.DefaultSubscrip
 	// update flag so it do not try to start the manager again.
 	r.isNATSSubManagerStarted = true
 	return nil
-}
-
-func (r *Reconciler) getDefaultSubscriptionConfig() ecenv.DefaultSubscriptionConfig {
-	return r.eventingManager.GetBackendConfig().
-		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
 }
 
 func (r *Reconciler) stopNATSSubManager(runCleanup bool, log *zap.SugaredLogger) error {

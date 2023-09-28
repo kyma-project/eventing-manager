@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	"os"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
@@ -39,7 +41,6 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	if err != nil {
 		return errors.Errorf("failed to sync OAuth secret: %v", err)
 	}
-
 	// retrieve secret to authenticate with EventMesh
 	eventMeshSecret, err := r.kubeClient.GetSecret(ctx, eventing.Spec.Backend.Config.EventMeshSecret)
 	if err != nil {
@@ -57,6 +58,16 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 		return fmt.Errorf("failed to setup environment variables for EventMesh controller: %v", err)
 	}
 
+	// get the subscription config
+	defaultSubsConfig := r.getDefaultSubscriptionConfig()
+	// get the subManager parameters
+	eventMeshSubMgrParams := r.getEventMeshSubManagerParams()
+	// get the hash of current config
+	specHash, err := r.getEventMeshBackendConfigHash(eventMeshSecret, eventMeshSubMgrParams)
+	if err != nil {
+		return err
+	}
+
 	if r.eventMeshSubManager == nil {
 		// create instance of EventMesh subscription manager
 		eventMeshSubManager, err := r.subManagerFactory.NewEventMeshManager()
@@ -72,6 +83,22 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 		r.namedLogger().Info("EventMesh subscription-manager initialized")
 		// save instance only when init is successful.
 		r.eventMeshSubManager = eventMeshSubManager
+	} else {
+		// update the config if hashes differ
+		if eventing.Status.BackendConfigHash != specHash && r.isEventMeshSubManagerStarted {
+			// set the eventing CR status to processing
+			if err = r.syncStatusWithSubscriptionManagerProcessingWithReason(ctx,
+				eventingv1alpha1.ConditionReasonSubscriptionManagerProcessing,
+				eventing, "Updating EventMesh subscription-manager with new config.", r.namedLogger()); err != nil {
+				return err
+			}
+
+			// stop the subsManager without cleanup
+			if err := r.stopEventMeshSubManager(false, r.namedLogger()); err != nil {
+				return err
+			}
+			return nil
+		}
 	}
 
 	if r.isEventMeshSubManagerStarted {
@@ -79,20 +106,36 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 		return nil
 	}
 
-	defaultSubsConfig := r.eventingManager.GetBackendConfig().
-		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
-	eventMeshSubMgrParams := ecsubscriptionmanager.Params{
+	err = r.startEventMeshSubManager(defaultSubsConfig, eventMeshSubMgrParams)
+	if err != nil {
+		return err
+	}
+
+	// update the hash of the current config only once subManager is started
+	eventing.Status.BackendConfigHash = specHash
+	r.namedLogger().Info(fmt.Sprintf("NATS subscription-manager has been updated, new hash: %d", specHash))
+
+	return nil
+}
+
+func (r *Reconciler) getEventMeshSubManagerParams() ecsubscriptionmanager.Params {
+	return ecsubscriptionmanager.Params{
 		ecsubscriptionmanager.ParamNameClientID:     r.oauth2credentials.clientID,
 		ecsubscriptionmanager.ParamNameClientSecret: r.oauth2credentials.clientSecret,
 		ecsubscriptionmanager.ParamNameTokenURL:     r.oauth2credentials.tokenURL,
 		ecsubscriptionmanager.ParamNameCertsURL:     r.oauth2credentials.certsURL,
 	}
-	if err = r.eventMeshSubManager.Start(defaultSubsConfig, eventMeshSubMgrParams); err != nil {
+}
+
+func (r *Reconciler) startEventMeshSubManager(defaultSubsConfig env.DefaultSubscriptionConfig,
+	eventMeshSubMgrParams ecsubscriptionmanager.Params) error {
+	if err := r.eventMeshSubManager.Start(defaultSubsConfig, eventMeshSubMgrParams); err != nil {
 		return err
 	}
-	r.namedLogger().Info("EventMesh subscription-manager started")
-	r.isEventMeshSubManagerStarted = true
 
+	r.namedLogger().Info("EventMesh subscription-manager started")
+	// update flag so it does not try to start the manager again
+	r.isEventMeshSubManagerStarted = true
 	return nil
 }
 
