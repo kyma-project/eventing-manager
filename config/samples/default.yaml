@@ -3,25 +3,27 @@ kind: Eventing
 metadata:
   labels:
     app.kubernetes.io/name: eventing
-    app.kubernetes.io/instance: eventing-sample
+    app.kubernetes.io/instance: eventing
     app.kubernetes.io/part-of: eventing-manager
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: eventing-manager
   name: eventing
   namespace: kyma-system
 spec:
   backend:
-    type: "EventMesh"
+    type: NATS
     config:
-      eventMeshSecret: "kyma-system/eventing-backend"
+      natsStreamStorageType: File
+      natsStreamReplicas: 3
+      natsStreamMaxSize: 700M
+      natsMaxMsgsPerTopic: 1000000
   publisher:
     replicas:
       min: 2
       max: 2
     resources:
       limits:
-        cpu: 300m
-        memory: 312Mi
+        cpu: 500m
+        memory: 512Mi
       requests:
-        cpu: 100m
-        memory: 156Mi
+        cpu: 40m
+        memory: 64Mi
