@@ -1,9 +1,6 @@
 package controller_test
 
 import (
-	"os"
-	"testing"
-
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -15,6 +12,9 @@ import (
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
+	"os"
+	"testing"
+	"time"
 
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	v1 "k8s.io/api/apps/v1"
@@ -651,6 +651,160 @@ func Test_DeleteEventingCR(t *testing.T) {
 				eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
 			testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
 				eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
+		})
+	}
+}
+
+func Test_DebugWatchNATSResource(t *testing.T) {
+	time.Sleep(40 * time.Minute)
+}
+
+func Test_WatcherNATSResource(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name                        string
+		givenOriginalNats           *natsv1alpha1.NATS
+		givenTargetNats             *natsv1alpha1.NATS
+		isEventMesh                 bool
+		wantedOriginalEventingState string
+		wantedTargetEventingState   string
+		wantOriginalEventingMatches gomegatypes.GomegaMatcher
+		wantTargetEventingMatches   gomegatypes.GomegaMatcher
+	}{
+		{
+			name: "should update Eventing CR state if NATS CR state changes from ready to error",
+			givenOriginalNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateReady(),
+			),
+			givenTargetNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateError(),
+			),
+			wantOriginalEventingMatches: gomega.And(
+				matchers.HaveStatusReady(),
+				matchers.HaveNATSAvailableConditionAvailable(),
+			),
+			wantTargetEventingMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveNATSAvailableConditionNotAvailable(),
+			),
+		},
+		{
+			name: "should update Eventing CR state if NATS CR state changes from error to ready",
+			givenOriginalNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateReady(),
+			),
+			wantOriginalEventingMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveNATSAvailableConditionAvailable(),
+			),
+			wantTargetEventingMatches: gomega.And(
+				matchers.HaveStatusReady(),
+				matchers.HaveNATSAvailableConditionAvailable(),
+			),
+		},
+		{
+			name: "should update Eventing CR state to error when NATS CR is deleted",
+			givenOriginalNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+			),
+			wantedOriginalEventingState: eventingv1alpha1.StateReady,
+			wantedTargetEventingState:   eventingv1alpha1.StateError,
+		},
+		{
+			name: "should not reconcile Eventing CR in EventMesh mode",
+			givenOriginalNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateReady(),
+			),
+			givenTargetNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateError(),
+			),
+			isEventMesh: true,
+			wantOriginalEventingMatches: gomega.And(
+				matchers.HaveStatusReady(),
+			),
+			wantTargetEventingMatches: gomega.And(
+				matchers.HaveStatusReady(),
+			),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			g := gomega.NewWithT(t)
+
+			// given
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+				return true
+			}
+
+			// create unique namespace for this test run.
+			givenNamespace := tc.givenOriginalNats.Namespace
+			tc.givenTargetNats.Namespace = givenNamespace
+
+			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
+
+			// create NATS CR.
+			originalNats := tc.givenOriginalNats.DeepCopy()
+			testEnvironment.EnsureK8sResourceCreated(t, originalNats)
+			// create original NATS CR.
+			if tc.givenOriginalNats.Status.State == natsv1alpha1.StateReady {
+				testEnvironment.EnsureNATSResourceStateReady(t, originalNats)
+			} else if tc.givenOriginalNats.Status.State == natsv1alpha1.StateError {
+				testEnvironment.EnsureNATSResourceStateError(t, originalNats)
+			}
+
+			// create Eventing CR.
+			var eventingResource *eventingv1alpha1.Eventing
+			if tc.isEventMesh {
+				eventingResource = utils.NewEventingCR(
+					utils.WithEventingCRNamespace(givenNamespace),
+					utils.WithEventMeshBackend("test-secret-name"),
+					utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+					utils.WithStatusState(tc.wantedOriginalEventingState),
+				)
+				// create necessary EventMesh secrets
+				testEnvironment.EnsureOAuthSecretCreated(t, eventingResource)
+				testEnvironment.EnsureEventMeshSecretCreated(t, eventingResource)
+			} else {
+				eventingResource = utils.NewEventingCR(
+					utils.WithEventingCRNamespace(givenNamespace),
+					utils.WithEventingCRMinimal(),
+					utils.WithEventingStreamData("Memory", "1M", 1, 1),
+					utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+					utils.WithStatusState(tc.wantedOriginalEventingState),
+				)
+			}
+			testEnvironment.EnsureK8sResourceCreated(t, eventingResource)
+
+			defer func() {
+				testEnvironment.EnsureEventingResourceDeletion(t, eventingResource.Name, givenNamespace)
+				//if !*testEnvironment.EnvTestInstance.UseExistingCluster {
+				//	testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*eventingResource), givenNamespace)
+				//}
+				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenOriginalNats)
+
+				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
+			}()
+
+			// check Eventing CR status.
+			testEnvironment.GetEventingAssert(g, eventingResource).Should(tc.wantOriginalEventingMatches)
+
+			// update original NATS CR to target NATS CR state
+			if tc.givenTargetNats != nil && tc.givenTargetNats.Status.State == natsv1alpha1.StateReady {
+				testEnvironment.EnsureNATSResourceStateReady(t, tc.givenOriginalNats)
+			} else if tc.givenTargetNats != nil && tc.givenTargetNats.Status.State == natsv1alpha1.StateError {
+				testEnvironment.EnsureNATSResourceStateError(t, tc.givenOriginalNats)
+			}
+
+			// check target Eventing CR status.
+			testEnvironment.GetEventingAssert(g, eventingResource).Should(tc.wantTargetEventingMatches)
 		})
 	}
 }

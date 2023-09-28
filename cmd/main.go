@@ -42,6 +42,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	"k8s.io/client-go/dynamic"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -145,10 +146,16 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		ctrLogger,
 	)
 
+	dynamicClient, err := dynamic.NewForConfig(k8sRestCfg)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	// create Eventing reconciler instance
 	eventingReconciler := eventingcontroller.NewReconciler(
 		k8sClient,
 		kubeClient,
+		dynamicClient,
 		mgr.GetScheme(),
 		ctrLogger,
 		recorder,

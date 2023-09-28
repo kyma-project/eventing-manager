@@ -56,7 +56,7 @@ import (
 )
 
 const (
-	useExistingCluster       = false
+	useExistingCluster       = true
 	attachControlPlaneOutput = false
 	testEnvStartDelay        = time.Minute
 	testEnvStartAttempts     = 10
@@ -180,6 +180,9 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(jetStreamSubManagerMock)
 	subManagerFactoryMock.On("NewEventMeshManager").Return(eventMeshSubManagerMock, nil)
 
+	// create a new watcher
+	natsWatcher := eventingctrl.NewWatcher(dynamicClient)
+
 	eventingReconciler := eventingctrl.NewReconciler(
 		k8sClient,
 		kubeClient,
@@ -191,6 +194,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 		subManagerFactoryMock,
 		opts,
 		allowedEventingCR,
+		natsWatcher,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(ctrlMgr); err != nil {
@@ -561,6 +565,14 @@ func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *nats
 	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
 }
 
+func (env TestEnvironment) EnsureNATSResourceStateError(t *testing.T, nats *natsv1alpha1.NATS) {
+	env.makeNatsCrError(t, nats)
+	require.Eventually(t, func() bool {
+		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
+		return err == nil && nats.Status.State == natsv1alpha1.StateError
+	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
+}
+
 func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, eventingCR *v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
 		deployment, err := env.GetDeploymentFromK8s(eventing.GetPublisherDeploymentName(*eventingCR), eventingCR.Namespace)
@@ -831,12 +843,31 @@ func (env TestEnvironment) UpdateEventingStatus(eventing *v1alpha1.Eventing) err
 }
 
 func (env TestEnvironment) UpdateNATSStatus(nats *natsv1alpha1.NATS) error {
-	return env.k8sClient.Status().Update(env.Context, nats)
+	baseNats := &natsv1alpha1.NATS{}
+	if err := env.k8sClient.Get(env.Context,
+		types.NamespacedName{nats.Namespace, nats.Name}, baseNats); err != nil {
+		return err
+	}
+	baseNats.Status = nats.Status
+	return env.k8sClient.Status().Update(env.Context, baseNats)
 }
 
 func (env TestEnvironment) makeNatsCrReady(t *testing.T, nats *natsv1alpha1.NATS) {
 	require.Eventually(t, func() bool {
 		nats.Status.State = natsv1alpha1.StateReady
+
+		err := env.UpdateNATSStatus(nats)
+		if err != nil {
+			env.Logger.WithContext().Errorw("failed to update NATS CR status", err)
+			return false
+		}
+		return true
+	}, BigTimeOut, BigPollingInterval, "failed to update status of NATS CR")
+}
+
+func (env TestEnvironment) makeNatsCrError(t *testing.T, nats *natsv1alpha1.NATS) {
+	require.Eventually(t, func() bool {
+		nats.Status.State = natsv1alpha1.StateError
 
 		err := env.UpdateNATSStatus(nats)
 		if err != nil {
