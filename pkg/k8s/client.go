@@ -18,6 +18,7 @@ import (
 //go:generate mockery --name=Client --outpkg=mocks --case=underscore
 type Client interface {
 	GetDeployment(context.Context, string, string) (*v1.Deployment, error)
+	UpdateDeployment(context.Context, *v1.Deployment) error
 	DeleteDeployment(context.Context, string, string) error
 	DeleteClusterRole(context.Context, string, string) error
 	DeleteClusterRoleBinding(context.Context, string, string) error
@@ -48,6 +49,10 @@ func (c *KubeClient) GetDeployment(ctx context.Context, name, namespace string) 
 		return nil, client.IgnoreNotFound(err)
 	}
 	return deployment, nil
+}
+
+func (c *KubeClient) UpdateDeployment(ctx context.Context, deployment *v1.Deployment) error {
+	return c.client.Update(ctx, deployment)
 }
 
 func (c *KubeClient) DeleteDeployment(ctx context.Context, name, namespace string) error {
