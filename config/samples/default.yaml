@@ -12,6 +12,7 @@ spec:
   backend:
     type: NATS
     config:
+      eventTypePrefix: "sap.kyma.custom"
       natsStreamStorageType: File
       natsStreamReplicas: 3
       natsStreamMaxSize: 700M
