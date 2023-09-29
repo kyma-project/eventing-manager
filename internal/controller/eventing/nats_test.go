@@ -184,9 +184,8 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(subManager).Once()
 				return subManagerFactoryMock
 			},
-			wantAssertCheck:  true,
-			givenShouldRetry: true,
-			wantHashAfter:    uint64(10896066536699660582),
+			wantAssertCheck: true,
+			wantHashAfter:   uint64(10896066536699660582),
 		},
 	}
 
@@ -224,7 +223,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				// starting the natsSubManager failed. So on next try it should again try to start the natsSubManager.
 				err = testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
 			}
-			if err == nil && tc.givenShouldRetry {
+			if tc.givenUpdateTest {
 				// Run reconcile again with newBackendConfig:
 				err = testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
 				require.NoError(t, err)
