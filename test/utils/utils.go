@@ -56,7 +56,7 @@ func NewApplicationCRD() *apiextensionsv1.CustomResourceDefinition {
 			Kind:       "CustomResourceDefinition",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "applicationconnector.kyma-project.io",
+			Name: "applications.applicationconnector.kyma-project.io",
 		},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Names:                 apiextensionsv1.CustomResourceDefinitionNames{},

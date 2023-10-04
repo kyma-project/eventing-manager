@@ -339,6 +339,7 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}
 	r.backendConfig.PublisherConfig.ApplicationCRDEnabled = isApplicationCRDEnabled
+	r.eventingManager.SetBackendConfig(r.backendConfig)
 
 	// reconcile for specified backend.
 	switch eventing.Spec.Backend.Type {

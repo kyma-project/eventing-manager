@@ -164,7 +164,6 @@ func WithContainers(publisherConfig env.PublisherConfig, eventing *v1alpha1.Even
 				ReadinessProbe:  getReadinessProbe(),
 				ImagePullPolicy: getImagePullPolicy(publisherConfig.ImagePullPolicy),
 				SecurityContext: getContainerSecurityContext(),
-				Env:             getCommonEnvVars(publisherConfig),
 				Resources: getResources(eventing.Spec.Publisher.Resources.Requests.Cpu().String(),
 					eventing.Spec.Publisher.Resources.Requests.Memory().String(),
 					eventing.Spec.Publisher.Resources.Limits.Cpu().String(),
@@ -204,6 +203,7 @@ func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConf
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{Name: "LEGACY_NAMESPACE", Value: "kyma"},
 		{Name: "EVENT_TYPE_PREFIX", Value: eventing.Spec.Backend.Config.EventTypePrefix},
+		{Name: "APPLICATION_CRD_ENABLED", Value: strconv.FormatBool(publisherConfig.ApplicationCRDEnabled)},
 		// JetStream-specific config
 		{Name: "JS_STREAM_NAME", Value: natsConfig.JSStreamName},
 	}
@@ -276,12 +276,6 @@ func getContainerPorts() []v1.ContainerPort {
 	}
 }
 
-func getCommonEnvVars(publisherConfig env.PublisherConfig) []v1.EnvVar {
-	return []v1.EnvVar{
-		{Name: "APPLICATION_CRD_ENABLED", Value: strconv.FormatBool(publisherConfig.ApplicationCRDEnabled)},
-	}
-}
-
 func getLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) []v1.EnvVar {
 	return []v1.EnvVar{
 		{Name: "APP_LOG_FORMAT", Value: publisherConfig.AppLogFormat},
@@ -319,6 +313,7 @@ func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConf
 		{Name: "BACKEND", Value: "beb"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
 		{Name: "EVENT_TYPE_PREFIX", Value: eventing.Spec.Backend.Config.EventTypePrefix},
+		{Name: "APPLICATION_CRD_ENABLED", Value: strconv.FormatBool(publisherConfig.ApplicationCRDEnabled)},
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{
 			Name: "CLIENT_ID",

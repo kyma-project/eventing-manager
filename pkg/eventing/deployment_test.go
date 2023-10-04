@@ -89,9 +89,6 @@ func TestNewDeployment(t *testing.T) {
 			assert.Equal(t, fmt.Sprint(container.Image), publisherConfig.Image)
 			assert.Equal(t, fmt.Sprint(container.ImagePullPolicy), publisherConfig.ImagePullPolicy)
 
-			isAppCRDEnabled := test.FindEnvVar(container.Env, "APPLICATION_CRD_ENABLED")
-			require.Equal(t, "false", isAppCRDEnabled)
-
 			tc.wantBackendAssertions(t, publisherName, *deployment)
 		})
 	}
@@ -137,6 +134,7 @@ func Test_GetNATSEnvVars(t *testing.T) {
 				{Name: "REQUEST_TIMEOUT", Value: "10s"},
 				{Name: "LEGACY_NAMESPACE", Value: "kyma"},
 				{Name: "EVENT_TYPE_PREFIX", Value: ""},
+				{Name: "APPLICATION_CRD_ENABLED", Value: "false"},
 				{Name: "JS_STREAM_NAME", Value: ""},
 			},
 		},
@@ -157,6 +155,7 @@ func Test_GetNATSEnvVars(t *testing.T) {
 				{Name: "REQUEST_TIMEOUT", Value: "10s"},
 				{Name: "LEGACY_NAMESPACE", Value: "kyma"},
 				{Name: "EVENT_TYPE_PREFIX", Value: ""},
+				{Name: "APPLICATION_CRD_ENABLED", Value: "false"},
 				{Name: "JS_STREAM_NAME", Value: "sap"},
 			},
 		},
@@ -222,41 +221,6 @@ func Test_GetLogEnvVars(t *testing.T) {
 	}
 }
 
-func Test_getCommonEnvVars(t *testing.T) {
-	testCases := []struct {
-		name                 string
-		givenPublisherConfig env.PublisherConfig
-		wantEnvs             []v1.EnvVar
-	}{
-		{
-			name: "APPLICATION_CRD_ENABLED should be false",
-			givenPublisherConfig: env.PublisherConfig{
-				ApplicationCRDEnabled: false,
-			},
-			wantEnvs: []v1.EnvVar{
-				{Name: "APPLICATION_CRD_ENABLED", Value: "false"},
-			},
-		},
-		{
-			name: "APPLICATION_CRD_ENABLED should be true",
-			givenPublisherConfig: env.PublisherConfig{
-				ApplicationCRDEnabled: true,
-			},
-			wantEnvs: []v1.EnvVar{
-				{Name: "APPLICATION_CRD_ENABLED", Value: "true"},
-			},
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			envVars := getCommonEnvVars(tc.givenPublisherConfig)
-
-			// ensure the right envs were set
-			require.Equal(t, tc.wantEnvs, envVars)
-		})
-	}
-}
-
 func Test_GetEventMeshEnvVars(t *testing.T) {
 	testCases := []struct {
 		name          string
@@ -288,6 +252,17 @@ func Test_GetEventMeshEnvVars(t *testing.T) {
 			wantEnvs: map[string]string{
 				"EVENT_TYPE_PREFIX": eventTypePrefix,
 				"REQUEST_TIMEOUT":   "10s",
+			},
+		},
+		{
+			name:      "APPLICATION_CRD_ENABLED should be set",
+			givenEnvs: map[string]string{},
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventMeshBackend("test-namespace/test-name"),
+				testutils.WithEventingEventTypePrefix(eventTypePrefix),
+			),
+			wantEnvs: map[string]string{
+				"APPLICATION_CRD_ENABLED": "false",
 			},
 		},
 	}

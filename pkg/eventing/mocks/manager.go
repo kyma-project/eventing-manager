@@ -224,6 +224,39 @@ func (_c *Manager_IsNATSAvailable_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
+// SetBackendConfig provides a mock function with given fields: _a0
+func (_m *Manager) SetBackendConfig(_a0 env.BackendConfig) {
+	_m.Called(_a0)
+}
+
+// Manager_SetBackendConfig_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetBackendConfig'
+type Manager_SetBackendConfig_Call struct {
+	*mock.Call
+}
+
+// SetBackendConfig is a helper method to define mock.On call
+//   - _a0 env.BackendConfig
+func (_e *Manager_Expecter) SetBackendConfig(_a0 interface{}) *Manager_SetBackendConfig_Call {
+	return &Manager_SetBackendConfig_Call{Call: _e.mock.On("SetBackendConfig", _a0)}
+}
+
+func (_c *Manager_SetBackendConfig_Call) Run(run func(_a0 env.BackendConfig)) *Manager_SetBackendConfig_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(env.BackendConfig))
+	})
+	return _c
+}
+
+func (_c *Manager_SetBackendConfig_Call) Return() *Manager_SetBackendConfig_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Manager_SetBackendConfig_Call) RunAndReturn(run func(env.BackendConfig)) *Manager_SetBackendConfig_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewManager(t interface {
