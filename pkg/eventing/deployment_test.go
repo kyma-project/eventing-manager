@@ -89,6 +89,9 @@ func TestNewDeployment(t *testing.T) {
 			assert.Equal(t, fmt.Sprint(container.Image), publisherConfig.Image)
 			assert.Equal(t, fmt.Sprint(container.ImagePullPolicy), publisherConfig.ImagePullPolicy)
 
+			isAppCRDEnabled := test.FindEnvVar(container.Env, "APPLICATION_CRD_ENABLED")
+			require.Equal(t, "false", isAppCRDEnabled)
+
 			tc.wantBackendAssertions(t, publisherName, *deployment)
 		})
 	}
@@ -212,6 +215,41 @@ func Test_GetLogEnvVars(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			backendConfig := env.GetBackendConfig()
 			envVars := getLogEnvVars(backendConfig.PublisherConfig, tc.givenEventing)
+
+			// ensure the right envs were set
+			require.Equal(t, tc.wantEnvs, envVars)
+		})
+	}
+}
+
+func Test_getCommonEnvVars(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		givenPublisherConfig env.PublisherConfig
+		wantEnvs             []v1.EnvVar
+	}{
+		{
+			name: "APPLICATION_CRD_ENABLED should be false",
+			givenPublisherConfig: env.PublisherConfig{
+				ApplicationCRDEnabled: false,
+			},
+			wantEnvs: []v1.EnvVar{
+				{Name: "APPLICATION_CRD_ENABLED", Value: "false"},
+			},
+		},
+		{
+			name: "APPLICATION_CRD_ENABLED should be true",
+			givenPublisherConfig: env.PublisherConfig{
+				ApplicationCRDEnabled: true,
+			},
+			wantEnvs: []v1.EnvVar{
+				{Name: "APPLICATION_CRD_ENABLED", Value: "true"},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			envVars := getCommonEnvVars(tc.givenPublisherConfig)
 
 			// ensure the right envs were set
 			require.Equal(t, tc.wantEnvs, envVars)
