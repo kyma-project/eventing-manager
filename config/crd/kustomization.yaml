@@ -4,7 +4,6 @@
 resources:
 - bases/operator.kyma-project.io_eventings.yaml
 - external/subscriptions.eventing.kyma-project.io.crd.yaml
-- external/applications.applicationconnector.crd.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

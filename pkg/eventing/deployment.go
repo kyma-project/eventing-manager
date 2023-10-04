@@ -164,6 +164,7 @@ func WithContainers(publisherConfig env.PublisherConfig, eventing *v1alpha1.Even
 				ReadinessProbe:  getReadinessProbe(),
 				ImagePullPolicy: getImagePullPolicy(publisherConfig.ImagePullPolicy),
 				SecurityContext: getContainerSecurityContext(),
+				Env:             getCommonEnvVars(publisherConfig),
 				Resources: getResources(eventing.Spec.Publisher.Resources.Requests.Cpu().String(),
 					eventing.Spec.Publisher.Resources.Requests.Memory().String(),
 					eventing.Spec.Publisher.Resources.Limits.Cpu().String(),
@@ -272,6 +273,12 @@ func getContainerPorts() []v1.ContainerPort {
 			Name:          publisherMetricsPortName,
 			ContainerPort: publisherMetricsPortNum,
 		},
+	}
+}
+
+func getCommonEnvVars(publisherConfig env.PublisherConfig) []v1.EnvVar {
+	return []v1.EnvVar{
+		{Name: "APPLICATION_CRD_ENABLED", Value: strconv.FormatBool(publisherConfig.ApplicationCRDEnabled)},
 	}
 }
 
