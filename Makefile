@@ -218,7 +218,7 @@ configure-git-origin:
 #	test-infra does not include origin remote in the .git directory.
 #	the CLI is looking for the origin url in the .git dir so first we need to be sure it's not empty
 	@git remote | grep '^origin$$' -q || \
-		git remote add origin https://github.com/kyma-project/nats-manager
+		git remote add origin https://github.com/kyma-project/eventing-manager
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
@@ -256,10 +256,10 @@ lint-thoroughly:
 go-gen:
 	go generate ./...
 
-fmt: ## Reformat files using `go fmt`
+fmt-local: ## Reformat files using `go fmt`
 	go fmt $$($(DIRS_TO_CHECK))
 
-imports: ## Optimize imports
+imports-local: ## Optimize imports
 	goimports -w -l $$($(FILES_TO_CHECK))
 
 ########## Kyma CLI ###########
