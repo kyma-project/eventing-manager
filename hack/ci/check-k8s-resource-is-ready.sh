@@ -9,6 +9,8 @@ check-nats-ready() {
     echo "NATS was not 'Ready' after ${timeouttime} seconds"
     exit 1
   fi
+
+  echo "NATS is 'Ready'"
 }
 
 check-nats-ready
