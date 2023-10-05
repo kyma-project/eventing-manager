@@ -78,6 +78,13 @@ jobs:
         run: |
           make e2e-eventing
 
+      - name: On error get eventing
+        if: failure()
+        run: |
+          kubectl get eventing -n kyma-system -oyaml
+
       - name: On error get subscriptions
+        if: failure()
         run: |
           kubectl get subscription test-sub-1-v1alpha1 -n eventing-tests -oyaml
+
