@@ -196,16 +196,29 @@ module-image: docker-build docker-push ## Build the Module Image and push it to 
 
 DEFAULT_CR ?= $(shell pwd)/config/samples/default.yaml
 .PHONY: module-build
-module-build: kyma kustomize ## Build the Module and push it to a registry defined in MODULE_REGISTRY
+module-build: kyma render-manifest module-config-template configure-git-origin ## Build the Module and push it to a registry defined in MODULE_REGISTRY
 	#################################################################
 	## Building module with:
 	# - image: ${IMG}
 	# - channel: ${MODULE_CHANNEL}
 	# - name: kyma-project.io/module/$(MODULE_NAME)
 	# - version: $(MODULE_VERSION)
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	@$(KYMA) alpha create module --kubebuilder-project --channel=${MODULE_CHANNEL} --name kyma-project.io/module/$(MODULE_NAME) --version $(MODULE_VERSION) --path . $(MODULE_CREATION_FLAGS) --output=template.yaml --default-cr=$(DEFAULT_CR)
+	@$(KYMA) alpha create module --path . --output=module-template.yaml --module-config-file=module-config.yaml $(MODULE_CREATION_FLAGS)
 
+.PHONY: module-config-template
+module-config-template:
+	@cat module-config-template.yaml \
+		| sed -e 's/{{.Channel}}/${MODULE_CHANNEL}/g' \
+			-e 's/{{.Version}}/$(MODULE_VERSION)/g' \
+			-e 's/{{.Name}}/kyma-project.io\/module\/$(MODULE_NAME)/g' \
+				> module-config.yaml
+
+.PHONY: configure-git-origin
+configure-git-origin:
+#	test-infra does not include origin remote in the .git directory.
+#	the CLI is looking for the origin url in the .git dir so first we need to be sure it's not empty
+	@git remote | grep '^origin$$' -q || \
+		git remote add origin https://github.com/kyma-project/nats-manager
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
