@@ -549,12 +549,12 @@ func Test_GetCRD(t *testing.T) {
 		wantNotFoundError bool
 	}{
 		{
-			name:              "should return not found error when CRD is missing in k8s",
+			name:              "should return correct CRD from k8s",
 			givenCRDName:      ApplicationCrdName,
 			wantNotFoundError: false,
 		},
 		{
-			name:              "should return correct CRD from k8s",
+			name:              "should return not found error when CRD is missing in k8s",
 			givenCRDName:      "non-existing",
 			wantNotFoundError: true,
 		},
