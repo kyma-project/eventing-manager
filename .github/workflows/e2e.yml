@@ -33,6 +33,6 @@ jobs:
 
       - name: Wait for NATS to become Ready
         run: |
-          ./hack/ci/e2e.yml
+          ./hack/ci/check-nats-ready.sh
 
       
