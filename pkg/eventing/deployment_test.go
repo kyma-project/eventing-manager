@@ -134,6 +134,7 @@ func Test_GetNATSEnvVars(t *testing.T) {
 				{Name: "REQUEST_TIMEOUT", Value: "10s"},
 				{Name: "LEGACY_NAMESPACE", Value: "kyma"},
 				{Name: "EVENT_TYPE_PREFIX", Value: ""},
+				{Name: "APPLICATION_CRD_ENABLED", Value: "false"},
 				{Name: "JS_STREAM_NAME", Value: ""},
 			},
 		},
@@ -154,6 +155,7 @@ func Test_GetNATSEnvVars(t *testing.T) {
 				{Name: "REQUEST_TIMEOUT", Value: "10s"},
 				{Name: "LEGACY_NAMESPACE", Value: "kyma"},
 				{Name: "EVENT_TYPE_PREFIX", Value: ""},
+				{Name: "APPLICATION_CRD_ENABLED", Value: "false"},
 				{Name: "JS_STREAM_NAME", Value: "sap"},
 			},
 		},
@@ -250,6 +252,17 @@ func Test_GetEventMeshEnvVars(t *testing.T) {
 			wantEnvs: map[string]string{
 				"EVENT_TYPE_PREFIX": eventTypePrefix,
 				"REQUEST_TIMEOUT":   "10s",
+			},
+		},
+		{
+			name:      "APPLICATION_CRD_ENABLED should be set",
+			givenEnvs: map[string]string{},
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventMeshBackend("test-namespace/test-name"),
+				testutils.WithEventingEventTypePrefix(eventTypePrefix),
+			),
+			wantEnvs: map[string]string{
+				"APPLICATION_CRD_ENABLED": "false",
 			},
 		},
 	}

@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 

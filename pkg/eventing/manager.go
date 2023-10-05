@@ -38,6 +38,7 @@ type Manager interface {
 		backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
 	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
 	GetBackendConfig() *env.BackendConfig
+	SetBackendConfig(env.BackendConfig)
 }
 
 type EventingManager struct {
@@ -57,7 +58,7 @@ func NewEventingManager(
 	logger *logger.Logger,
 	recorder record.EventRecorder,
 ) Manager {
-	return EventingManager{
+	return &EventingManager{
 		ctx:           ctx,
 		Client:        client,
 		backendConfig: backendConfig,
@@ -166,6 +167,10 @@ func (em EventingManager) IsNATSAvailable(ctx context.Context, namespace string)
 
 func (em EventingManager) GetBackendConfig() *env.BackendConfig {
 	return &em.backendConfig
+}
+
+func (em *EventingManager) SetBackendConfig(config env.BackendConfig) {
+	em.backendConfig = config
 }
 
 func (em EventingManager) DeployPublisherProxyResources(
