@@ -31,6 +31,14 @@ jobs:
         run: |
           make -C hack/ci/ install-lifecycle-manager
 
+      - name: Install the latest NATS-manager module template
+        run: |
+          make -C hack/ci/ install-latest-nats-module-template-fast
+
+      - name: Enable NATS-manager module
+        run: |
+          make -C hack/ci/ enable-nats-module
+
       - name: Wait for NATS to become Ready
         run: |
           ./hack/ci/check-nats-ready.sh

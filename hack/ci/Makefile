@@ -23,7 +23,7 @@ install-latest-nats-module-template-fast: ## Downloads and applies the latest na
 
 .PHONY: enable-nats-module
 enable-nats-module:
-	kyma alpha enable module nats -c fast -f --ci -n kyma-system
+	"${KYMA_CLI}" alpha enable module nats -c fast -f --ci -n kyma-system
 
 .PHONY: wait-until-nats-is-ready
 wait-until-nats-is-ready:
