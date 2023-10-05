@@ -65,3 +65,15 @@ jobs:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           GITHUB_OWNER: "${{ github.repository_owner }}"
           GITHUB_REPO: "eventing-manager"
+      
+      - name: Deploy the controller to the cluster
+        run: |
+          make deploy IMG=$DOCKER_IMAGE
+
+      - name: Setup and test the eventing-manager
+        run: |
+          make e2e-setup 
+
+      - name: Setup and test eventing
+        run: |
+          make e2e-eventing
