@@ -44,7 +44,7 @@ jobs:
         run: |
           ./hack/ci/check-k8s-resource-is-ready.sh
 
-      - name: Get NATS on error
+      - name: On error get NATS
         if: failure()
         run: |
           kubectl get nats -n kyma-system -o yaml
@@ -77,3 +77,7 @@ jobs:
       - name: Setup and test eventing
         run: |
           make e2e-eventing
+
+      - name: On error get subscriptions
+        run: |
+          kubectl get subscription test-sub-1-v1alpha1 -n eventing-tests -oyaml
