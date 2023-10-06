@@ -14,9 +14,6 @@ on:
 jobs:
   e2e-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        backend: [nats, eventmesh]
 
     steps:
       - uses: actions/checkout@v4
@@ -55,15 +52,9 @@ jobs:
           make deploy IMG=$DOCKER_IMAGE
 
       - name: Setup NATS
-        if: {{ matrix.backend }} == 'nats'
         run: |
           make -C hack/ci/ get-nats-via-lifecycle-manager
 
-      - name: Setup EventMesh
-        if: {{ matrix.backend }} == 'eventmesh'
-        run: |
-          echo 'implement me'
-          exit 1
 
       - name: Setup and test the eventing-manager
         run: |
