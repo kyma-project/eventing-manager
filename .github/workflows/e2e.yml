@@ -32,7 +32,7 @@ jobs:
           kubectl version
           kubectl cluster-info
 
-      - name: Install eventing-manager 
+      - name: Install eventing-manager
         run: |
           make install IMG=$DOCKER_IMAGE
 
@@ -48,19 +48,21 @@ jobs:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           GITHUB_OWNER: "${{ github.repository_owner }}"
           GITHUB_REPO: "eventing-manager"
-      
+
       - name: Deploy the controller to the cluster
         run: |
           kubectl create ns kyma-system || true
           make deploy IMG=$DOCKER_IMAGE
 
-      - name: Get backend {{ matrix.backend }}
+      - name: Setup NATS
         if: {{ matrix.backend }} == 'nats'
         run: |
           make -C hack/ci/ get-nats-via-lifecycle-manager
-        else
+
+      - name: Setup EventMesh
+        if: {{ matrix.backend }} == 'eventmesh'
         run: |
-          echo "implement me!"
+          echo 'implement me'
           exit 1
 
       - name: Setup and test the eventing-manager
@@ -79,7 +81,7 @@ jobs:
         if: failure()
         run: |
           kubectl get nats -n kyma-system -o yaml
-      
+
       - name: On error get eventing CR
         if: failure()
         run: |
