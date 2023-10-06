@@ -3,7 +3,7 @@ name: e2e-without-lifecycle-manager
 env:
   KYMA_STABILITY: "unstable"
   KYMA: "./hack/kyma"
-  DOCKER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
+  MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
 
 on:
   pull_request:
@@ -29,7 +29,7 @@ jobs:
 
       - name: Install eventing-manager
         run: |
-          make install IMG=$DOCKER_IMAGE
+          make install IMG=$MANAGER_IMAGE
 
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
@@ -47,7 +47,7 @@ jobs:
       - name: Deploy the controller to the cluster
         run: |
           kubectl create ns kyma-system || true
-          make deploy IMG=$DOCKER_IMAGE
+          make deploy IMG=$MANAGER_IMAGE
 
       - name: Setup NATS
         run: |
