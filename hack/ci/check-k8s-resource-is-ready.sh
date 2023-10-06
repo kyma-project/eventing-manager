@@ -5,7 +5,7 @@ resource=${2:-nats}
 namespace=${3:-kyma-system}
 
 check-nats-ready() {
-  echo "checking ${resource} in the namespace ${namespace} to become 'Ready' for ${timeouttime} seconds"
+  echo -e "\n checking ${resource} in the namespace ${namespace} to become 'Ready' for ${timeouttime} seconds"
 
   export resource
   export namespace
