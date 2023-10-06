@@ -27,4 +27,4 @@ enable-nats-module:
 
 .PHONY: get-nats-via-lifecycle-manager
 get-nats-via-lifecycle-manager: install-lifecycle-manager install-latest-nats-module-template-fast enable-nats-module
-	./check-k8s-resource-is-ready.sh 
+	./check-k8s-resource-is-ready.sh 180 nats kyma-system
