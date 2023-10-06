@@ -77,13 +77,13 @@ jobs:
         run: |
           make e2e-eventing
 
-      - name: On error get NATS
+      - name: On error get NATS CR
         if: failure()
         run: |
           kubectl get nats -n kyma-system -o yaml
       
-      - name: On error get eventing
+      - name: On error get eventing CR
         if: failure()
         run: |
-          kubectl get eventing -n kyma-system -oyaml
+          kubectl get eventing -n kyma-system -o yaml
 
