@@ -47,6 +47,7 @@ jobs:
       
       - name: Deploy the controller to the cluster
         run: |
+          kubectl create ns kyma-system || true
           make deploy IMG=$DOCKER_IMAGE
 
       - name: Get NATS
