@@ -563,7 +563,7 @@ func Test_syncEventTypes(t *testing.T) {
 			sub := testCase.givenSub
 
 			// when
-			r.syncEventTypes(sub)
+			require.NoError(t, r.syncEventTypes(sub))
 
 			// then
 			require.Equal(t, testCase.wantSubStatus.Types, sub.Status.Types)
