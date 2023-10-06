@@ -1,4 +1,4 @@
-name: e2e-w/o-lifecycle-manager
+name: e2e-without-lifecycle-manager
 
 env:
   KYMA_STABILITY: "unstable"
@@ -12,7 +12,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  e2e-test:
+  nats:
     runs-on: ubuntu-latest
 
     steps:
@@ -55,7 +55,6 @@ jobs:
         run: |
           make -C hack/ci/ get-nats-via-lifecycle-manager
 
-
       - name: Setup and test the eventing-manager
         run: |
           make e2e-setup 
@@ -77,4 +76,3 @@ jobs:
         if: failure()
         run: |
           kubectl get eventing -n kyma-system -o yaml
-
