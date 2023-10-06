@@ -14,9 +14,9 @@ check-nats-ready() {
   if [[ $? -ne 0 ]]; then
     echo "NATS was not 'Ready' after ${timeouttime} seconds"
     exit 1
+  else
+    echo "NATS is 'Ready'"
   fi
-
-  echo "NATS is 'Ready'"
 }
 
 check-nats-ready
