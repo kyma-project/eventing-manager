@@ -24,3 +24,7 @@ install-latest-nats-module-template-fast: ## Downloads and applies the latest na
 .PHONY: enable-nats-module
 enable-nats-module:
 	"${KYMA_CLI}" alpha enable module nats -c fast -f --ci -n kyma-system
+
+.PHONY: get-nats-via-lifecycle-manager
+get-nats-via-lifecycle-manager: install-lifecycle-manager install-latest-nats-module-template-fast enable-nats-module
+	./check-k8s-resource-is-ready.sh 
