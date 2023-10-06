@@ -226,8 +226,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha1.Eventing) error {
 	err := r.controller.Watch(
-		source.NewKindWithCache(kind, r.ctrlManager.GetCache()),
-		handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+		source.Kind(r.ctrlManager.GetCache(), kind),
+		handler.EnqueueRequestsFromMapFunc(func(_ context.Context, obj client.Object) []reconcile.Request {
 			// Enqueue a reconcile request for the eventing resource
 			return []reconcile.Request{
 				{NamespacedName: types.NamespacedName{
