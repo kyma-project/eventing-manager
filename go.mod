@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/avast/retry-go/v3 v3.1.1
+	github.com/cloudevents/sdk-go/protocol/nats/v2 v2.14.0
 	github.com/cloudevents/sdk-go/v2 v2.14.0
 	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zapr v1.2.4
@@ -32,7 +33,6 @@ require (
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/cloudevents/sdk-go/protocol/nats/v2 v2.14.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect

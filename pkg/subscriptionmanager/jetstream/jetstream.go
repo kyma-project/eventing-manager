@@ -26,11 +26,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/kyma-project/eventing-manager/internal/controller/subscription/jetstream"
+	backendjetstream "github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/eventtype"
-	backendjetstream "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/jetstream"
 	backendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 )

@@ -32,9 +32,9 @@ import (
 	backendutils "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/utils"
 	"github.com/kyma-project/kyma/components/eventing-controller/utils"
 
+	jetstream "github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	jetstream "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/jetstream"
 )
 
 const (

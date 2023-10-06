@@ -5,8 +5,8 @@ import (
 
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 
+	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/jetstream"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 )
