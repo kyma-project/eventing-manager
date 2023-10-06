@@ -54,6 +54,24 @@ install-lifecycle-manager: ## Deploys lifecycle-manager.
 create-k3d: ## Create k3d with kyma CRDs.
 	"${KYMA_CLI}" provision k3d -p 8081:80@loadbalancer -p 8443:443@loadbalancer --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
 
+.PHONY: install-lifecycle-manager
+install-lifecycle-manager: ## Deploys lifecycle-manager.
+	"${KYMA_CLI}" alpha deploy \
+		--ci \
+		--force-conflicts
+
+.PHONY: install-latest-nats-module-template-fast
+install-latest-nats-module-template-fast: ## Downloads and applies the latest nats-manager released module-template from fast channel.
+	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/module-template.yaml
+
+.PHONY: enable-nats-module
+enable-nats-module:
+	"${KYMA_CLI}" alpha enable module nats -c fast -f --ci -n kyma-system
+
+.PHONY: get-nats-via-lifecycle-manager
+get-nats-via-lifecycle-manager: install-lifecycle-manager install-latest-nats-module-template-fast enable-nats-module
+	./check-k8s-resource-is-ready.sh 180 nats kyma-system
+
 .PHONY: verify-kyma
 verify-kyma: ## Wait for Kyma CR to be in Ready state.
 	../verify_kyma_status.sh
