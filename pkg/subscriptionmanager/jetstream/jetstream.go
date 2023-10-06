@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	manager2 "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/sink"
 	backendutils "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/utils"
 
@@ -31,7 +33,6 @@ import (
 	backendjetstream "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/jetstream"
 	backendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 )
 
 const (
@@ -90,7 +91,7 @@ func (sm *SubscriptionManager) Init(mgr manager.Manager) error {
 	return nil
 }
 
-func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionConfig, _ subscriptionmanager.Params) error {
+func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionConfig, _ manager2.Params) error {
 	sm.metricsCollector.ResetSubscriptionStatus()
 
 	ctx, cancel := context.WithCancel(context.Background())

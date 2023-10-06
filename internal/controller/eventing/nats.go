@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 
@@ -11,7 +13,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"go.uber.org/zap"
 )
 
@@ -79,7 +80,7 @@ func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1al
 }
 
 func (r *Reconciler) startNATSSubManager(defaultSubsConfig ecenv.DefaultSubscriptionConfig, log *zap.SugaredLogger) error {
-	if err := r.natsSubManager.Start(defaultSubsConfig, ecsubscriptionmanager.Params{}); err != nil {
+	if err := r.natsSubManager.Start(defaultSubsConfig, manager.Params{}); err != nil {
 		return err
 	}
 

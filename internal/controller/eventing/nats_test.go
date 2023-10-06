@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
+	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
+
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/internal/controller/eventing/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	managermocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
-	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
@@ -64,10 +65,10 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 		givenShouldRetry             bool
 		givenUpdateTest              bool
 		givenHashBefore              uint64
-		givenNATSSubManagerMock      func() *ecsubmanagermocks.Manager
+		givenNATSSubManagerMock      func() *submanagermocks.Manager
 		givenEventingManagerMock     func() *managermocks.Manager
 		givenNatsConfigHandlerMock   func() *mocks.NatsConfigHandler
-		givenManagerFactoryMock      func(*ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory
+		givenManagerFactoryMock      func(*submanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory
 		wantAssertCheck              bool
 		wantError                    error
 		wantHashAfter                uint64
@@ -76,8 +77,8 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			name:                         "it should do nothing because subscription manager is already started",
 			givenIsNATSSubManagerStarted: true,
 			givenHashBefore:              uint64(10896066536699660582),
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				jetStreamSubManagerMock := new(submanagermocks.Manager)
 				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
 				jetStreamSubManagerMock.On("Stop", mock.Anything, mock.Anything).Return(nil).Once()
 				return jetStreamSubManagerMock
@@ -92,7 +93,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				nchMock.On("GetNatsConfig", mock.Anything, mock.Anything).Return(givenNATSConfig, nil)
 				return nchMock
 			},
-			givenManagerFactoryMock: func(_ *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
+			givenManagerFactoryMock: func(_ *submanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				return nil
 			},
 			wantHashAfter: uint64(10896066536699660582),
@@ -102,8 +103,8 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				"subscription manager is not started",
 			givenIsNATSSubManagerStarted: false,
 			givenHashBefore:              uint64(0),
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				jetStreamSubManagerMock := new(submanagermocks.Manager)
 				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
 				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
 				return jetStreamSubManagerMock
@@ -118,7 +119,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				nchMock.On("GetNatsConfig", mock.Anything, mock.Anything).Return(givenNATSConfig, nil)
 				return nchMock
 			},
-			givenManagerFactoryMock: func(subManager *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
+			givenManagerFactoryMock: func(subManager *submanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
 				subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(subManager).Once()
 				return subManagerFactoryMock
@@ -131,8 +132,8 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				"successfully initialized but failed to start",
 			givenIsNATSSubManagerStarted: false,
 			givenHashBefore:              uint64(0),
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				jetStreamSubManagerMock := new(submanagermocks.Manager)
 				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
 				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(errors.New("failed to start")).Twice()
 				return jetStreamSubManagerMock
@@ -147,7 +148,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				nchMock.On("GetNatsConfig", mock.Anything, mock.Anything).Return(givenNATSConfig, nil)
 				return nchMock
 			},
-			givenManagerFactoryMock: func(subManager *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
+			givenManagerFactoryMock: func(subManager *submanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
 				subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(subManager).Once()
 				return subManagerFactoryMock
@@ -162,8 +163,8 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			givenIsNATSSubManagerStarted: true,
 			givenHashBefore:              uint64(17644964695675018020),
 			givenUpdateTest:              true,
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				jetStreamSubManagerMock := new(submanagermocks.Manager)
 				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
 				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
 				jetStreamSubManagerMock.On("Stop", mock.Anything, mock.Anything).Return(nil).Once()
@@ -179,7 +180,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				nchMock.On("GetNatsConfig", mock.Anything, mock.Anything).Return(givenNATSConfig, nil)
 				return nchMock
 			},
-			givenManagerFactoryMock: func(subManager *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
+			givenManagerFactoryMock: func(subManager *submanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
 				subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(subManager).Once()
 				return subManagerFactoryMock
@@ -261,14 +262,14 @@ func Test_stopNATSSubManager(t *testing.T) {
 	// define test cases
 	testCases := []struct {
 		name                         string
-		givenNATSSubManagerMock      func() *ecsubmanagermocks.Manager
+		givenNATSSubManagerMock      func() *submanagermocks.Manager
 		givenIsNATSSubManagerStarted bool
 		wantError                    error
 		wantAssertCheck              bool
 	}{
 		{
 			name: "should do nothing when subscription manager is not initialised",
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				return nil
 			},
 			givenIsNATSSubManagerStarted: false,
@@ -276,8 +277,8 @@ func Test_stopNATSSubManager(t *testing.T) {
 		},
 		{
 			name: "should return error when subscription manager fails to stop",
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				managerMock := new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				managerMock := new(submanagermocks.Manager)
 				managerMock.On("Stop", mock.Anything).Return(errors.New("failed to stop")).Once()
 				return managerMock
 			},
@@ -287,8 +288,8 @@ func Test_stopNATSSubManager(t *testing.T) {
 		},
 		{
 			name: "should succeed to stop subscription manager",
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				managerMock := new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				managerMock := new(submanagermocks.Manager)
 				managerMock.On("Stop", mock.Anything).Return(nil).Once()
 				return managerMock
 			},

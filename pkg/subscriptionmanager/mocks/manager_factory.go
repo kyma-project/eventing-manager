@@ -4,6 +4,7 @@ package mocks
 
 import (
 	env "github.com/kyma-project/eventing-manager/pkg/env"
+	manager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	mock "github.com/stretchr/testify/mock"
 
 	subscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
@@ -78,15 +79,15 @@ func (_c *ManagerFactory_NewEventMeshManager_Call) RunAndReturn(run func() (subs
 }
 
 // NewJetStreamManager provides a mock function with given fields: _a0, _a1
-func (_m *ManagerFactory) NewJetStreamManager(_a0 v1alpha1.Eventing, _a1 env.NATSConfig) subscriptionmanager.Manager {
+func (_m *ManagerFactory) NewJetStreamManager(_a0 v1alpha1.Eventing, _a1 env.NATSConfig) manager.Manager {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 subscriptionmanager.Manager
-	if rf, ok := ret.Get(0).(func(v1alpha1.Eventing, env.NATSConfig) subscriptionmanager.Manager); ok {
+	var r0 manager.Manager
+	if rf, ok := ret.Get(0).(func(v1alpha1.Eventing, env.NATSConfig) manager.Manager); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(subscriptionmanager.Manager)
+			r0 = ret.Get(0).(manager.Manager)
 		}
 	}
 
@@ -112,12 +113,12 @@ func (_c *ManagerFactory_NewJetStreamManager_Call) Run(run func(_a0 v1alpha1.Eve
 	return _c
 }
 
-func (_c *ManagerFactory_NewJetStreamManager_Call) Return(_a0 subscriptionmanager.Manager) *ManagerFactory_NewJetStreamManager_Call {
+func (_c *ManagerFactory_NewJetStreamManager_Call) Return(_a0 manager.Manager) *ManagerFactory_NewJetStreamManager_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ManagerFactory_NewJetStreamManager_Call) RunAndReturn(run func(v1alpha1.Eventing, env.NATSConfig) subscriptionmanager.Manager) *ManagerFactory_NewJetStreamManager_Call {
+func (_c *ManagerFactory_NewJetStreamManager_Call) RunAndReturn(run func(v1alpha1.Eventing, env.NATSConfig) manager.Manager) *ManagerFactory_NewJetStreamManager_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
@@ -77,7 +78,7 @@ type Reconciler struct {
 	scheme                        *runtime.Scheme
 	recorder                      record.EventRecorder
 	subManagerFactory             subscriptionmanager.ManagerFactory
-	natsSubManager                ecsubscriptionmanager.Manager
+	natsSubManager                manager.Manager
 	eventMeshSubManager           ecsubscriptionmanager.Manager
 	isNATSSubManagerStarted       bool
 	isEventMeshSubManagerStarted  bool
