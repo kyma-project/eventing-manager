@@ -67,7 +67,7 @@ jobs:
 
       - name: Test eventing cleanup
         run: |
-          make e2e-eventing-cleanup
+          make e2e-cleanup
 
       - name: On error get NATS CR
         if: failure()
