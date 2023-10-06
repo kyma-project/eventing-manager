@@ -28,10 +28,6 @@ jobs:
           kubectl version
           kubectl cluster-info
 
-      - name: Get NATS
-        run: |
-          make -C hack/ci/ get-nats-via-lifecycle-manager
-
       - name: Install eventing-manager 
         run: |
           make install IMG=$DOCKER_IMAGE
@@ -52,6 +48,10 @@ jobs:
       - name: Deploy the controller to the cluster
         run: |
           make deploy IMG=$DOCKER_IMAGE
+
+      - name: Get NATS
+        run: |
+          make -C hack/ci/ get-nats-via-lifecycle-manager
 
       - name: Setup and test the eventing-manager
         run: |
