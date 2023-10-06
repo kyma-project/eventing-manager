@@ -53,7 +53,6 @@ import (
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -66,7 +65,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(natsv1alpha1.AddToScheme(scheme))
+
 	utilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
 
 	utilruntime.Must(jetstream.AddToScheme(scheme))
@@ -123,7 +122,12 @@ func main() { //nolint:funlen // main function needs to initialize many object
 
 	// init custom kube client wrapper
 	k8sClient := mgr.GetClient()
-	kubeClient := k8s.NewKubeClient(k8sClient, "eventing-manager")
+	dynamicClient, err := dynamic.NewForConfig(k8sRestCfg)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	kubeClient := k8s.NewKubeClient(k8sClient, dynamicClient, "eventing-manager")
 	recorder := mgr.GetEventRecorderFor("eventing-manager")
 	ctx := context.Background()
 
@@ -145,11 +149,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		opts.ReconcilePeriod,
 		ctrLogger,
 	)
-
-	dynamicClient, err := dynamic.NewForConfig(k8sRestCfg)
-	if err != nil {
-		panic(err.Error())
-	}
 
 	// create Eventing reconciler instance
 	eventingReconciler := eventingcontroller.NewReconciler(

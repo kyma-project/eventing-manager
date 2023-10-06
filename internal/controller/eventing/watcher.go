@@ -2,11 +2,10 @@ package eventing
 
 import (
 	"fmt"
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"reflect"
 	"time"
 
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
@@ -14,16 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-var natsGVK = schema.GroupVersionResource{
-	Group:    natsv1alpha1.GroupVersion.Group,
-	Version:  natsv1alpha1.GroupVersion.Version,
-	Resource: "nats",
-}
-
 func NewWatcher(client dynamic.Interface, namespace string) *NatsWatcher {
 	dynamicInformerFactory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(
 		client, 30*time.Second, namespace, nil)
-	dynamicInformer := dynamicInformerFactory.ForResource(natsGVK).Informer()
+	dynamicInformer := dynamicInformerFactory.ForResource(k8s.NatsGVK).Informer()
 	return &NatsWatcher{
 		client:                 client,
 		namespace:              namespace,

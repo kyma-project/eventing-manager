@@ -116,12 +116,6 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 		return nil, err
 	}
 
-	// add NATS CRD scheme
-	err = natsv1alpha1.AddToScheme(scheme.Scheme)
-	if err != nil {
-		return nil, err
-	}
-
 	// +kubebuilder:scaffold:scheme
 
 	k8sClient, err := client.New(envTestKubeCfg, client.Options{Scheme: scheme.Scheme})
@@ -155,7 +149,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	os.Setenv("DOMAIN", "my.test.domain")
 
 	// create k8s clients.
-	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), "eventing-manager")
+	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), dynamicClient, "eventing-manager")
 
 	// get backend configs.
 	backendConfig := env.GetBackendConfig()
@@ -181,11 +175,10 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	subManagerFactoryMock.On("NewEventMeshManager").Return(eventMeshSubManagerMock, nil)
 
 	// create a new watcher
-	natsWatcher := eventingctrl.NewWatcher(dynamicClient)
-
 	eventingReconciler := eventingctrl.NewReconciler(
 		k8sClient,
 		kubeClient,
+		dynamicClient,
 		ctrlMgr.GetScheme(),
 		ctrLogger,
 		ctrlMgr.GetEventRecorderFor("eventing-manager-test"),
@@ -194,7 +187,6 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 		subManagerFactoryMock,
 		opts,
 		allowedEventingCR,
-		natsWatcher,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(ctrlMgr); err != nil {

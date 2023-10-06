@@ -88,7 +88,7 @@ type Reconciler struct {
 	backendConfig                 env.BackendConfig
 	allowedEventingCR             *eventingv1alpha1.Eventing
 	clusterScopedResourcesWatched bool
-	natsResourceWatched           bool
+	natsResourceWatchStarted      bool
 	natsWatcher                   *NatsWatcher
 }
 
@@ -121,7 +121,6 @@ func NewReconciler(
 		isNATSSubManagerStarted: false,
 		natsConfigHandler:       NewNatsConfigHandler(kubeClient, opts),
 		allowedEventingCR:       allowedEventingCR,
-		natsWatcher:             NewWatcher(dynamicClient, allowedEventingCR.Namespace),
 	}
 }
 
@@ -255,13 +254,14 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 }
 
 func (r *Reconciler) watchNATSResource(eventing *eventingv1alpha1.Eventing) error {
-
-	if r.natsResourceWatched {
-		// NATS CR watch is already started
+	if r.natsResourceWatchStarted {
 		return nil
 	}
 
-	r.natsWatcher = NewWatcher(r.dynamicClient, eventing.Namespace)
+	if r.natsWatcher == nil {
+		r.natsWatcher = NewWatcher(r.dynamicClient, eventing.Namespace)
+	}
+
 	r.natsWatcher.Start()
 	if err := r.controller.Watch(&source.Channel{Source: r.natsWatcher.natsCREventsCh},
 		handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
@@ -277,7 +277,7 @@ func (r *Reconciler) watchNATSResource(eventing *eventingv1alpha1.Eventing) erro
 	); err != nil {
 		return err
 	}
-	r.natsResourceWatched = true
+	r.natsResourceWatchStarted = true
 	return nil
 }
 
@@ -394,7 +394,8 @@ func (r *Reconciler) handleBackendSwitching(
 			return err
 		}
 		r.natsWatcher.Stop()
-		r.natsResourceWatched = false
+		r.natsWatcher = nil
+		r.natsResourceWatchStarted = false
 	} else if eventing.Status.ActiveBackend == eventingv1alpha1.EventMeshBackendType {
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
 			return err
