@@ -680,7 +680,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 			),
 			givenTargetNats: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateError(),
+				//natstestutils.WithNATSStateError(),
 			),
 			wantOriginalEventingMatches: gomega.And(
 				matchers.HaveStatusReady(),
@@ -722,7 +722,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 			),
 			givenTargetNats: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateError(),
+				//natstestutils.WithNATSStateError(),
 			),
 			isEventMesh: true,
 			wantOriginalEventingMatches: gomega.And(

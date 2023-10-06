@@ -233,8 +233,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha1.Eventing) error {
 	err := r.controller.Watch(
-		source.NewKindWithCache(kind, r.ctrlManager.GetCache()),
-		handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+		source.Kind(r.ctrlManager.GetCache(), kind),
+		handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
 			// Enqueue a reconcile request for the eventing resource
 			return []reconcile.Request{
 				{NamespacedName: types.NamespacedName{
@@ -256,16 +256,15 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 
 func (r *Reconciler) watchNATSResource(eventing *eventingv1alpha1.Eventing) error {
 
-	r.natsWatcher = NewWatcher(r.dynamicClient, eventing.Namespace)
-
-	if !r.natsResourceWatched {
+	if r.natsResourceWatched {
 		// NATS CR watch is already started
 		return nil
 	}
 
+	r.natsWatcher = NewWatcher(r.dynamicClient, eventing.Namespace)
 	r.natsWatcher.Start()
 	if err := r.controller.Watch(&source.Channel{Source: r.natsWatcher.natsCREventsCh},
-		handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+		handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
 			// Enqueue a reconcile request for the eventing resource
 			return []reconcile.Request{
 				{NamespacedName: types.NamespacedName{
