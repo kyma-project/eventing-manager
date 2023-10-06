@@ -6,8 +6,6 @@ env:
   DOCKER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
