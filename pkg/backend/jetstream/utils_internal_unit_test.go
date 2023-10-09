@@ -5,16 +5,16 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/nats-io/nats.go"
 
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	evtesting "github.com/kyma-project/eventing-manager/testing"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/cleaner"
-	evtesting "github.com/kyma-project/kyma/components/eventing-controller/testing"
 )
 
 // maxJetStreamConsumerNameLength is the maximum preferred length for the JetStream consumer names

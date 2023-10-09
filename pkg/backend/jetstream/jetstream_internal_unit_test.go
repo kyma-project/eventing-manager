@@ -3,7 +3,7 @@ package jetstream
 import (
 	"testing"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 
 	cev2 "github.com/cloudevents/sdk-go/v2/event"
 	jetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
@@ -13,10 +13,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	subtesting "github.com/kyma-project/eventing-manager/testing"
 	"github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/cleaner"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
-	subtesting "github.com/kyma-project/kyma/components/eventing-controller/testing"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )

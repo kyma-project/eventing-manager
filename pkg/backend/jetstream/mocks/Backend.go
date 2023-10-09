@@ -3,13 +3,13 @@
 package mocks
 
 import (
-	env "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	env "github.com/kyma-project/eventing-manager/pkg/env"
 
 	mock "github.com/stretchr/testify/mock"
 
 	nats "github.com/nats-io/nats.go"
 
-	utils "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/utils"
+	utils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 
 	v1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )

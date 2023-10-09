@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	env "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	env "github.com/kyma-project/eventing-manager/pkg/env"
 	manager "sigs.k8s.io/controller-runtime/pkg/manager"
 
 	mock "github.com/stretchr/testify/mock"

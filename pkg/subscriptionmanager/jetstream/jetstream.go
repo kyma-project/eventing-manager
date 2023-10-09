@@ -6,10 +6,10 @@ import (
 
 	manager2 "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/sink"
-	backendutils "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/utils"
+	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
+	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/cleaner"
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 
 	"golang.org/x/xerrors"
 
@@ -26,13 +26,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/kyma-project/eventing-manager/internal/controller/subscription/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
 	backendjetstream "github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
+	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/eventtype"
-	backendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 )
 
 const (

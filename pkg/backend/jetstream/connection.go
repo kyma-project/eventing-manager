@@ -1,8 +1,8 @@
 package jetstream
 
 import (
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-	pkgerrors "github.com/kyma-project/kyma/components/eventing-controller/pkg/errors"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/nats-io/nats.go"
 )
 

@@ -14,12 +14,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/dynamic"
 
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendnats "github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	controllertesting "github.com/kyma-project/eventing-manager/testing"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/cleaner"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-	controllertesting "github.com/kyma-project/kyma/components/eventing-controller/testing"
 )
 
 const (

@@ -3,7 +3,7 @@ package manager
 import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 )
 
 const (

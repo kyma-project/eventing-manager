@@ -10,8 +10,8 @@ import (
 
 	http2 "github.com/cloudevents/sdk-go/v2/protocol/http"
 
-	backendutils "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/utils"
-	pkgerrors "github.com/kyma-project/kyma/components/eventing-controller/pkg/errors"
+	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
+	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 
 	cev2 "github.com/cloudevents/sdk-go/v2"
 	cev2protocol "github.com/cloudevents/sdk-go/v2/protocol"
@@ -19,12 +19,13 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/tracing"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/cleaner"
-	backendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/tracing"
+	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	"github.com/kyma-project/kyma/components/eventing-controller/utils"
 )
 
@@ -615,9 +616,10 @@ func (js *JetStream) getOrCreateConsumer(subscription *eventingv1alpha2.Subscrip
 	consumerInfo, err := js.jsCtx.ConsumerInfo(js.Config.JSStreamName, jsSubKey.ConsumerName())
 	if err != nil {
 		if errors.Is(err, nats.ErrConsumerNotFound) {
+			ecSubsConfig := ecenv.DefaultSubscriptionConfig(js.subsConfig)
 			consumerInfo, err = js.jsCtx.AddConsumer(
 				js.Config.JSStreamName,
-				js.getConsumerConfig(jsSubKey, jsSubject, subscription.GetMaxInFlightMessages(&js.subsConfig)),
+				js.getConsumerConfig(jsSubKey, jsSubject, subscription.GetMaxInFlightMessages(&ecSubsConfig)),
 			)
 			if err != nil {
 				return nil, pkgerrors.MakeError(ErrAddConsumer, err)
@@ -635,10 +637,11 @@ func (js *JetStream) createNATSSubscription(subscription *eventingv1alpha2.Subsc
 	jsSubject := js.GetJetStreamSubject(subscription.Spec.Source, subject.CleanType, subscription.Spec.TypeMatching)
 	jsSubKey := NewSubscriptionSubjectIdentifier(subscription, jsSubject)
 
+	ecSubsConfig := ecenv.DefaultSubscriptionConfig(js.subsConfig)
 	jsSubscription, err := js.jsCtx.Subscribe(
 		jsSubject,
 		asyncCallback,
-		js.getDefaultSubscriptionOptions(jsSubKey, subscription.GetMaxInFlightMessages(&js.subsConfig))...,
+		js.getDefaultSubscriptionOptions(jsSubKey, subscription.GetMaxInFlightMessages(&ecSubsConfig))...,
 	)
 	if err != nil {
 		return pkgerrors.MakeError(ErrFailedSubscribe, err)
@@ -678,7 +681,8 @@ func (js *JetStream) bindInvalidSubscriptions(subscription *eventingv1alpha2.Sub
 // is propagated to the NATS consumer as MaxAckPending.
 func (js *JetStream) syncConsumerMaxInFlight(subscription *eventingv1alpha2.Subscription,
 	consumerInfo nats.ConsumerInfo) error {
-	maxInFlight := subscription.GetMaxInFlightMessages(&js.subsConfig)
+	ecSubsConfig := ecenv.DefaultSubscriptionConfig(js.subsConfig)
+	maxInFlight := subscription.GetMaxInFlightMessages(&ecSubsConfig)
 
 	if consumerInfo.Config.MaxAckPending == maxInFlight {
 		return nil

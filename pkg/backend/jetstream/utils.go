@@ -6,17 +6,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 
 	"github.com/pkg/errors"
 
-	pkgerrors "github.com/kyma-project/kyma/components/eventing-controller/pkg/errors"
+	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/nats-io/nats.go"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/cleaner"
 )
 
 const (

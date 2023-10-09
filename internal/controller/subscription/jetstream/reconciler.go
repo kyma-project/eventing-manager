@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 
 	k8stypes "k8s.io/apimachinery/pkg/types"
 
@@ -27,12 +27,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/cleaner"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/sink"
-	backendutils "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/utils"
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
+	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/kyma/components/eventing-controller/utils"
 
-	jetstream "github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 )

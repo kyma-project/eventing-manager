@@ -3,14 +3,16 @@ package subscriptionmanager
 import (
 	"time"
 
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	ecmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
+	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
+
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
 	eclogger "github.com/kyma-project/kyma/components/eventing-controller/logger"
-	ecbackendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
-	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager/eventmesh"
 	"k8s.io/client-go/rest"
 )
@@ -28,7 +30,7 @@ type ManagerFactory interface {
 type Factory struct {
 	k8sRestCfg       *rest.Config
 	metricsAddress   string
-	metricsCollector *ecbackendmetrics.Collector
+	metricsCollector *metrics.Collector
 	resyncPeriod     time.Duration
 	logger           *eclogger.Logger
 }
@@ -36,7 +38,7 @@ type Factory struct {
 func NewFactory(
 	k8sRestCfg *rest.Config,
 	metricsAddress string,
-	metricsCollector *ecbackendmetrics.Collector,
+	metricsCollector *metrics.Collector,
 	resyncPeriod time.Duration,
 	logger *eclogger.Logger) *Factory {
 	return &Factory{
@@ -49,10 +51,12 @@ func NewFactory(
 }
 
 func (f Factory) NewJetStreamManager(eventing v1alpha1.Eventing, natsConfig env.NATSConfig) manager.Manager {
-	return jetstream.NewSubscriptionManager(f.k8sRestCfg, natsConfig.ToECENVNATSConfig(eventing),
+	return jetstream.NewSubscriptionManager(f.k8sRestCfg, natsConfig.GetNewNATSConfig(eventing),
 		f.metricsAddress, f.metricsCollector, f.logger)
 }
 
 func (f Factory) NewEventMeshManager() (ecsubscriptionmanager.Manager, error) {
-	return eventmesh.NewSubscriptionManager(f.k8sRestCfg, f.metricsAddress, f.resyncPeriod, f.logger, f.metricsCollector), nil
+	// TODO: fix the metrics object from f.metricsCollector
+	mc := ecmetrics.NewCollector()
+	return eventmesh.NewSubscriptionManager(f.k8sRestCfg, f.metricsAddress, f.resyncPeriod, f.logger, mc), nil
 }

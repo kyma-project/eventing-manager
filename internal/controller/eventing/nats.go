@@ -6,10 +6,8 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/kyma/components/eventing-controller/options"
@@ -79,7 +77,7 @@ func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1al
 	return nil
 }
 
-func (r *Reconciler) startNATSSubManager(defaultSubsConfig ecenv.DefaultSubscriptionConfig, log *zap.SugaredLogger) error {
+func (r *Reconciler) startNATSSubManager(defaultSubsConfig env.DefaultSubscriptionConfig, log *zap.SugaredLogger) error {
 	if err := r.natsSubManager.Start(defaultSubsConfig, manager.Params{}); err != nil {
 		return err
 	}
@@ -90,9 +88,9 @@ func (r *Reconciler) startNATSSubManager(defaultSubsConfig ecenv.DefaultSubscrip
 	return nil
 }
 
-func (r *Reconciler) getDefaultSubscriptionConfig() ecenv.DefaultSubscriptionConfig {
+func (r *Reconciler) getDefaultSubscriptionConfig() env.DefaultSubscriptionConfig {
 	return r.eventingManager.GetBackendConfig().
-		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
+		DefaultSubscriptionConfig
 }
 
 func (r *Reconciler) stopNATSSubManager(runCleanup bool, log *zap.SugaredLogger) error {

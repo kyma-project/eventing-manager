@@ -7,20 +7,20 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/nats-io/nats-server/v2/server"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/cleaner"
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 
 	nats2 "github.com/cloudevents/sdk-go/protocol/nats/v2"
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
 	cev2http "github.com/cloudevents/sdk-go/v2/protocol/http"
+	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	evtesting "github.com/kyma-project/eventing-manager/testing"
 	"github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/ems/api/events/types"
-	evtesting "github.com/kyma-project/kyma/components/eventing-controller/testing"
 )
 
 const (
