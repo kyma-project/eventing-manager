@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/utils"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 
 	. "github.com/onsi/gomega"
 	v1meta "k8s.io/apimachinery/pkg/apis/meta/v1"

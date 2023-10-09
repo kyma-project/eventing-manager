@@ -12,7 +12,7 @@ import (
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/options"
+	"github.com/kyma-project/eventing-manager/options"
 
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 

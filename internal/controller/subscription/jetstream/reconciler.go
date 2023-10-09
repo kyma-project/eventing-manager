@@ -13,8 +13,8 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	pkgerrors "github.com/kyma-project/kyma/components/eventing-controller/pkg/errors"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/object"
+	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
+	"github.com/kyma-project/eventing-manager/pkg/object"
 
 	"github.com/pkg/errors"
 
@@ -30,7 +30,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	"github.com/kyma-project/kyma/components/eventing-controller/utils"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"

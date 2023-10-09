@@ -17,6 +17,18 @@ func MakeError(actualError, underlyingError error) error {
 	return fmt.Errorf("%w: %v", actualError, underlyingError)
 }
 
+// MakeSubscriptionError creates a new error and includes the underlyingError in the message
+// for subscription-related errors.
+func MakeSubscriptionError(actualError, underlyingError error, subscription any) error {
+	return fmt.Errorf("%w: %v, subscription: %v", actualError, underlyingError, subscription)
+}
+
+// MakeConsumerError creates a new error and includes the underlyingError in the message
+// for consumer-related errors.
+func MakeConsumerError(actualError, underlyingError error, consumer any) error {
+	return fmt.Errorf("%w: %v, consumer: %v", actualError, underlyingError, consumer)
+}
+
 // ArgumentError is a generic error which can be used to create errors that shall include any kind of argument
 // in their Error() message.
 // By using the ArgumentError you don't need to create a custom error for each of these errors that have this

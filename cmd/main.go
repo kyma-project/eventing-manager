@@ -38,9 +38,9 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"github.com/kyma-project/eventing-manager/options"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)

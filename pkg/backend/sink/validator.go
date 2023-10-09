@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/utils"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 	"golang.org/x/xerrors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"

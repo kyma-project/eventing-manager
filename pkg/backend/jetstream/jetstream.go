@@ -23,10 +23,10 @@ import (
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/tracing"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-	"github.com/kyma-project/kyma/components/eventing-controller/utils"
 )
 
 var _ Backend = &JetStream{}
@@ -440,7 +440,7 @@ func (js *JetStream) deleteSubscriptionFromJetStream(jsSub Subscriber, jsSubKey 
 	if jsSub.IsValid() {
 		// unsubscribe will also delete the consumer on JS server
 		if err := jsSub.Unsubscribe(); err != nil {
-			return utils.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
+			return pkgerrors.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
 		}
 	}
 
@@ -460,7 +460,7 @@ func (js *JetStream) deleteSubscriptionFromJetStreamOnly(jsSub Subscriber,
 	if jsSub.IsValid() {
 		// The Unsubscribe function should not delete the consumer because it was added manually.
 		if err := jsSub.Unsubscribe(); err != nil {
-			return utils.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
+			return pkgerrors.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
 		}
 	}
 	delete(js.subscriptions, jsSubKey)
@@ -560,7 +560,7 @@ func (js *JetStream) deleteConsumerFromJetStream(name string) error {
 	if err := js.jsCtx.DeleteConsumer(js.Config.JSStreamName, name); err != nil &&
 		!errors.Is(err, nats.ErrConsumerNotFound) {
 		// if it is not a Not Found error, then return error
-		return utils.MakeConsumerError(ErrDeleteConsumer, err, name)
+		return pkgerrors.MakeConsumerError(ErrDeleteConsumer, err, name)
 	}
 
 	return nil

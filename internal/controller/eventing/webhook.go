@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 
-	pkgerrors "github.com/kyma-project/kyma/components/eventing-controller/pkg/errors"
+	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
