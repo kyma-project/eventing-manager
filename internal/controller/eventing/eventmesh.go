@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 	"os"
 
@@ -85,6 +86,13 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	} else {
 		// update the config if hashes differ
 		if eventing.Status.BackendConfigHash != specHash && r.isEventMeshSubManagerStarted {
+			// set the eventing CR status to processing
+			if err = r.syncStatusWithSubscriptionManagerProcessingWithReason(ctx,
+				eventingv1alpha1.ConditionReasonSubscriptionManagerProcessing,
+				eventing, "Updating EventMesh subscription-manager with new config.", r.namedLogger()); err != nil {
+				return err
+			}
+
 			// stop the subsManager without cleanup
 			if err := r.stopEventMeshSubManager(false, r.namedLogger()); err != nil {
 				return err
