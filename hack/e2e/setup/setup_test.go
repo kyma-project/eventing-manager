@@ -17,14 +17,16 @@ import (
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
 
+	"github.com/pkg/errors"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	"github.com/pkg/errors"
+
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common"
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
-	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var testEnvironment *testenvironment.TestEnvironment
@@ -56,7 +58,7 @@ func TestMain(m *testing.M) {
 		testEnvironment.Logger.Fatal(err.Error())
 	}
 
-	// wait for an testenvironment.Interval for reconciliation to update status.
+	// wait for a testenvironment.Interval for reconciliation to update status.
 	time.Sleep(testenvironment.Interval)
 
 	// Wait for Eventing CR to get ready.
