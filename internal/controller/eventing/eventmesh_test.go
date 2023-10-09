@@ -916,7 +916,7 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			testEnv := NewMockedUnitTestEnvironment(t)
+			testEnv := NewMockedUnitTestEnvironment(t, tc.givenEventing)
 			testEnv.Reconciler.oauth2credentials = oauth2Credentials{}
 			eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
 			eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
@@ -929,10 +929,6 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 
 			if tc.givenSecret != nil {
 				require.NoError(t, testEnv.Reconciler.Client.Create(ctx, tc.givenSecret))
-			}
-
-			if tc.givenEventing != nil {
-				require.NoError(t, testEnv.Reconciler.Client.Create(ctx, tc.givenEventing))
 			}
 
 			if tc.givenCredentials != nil {

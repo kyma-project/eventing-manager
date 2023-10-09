@@ -22,12 +22,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/go-logr/zapr"
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	subscriptionv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	subscriptionv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
