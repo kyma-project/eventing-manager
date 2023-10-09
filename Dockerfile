@@ -17,6 +17,7 @@ COPY api/ api/
 COPY internal/controller/ internal/controller/
 COPY pkg/ pkg/
 COPY testing/ testing/
+COPY options/ options/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
