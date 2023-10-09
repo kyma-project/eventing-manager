@@ -2,5 +2,5 @@
 namespace: eventing-manager
 
 resources:
-- operator_v1alpha1_eventing.yaml
+- default.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

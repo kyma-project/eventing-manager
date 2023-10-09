@@ -3,9 +3,8 @@ kind: Eventing
 metadata:
   labels:
     app.kubernetes.io/name: eventing
-    app.kubernetes.io/instance: eventing-sample
+    app.kubernetes.io/instance: eventing
     app.kubernetes.io/part-of: eventing-manager
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: eventing-manager
   name: eventing
   namespace: kyma-system

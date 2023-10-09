@@ -40,7 +40,8 @@ type PublisherConfig struct {
 	RequestTimeout    string `envconfig:"PUBLISHER_REQUEST_TIMEOUT" default:"5s"`
 	PriorityClassName string `envconfig:"PUBLISHER_PRIORITY_CLASS_NAME" default:""`
 	// publisher takes the controller values
-	AppLogFormat string `envconfig:"APP_LOG_FORMAT" default:"json"`
+	AppLogFormat          string `envconfig:"APP_LOG_FORMAT" default:"json"`
+	ApplicationCRDEnabled bool
 }
 
 type DefaultSubscriptionConfig struct {

@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
 	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
@@ -155,7 +157,11 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	os.Setenv("DOMAIN", "my.test.domain")
 
 	// create k8s clients.
-	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), "eventing-manager")
+	apiClientSet, err := apiclientset.NewForConfig(ctrlMgr.GetConfig())
+	if err != nil {
+		return nil, err
+	}
+	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), apiClientSet, "eventing-manager")
 
 	// get backend configs.
 	backendConfig := env.GetBackendConfig()
@@ -588,6 +594,18 @@ func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventin
 		}
 		return *hpa.Spec.MinReplicas == int32(eventingCR.Spec.Publisher.Replicas.Min) && hpa.Spec.MaxReplicas == int32(eventingCR.Spec.Publisher.Replicas.Max)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing spec replicas is reflected")
+}
+
+func (env TestEnvironment) EnsurePublisherDeploymentENVSet(t *testing.T, eventingCR *v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		deployment, err := env.GetDeploymentFromK8s(eventing.GetPublisherDeploymentName(*eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
+				"name", eventingCR.Name, "namespace", eventingCR.Namespace)
+		}
+		gotValue := test.FindEnvVar(deployment.Spec.Template.Spec.Containers[0].Env, "APPLICATION_CRD_ENABLED")
+		return gotValue != nil && gotValue.Value == "true"
+	}, SmallTimeOut, SmallPollingInterval, "failed to verify APPLICATION_CRD_ENABLED ENV in Publisher deployment")
 }
 
 func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, eventingCR *v1alpha1.Eventing) {

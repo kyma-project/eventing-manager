@@ -10,6 +10,8 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	k8sclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,16 +31,20 @@ type Client interface {
 		name string) (*admissionv1.MutatingWebhookConfiguration, error)
 	GetValidatingWebHookConfiguration(ctx context.Context,
 		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
+	GetCRD(context.Context, string) (*apiextensionsv1.CustomResourceDefinition, error)
+	ApplicationCRDExists(context.Context) (bool, error)
 }
 
 type KubeClient struct {
 	fieldManager string
 	client       client.Client
+	clientset    k8sclientset.Interface
 }
 
-func NewKubeClient(client client.Client, fieldManager string) Client {
+func NewKubeClient(client client.Client, clientset k8sclientset.Interface, fieldManager string) Client {
 	return &KubeClient{
 		client:       client,
+		clientset:    clientset,
 		fieldManager: fieldManager,
 	}
 }
@@ -128,6 +134,18 @@ func (c *KubeClient) GetSecret(ctx context.Context, namespacedName string) (*cor
 		return nil, err
 	}
 	return secret, nil
+}
+
+func (c *KubeClient) GetCRD(ctx context.Context, name string) (*apiextensionsv1.CustomResourceDefinition, error) {
+	return c.clientset.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, name, metav1.GetOptions{})
+}
+
+func (c *KubeClient) ApplicationCRDExists(ctx context.Context) (bool, error) {
+	_, err := c.GetCRD(ctx, ApplicationCrdName)
+	if err != nil {
+		return false, client.IgnoreNotFound(err)
+	}
+	return true, nil
 }
 
 // GetMutatingWebHookConfiguration returns the MutatingWebhookConfiguration k8s resource.

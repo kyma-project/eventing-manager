@@ -177,7 +177,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return r.handleEventingDeletion(ctx, eventing, log)
 	}
 
-	// check if the Eveting CR is allowed to be created.
+	// check if the Eventing CR is allowed to be created.
 	if r.allowedEventingCR != nil {
 		if result, err := r.handleEventingCRAllowedCheck(ctx, eventing, log); !result || err != nil {
 			return ctrl.Result{}, err
@@ -332,6 +332,14 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 
 	// update ActiveBackend in status.
 	eventing.SyncStatusActiveBackend()
+
+	// check if Application CRD is installed.
+	isApplicationCRDEnabled, err := r.kubeClient.ApplicationCRDExists(ctx)
+	if err != nil {
+		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
+	}
+	r.backendConfig.PublisherConfig.ApplicationCRDEnabled = isApplicationCRDEnabled
+	r.eventingManager.SetBackendConfig(r.backendConfig)
 
 	// reconcile for specified backend.
 	switch eventing.Spec.Backend.Type {
