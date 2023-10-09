@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 
 	"github.com/kelseyhightower/envconfig"
-	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 )
 
 // NATSConfig represents the environment config for the Eventing Controller with Nats.
@@ -59,9 +58,9 @@ type NATSConfig struct {
 	JSConsumerDeliverPolicy string `envconfig:"JS_CONSUMER_DELIVER_POLICY" default:"new"`
 }
 
-// ToECENVNATSConfig returns eventing-controller's NATSConfig.
-func (nc NATSConfig) ToECENVNATSConfig(eventingCR v1alpha1.Eventing) ecenv.NATSConfig {
-	return ecenv.NATSConfig{
+// GetNewNATSConfig returns NATSConfig with values based on Eventing CR.
+func (nc NATSConfig) GetNewNATSConfig(eventingCR v1alpha1.Eventing) NATSConfig {
+	return NATSConfig{
 		// values from local NATSConfig.
 		URL:                     nc.URL,
 		MaxReconnects:           nc.MaxReconnects,

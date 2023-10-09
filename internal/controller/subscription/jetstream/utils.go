@@ -1,8 +1,8 @@
 package jetstream
 
 import (
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	"github.com/kyma-project/kyma/components/eventing-controller/utils"
 )
 
 // isInDeletion checks if the subscription needs to be deleted.

@@ -3,8 +3,8 @@ package jetstream
 import (
 	"testing"
 
+	subtesting "github.com/kyma-project/eventing-manager/testing"
 	"github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	subtesting "github.com/kyma-project/kyma/components/eventing-controller/testing"
 	"github.com/stretchr/testify/require"
 )
 

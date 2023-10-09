@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 
-	eventingtesting "github.com/kyma-project/kyma/components/eventing-controller/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )

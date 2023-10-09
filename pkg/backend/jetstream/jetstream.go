@@ -10,8 +10,8 @@ import (
 
 	http2 "github.com/cloudevents/sdk-go/v2/protocol/http"
 
-	backendutils "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/utils"
-	pkgerrors "github.com/kyma-project/kyma/components/eventing-controller/pkg/errors"
+	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
+	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 
 	cev2 "github.com/cloudevents/sdk-go/v2"
 	cev2protocol "github.com/cloudevents/sdk-go/v2/protocol"
@@ -19,13 +19,14 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/tracing"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/cleaner"
-	backendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/tracing"
-	"github.com/kyma-project/kyma/components/eventing-controller/utils"
+	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 )
 
 var _ Backend = &JetStream{}
@@ -439,7 +440,7 @@ func (js *JetStream) deleteSubscriptionFromJetStream(jsSub Subscriber, jsSubKey 
 	if jsSub.IsValid() {
 		// unsubscribe will also delete the consumer on JS server
 		if err := jsSub.Unsubscribe(); err != nil {
-			return utils.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
+			return pkgerrors.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
 		}
 	}
 
@@ -459,7 +460,7 @@ func (js *JetStream) deleteSubscriptionFromJetStreamOnly(jsSub Subscriber,
 	if jsSub.IsValid() {
 		// The Unsubscribe function should not delete the consumer because it was added manually.
 		if err := jsSub.Unsubscribe(); err != nil {
-			return utils.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
+			return pkgerrors.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
 		}
 	}
 	delete(js.subscriptions, jsSubKey)
@@ -559,7 +560,7 @@ func (js *JetStream) deleteConsumerFromJetStream(name string) error {
 	if err := js.jsCtx.DeleteConsumer(js.Config.JSStreamName, name); err != nil &&
 		!errors.Is(err, nats.ErrConsumerNotFound) {
 		// if it is not a Not Found error, then return error
-		return utils.MakeConsumerError(ErrDeleteConsumer, err, name)
+		return pkgerrors.MakeConsumerError(ErrDeleteConsumer, err, name)
 	}
 
 	return nil
@@ -615,9 +616,10 @@ func (js *JetStream) getOrCreateConsumer(subscription *eventingv1alpha2.Subscrip
 	consumerInfo, err := js.jsCtx.ConsumerInfo(js.Config.JSStreamName, jsSubKey.ConsumerName())
 	if err != nil {
 		if errors.Is(err, nats.ErrConsumerNotFound) {
+			ecSubsConfig := ecenv.DefaultSubscriptionConfig(js.subsConfig)
 			consumerInfo, err = js.jsCtx.AddConsumer(
 				js.Config.JSStreamName,
-				js.getConsumerConfig(jsSubKey, jsSubject, subscription.GetMaxInFlightMessages(&js.subsConfig)),
+				js.getConsumerConfig(jsSubKey, jsSubject, subscription.GetMaxInFlightMessages(&ecSubsConfig)),
 			)
 			if err != nil {
 				return nil, pkgerrors.MakeError(ErrAddConsumer, err)
@@ -635,10 +637,11 @@ func (js *JetStream) createNATSSubscription(subscription *eventingv1alpha2.Subsc
 	jsSubject := js.GetJetStreamSubject(subscription.Spec.Source, subject.CleanType, subscription.Spec.TypeMatching)
 	jsSubKey := NewSubscriptionSubjectIdentifier(subscription, jsSubject)
 
+	ecSubsConfig := ecenv.DefaultSubscriptionConfig(js.subsConfig)
 	jsSubscription, err := js.jsCtx.Subscribe(
 		jsSubject,
 		asyncCallback,
-		js.getDefaultSubscriptionOptions(jsSubKey, subscription.GetMaxInFlightMessages(&js.subsConfig))...,
+		js.getDefaultSubscriptionOptions(jsSubKey, subscription.GetMaxInFlightMessages(&ecSubsConfig))...,
 	)
 	if err != nil {
 		return pkgerrors.MakeError(ErrFailedSubscribe, err)
@@ -678,7 +681,8 @@ func (js *JetStream) bindInvalidSubscriptions(subscription *eventingv1alpha2.Sub
 // is propagated to the NATS consumer as MaxAckPending.
 func (js *JetStream) syncConsumerMaxInFlight(subscription *eventingv1alpha2.Subscription,
 	consumerInfo nats.ConsumerInfo) error {
-	maxInFlight := subscription.GetMaxInFlightMessages(&js.subsConfig)
+	ecSubsConfig := ecenv.DefaultSubscriptionConfig(js.subsConfig)
+	maxInFlight := subscription.GetMaxInFlightMessages(&ecSubsConfig)
 
 	if consumerInfo.Config.MaxAckPending == maxInFlight {
 		return nil

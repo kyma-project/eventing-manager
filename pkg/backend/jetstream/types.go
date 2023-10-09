@@ -5,16 +5,16 @@ package jetstream
 import (
 	"sync"
 
-	backendutilsv2 "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/utils"
+	backendutilsv2 "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 
 	cev2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/nats-io/nats.go"
 
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/cleaner"
-	backendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 )
 
 const (
