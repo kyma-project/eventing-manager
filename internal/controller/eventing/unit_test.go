@@ -14,7 +14,7 @@ import (
 
 	"github.com/kyma-project/eventing-manager/options"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 
 	ctrlmocks "github.com/kyma-project/eventing-manager/internal/controller/eventing/mocks"
 

@@ -3,8 +3,8 @@ package cleaner
 import (
 	"testing"
 
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/stretchr/testify/require"
 )
 

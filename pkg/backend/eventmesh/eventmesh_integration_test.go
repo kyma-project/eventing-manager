@@ -12,10 +12,10 @@ import (
 	PublisherManagerMock "github.com/kyma-project/eventing-manager/pkg/ems/api/events/client/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	controllertesting "github.com/kyma-project/eventing-manager/testing"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 )
 
 func Test_getProcessedEventTypes(t *testing.T) {

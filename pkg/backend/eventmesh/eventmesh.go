@@ -16,8 +16,8 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/ems/httpclient"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 )
 
 const (

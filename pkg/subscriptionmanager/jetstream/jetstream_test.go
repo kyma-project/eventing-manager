@@ -18,8 +18,8 @@ import (
 	backendnats "github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	controllertesting "github.com/kyma-project/eventing-manager/testing"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 )
 
 const (

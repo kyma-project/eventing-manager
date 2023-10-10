@@ -17,9 +17,9 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	evtesting "github.com/kyma-project/eventing-manager/testing"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 )
 
 // TestJetStreamSubAfterSync_SinkChange tests the SyncSubscription method

@@ -6,7 +6,7 @@ import (
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 )
 
 func Test_CleanEventType(t *testing.T) {

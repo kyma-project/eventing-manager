@@ -9,7 +9,7 @@ import (
 
 	k8stypes "k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/controllers/events"
+	"github.com/kyma-project/eventing-manager/internal/controller/events"
 
 	"github.com/nats-io/nats.go"
 
@@ -33,8 +33,8 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 )
 
 const (

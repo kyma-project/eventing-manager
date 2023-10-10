@@ -19,7 +19,6 @@ import (
 	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
-	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
 	"github.com/stretchr/testify/mock"
 
 	corev1 "k8s.io/api/core/v1"
@@ -47,8 +46,8 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -178,7 +177,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	jetStreamSubManagerMock.On("Stop", mock.Anything).Return(nil)
 
 	// define EventMesh subscription manager mock.
-	eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+	eventMeshSubManagerMock := new(submanagermocks.Manager)
 	eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil)
 	eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
 	eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil)
