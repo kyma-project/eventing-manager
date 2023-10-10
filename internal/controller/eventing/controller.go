@@ -19,6 +19,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/eventing-manager/pkg/watcher"
 
 	"k8s.io/client-go/dynamic"
 
@@ -91,7 +92,7 @@ type Reconciler struct {
 	allowedEventingCR             *eventingv1alpha1.Eventing
 	clusterScopedResourcesWatched bool
 	natsResourceWatchStarted      bool
-	natsWatcher                   *NatsWatcher
+	natsWatcher                   watcher.Watcher
 }
 
 func NewReconciler(
@@ -261,11 +262,11 @@ func (r *Reconciler) startNATSResourceWatch(eventing *eventingv1alpha1.Eventing)
 	}
 
 	if r.natsWatcher == nil {
-		r.natsWatcher = NewWatcher(r.dynamicClient, eventing.Namespace)
+		r.natsWatcher = watcher.NewResourceWatcher(r.dynamicClient, k8s.NatsGVK, eventing.Namespace)
 	}
 
 	r.natsWatcher.Start()
-	if err := r.controller.Watch(&source.Channel{Source: r.natsWatcher.natsCREventsCh},
+	if err := r.controller.Watch(&source.Channel{Source: r.natsWatcher.GetEventsChannel()},
 		handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
 			// Enqueue a reconcile request for the eventing resource
 			return []reconcile.Request{

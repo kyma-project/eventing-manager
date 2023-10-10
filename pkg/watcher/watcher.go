@@ -1,12 +1,11 @@
-package eventing
+package watcher
 
 import (
 	"log"
 	"reflect"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
-
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
@@ -14,23 +13,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-func NewWatcher(client dynamic.Interface, namespace string) *NatsWatcher {
+func NewResourceWatcher(client dynamic.Interface, gvk schema.GroupVersionResource, namespace string) *ResourceWatcher {
 	dynamicInformerFactory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(
 		client, 30*time.Second, namespace, nil)
-	dynamicInformer := dynamicInformerFactory.ForResource(k8s.NatsGVK).Informer()
-	return &NatsWatcher{
+	dynamicInformer := dynamicInformerFactory.ForResource(gvk).Informer()
+	return &ResourceWatcher{
 		client:                 client,
 		namespace:              namespace,
-		natsCREventsCh:         make(chan event.GenericEvent),
+		eventsCh:               make(chan event.GenericEvent),
 		dynamicInformerFactory: dynamicInformerFactory,
 		dynamicInformer:        dynamicInformer,
 	}
 }
 
-type NatsWatcher struct {
+type Watcher interface {
+	Start()
+	Stop()
+	GetEventsChannel() <-chan event.GenericEvent
+}
+
+type ResourceWatcher struct {
 	client                 dynamic.Interface
 	namespace              string
-	natsCREventsCh         chan event.GenericEvent
+	eventsCh               chan event.GenericEvent
 	dynamicInformerFactory dynamicinformer.DynamicSharedInformerFactory
 	dynamicInformer        cache.SharedIndexInformer
 	eventHandler           cache.ResourceEventHandlerRegistration
@@ -38,7 +43,7 @@ type NatsWatcher struct {
 	started                bool
 }
 
-func (w *NatsWatcher) Start() {
+func (w *ResourceWatcher) Start() {
 	if w.started {
 		return
 	}
@@ -59,14 +64,14 @@ func (w *NatsWatcher) Start() {
 
 	w.dynamicInformerFactory.Start(w.stopCh)
 	w.dynamicInformerFactory.WaitForCacheSync(w.stopCh)
-	if !cache.WaitForNamedCacheSync("NatsWatcher", w.stopCh, w.dynamicInformer.HasSynced) {
+	if !cache.WaitForNamedCacheSync("ResourceWatcher", w.stopCh, w.dynamicInformer.HasSynced) {
 		runtime.HandleError(err)
 	}
 
 	w.started = true
 }
 
-func (w *NatsWatcher) Stop() {
+func (w *ResourceWatcher) Stop() {
 	// recover from closing already closed channels
 	defer func() {
 		if r := recover(); r != nil {
@@ -87,16 +92,20 @@ func (w *NatsWatcher) Stop() {
 	w.started = false
 }
 
-func (w *NatsWatcher) addFunc(o interface{}) {
-	w.natsCREventsCh <- event.GenericEvent{}
+func (w *ResourceWatcher) GetEventsChannel() <-chan event.GenericEvent {
+	return w.eventsCh
 }
 
-func (w *NatsWatcher) updateFunc(o, n interface{}) {
+func (w *ResourceWatcher) addFunc(o interface{}) {
+	w.eventsCh <- event.GenericEvent{}
+}
+
+func (w *ResourceWatcher) updateFunc(o, n interface{}) {
 	if !reflect.DeepEqual(o, n) {
-		w.natsCREventsCh <- event.GenericEvent{}
+		w.eventsCh <- event.GenericEvent{}
 	}
 }
 
-func (w *NatsWatcher) deleteFunc(o interface{}) {
-	w.natsCREventsCh <- event.GenericEvent{}
+func (w *ResourceWatcher) deleteFunc(o interface{}) {
+	w.eventsCh <- event.GenericEvent{}
 }
