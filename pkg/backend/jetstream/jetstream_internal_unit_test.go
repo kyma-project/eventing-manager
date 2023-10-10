@@ -7,8 +7,8 @@ import (
 
 	cev2 "github.com/cloudevents/sdk-go/v2/event"
 	jetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	"github.com/nats-io/nats.go"
 
 	"github.com/stretchr/testify/assert"

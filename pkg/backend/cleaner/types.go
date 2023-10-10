@@ -1,6 +1,6 @@
 package cleaner
 
-import "github.com/kyma-project/kyma/components/eventing-controller/logger"
+import "github.com/kyma-project/eventing-manager/pkg/logger"
 
 type Cleaner interface {
 	CleanSource(source string) (string, error)

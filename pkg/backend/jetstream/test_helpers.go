@@ -9,7 +9,7 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/nats-io/nats-server/v2/server"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"

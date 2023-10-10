@@ -7,8 +7,6 @@ import (
 	manager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	mock "github.com/stretchr/testify/mock"
 
-	subscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
-
 	v1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 )
 
@@ -26,19 +24,19 @@ func (_m *ManagerFactory) EXPECT() *ManagerFactory_Expecter {
 }
 
 // NewEventMeshManager provides a mock function with given fields:
-func (_m *ManagerFactory) NewEventMeshManager() (subscriptionmanager.Manager, error) {
+func (_m *ManagerFactory) NewEventMeshManager() (manager.Manager, error) {
 	ret := _m.Called()
 
-	var r0 subscriptionmanager.Manager
+	var r0 manager.Manager
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (subscriptionmanager.Manager, error)); ok {
+	if rf, ok := ret.Get(0).(func() (manager.Manager, error)); ok {
 		return rf()
 	}
-	if rf, ok := ret.Get(0).(func() subscriptionmanager.Manager); ok {
+	if rf, ok := ret.Get(0).(func() manager.Manager); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(subscriptionmanager.Manager)
+			r0 = ret.Get(0).(manager.Manager)
 		}
 	}
 
@@ -68,12 +66,12 @@ func (_c *ManagerFactory_NewEventMeshManager_Call) Run(run func()) *ManagerFacto
 	return _c
 }
 
-func (_c *ManagerFactory_NewEventMeshManager_Call) Return(_a0 subscriptionmanager.Manager, _a1 error) *ManagerFactory_NewEventMeshManager_Call {
+func (_c *ManagerFactory_NewEventMeshManager_Call) Return(_a0 manager.Manager, _a1 error) *ManagerFactory_NewEventMeshManager_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ManagerFactory_NewEventMeshManager_Call) RunAndReturn(run func() (subscriptionmanager.Manager, error)) *ManagerFactory_NewEventMeshManager_Call {
+func (_c *ManagerFactory_NewEventMeshManager_Call) RunAndReturn(run func() (manager.Manager, error)) *ManagerFactory_NewEventMeshManager_Call {
 	_c.Call.Return(run)
 	return _c
 }

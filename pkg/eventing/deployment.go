@@ -29,6 +29,7 @@ const (
 	publisherPortNum         = int32(8080)
 	publisherMetricsPortName = "http-metrics"
 	publisherMetricsPortNum  = int32(9090)
+	PublisherName            = "eventing-publisher-proxy"
 
 	AppLabelKey                     = "app.kubernetes.io/name"
 	PublisherSecretClientIDKey      = "client-id"

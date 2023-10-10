@@ -13,7 +13,6 @@ import (
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -23,7 +22,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 )
 
 const (
@@ -267,38 +265,6 @@ func NewEventingBackend(name, namespace string) *eventingv1alpha1.EventingBacken
 		},
 		Spec:   eventingv1alpha1.EventingBackendSpec{},
 		Status: eventingv1alpha1.EventingBackendStatus{},
-	}
-}
-
-func NewEventingControllerDeployment() *appsv1.Deployment {
-	labels := map[string]string{
-		"app.kubernetes.io/name": "value",
-	}
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      deployment.ControllerName,
-			Namespace: deployment.ControllerNamespace,
-			Labels:    labels,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: utils.Int32Ptr(1),
-			Selector: metav1.SetAsLabelSelector(labels),
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   deployment.ControllerName,
-					Labels: labels,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  deployment.ControllerName,
-							Image: "eventing-controller-pod-image",
-						},
-					},
-				},
-			},
-		},
-		Status: appsv1.DeploymentStatus{},
 	}
 }
 
