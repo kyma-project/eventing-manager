@@ -51,6 +51,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1"
+
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
@@ -67,6 +70,8 @@ func init() {
 	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
 
 	utilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
+
+	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 
 	utilruntime.Must(jetstream.AddToScheme(scheme))
 	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
@@ -127,7 +132,12 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		panic(err.Error())
 	}
 
-	kubeClient := k8s.NewKubeClient(k8sClient, dynamicClient, "eventing-manager")
+	apiextensionsclient, err := apiextensionsv1clientset.NewForConfig(k8sRestCfg)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	kubeClient := k8s.NewKubeClient(k8sClient, dynamicClient, apiextensionsclient, "eventing-manager")
 	recorder := mgr.GetEventRecorderFor("eventing-manager")
 	ctx := context.Background()
 

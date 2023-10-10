@@ -1,10 +1,11 @@
 package eventing
 
 import (
-	"fmt"
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"log"
 	"reflect"
 	"time"
+
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
 
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/dynamic"
@@ -69,7 +70,7 @@ func (w *NatsWatcher) Stop() {
 	// recover from closing already closed channels
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("recovered from panic: %v\n", r)
+			log.Printf("recovered from panic: %v", r)
 		}
 	}()
 

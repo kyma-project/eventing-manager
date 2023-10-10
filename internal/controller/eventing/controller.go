@@ -19,6 +19,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+
 	"k8s.io/client-go/dynamic"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
@@ -35,6 +36,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -253,7 +255,7 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 	return err
 }
 
-func (r *Reconciler) watchNATSResource(eventing *eventingv1alpha1.Eventing) error {
+func (r *Reconciler) startNATSResourceWatch(eventing *eventingv1alpha1.Eventing) error {
 	if r.natsResourceWatchStarted {
 		return nil
 	}
@@ -279,6 +281,12 @@ func (r *Reconciler) watchNATSResource(eventing *eventingv1alpha1.Eventing) erro
 	}
 	r.natsResourceWatchStarted = true
 	return nil
+}
+
+func (r *Reconciler) stopNATSResourceWatch() {
+	r.natsWatcher.Stop()
+	r.natsWatcher = nil
+	r.natsResourceWatchStarted = false
 }
 
 // loggerWithEventing returns a logger with the given Eventing CR details.
@@ -370,9 +378,6 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// reconcile for specified backend.
 	switch eventing.Spec.Backend.Type {
 	case eventingv1alpha1.NatsBackendType:
-		if err := r.watchNATSResource(eventing); err != nil {
-			return ctrl.Result{}, err
-		}
 		return r.reconcileNATSBackend(ctx, eventing, log)
 	case eventingv1alpha1.EventMeshBackendType:
 		return r.reconcileEventMeshBackend(ctx, eventing, log)
@@ -393,9 +398,7 @@ func (r *Reconciler) handleBackendSwitching(
 		if err := r.stopNATSSubManager(true, log); err != nil {
 			return err
 		}
-		r.natsWatcher.Stop()
-		r.natsWatcher = nil
-		r.natsResourceWatchStarted = false
+		r.stopNATSResourceWatch()
 	} else if eventing.Status.ActiveBackend == eventingv1alpha1.EventMeshBackendType {
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
 			return err
@@ -409,8 +412,21 @@ func (r *Reconciler) handleBackendSwitching(
 }
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+	_, err := r.kubeClient.GetCRD(k8s.NatsGVK.GroupResource().String())
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			err = fmt.Errorf("NATS module has to be installed: %v", err)
+			return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+		}
+		return ctrl.Result{}, err
+	}
+
+	if err := r.startNATSResourceWatch(eventing); err != nil {
+		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+	}
+
 	// check nats CR if it exists and is in natsAvailable state
-	err := r.checkNATSAvailability(ctx, eventing)
+	err = r.checkNATSAvailability(ctx, eventing)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}

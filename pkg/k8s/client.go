@@ -3,6 +3,7 @@ package k8s
 import (
 	"context"
 	"errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -18,6 +19,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1"
 )
 
 var NatsGVK = schema.GroupVersionResource{
@@ -39,20 +43,32 @@ type Client interface {
 		name string) (*admissionv1.MutatingWebhookConfiguration, error)
 	GetValidatingWebHookConfiguration(ctx context.Context,
 		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
+	GetCRD(crdNameGroup string) (*apiextensionsv1.CustomResourceDefinition, error)
 }
 
 type KubeClient struct {
-	fieldManager  string
-	client        client.Client
-	dynamicClient *dynamic.DynamicClient
+	fieldManager        string
+	client              client.Client
+	dynamicClient       *dynamic.DynamicClient
+	apiextensionsclient *apiextensionsv1clientset.ApiextensionsV1Client
 }
 
-func NewKubeClient(client client.Client, dynamicClient *dynamic.DynamicClient, fieldManager string) Client {
+func NewKubeClient(client client.Client, dynamicClient *dynamic.DynamicClient,
+	apiextensionsclient *apiextensionsv1clientset.ApiextensionsV1Client, fieldManager string) Client {
 	return &KubeClient{
-		client:        client,
-		fieldManager:  fieldManager,
-		dynamicClient: dynamicClient,
+		client:              client,
+		fieldManager:        fieldManager,
+		dynamicClient:       dynamicClient,
+		apiextensionsclient: apiextensionsclient,
 	}
+}
+
+func (c *KubeClient) GetCRD(crdNameGroup string) (*apiextensionsv1.CustomResourceDefinition, error) {
+	natsCRD, err := c.apiextensionsclient.CustomResourceDefinitions().Get(context.Background(), crdNameGroup, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return natsCRD, nil
 }
 
 func (c *KubeClient) GetDeployment(ctx context.Context, name, namespace string) (*v1.Deployment, error) {

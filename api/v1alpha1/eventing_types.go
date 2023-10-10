@@ -74,6 +74,7 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.state",description="State of Eventing"
+// +kubebuilder:printcolumn:name="Backend",type="string",JSONPath=".spec.backend.type",description="Type of Eventing backend, either NATS or EventMesh"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Age of the resource"
 type Eventing struct {
 	metav1.TypeMeta   `json:",inline"`

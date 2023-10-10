@@ -53,6 +53,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	apiextensionsv1clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1"
 )
 
 const (
@@ -128,6 +130,11 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 		return nil, err
 	}
 
+	apiextensionsclient, err := apiextensionsv1clientset.NewForConfig(envTestKubeCfg)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	// setup ctrl manager
 	metricsPort, err := testutils.GetFreePort()
 	if err != nil {
@@ -149,7 +156,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	os.Setenv("DOMAIN", "my.test.domain")
 
 	// create k8s clients.
-	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), dynamicClient, "eventing-manager")
+	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), dynamicClient, apiextensionsclient, "eventing-manager")
 
 	// get backend configs.
 	backendConfig := env.GetBackendConfig()
