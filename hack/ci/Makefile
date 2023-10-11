@@ -70,7 +70,11 @@ enable-nats-module:
 
 .PHONY: get-nats-via-lifecycle-manager
 get-nats-via-lifecycle-manager: install-lifecycle-manager install-latest-nats-module-template-fast enable-nats-module
-	./check-k8s-resource-is-ready.sh 180 nats kyma-system
+	./check-k8s-resource-is-ready.sh 180 nats kyma-system #args: timeout in seconds, resource name, namespace
+
+.PHONY: setup-eventmesh-as-backend
+setup-eventmesh-as-backend: 
+	exit 1
 
 .PHONY: verify-kyma
 verify-kyma: ## Wait for Kyma CR to be in Ready state.
