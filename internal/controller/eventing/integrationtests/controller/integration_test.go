@@ -9,15 +9,13 @@ import (
 	"github.com/kyma-project/eventing-manager/test/utils"
 	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/apps/v1"
 	"os"
 	"testing"
-	"time"
-
-	natstestutils "github.com/kyma-project/nats-manager/testutils"
-	v1 "k8s.io/api/apps/v1"
 )
 
 const (
@@ -75,7 +73,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			givenNATSReady: false,
 			wantMatches: gomega.And(
 				matchers.HaveStatusError(),
-				matchers.HaveNATSAvailableConditionNotAvailable(),
+				matchers.HaveNATSNotAvailableCondition(),
 				matchers.HaveFinalizer(),
 			),
 		},
@@ -94,7 +92,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			givenNATSReady:       true,
 			wantMatches: gomega.And(
 				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSAvailableCondition(),
 				matchers.HavePublisherProxyReadyConditionDeployed(),
 				matchers.HaveFinalizer(),
 			),
@@ -114,7 +112,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			givenNATSReady:       true,
 			wantMatches: gomega.And(
 				matchers.HaveStatusProcessing(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSAvailableCondition(),
 				matchers.HavePublisherProxyReadyConditionProcessing(),
 				matchers.HaveFinalizer(),
 			),
@@ -655,10 +653,6 @@ func Test_DeleteEventingCR(t *testing.T) {
 	}
 }
 
-func Test_DebugWatchNATSResource(t *testing.T) {
-	time.Sleep(40 * time.Minute)
-}
-
 func Test_WatcherNATSResource(t *testing.T) {
 	t.Parallel()
 
@@ -680,39 +674,51 @@ func Test_WatcherNATSResource(t *testing.T) {
 			),
 			givenTargetNats: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
-				//natstestutils.WithNATSStateError(),
+				natstestutils.WithNATSStateError(),
 			),
 			wantOriginalEventingMatches: gomega.And(
 				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSAvailableCondition(),
 			),
 			wantTargetEventingMatches: gomega.And(
 				matchers.HaveStatusError(),
-				matchers.HaveNATSAvailableConditionNotAvailable(),
+				matchers.HaveNATSNotAvailableCondition(),
 			),
 		},
 		{
 			name: "should update Eventing CR state if NATS CR state changes from error to ready",
 			givenOriginalNats: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateError(),
+			),
+			givenTargetNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
 				natstestutils.WithNATSStateReady(),
 			),
 			wantOriginalEventingMatches: gomega.And(
 				matchers.HaveStatusError(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSNotAvailableCondition(),
 			),
 			wantTargetEventingMatches: gomega.And(
 				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSAvailableCondition(),
 			),
 		},
 		{
 			name: "should update Eventing CR state to error when NATS CR is deleted",
 			givenOriginalNats: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateReady(),
 			),
-			wantedOriginalEventingState: eventingv1alpha1.StateReady,
-			wantedTargetEventingState:   eventingv1alpha1.StateError,
+			givenTargetNats: nil, // means, NATS CR is deleted.
+			wantOriginalEventingMatches: gomega.And(
+				matchers.HaveStatusReady(),
+				matchers.HaveNATSAvailableCondition(),
+			),
+			wantTargetEventingMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveNATSNotAvailableCondition(),
+			),
 		},
 		{
 			name: "should not reconcile Eventing CR in EventMesh mode",
@@ -722,7 +728,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 			),
 			givenTargetNats: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
-				//natstestutils.WithNATSStateError(),
+				natstestutils.WithNATSStateError(),
 			),
 			isEventMesh: true,
 			wantOriginalEventingMatches: gomega.And(
@@ -737,6 +743,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			g := gomega.NewWithT(t)
 
 			// given
@@ -745,8 +752,13 @@ func Test_WatcherNATSResource(t *testing.T) {
 			}
 
 			// create unique namespace for this test run.
-			givenNamespace := tc.givenOriginalNats.Namespace
-			tc.givenTargetNats.Namespace = givenNamespace
+			var givenNamespace string
+
+			givenNamespace = tc.givenOriginalNats.Namespace
+			if tc.givenTargetNats != nil {
+				tc.givenTargetNats.Namespace = givenNamespace
+				tc.givenTargetNats.Name = tc.givenOriginalNats.Name
+			}
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
@@ -754,6 +766,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 			originalNats := tc.givenOriginalNats.DeepCopy()
 			testEnvironment.EnsureK8sResourceCreated(t, originalNats)
 			// create original NATS CR.
+
 			if tc.givenOriginalNats.Status.State == natsv1alpha1.StateReady {
 				testEnvironment.EnsureNATSResourceStateReady(t, originalNats)
 			} else if tc.givenOriginalNats.Status.State == natsv1alpha1.StateError {
@@ -785,22 +798,43 @@ func Test_WatcherNATSResource(t *testing.T) {
 
 			defer func() {
 				testEnvironment.EnsureEventingResourceDeletion(t, eventingResource.Name, givenNamespace)
-				//if !*testEnvironment.EnvTestInstance.UseExistingCluster {
-				//	testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*eventingResource), givenNamespace)
-				//}
-				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenOriginalNats)
+				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*eventingResource), givenNamespace)
+				}
+
+				if tc.givenOriginalNats != nil && tc.givenTargetNats != nil {
+					testEnvironment.EnsureK8sResourceDeleted(t, tc.givenOriginalNats)
+				}
 
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
+
+				if tc.isEventMesh {
+					testEnvironment.EnsureEventMeshSecretDeleted(t, eventingResource)
+				}
 			}()
+
+			// update target NATS CR to target NATS CR state
+			if tc.givenOriginalNats != nil {
+				if tc.givenOriginalNats.Status.State == natsv1alpha1.StateReady {
+					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenOriginalNats)
+				} else if tc.givenOriginalNats.Status.State == natsv1alpha1.StateError {
+					testEnvironment.EnsureNATSResourceStateError(t, tc.givenOriginalNats)
+				}
+			}
 
 			// check Eventing CR status.
 			testEnvironment.GetEventingAssert(g, eventingResource).Should(tc.wantOriginalEventingMatches)
 
-			// update original NATS CR to target NATS CR state
-			if tc.givenTargetNats != nil && tc.givenTargetNats.Status.State == natsv1alpha1.StateReady {
-				testEnvironment.EnsureNATSResourceStateReady(t, tc.givenOriginalNats)
-			} else if tc.givenTargetNats != nil && tc.givenTargetNats.Status.State == natsv1alpha1.StateError {
-				testEnvironment.EnsureNATSResourceStateError(t, tc.givenOriginalNats)
+			// update target NATS CR to target NATS CR state
+			if tc.givenTargetNats != nil {
+				if tc.givenTargetNats.Status.State == natsv1alpha1.StateReady {
+					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenTargetNats)
+				} else if tc.givenTargetNats.Status.State == natsv1alpha1.StateError {
+					testEnvironment.EnsureNATSResourceStateError(t, tc.givenTargetNats)
+				}
+			} else {
+				// delete NATS CR
+				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenOriginalNats)
 			}
 
 			// check target Eventing CR status.

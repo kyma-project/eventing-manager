@@ -62,14 +62,10 @@ const (
 	attachControlPlaneOutput = false
 	testEnvStartDelay        = time.Minute
 	testEnvStartAttempts     = 10
-	namespacePrefixLength    = 5
-	TwoMinTimeOut            = 120 * time.Second
 	BigPollingInterval       = 3 * time.Second
 	BigTimeOut               = 60 * time.Second
-	SmallTimeOut             = 5 * time.Second
+	SmallTimeOut             = 6 * time.Second
 	SmallPollingInterval     = 1 * time.Second
-	EventTypePrefix          = "prefix"
-	JSStreamName             = "kyma"
 )
 
 // TestEnvironment provides mocked resources for integration tests.
@@ -114,6 +110,11 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 
 	// add Eventing CRD scheme
 	err = eventingv1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, err
+	}
+
+	err = natsv1alpha1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, err
 	}
@@ -785,6 +786,12 @@ func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, eventing *
 	subarr := strings.Split(eventing.Spec.Backend.Config.EventMeshSecret, "/")
 	secret := evnttestutils.NewEventMeshSecret(subarr[1], subarr[0])
 	env.EnsureK8sResourceCreated(t, secret)
+}
+
+func (env TestEnvironment) EnsureEventMeshSecretDeleted(t *testing.T, eventing *v1alpha1.Eventing) {
+	subarr := strings.Split(eventing.Spec.Backend.Config.EventMeshSecret, "/")
+	secret := evnttestutils.NewEventMeshSecret(subarr[1], subarr[0])
+	env.EnsureK8sResourceDeleted(t, secret)
 }
 
 func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
