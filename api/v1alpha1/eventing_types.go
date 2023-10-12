@@ -88,7 +88,7 @@ type Eventing struct {
 // EventingStatus defines the observed state of Eventing
 type EventingStatus struct {
 	ActiveBackend     BackendType        `json:"activeBackend"`
-	BackendConfigHash uint64             `json:"specHash"`
+	BackendConfigHash int64              `json:"specHash"`
 	State             string             `json:"state"`
 	Conditions        []metav1.Condition `json:"conditions,omitempty"`
 }
