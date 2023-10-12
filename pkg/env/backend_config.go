@@ -4,8 +4,6 @@ import (
 	"log"
 	"time"
 
-	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -48,15 +46,6 @@ type DefaultSubscriptionConfig struct {
 	MaxInFlightMessages   int           `envconfig:"DEFAULT_MAX_IN_FLIGHT_MESSAGES" default:"10"`
 	DispatcherRetryPeriod time.Duration `envconfig:"DEFAULT_DISPATCHER_RETRY_PERIOD" default:"5m"`
 	DispatcherMaxRetries  int           `envconfig:"DEFAULT_DISPATCHER_MAX_RETRIES" default:"10"`
-}
-
-// ToECENVDefaultSubscriptionConfig returns eventing-controller's DefaultSubscriptionConfig.
-func (dsc DefaultSubscriptionConfig) ToECENVDefaultSubscriptionConfig() ecenv.DefaultSubscriptionConfig {
-	return ecenv.DefaultSubscriptionConfig{
-		MaxInFlightMessages:   dsc.MaxInFlightMessages,
-		DispatcherRetryPeriod: dsc.DispatcherRetryPeriod,
-		DispatcherMaxRetries:  dsc.DispatcherMaxRetries,
-	}
 }
 
 func GetBackendConfig() BackendConfig {

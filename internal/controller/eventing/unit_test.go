@@ -12,9 +12,9 @@ import (
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/options"
+	"github.com/kyma-project/eventing-manager/options"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 
 	ctrlmocks "github.com/kyma-project/eventing-manager/internal/controller/eventing/mocks"
 
@@ -62,9 +62,7 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	require.NoError(t, err)
 
 	fakeClientBuilder := fake.NewClientBuilder().WithScheme(newScheme)
-	// TODO: once controller-runtime version is upgraded to >=0.15.x, use the following.
-	//fakeClient := fakeClientBuilder.WithObjects(objs...).WithStatusSubresource(objs...).Build()
-	fakeClient := fakeClientBuilder.WithObjects(objs...).Build()
+	fakeClient := fakeClientBuilder.WithObjects(objs...).WithStatusSubresource(objs...).Build()
 	fakeClientSet := apiclientsetfake.NewSimpleClientset()
 	recorder := &record.FakeRecorder{}
 	kubeClient := k8s.NewKubeClient(fakeClient, fakeClientSet, "eventing-manager")

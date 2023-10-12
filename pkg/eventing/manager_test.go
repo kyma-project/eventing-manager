@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
 	"github.com/kyma-project/eventing-manager/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -16,7 +18,6 @@ import (
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
@@ -107,8 +108,7 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 			kubeClient.On("Create", ctx, mock.Anything).Return(nil)
 			kubeClient.On("PatchApply", ctx, mock.Anything).Return(tc.patchApplyErr)
 
-			mockClient := new(mocks.Client)
-			mockClient.On("Scheme").Return(newScheme)
+			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
 
 			logger, err := test.NewEventingLogger()
 			require.NoError(t, err)
@@ -214,8 +214,7 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 				tc.givenEventing.Namespace, map[string]string{})
 
 			// define mocks.
-			mockClient := new(mocks.Client)
-			mockClient.On("Scheme").Return(newScheme)
+			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
 			kubeClientMock := tc.givenKubeClientFunc()
 
 			// define logger.
@@ -394,12 +393,11 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
-			mockClient := new(mocks.Client)
+			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
 			kubeClient := new(k8smocks.Client)
 
 			var createdObjects []client.Object
 			// define mocks behaviours.
-			mockClient.On("Scheme").Return(newScheme)
 			if tc.wantError {
 				kubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed"))
 			} else {

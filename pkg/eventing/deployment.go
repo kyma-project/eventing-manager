@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/kyma/components/eventing-controller/utils"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -29,6 +29,7 @@ const (
 	publisherPortNum         = int32(8080)
 	publisherMetricsPortName = "http-metrics"
 	publisherMetricsPortNum  = int32(9090)
+	PublisherName            = "eventing-publisher-proxy"
 
 	AppLabelKey                     = "app.kubernetes.io/name"
 	PublisherSecretClientIDKey      = "client-id"

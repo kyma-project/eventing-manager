@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
-	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"go.uber.org/zap"
 )
 
@@ -67,8 +66,8 @@ func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1al
 	return nil
 }
 
-func (r *Reconciler) startNATSSubManager(defaultSubsConfig ecenv.DefaultSubscriptionConfig, log *zap.SugaredLogger) error {
-	if err := r.natsSubManager.Start(defaultSubsConfig, ecsubscriptionmanager.Params{}); err != nil {
+func (r *Reconciler) startNATSSubManager(defaultSubsConfig env.DefaultSubscriptionConfig, log *zap.SugaredLogger) error {
+	if err := r.natsSubManager.Start(defaultSubsConfig, manager.Params{}); err != nil {
 		return err
 	}
 
@@ -76,6 +75,11 @@ func (r *Reconciler) startNATSSubManager(defaultSubsConfig ecenv.DefaultSubscrip
 	// update flag so it do not try to start the manager again.
 	r.isNATSSubManagerStarted = true
 	return nil
+}
+
+func (r *Reconciler) getDefaultSubscriptionConfig() env.DefaultSubscriptionConfig {
+	return r.eventingManager.GetBackendConfig().
+		DefaultSubscriptionConfig
 }
 
 func (r *Reconciler) stopNATSSubManager(runCleanup bool, log *zap.SugaredLogger) error {

@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

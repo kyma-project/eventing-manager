@@ -12,12 +12,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
+
 	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
-	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
-	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
-	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"github.com/stretchr/testify/mock"
 
 	corev1 "k8s.io/api/core/v1"
@@ -41,12 +42,12 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -84,7 +85,7 @@ type TestEnvironment struct {
 	Recorder            *record.EventRecorder
 	TestCancelFn        context.CancelFunc
 	SubManagerFactory   subscriptionmanager.ManagerFactory
-	JetStreamSubManager ecsubscriptionmanager.Manager
+	JetStreamSubManager manager.Manager
 }
 
 //nolint:funlen // Used in testing
@@ -170,13 +171,13 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, backendConfig, ctrLogger, recorder)
 
 	// define JetStream subscription manager mock.
-	jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
+	jetStreamSubManagerMock := new(submanagermocks.Manager)
 	jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil)
 	jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
 	jetStreamSubManagerMock.On("Stop", mock.Anything).Return(nil)
 
 	// define EventMesh subscription manager mock.
-	eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+	eventMeshSubManagerMock := new(submanagermocks.Manager)
 	eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil)
 	eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
 	eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil)
