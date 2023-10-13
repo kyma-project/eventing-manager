@@ -13,9 +13,12 @@ import (
 	"time"
 
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
+
+	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+
 	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
-	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
-	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"github.com/stretchr/testify/mock"
 
 	corev1 "k8s.io/api/core/v1"
@@ -39,12 +42,12 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/options"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -80,7 +83,7 @@ type TestEnvironment struct {
 	Recorder            *record.EventRecorder
 	TestCancelFn        context.CancelFunc
 	SubManagerFactory   subscriptionmanager.ManagerFactory
-	JetStreamSubManager ecsubscriptionmanager.Manager
+	JetStreamSubManager manager.Manager
 }
 
 //nolint:funlen // Used in testing
@@ -157,7 +160,11 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	os.Setenv("DOMAIN", "my.test.domain")
 
 	// create k8s clients.
-	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), dynamicClient, apiextensionsclient, "eventing-manager")
+	apiClientSet, err := apiclientset.NewForConfig(ctrlMgr.GetConfig())
+	if err != nil {
+		return nil, err
+	}
+	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), apiClientSet, "eventing-manager", dynamicClient)
 
 	// get backend configs.
 	backendConfig := env.GetBackendConfig()
@@ -166,13 +173,13 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, backendConfig, ctrLogger, recorder)
 
 	// define JetStream subscription manager mock.
-	jetStreamSubManagerMock := new(ecsubmanagermocks.Manager)
+	jetStreamSubManagerMock := new(submanagermocks.Manager)
 	jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil)
 	jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
 	jetStreamSubManagerMock.On("Stop", mock.Anything).Return(nil)
 
 	// define EventMesh subscription manager mock.
-	eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+	eventMeshSubManagerMock := new(submanagermocks.Manager)
 	eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil)
 	eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
 	eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil)
@@ -600,6 +607,18 @@ func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventin
 		}
 		return *hpa.Spec.MinReplicas == int32(eventingCR.Spec.Publisher.Replicas.Min) && hpa.Spec.MaxReplicas == int32(eventingCR.Spec.Publisher.Replicas.Max)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing spec replicas is reflected")
+}
+
+func (env TestEnvironment) EnsurePublisherDeploymentENVSet(t *testing.T, eventingCR *v1alpha1.Eventing) {
+	require.Eventually(t, func() bool {
+		deployment, err := env.GetDeploymentFromK8s(eventing.GetPublisherDeploymentName(*eventingCR), eventingCR.Namespace)
+		if err != nil {
+			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
+				"name", eventingCR.Name, "namespace", eventingCR.Namespace)
+		}
+		gotValue := test.FindEnvVar(deployment.Spec.Template.Spec.Containers[0].Env, "APPLICATION_CRD_ENABLED")
+		return gotValue != nil && gotValue.Value == "true"
+	}, SmallTimeOut, SmallPollingInterval, "failed to verify APPLICATION_CRD_ENABLED ENV in Publisher deployment")
 }
 
 func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, eventingCR *v1alpha1.Eventing) {

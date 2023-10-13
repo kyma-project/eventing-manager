@@ -9,6 +9,7 @@ import (
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
 	watchmock "github.com/kyma-project/eventing-manager/pkg/watcher/mocks"
+	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/stretchr/testify/mock"
@@ -115,8 +116,8 @@ func Test_handleBackendSwitching(t *testing.T) {
 	testCases := []struct {
 		name                         string
 		givenEventing                *eventingv1alpha1.Eventing
-		givenNATSSubManagerMock      func() *ecsubmanagermocks.Manager
-		givenEventMeshSubManagerMock func() *ecsubmanagermocks.Manager
+		givenNATSSubManagerMock      func() *submanagermocks.Manager
+		givenEventMeshSubManagerMock func() *submanagermocks.Manager
 		wantNATSStopped              bool
 		wantEventMeshStopped         bool
 		wantEventingState            string
@@ -131,11 +132,11 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithStatusState(eventingv1alpha1.StateReady),
 				testutils.WithStatusConditions([]metav1.Condition{{Type: "Available"}}),
 			),
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				return new(submanagermocks.Manager)
 			},
-			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
+				return new(submanagermocks.Manager)
 			},
 			wantError:                 nil,
 			wantEventingState:         eventingv1alpha1.StateReady,
@@ -151,13 +152,13 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithStatusState(eventingv1alpha1.StateReady),
 				testutils.WithStatusConditions([]metav1.Condition{{Type: "Available"}}),
 			),
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				managerMock := new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				managerMock := new(submanagermocks.Manager)
 				managerMock.On("Stop", true).Return(nil).Once()
 				return managerMock
 			},
-			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
+				return new(submanagermocks.Manager)
 			},
 			wantError:                 nil,
 			wantEventingState:         eventingv1alpha1.StateProcessing,
@@ -173,13 +174,13 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithStatusState(eventingv1alpha1.StateReady),
 				testutils.WithStatusConditions([]metav1.Condition{{Type: "Available"}}),
 			),
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				managerMock := new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				managerMock := new(submanagermocks.Manager)
 				managerMock.On("Stop", true).Return(errors.New("failed to stop")).Once()
 				return managerMock
 			},
-			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
+				return new(submanagermocks.Manager)
 			},
 			wantError:                 errors.New("failed to stop"),
 			wantEventingState:         eventingv1alpha1.StateReady,
@@ -195,11 +196,11 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithStatusState(eventingv1alpha1.StateReady),
 				testutils.WithStatusConditions([]metav1.Condition{{Type: "Available"}}),
 			),
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				return new(submanagermocks.Manager)
 			},
-			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
-				managerMock := new(ecsubmanagermocks.Manager)
+			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
+				managerMock := new(submanagermocks.Manager)
 				managerMock.On("Stop", true).Return(nil).Once()
 				return managerMock
 			},
@@ -217,11 +218,11 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithStatusState(eventingv1alpha1.StateReady),
 				testutils.WithStatusConditions([]metav1.Condition{{Type: "Available"}}),
 			),
-			givenNATSSubManagerMock: func() *ecsubmanagermocks.Manager {
-				return new(ecsubmanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				return new(submanagermocks.Manager)
 			},
-			givenEventMeshSubManagerMock: func() *ecsubmanagermocks.Manager {
-				managerMock := new(ecsubmanagermocks.Manager)
+			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
+				managerMock := new(submanagermocks.Manager)
 				managerMock.On("Stop", true).Return(errors.New("failed to stop")).Once()
 				return managerMock
 			},

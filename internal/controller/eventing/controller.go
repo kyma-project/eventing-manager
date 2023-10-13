@@ -25,14 +25,13 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
-	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -59,7 +58,7 @@ const (
 	NatsServerNotAvailableMsg = "NATS server is not available"
 	natsClientPort            = 4222
 
-	AppLabelValue             = deployment.PublisherName
+	AppLabelValue             = eventing.PublisherName
 	PublisherSecretEMSHostKey = "ems-publish-host"
 
 	TokenEndpointFormat                   = "%s?grant_type=%s&response_type=token"
@@ -83,8 +82,8 @@ type Reconciler struct {
 	scheme                        *runtime.Scheme
 	recorder                      record.EventRecorder
 	subManagerFactory             subscriptionmanager.ManagerFactory
-	natsSubManager                ecsubscriptionmanager.Manager
-	eventMeshSubManager           ecsubscriptionmanager.Manager
+	natsSubManager                manager.Manager
+	eventMeshSubManager           manager.Manager
 	isNATSSubManagerStarted       bool
 	isEventMeshSubManagerStarted  bool
 	natsConfigHandler             NatsConfigHandler
@@ -187,7 +186,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return r.handleEventingDeletion(ctx, eventing, log)
 	}
 
-	// check if the Eveting CR is allowed to be created.
+	// check if the Eventing CR is allowed to be created.
 	if r.allowedEventingCR != nil {
 		if result, err := r.handleEventingCRAllowedCheck(ctx, eventing, log); !result || err != nil {
 			return ctrl.Result{}, err
@@ -237,7 +236,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha1.Eventing) error {
 	err := r.controller.Watch(
 		source.Kind(r.ctrlManager.GetCache(), kind),
-		handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
+		handler.EnqueueRequestsFromMapFunc(func(_ context.Context, obj client.Object) []reconcile.Request {
 			// Enqueue a reconcile request for the eventing resource
 			return []reconcile.Request{
 				{NamespacedName: types.NamespacedName{
@@ -377,6 +376,14 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// update ActiveBackend in status.
 	eventing.SyncStatusActiveBackend()
 
+	// check if Application CRD is installed.
+	isApplicationCRDEnabled, err := r.kubeClient.ApplicationCRDExists(ctx)
+	if err != nil {
+		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
+	}
+	r.backendConfig.PublisherConfig.ApplicationCRDEnabled = isApplicationCRDEnabled
+	r.eventingManager.SetBackendConfig(r.backendConfig)
+
 	// reconcile for specified backend.
 	switch eventing.Spec.Backend.Type {
 	case eventingv1alpha1.NatsBackendType:
@@ -428,7 +435,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	}
 
 	// check nats CR if it exists and is in natsAvailable state
-	err = r.checkNATSAvailability(ctx, eventing)
+	err := r.checkNATSAvailability(ctx, eventing)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
@@ -442,7 +449,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	}
 
 	// start NATS subscription manager
-	if err := r.reconcileNATSSubManager(eventing, log); err != nil {
+	if err := r.reconcileNATSSubManager(ctx, eventing, log); err != nil {
 		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 
@@ -502,11 +509,11 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *ev
 	return r.handleEventingState(ctx, deployment, eventing, log)
 }
 
-func (r *Reconciler) GetEventMeshSubManager() ecsubscriptionmanager.Manager {
+func (r *Reconciler) GetEventMeshSubManager() manager.Manager {
 	return r.eventMeshSubManager
 }
 
-func (r *Reconciler) SetEventMeshSubManager(eventMeshSubManager ecsubscriptionmanager.Manager) {
+func (r *Reconciler) SetEventMeshSubManager(eventMeshSubManager manager.Manager) {
 	r.eventMeshSubManager = eventMeshSubManager
 }
 

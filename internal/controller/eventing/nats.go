@@ -4,20 +4,38 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
-	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
 	"go.uber.org/zap"
 )
 
-func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
-	if r.natsSubManager == nil {
-		natsConfig, err := r.natsConfigHandler.GetNatsConfig(context.Background(), *eventing)
-		if err != nil {
+func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
+	// get the subscription config
+	defaultSubsConfig := r.getDefaultSubscriptionConfig()
+	// get the nats config
+	natsConfig, err := r.natsConfigHandler.GetNatsConfig(context.Background(), *eventing)
+	if err != nil {
+		return err
+	}
+	// get the hash of current config
+	specHash, err := r.getNATSBackendConfigHash(defaultSubsConfig, *natsConfig)
+	if err != nil {
+		return err
+	}
+
+	// update the config if hashes differ
+	if eventing.Status.BackendConfigHash != specHash && r.isNATSSubManagerStarted {
+		// stop the subsManager without cleanup
+		if err := r.stopNATSSubManager(false, log); err != nil {
 			return err
 		}
+	}
+
+	if r.natsSubManager == nil {
 		// create instance of NATS subscription manager
 		natsSubManager := r.subManagerFactory.NewJetStreamManager(*eventing, *natsConfig)
 
@@ -36,19 +54,32 @@ func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *z
 		return nil
 	}
 
-	// start the subscription manager.
-	defaultSubsConfig := r.eventingManager.GetBackendConfig().
-		DefaultSubscriptionConfig.ToECENVDefaultSubscriptionConfig()
+	err = r.startNATSSubManager(defaultSubsConfig, log)
+	if err != nil {
+		return err
+	}
 
-	if err := r.natsSubManager.Start(defaultSubsConfig, ecsubscriptionmanager.Params{}); err != nil {
+	// update the hash of the current config only once subManager is started
+	eventing.Status.BackendConfigHash = specHash
+	log.Info(fmt.Sprintf("NATS subscription-manager has been updated, new hash: %d", specHash))
+
+	return nil
+}
+
+func (r *Reconciler) startNATSSubManager(defaultSubsConfig env.DefaultSubscriptionConfig, log *zap.SugaredLogger) error {
+	if err := r.natsSubManager.Start(defaultSubsConfig, manager.Params{}); err != nil {
 		return err
 	}
 
 	log.Info("NATS subscription-manager started")
 	// update flag so it do not try to start the manager again.
 	r.isNATSSubManagerStarted = true
-
 	return nil
+}
+
+func (r *Reconciler) getDefaultSubscriptionConfig() env.DefaultSubscriptionConfig {
+	return r.eventingManager.GetBackendConfig().
+		DefaultSubscriptionConfig
 }
 
 func (r *Reconciler) stopNATSSubManager(runCleanup bool, log *zap.SugaredLogger) error {

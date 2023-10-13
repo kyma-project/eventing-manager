@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/kyma/components/eventing-controller/utils"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -29,6 +29,7 @@ const (
 	publisherPortNum         = int32(8080)
 	publisherMetricsPortName = "http-metrics"
 	publisherMetricsPortNum  = int32(9090)
+	PublisherName            = "eventing-publisher-proxy"
 
 	AppLabelKey                     = "app.kubernetes.io/name"
 	PublisherSecretClientIDKey      = "client-id"
@@ -203,6 +204,7 @@ func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConf
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{Name: "LEGACY_NAMESPACE", Value: "kyma"},
 		{Name: "EVENT_TYPE_PREFIX", Value: eventing.Spec.Backend.Config.EventTypePrefix},
+		{Name: "APPLICATION_CRD_ENABLED", Value: strconv.FormatBool(publisherConfig.ApplicationCRDEnabled)},
 		// JetStream-specific config
 		{Name: "JS_STREAM_NAME", Value: natsConfig.JSStreamName},
 	}
@@ -312,6 +314,7 @@ func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConf
 		{Name: "BACKEND", Value: "beb"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
 		{Name: "EVENT_TYPE_PREFIX", Value: eventing.Spec.Backend.Config.EventTypePrefix},
+		{Name: "APPLICATION_CRD_ENABLED", Value: strconv.FormatBool(publisherConfig.ApplicationCRDEnabled)},
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{
 			Name: "CLIENT_ID",

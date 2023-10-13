@@ -22,23 +22,26 @@ import (
 	"log"
 	"os"
 
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/go-logr/zapr"
+
 	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	subscriptionv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	subscriptionv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
 
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 
-	"github.com/go-logr/zapr"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
-	"github.com/kyma-project/kyma/components/eventing-controller/options"
-	backendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/options"
+	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
+	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -132,12 +135,14 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		panic(err.Error())
 	}
 
-	apiextensionsclient, err := apiextensionsv1clientset.NewForConfig(k8sRestCfg)
+	// init custom kube client wrapper
+	apiClientSet, err := apiclientset.NewForConfig(mgr.GetConfig())
 	if err != nil {
-		panic(err.Error())
+		setupLog.Error(err, "failed to create new k8s clientset")
+		os.Exit(1)
 	}
 
-	kubeClient := k8s.NewKubeClient(k8sClient, dynamicClient, apiextensionsclient, "eventing-manager")
+	kubeClient := k8s.NewKubeClient(k8sClient, apiClientSet, "eventing-manager", dynamicClient)
 	recorder := mgr.GetEventRecorderFor("eventing-manager")
 	ctx := context.Background()
 

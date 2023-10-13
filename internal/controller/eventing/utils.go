@@ -4,6 +4,8 @@ import (
 	"context"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/mitchellh/hashstructure/v2"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -28,4 +30,26 @@ func (r *Reconciler) removeFinalizer(ctx context.Context, eventing *eventingv1al
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) getNATSBackendConfigHash(defaultSubscriptionConfig env.DefaultSubscriptionConfig, natsConfig env.NATSConfig) (int64, error) {
+	natsBackendConfig := struct {
+		env.DefaultSubscriptionConfig
+		env.NATSConfig
+	}{defaultSubscriptionConfig, natsConfig}
+	hash, err := hashstructure.Hash(natsBackendConfig, hashstructure.FormatV2, nil)
+	if err != nil {
+		return 0, err
+	}
+	return int64(hash), nil
+}
+
+func (r *Reconciler) getEventMeshBackendConfigHash(eventMeshSecret, eventTypePrefix string) (int64, error) {
+	eventMeshBackendConfig := eventMeshSecret + eventTypePrefix
+
+	hash, err := hashstructure.Hash(eventMeshBackendConfig, hashstructure.FormatV2, nil)
+	if err != nil {
+		return 0, err
+	}
+	return int64(hash), nil
 }

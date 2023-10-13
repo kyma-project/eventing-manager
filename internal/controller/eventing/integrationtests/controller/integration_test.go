@@ -847,6 +847,7 @@ func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *eventingv1a
 	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
 	testEnvironment.EnsureEventingReplicasReflected(t, givenEventing)
 	testEnvironment.EnsureDeploymentOwnerReferenceSet(t, givenEventing)
+	testEnvironment.EnsurePublisherDeploymentENVSet(t, givenEventing)
 }
 
 func ensureK8sResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {

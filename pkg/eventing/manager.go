@@ -7,8 +7,8 @@ import (
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	"github.com/kyma-project/kyma/components/eventing-controller/logger"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,6 +38,7 @@ type Manager interface {
 		backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
 	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
 	GetBackendConfig() *env.BackendConfig
+	SetBackendConfig(env.BackendConfig)
 }
 
 type EventingManager struct {
@@ -57,7 +58,7 @@ func NewEventingManager(
 	logger *logger.Logger,
 	recorder record.EventRecorder,
 ) Manager {
-	return EventingManager{
+	return &EventingManager{
 		ctx:           ctx,
 		Client:        client,
 		backendConfig: backendConfig,
@@ -100,7 +101,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 		return nil, fmt.Errorf("failed to set controller reference: %v", err)
 	}
 
-	currentPublisher, err := em.kubeClient.GetDeployment(ctx, eventing.Name, eventing.Namespace)
+	currentPublisher, err := em.kubeClient.GetDeployment(ctx, GetPublisherDeploymentName(*eventing), eventing.Namespace)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Event Publisher deployment: %v", err)
 	}
@@ -113,6 +114,11 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 				desiredPublisher.Spec.Template.ObjectMeta.Annotations[k] = v
 			}
 		}
+
+		// if a publisher deploy from eventing-controller exists, then update it.
+		if err := em.migratePublisherDeploymentFromEC(ctx, eventing, *currentPublisher, *desiredPublisher); err != nil {
+			return nil, fmt.Errorf("failed to migrate publisher: %v", err)
+		}
 	}
 	// Update publisher proxy deployment
 	if err := em.kubeClient.PatchApply(ctx, desiredPublisher); err != nil {
@@ -120,6 +126,30 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	}
 
 	return desiredPublisher, nil
+}
+
+func (em *EventingManager) migratePublisherDeploymentFromEC(
+	ctx context.Context, eventing *v1alpha1.Eventing,
+	currentPublisher appsv1.Deployment, desiredPublisher appsv1.Deployment) error {
+	// If Eventing CR is already owner of deployment, then it means that the publisher deployment
+	// was already migrated.
+	if len(currentPublisher.OwnerReferences) == 1 && currentPublisher.OwnerReferences[0].Name == eventing.Name {
+		return nil
+	}
+
+	em.logger.WithContext().Info("migrating publisher deployment from eventing-controller to Eventing CR")
+	updatedPublisher := currentPublisher.DeepCopy()
+	// change OwnerReference to Eventing CR.
+	updatedPublisher.OwnerReferences = nil
+	if err := controllerutil.SetControllerReference(eventing, updatedPublisher, em.Scheme()); err != nil {
+		return fmt.Errorf("failed to set controller reference: %v", err)
+	}
+	// copy Spec from desired publisher
+	// because some ENV variables conflicts with server-side patch apply.
+	updatedPublisher.Spec = desiredPublisher.Spec
+
+	// update the publisher deployment.
+	return em.kubeClient.UpdateDeployment(ctx, updatedPublisher)
 }
 
 func (em EventingManager) IsNATSAvailable(ctx context.Context, namespace string) (bool, error) {
@@ -137,6 +167,10 @@ func (em EventingManager) IsNATSAvailable(ctx context.Context, namespace string)
 
 func (em EventingManager) GetBackendConfig() *env.BackendConfig {
 	return &em.backendConfig
+}
+
+func (em *EventingManager) SetBackendConfig(config env.BackendConfig) {
+	em.backendConfig = config
 }
 
 func (em EventingManager) DeployPublisherProxyResources(

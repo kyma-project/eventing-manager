@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_ToECENVNATSConfig(t *testing.T) {
+func Test_GetNewNATSConfig(t *testing.T) {
 	// given
 	givenConfig := NATSConfig{
 		URL:                     "http://eventing-nats.svc.cluster.local",
@@ -35,7 +35,7 @@ func Test_ToECENVNATSConfig(t *testing.T) {
 	)
 
 	// when
-	result := givenConfig.ToECENVNATSConfig(*givenEventing)
+	result := givenConfig.GetNewNATSConfig(*givenEventing)
 
 	// then
 	// check values from local NATSConfig.

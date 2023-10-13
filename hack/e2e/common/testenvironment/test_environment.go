@@ -13,11 +13,6 @@ import (
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 
-	"github.com/kyma-project/eventing-manager/hack/e2e/common"
-	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
-	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
-	pkghttp "github.com/kyma-project/eventing-manager/hack/e2e/common/http"
-	"github.com/kyma-project/eventing-manager/hack/e2e/env"
 	ecv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,6 +23,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/eventing-manager/hack/e2e/common"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
+	pkghttp "github.com/kyma-project/eventing-manager/hack/e2e/common/http"
+	"github.com/kyma-project/eventing-manager/hack/e2e/env"
 )
 
 const (
@@ -89,7 +90,7 @@ func (te *TestEnvironment) CreateTestNamespace() error {
 
 func (te *TestEnvironment) DeleteTestNamespace() error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		// It's fine if the Namespace already exists.
+		// It's fine if the Namespace not exists.
 		return client.IgnoreNotFound(te.K8sClient.Delete(te.Context, fixtures.Namespace(te.TestConfigs.TestNamespace)))
 	})
 }

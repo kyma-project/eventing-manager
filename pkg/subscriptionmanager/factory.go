@@ -3,13 +3,14 @@ package subscriptionmanager
 import (
 	"time"
 
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
-	eclogger "github.com/kyma-project/kyma/components/eventing-controller/logger"
-	ecbackendmetrics "github.com/kyma-project/kyma/components/eventing-controller/pkg/backend/metrics"
-	ecsubscriptionmanager "github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager/eventmesh"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager/jetstream"
+	eclogger "github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/eventmesh"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
 	"k8s.io/client-go/rest"
 )
 
@@ -17,16 +18,15 @@ import (
 var _ ManagerFactory = &Factory{}
 
 //go:generate mockery --name=ManagerFactory --outpkg=mocks --case=underscore
-//go:generate mockery --name=Manager --dir=../../vendor/github.com/kyma-project/kyma/components/eventing-controller/pkg/subscriptionmanager --outpkg=mocks --output=mocks/ec --case=underscore
 type ManagerFactory interface {
-	NewJetStreamManager(v1alpha1.Eventing, env.NATSConfig) ecsubscriptionmanager.Manager
-	NewEventMeshManager() (ecsubscriptionmanager.Manager, error)
+	NewJetStreamManager(v1alpha1.Eventing, env.NATSConfig) manager.Manager
+	NewEventMeshManager() (manager.Manager, error)
 }
 
 type Factory struct {
 	k8sRestCfg       *rest.Config
 	metricsAddress   string
-	metricsCollector *ecbackendmetrics.Collector
+	metricsCollector *metrics.Collector
 	resyncPeriod     time.Duration
 	logger           *eclogger.Logger
 }
@@ -34,7 +34,7 @@ type Factory struct {
 func NewFactory(
 	k8sRestCfg *rest.Config,
 	metricsAddress string,
-	metricsCollector *ecbackendmetrics.Collector,
+	metricsCollector *metrics.Collector,
 	resyncPeriod time.Duration,
 	logger *eclogger.Logger) *Factory {
 	return &Factory{
@@ -46,11 +46,11 @@ func NewFactory(
 	}
 }
 
-func (f Factory) NewJetStreamManager(eventing v1alpha1.Eventing, natsConfig env.NATSConfig) ecsubscriptionmanager.Manager {
-	return jetstream.NewSubscriptionManager(f.k8sRestCfg, natsConfig.ToECENVNATSConfig(eventing),
+func (f Factory) NewJetStreamManager(eventing v1alpha1.Eventing, natsConfig env.NATSConfig) manager.Manager {
+	return jetstream.NewSubscriptionManager(f.k8sRestCfg, natsConfig.GetNewNATSConfig(eventing),
 		f.metricsAddress, f.metricsCollector, f.logger)
 }
 
-func (f Factory) NewEventMeshManager() (ecsubscriptionmanager.Manager, error) {
+func (f Factory) NewEventMeshManager() (manager.Manager, error) {
 	return eventmesh.NewSubscriptionManager(f.k8sRestCfg, f.metricsAddress, f.resyncPeriod, f.logger, f.metricsCollector), nil
 }

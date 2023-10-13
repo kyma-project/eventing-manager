@@ -22,6 +22,7 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
+        traffic.sidecar.istio.io/excludeInboundPorts: "9443"
       labels:
         control-plane: eventing-manager
         app.kubernetes.io/name: eventing-manager
@@ -89,7 +90,7 @@ spec:
           - name: PUBLISHER_LIMITS_MEMORY
             value: 128Mi
           - name: PUBLISHER_IMAGE
-            value: "europe-docker.pkg.dev/kyma-project/prod/event-publisher-proxy:v20230817-c3e3291f"
+            value: "europe-docker.pkg.dev/kyma-project/dev/event-publisher-proxy:PR-18259"
           - name: PUBLISHER_IMAGE_PULL_POLICY
             value: "IfNotPresent"
           - name: PUBLISHER_REPLICAS
@@ -130,8 +131,6 @@ spec:
             value: "subscription-mutating-webhook-configuration"
           - name: VALIDATING_WEBHOOK_NAME
             value: "subscription-validating-webhook-configuration"
-          - name: EVENTING_WEBHOOK_AUTH_ENABLED
-            value: "false"
           - name: EVENTING_WEBHOOK_AUTH_SECRET_NAME
             value: "eventing-webhook-auth"
           - name: EVENTING_WEBHOOK_AUTH_SECRET_NAMESPACE
@@ -169,7 +168,7 @@ spec:
           - mountPath: /tmp/k8s-webhook-server/serving-certs
             name: cert
             readOnly: true
-      serviceAccountName: eventing-controller-manager
+      serviceAccountName: eventing-manager
       terminationGracePeriodSeconds: 10
       volumes:
         - name: cert
