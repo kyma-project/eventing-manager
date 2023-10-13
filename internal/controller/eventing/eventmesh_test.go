@@ -228,7 +228,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenHashBefore:                   int64(-2279197549452913403),
 			givenUpdateTest:                   true,
 			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
-				eventMeshSubManagerMock := new(ecsubmanagermocks.Manager)
+				eventMeshSubManagerMock := new(submanagermocks.Manager)
 				eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
 				eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
 				eventMeshSubManagerMock.On("Stop", mock.Anything, mock.Anything).Return(nil).Once()
@@ -239,7 +239,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				emMock.On("GetBackendConfig").Return(givenBackendConfig).Twice()
 				return emMock
 			},
-			givenManagerFactoryMock: func(subManager *ecsubmanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
+			givenManagerFactoryMock: func(subManager *submanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
 				subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
 				subManagerFactoryMock.On("NewEventMeshManager", mock.Anything).Return(subManager, nil).Once()
 				return subManagerFactoryMock
@@ -260,8 +260,6 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t, givenEventing, givenOauthSecret)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig
@@ -959,10 +957,6 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 
 			if tc.givenSecret != nil {
 				require.NoError(t, testEnv.Reconciler.Client.Create(ctx, tc.givenSecret))
-			}
-
-			if tc.givenEventing != nil {
-				require.NoError(t, testEnv.Reconciler.Client.Create(ctx, tc.givenEventing))
 			}
 
 			if tc.givenCredentials != nil {

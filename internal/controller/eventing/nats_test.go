@@ -65,7 +65,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 		givenShouldRetry             bool
 		givenUpdateTest              bool
 		givenHashBefore              int64
-		givenNATSSubManagerMock      func() *ecsubmanagermocks.Manager
+		givenNATSSubManagerMock      func() *submanagermocks.Manager
 		givenEventingManagerMock     func() *managermocks.Manager
 		givenNatsConfigHandlerMock   func() *mocks.NatsConfigHandler
 		givenManagerFactoryMock      func(*submanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory
