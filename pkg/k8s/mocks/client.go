@@ -4,6 +4,8 @@ package mocks
 
 import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
+
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 
 	context "context"
@@ -12,7 +14,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	v1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	v1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 )
@@ -162,20 +164,74 @@ func (_c *Client_DeleteDeployment_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
+// GetCRD provides a mock function with given fields: crdNameGroup
+func (_m *Client) GetCRD(crdNameGroup string) (*v1.CustomResourceDefinition, error) {
+	ret := _m.Called(crdNameGroup)
+
+	var r0 *v1.CustomResourceDefinition
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (*v1.CustomResourceDefinition, error)); ok {
+		return rf(crdNameGroup)
+	}
+	if rf, ok := ret.Get(0).(func(string) *v1.CustomResourceDefinition); ok {
+		r0 = rf(crdNameGroup)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*v1.CustomResourceDefinition)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(crdNameGroup)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_GetCRD_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCRD'
+type Client_GetCRD_Call struct {
+	*mock.Call
+}
+
+// GetCRD is a helper method to define mock.On call
+//   - crdNameGroup string
+func (_e *Client_Expecter) GetCRD(crdNameGroup interface{}) *Client_GetCRD_Call {
+	return &Client_GetCRD_Call{Call: _e.mock.On("GetCRD", crdNameGroup)}
+}
+
+func (_c *Client_GetCRD_Call) Run(run func(crdNameGroup string)) *Client_GetCRD_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Client_GetCRD_Call) Return(_a0 *v1.CustomResourceDefinition, _a1 error) *Client_GetCRD_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_GetCRD_Call) RunAndReturn(run func(string) (*v1.CustomResourceDefinition, error)) *Client_GetCRD_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetDeployment provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Client) GetDeployment(_a0 context.Context, _a1 string, _a2 string) (*v1.Deployment, error) {
+func (_m *Client) GetDeployment(_a0 context.Context, _a1 string, _a2 string) (*appsv1.Deployment, error) {
 	ret := _m.Called(_a0, _a1, _a2)
 
-	var r0 *v1.Deployment
+	var r0 *appsv1.Deployment
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*v1.Deployment, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*appsv1.Deployment, error)); ok {
 		return rf(_a0, _a1, _a2)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *v1.Deployment); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *appsv1.Deployment); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*v1.Deployment)
+			r0 = ret.Get(0).(*appsv1.Deployment)
 		}
 	}
 
@@ -208,12 +264,12 @@ func (_c *Client_GetDeployment_Call) Run(run func(_a0 context.Context, _a1 strin
 	return _c
 }
 
-func (_c *Client_GetDeployment_Call) Return(_a0 *v1.Deployment, _a1 error) *Client_GetDeployment_Call {
+func (_c *Client_GetDeployment_Call) Return(_a0 *appsv1.Deployment, _a1 error) *Client_GetDeployment_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Client_GetDeployment_Call) RunAndReturn(run func(context.Context, string, string) (*v1.Deployment, error)) *Client_GetDeployment_Call {
+func (_c *Client_GetDeployment_Call) RunAndReturn(run func(context.Context, string, string) (*appsv1.Deployment, error)) *Client_GetDeployment_Call {
 	_c.Call.Return(run)
 	return _c
 }

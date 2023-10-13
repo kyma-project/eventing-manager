@@ -851,7 +851,10 @@ func (env TestEnvironment) UpdateEventingStatus(eventing *v1alpha1.Eventing) err
 func (env TestEnvironment) UpdateNATSStatus(nats *natsv1alpha1.NATS) error {
 	baseNats := &natsv1alpha1.NATS{}
 	if err := env.k8sClient.Get(env.Context,
-		types.NamespacedName{nats.Namespace, nats.Name}, baseNats); err != nil {
+		types.NamespacedName{
+			Namespace: nats.Namespace,
+			Name:      nats.Name,
+		}, baseNats); err != nil {
 		return err
 	}
 	baseNats.Status = nats.Status

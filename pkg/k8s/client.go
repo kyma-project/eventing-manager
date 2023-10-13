@@ -49,11 +49,11 @@ type Client interface {
 type KubeClient struct {
 	fieldManager        string
 	client              client.Client
-	dynamicClient       *dynamic.DynamicClient
+	dynamicClient       dynamic.Interface
 	apiextensionsclient *apiextensionsv1clientset.ApiextensionsV1Client
 }
 
-func NewKubeClient(client client.Client, dynamicClient *dynamic.DynamicClient,
+func NewKubeClient(client client.Client, dynamicClient dynamic.Interface,
 	apiextensionsclient *apiextensionsv1clientset.ApiextensionsV1Client, fieldManager string) Client {
 	return &KubeClient{
 		client:              client,

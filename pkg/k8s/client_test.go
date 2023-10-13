@@ -85,7 +85,7 @@ func Test_PatchApply(t *testing.T) {
 			}
 			fakeClientBuilder := fake.NewClientBuilder()
 			fakeClient := fakeClientBuilder.WithObjects(objs...).Build()
-			kubeClient := NewKubeClient(fakeClient, testFieldManager)
+			kubeClient := NewKubeClient(fakeClient, nil, nil, testFieldManager)
 
 			// when
 			err := kubeClient.PatchApply(context.Background(), tc.givenUpdateDeployment)

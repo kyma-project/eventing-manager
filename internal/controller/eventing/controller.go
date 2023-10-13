@@ -19,6 +19,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-project/eventing-manager/pkg/watcher"
 
 	"k8s.io/client-go/dynamic"
@@ -78,7 +79,7 @@ type Reconciler struct {
 	controller                    controller.Controller
 	eventingManager               eventing.Manager
 	kubeClient                    k8s.Client
-	dynamicClient                 *dynamic.DynamicClient
+	dynamicClient                 dynamic.Interface
 	scheme                        *runtime.Scheme
 	recorder                      record.EventRecorder
 	subManagerFactory             subscriptionmanager.ManagerFactory
@@ -91,14 +92,14 @@ type Reconciler struct {
 	backendConfig                 env.BackendConfig
 	allowedEventingCR             *eventingv1alpha1.Eventing
 	clusterScopedResourcesWatched bool
-	natsResourceWatchStarted      bool
+	natsCRWatchStarted            bool
 	natsWatcher                   watcher.Watcher
 }
 
 func NewReconciler(
 	client client.Client,
 	kubeClient k8s.Client,
-	dynamicClient *dynamic.DynamicClient,
+	dynamicClient dynamic.Interface,
 	scheme *runtime.Scheme,
 	logger *logger.Logger,
 	recorder record.EventRecorder,
@@ -256,8 +257,8 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 	return err
 }
 
-func (r *Reconciler) startNATSResourceWatch(eventing *eventingv1alpha1.Eventing) error {
-	if r.natsResourceWatchStarted {
+func (r *Reconciler) startNatsCRWatch(eventing *eventingv1alpha1.Eventing) error {
+	if r.natsCRWatchStarted {
 		return nil
 	}
 
@@ -268,7 +269,6 @@ func (r *Reconciler) startNATSResourceWatch(eventing *eventingv1alpha1.Eventing)
 	r.natsWatcher.Start()
 	if err := r.controller.Watch(&source.Channel{Source: r.natsWatcher.GetEventsChannel()},
 		handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
-			// Enqueue a reconcile request for the eventing resource
 			return []reconcile.Request{
 				{NamespacedName: types.NamespacedName{
 					Namespace: eventing.Namespace,
@@ -278,16 +278,17 @@ func (r *Reconciler) startNATSResourceWatch(eventing *eventingv1alpha1.Eventing)
 		}),
 		predicate.ResourceVersionChangedPredicate{},
 	); err != nil {
+		r.natsCRWatchStarted = false
 		return err
 	}
-	r.natsResourceWatchStarted = true
+	r.natsCRWatchStarted = true
 	return nil
 }
 
-func (r *Reconciler) stopNATSResourceWatch() {
+func (r *Reconciler) stopNatsCRWatch() {
 	r.natsWatcher.Stop()
 	r.natsWatcher = nil
-	r.natsResourceWatchStarted = false
+	r.natsCRWatchStarted = false
 }
 
 // loggerWithEventing returns a logger with the given Eventing CR details.
@@ -399,7 +400,7 @@ func (r *Reconciler) handleBackendSwitching(
 		if err := r.stopNATSSubManager(true, log); err != nil {
 			return err
 		}
-		r.stopNATSResourceWatch()
+		r.stopNatsCRWatch()
 	} else if eventing.Status.ActiveBackend == eventingv1alpha1.EventMeshBackendType {
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
 			return err
@@ -422,7 +423,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 		return ctrl.Result{}, err
 	}
 
-	if err := r.startNATSResourceWatch(eventing); err != nil {
+	if err := r.startNatsCRWatch(eventing); err != nil {
 		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 

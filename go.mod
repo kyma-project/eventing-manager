@@ -1,6 +1,8 @@
 module github.com/kyma-project/eventing-manager
 
-go 1.20
+go 1.21
+
+toolchain go1.21.1
 
 require (
 	github.com/avast/retry-go/v3 v3.1.1
@@ -11,12 +13,13 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-incubator/api-gateway v0.0.0-20220819093753-296e6704d413
 	github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20231005133034-b2a8848645e0
-	github.com/kyma-project/nats-manager v0.0.0-20230718133808-9241d3b926bd
+	github.com/kyma-project/nats-manager v1.0.2-0.20231013094902-6091000ea996
 	github.com/onsi/gomega v1.27.10
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.25.0
 	k8s.io/api v0.28.1
+	k8s.io/apiextensions-apiserver v0.28.0
 	k8s.io/apimachinery v0.28.1
 	k8s.io/client-go v0.28.1
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
@@ -85,7 +88,6 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiextensions-apiserver v0.28.0 // indirect
 	k8s.io/component-base v0.28.1 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect

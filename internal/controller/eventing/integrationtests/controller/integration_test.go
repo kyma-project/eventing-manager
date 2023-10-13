@@ -1,6 +1,9 @@
 package controller_test
 
 import (
+	"os"
+	"testing"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -14,8 +17,6 @@ import (
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
-	"os"
-	"testing"
 )
 
 const (
@@ -751,10 +752,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 				return true
 			}
 
-			// create unique namespace for this test run.
-			var givenNamespace string
-
-			givenNamespace = tc.givenOriginalNats.Namespace
+			givenNamespace := tc.givenOriginalNats.Namespace
 			if tc.givenTargetNats != nil {
 				tc.givenTargetNats.Namespace = givenNamespace
 				tc.givenTargetNats.Name = tc.givenOriginalNats.Name
