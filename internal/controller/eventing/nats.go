@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
@@ -28,6 +27,14 @@ func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1al
 		return err
 	}
 
+	// update the config if hashes differ
+	if eventing.Status.BackendConfigHash != specHash && r.isNATSSubManagerStarted {
+		// stop the subsManager without cleanup
+		if err := r.stopNATSSubManager(false, log); err != nil {
+			return err
+		}
+	}
+
 	if r.natsSubManager == nil {
 		// create instance of NATS subscription manager
 		natsSubManager := r.subManagerFactory.NewJetStreamManager(*eventing, *natsConfig)
@@ -40,24 +47,6 @@ func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1al
 		log.Info("NATS subscription-manager initialized")
 		// save instance only when init is successful.
 		r.natsSubManager = natsSubManager
-	} else {
-		// update the config if hashes differ
-		if eventing.Status.BackendConfigHash != specHash && r.isNATSSubManagerStarted {
-			// set the eventing CR status to processing
-			if err = r.syncStatusWithSubscriptionManagerProcessingWithReason(ctx,
-				eventingv1alpha1.ConditionReasonSubscriptionManagerProcessing,
-				eventing, "Updating NATS subscription-manager with new config.", log); err != nil {
-				return err
-			}
-
-			// stop the subsManager without cleanup
-
-			if err := r.stopNATSSubManager(false, log); err != nil {
-				return err
-			}
-			return nil
-
-		}
 	}
 
 	if r.isNATSSubManagerStarted {
