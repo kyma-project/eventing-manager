@@ -48,19 +48,19 @@ type Client interface {
 }
 
 type KubeClient struct {
-	fieldManager string
-	client       client.Client
-	clientset    k8sclientset.Interface
-	dynamicClient       dynamic.Interface
+	fieldManager  string
+	client        client.Client
+	clientset     k8sclientset.Interface
+	dynamicClient dynamic.Interface
 }
 
 func NewKubeClient(client client.Client, clientset k8sclientset.Interface, fieldManager string,
 	dynamicClient dynamic.Interface) Client {
 	return &KubeClient{
-		client:              client,
-		clientset:    		 clientset,
-		fieldManager:        fieldManager,
-		dynamicClient:       dynamicClient,
+		client:        client,
+		clientset:     clientset,
+		fieldManager:  fieldManager,
+		dynamicClient: dynamicClient,
 	}
 }
 

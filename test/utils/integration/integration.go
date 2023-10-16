@@ -56,12 +56,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	apiextensionsv1clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1"
 )
 
 const (
-	useExistingCluster       = true
+	useExistingCluster       = false
 	attachControlPlaneOutput = false
 	testEnvStartDelay        = time.Minute
 	testEnvStartAttempts     = 10
@@ -132,11 +130,6 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	dynamicClient, err := dynamic.NewForConfig(envTestKubeCfg)
 	if err != nil {
 		return nil, err
-	}
-
-	apiextensionsclient, err := apiextensionsv1clientset.NewForConfig(envTestKubeCfg)
-	if err != nil {
-		panic(err.Error())
 	}
 
 	// setup ctrl manager

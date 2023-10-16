@@ -63,6 +63,47 @@ func (_c *Watcher_GetEventsChannel_Call) RunAndReturn(run func() <-chan event.Ge
 	return _c
 }
 
+// IsStarted provides a mock function with given fields:
+func (_m *Watcher) IsStarted() bool {
+	ret := _m.Called()
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Watcher_IsStarted_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsStarted'
+type Watcher_IsStarted_Call struct {
+	*mock.Call
+}
+
+// IsStarted is a helper method to define mock.On call
+func (_e *Watcher_Expecter) IsStarted() *Watcher_IsStarted_Call {
+	return &Watcher_IsStarted_Call{Call: _e.mock.On("IsStarted")}
+}
+
+func (_c *Watcher_IsStarted_Call) Run(run func()) *Watcher_IsStarted_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Watcher_IsStarted_Call) Return(_a0 bool) *Watcher_IsStarted_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Watcher_IsStarted_Call) RunAndReturn(run func() bool) *Watcher_IsStarted_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Start provides a mock function with given fields:
 func (_m *Watcher) Start() {
 	_m.Called()

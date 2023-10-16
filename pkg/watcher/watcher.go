@@ -31,6 +31,7 @@ type Watcher interface {
 	Start()
 	Stop()
 	GetEventsChannel() <-chan event.GenericEvent
+	IsStarted() bool
 }
 
 type ResourceWatcher struct {
@@ -91,6 +92,10 @@ func (w *ResourceWatcher) Stop() {
 	w.dynamicInformerFactory.Shutdown()
 
 	w.started = false
+}
+
+func (w *ResourceWatcher) IsStarted() bool {
+	return w.started
 }
 
 func (w *ResourceWatcher) GetEventsChannel() <-chan event.GenericEvent {

@@ -92,7 +92,7 @@ type Reconciler struct {
 	allowedEventingCR             *eventingv1alpha1.Eventing
 	clusterScopedResourcesWatched bool
 	natsCRWatchStarted            bool
-	natsWatcher                   watcher.Watcher
+	natsWatchers                  map[string]watcher.Watcher
 }
 
 func NewReconciler(
@@ -124,6 +124,7 @@ func NewReconciler(
 		isNATSSubManagerStarted: false,
 		natsConfigHandler:       NewNatsConfigHandler(kubeClient, opts),
 		allowedEventingCR:       allowedEventingCR,
+		natsWatchers:            make(map[string]watcher.Watcher),
 	}
 }
 
@@ -257,16 +258,17 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 }
 
 func (r *Reconciler) startNatsCRWatch(eventing *eventingv1alpha1.Eventing) error {
-	if r.natsCRWatchStarted {
+	natsWatcher, found := r.natsWatchers[eventing.Namespace]
+	if found && natsWatcher.IsStarted() {
 		return nil
 	}
 
-	if r.natsWatcher == nil {
-		r.natsWatcher = watcher.NewResourceWatcher(r.dynamicClient, k8s.NatsGVK, eventing.Namespace)
+	if !found {
+		natsWatcher = watcher.NewResourceWatcher(r.dynamicClient, k8s.NatsGVK, eventing.Namespace)
+		r.natsWatchers[eventing.Namespace] = natsWatcher
 	}
 
-	r.natsWatcher.Start()
-	if err := r.controller.Watch(&source.Channel{Source: r.natsWatcher.GetEventsChannel()},
+	if err := r.controller.Watch(&source.Channel{Source: natsWatcher.GetEventsChannel()},
 		handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
 			return []reconcile.Request{
 				{NamespacedName: types.NamespacedName{
@@ -280,13 +282,17 @@ func (r *Reconciler) startNatsCRWatch(eventing *eventingv1alpha1.Eventing) error
 		r.natsCRWatchStarted = false
 		return err
 	}
-	r.natsCRWatchStarted = true
+	natsWatcher.Start()
+
 	return nil
 }
 
-func (r *Reconciler) stopNatsCRWatch() {
-	r.natsWatcher.Stop()
-	r.natsWatcher = nil
+func (r *Reconciler) stopNatsCRWatch(eventing *eventingv1alpha1.Eventing) {
+	natsWatcher, found := r.natsWatchers[eventing.Namespace]
+	if found {
+		natsWatcher.Stop()
+		delete(r.natsWatchers, eventing.Namespace)
+	}
 	r.natsCRWatchStarted = false
 }
 
@@ -407,7 +413,7 @@ func (r *Reconciler) handleBackendSwitching(
 		if err := r.stopNATSSubManager(true, log); err != nil {
 			return err
 		}
-		r.stopNatsCRWatch()
+		r.stopNatsCRWatch(eventing)
 	} else if eventing.Status.ActiveBackend == eventingv1alpha1.EventMeshBackendType {
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
 			return err
@@ -421,7 +427,7 @@ func (r *Reconciler) handleBackendSwitching(
 }
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
-	_, err := r.kubeClient.GetCRD(k8s.NatsGVK.GroupResource().String())
+	_, err := r.kubeClient.GetCRD(ctx, k8s.NatsGVK.GroupResource().String())
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			err = fmt.Errorf("NATS module has to be installed: %v", err)
@@ -430,12 +436,12 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 		return ctrl.Result{}, err
 	}
 
-	if err := r.startNatsCRWatch(eventing); err != nil {
+	if err = r.startNatsCRWatch(eventing); err != nil {
 		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 
 	// check nats CR if it exists and is in natsAvailable state
-	err := r.checkNATSAvailability(ctx, eventing)
+	err = r.checkNATSAvailability(ctx, eventing)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}

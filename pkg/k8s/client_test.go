@@ -574,7 +574,7 @@ func Test_GetCRD(t *testing.T) {
 			}
 
 			fakeClientSet := apiclientsetfake.NewSimpleClientset(objs...)
-			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager)
+			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
 			gotCRD, err := kubeClient.GetCRD(context.Background(), tc.givenCRDName)
