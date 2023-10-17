@@ -16,7 +16,6 @@ on:
       - 'docs/**'
       - '**.md'
 
-
 jobs:
   unit:
     runs-on: ubuntu-latest
@@ -30,22 +29,3 @@ jobs:
       - name: Run tests
         run: |
           make test-only
-
-  validate-crd:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install k3d tools
-        run: |
-          make -C hack/ci/ install-k3d-tools
-
-      - name: Install Kyma CLI & setup k3d cluster using kyma CLI
-        run: |
-          make kyma
-          make -C hack/ci/ create-k3d
-          kubectl version
-          kubectl cluster-info
-
-      - name: apply crd
-        run: kubectl apply -f config/crd/bases/operator.kyma-project.io_eventings.yaml
