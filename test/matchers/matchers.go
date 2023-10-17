@@ -89,13 +89,17 @@ func HaveNATSAvailableCondition() gomegatypes.GomegaMatcher {
 	})
 }
 
-func HaveNATSNotAvailableCondition() gomegatypes.GomegaMatcher {
+func HaveNATSNotAvailableConditionWith(message string) gomegatypes.GomegaMatcher {
 	return HaveCondition(metav1.Condition{
 		Type:    string(v1alpha1.ConditionNATSAvailable),
 		Status:  metav1.ConditionFalse,
 		Reason:  string(v1alpha1.ConditionReasonNATSNotAvailable),
-		Message: eventing.NatsServerNotAvailableMsg,
+		Message: message,
 	})
+}
+
+func HaveNATSNotAvailableCondition() gomegatypes.GomegaMatcher {
+	return HaveNATSNotAvailableConditionWith(eventing.NatsServerNotAvailableMsg)
 }
 
 func HaveEventMeshSubManagerReadyCondition() gomegatypes.GomegaMatcher {

@@ -521,6 +521,10 @@ func (r *Reconciler) SetEventMeshSubManager(eventMeshSubManager manager.Manager)
 	r.eventMeshSubManager = eventMeshSubManager
 }
 
+func (r *Reconciler) SetKubeClient(kubeClient k8s.Client) {
+	r.kubeClient = kubeClient
+}
+
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {
 	return r.logger.WithContext().Named(ControllerName)
 }

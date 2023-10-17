@@ -1,6 +1,13 @@
 package controller_test
 
 import (
+	"context"
+	"fmt"
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/http"
 	"os"
 	"testing"
 
@@ -58,6 +65,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 		givenNATS            *natsv1alpha1.NATS
 		givenDeploymentReady bool
 		givenNATSReady       bool
+		givenNatsCRDMissing  bool
 		wantMatches          gomegatypes.GomegaMatcher
 		wantEnsureK8sObjects bool
 	}{
@@ -118,6 +126,24 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				matchers.HaveFinalizer(),
 			),
 		},
+		{
+			name: "Eventing CR should error state due to NATS CRD is missing",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			givenNATS: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+			),
+			givenNatsCRDMissing: true,
+			wantMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveNATSNotAvailableConditionWith("NATS module has to be installed: "+
+					"customresourcedefinitions.apiextensions.k8s.io \"nats.operator.kyma-project.io\" not found"),
+				matchers.HaveFinalizer(),
+			),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -136,19 +162,32 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 			// when
 			// create NATS.
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenNATS)
-			if tc.givenNATSReady {
-				testEnvironment.EnsureNATSResourceStateReady(t, tc.givenNATS)
+			originalKubeClient := testEnvironment.KubeClient
+			if !tc.givenNatsCRDMissing {
+				testEnvironment.EnsureK8sResourceCreated(t, tc.givenNATS)
+				if tc.givenNATSReady {
+					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenNATS)
+				}
+			} else {
+				mockedKubeClient := &MockKubeClient{
+					Client: originalKubeClient,
+				}
+				testEnvironment.KubeClient = mockedKubeClient
+				testEnvironment.Reconciler.SetKubeClient(mockedKubeClient)
 			}
 			// create Eventing CR.
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
 
 			defer func() {
+				testEnvironment.KubeClient = originalKubeClient
+				testEnvironment.Reconciler.SetKubeClient(originalKubeClient)
 				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
 				if tc.givenNATSReady && !*testEnvironment.EnvTestInstance.UseExistingCluster {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
-				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenNATS)
+				if !tc.givenNatsCRDMissing {
+					testEnvironment.EnsureK8sResourceDeleted(t, tc.givenNATS)
+				}
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
@@ -867,4 +906,20 @@ func ensureK8sResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, 
 	testEnvironment.EnsureEPPClusterRoleCorrect(t, *givenEventing)
 	// ClusterRoleBinding
 	testEnvironment.EnsureEPPClusterRoleBindingCorrect(t, *givenEventing)
+}
+
+type MockKubeClient struct {
+	k8s.Client
+}
+
+// mock only GetCRD and leave the rest as is.
+func (mkc *MockKubeClient) GetCRD(ctx context.Context, name string) (*apiextensionsv1.CustomResourceDefinition, error) {
+	notFoundError := &errors.StatusError{
+		ErrStatus: metav1.Status{
+			Code:    http.StatusNotFound,
+			Reason:  metav1.StatusReasonNotFound,
+			Message: fmt.Sprintf("customresourcedefinitions.apiextensions.k8s.io \"%s\" not found", name),
+		},
+	}
+	return nil, notFoundError
 }
