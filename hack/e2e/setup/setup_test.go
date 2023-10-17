@@ -239,6 +239,15 @@ func Test_PublisherProxyDeployment(t *testing.T) {
 			return err
 		}
 
+		if gotDeployment.Spec.Template.Spec.PriorityClassName != eventing.PriorityClassName {
+			return fmt.Errorf(
+				"error while checking deployment '%s'; PriorityClasssName was supposed to be %s, but was %s",
+				gotDeployment.GetName(),
+				eventing.PriorityClassName,
+				gotDeployment.Spec.Template.Spec.PriorityClassName,
+			)
+		}
+
 		return nil
 	})
 	require.NoError(t, err)
@@ -253,7 +262,7 @@ func Test_PublisherProxyPods(t *testing.T) {
 
 	ctx := context.TODO()
 	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
-	// RetryGet the Pods and test them.
+	// Retry to get the Pods and test them.
 	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
 		// get publisher deployment
 		gotDeployment, getErr := testEnvironment.GetDeployment(eventing.GetPublisherDeploymentName(*eventingCR), NamespaceName)
@@ -279,7 +288,7 @@ func Test_PublisherProxyPods(t *testing.T) {
 			)
 		}
 
-		// Go through all Pods, check its spec. It should be same as defined in Eventing CR
+		// Go through all Pods, check its spec. It should be same as defined in Eventing CR.
 		for _, pod := range pods.Items {
 			// find the container.
 			container := FindContainerInPod(pod, PublisherContainerName)
@@ -296,13 +305,22 @@ func Test_PublisherProxyPods(t *testing.T) {
 				)
 			}
 
-			// check if the ENV `BACKEND` is defined correctly.
+			// Check if the PriorityClassName was set as expected.
+			if pod.Spec.PriorityClassName != eventing.PriorityClassName {
+				return fmt.Errorf("'PriorityClassName' of Pod %v should be %v but was %v",
+					pod.GetName(),
+					eventing.PriorityClassName,
+					pod.Spec.PriorityClassName,
+				)
+			}
+
+			// Check if the ENV `BACKEND` is defined correctly.
 			wantBackendENVValue := "nats"
 			if eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType) == eventingv1alpha1.EventMeshBackendType {
 				wantBackendENVValue = "beb"
 			}
 
-			// get value of ENV `BACKEND`
+			// Get value of ENV `BACKEND`.
 			gotBackendENVValue := ""
 			for _, envVar := range container.Env {
 				if envVar.Name == "BACKEND" {
