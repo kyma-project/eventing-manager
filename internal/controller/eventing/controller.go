@@ -279,7 +279,6 @@ func (r *Reconciler) startNatsCRWatch(eventing *eventingv1alpha1.Eventing) error
 		}),
 		predicate.ResourceVersionChangedPredicate{},
 	); err != nil {
-		r.natsCRWatchStarted = false
 		return err
 	}
 	natsWatcher.Start()
@@ -293,7 +292,6 @@ func (r *Reconciler) stopNatsCRWatch(eventing *eventingv1alpha1.Eventing) {
 		natsWatcher.Stop()
 		delete(r.natsWatchers, eventing.Namespace)
 	}
-	r.natsCRWatchStarted = false
 }
 
 // loggerWithEventing returns a logger with the given Eventing CR details.
