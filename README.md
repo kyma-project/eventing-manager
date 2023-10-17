@@ -109,7 +109,7 @@ You’ll need a Kubernetes cluster to run against. You can use [k3d](https://k3d
 4. [Optional] Install `Eventing` Custom Resource:
 
     ```sh
-    kubectl apply -f config/samples/eventing-eval.yaml
+    kubectl apply -f config/samples/default.yaml
     ```
 5. [Optional] For EventMesh backend, set env var `DOMAIN` to the cluster domain in the deployment resource. For example:
     ```   
