@@ -40,7 +40,7 @@ const (
 	PublisherSecretEMSURLKey       = "ems-publish-url"
 	PublisherSecretBEBNamespaceKey = "beb-namespace"
 
-	priorityClassName = "eventing-manager-priority-class"
+	PriorityClassName = "eventing-manager-priority-class"
 )
 
 var (
@@ -59,7 +59,7 @@ func newNATSPublisherDeployment(
 		WithNATSEnvVars(natsConfig, publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
 		WithAffinity(GetPublisherDeploymentName(*eventing)),
-		WithPriorityClassName(priorityClassName),
+		WithPriorityClassName(PriorityClassName),
 	)
 }
 
@@ -73,7 +73,7 @@ func newEventMeshPublisherDeployment(
 		WithContainers(publisherConfig, eventing),
 		WithBEBEnvVars(GetPublisherDeploymentName(*eventing), publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
-		WithPriorityClassName(priorityClassName),
+		WithPriorityClassName(PriorityClassName),
 	)
 }
 

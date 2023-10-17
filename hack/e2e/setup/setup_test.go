@@ -53,7 +53,6 @@ func TestMain(m *testing.M) {
 	}
 
 	// Create the Eventing CR used for testing.
-
 	if err := testEnvironment.SetupEventingCR(); err != nil {
 		testEnvironment.Logger.Fatal(err.Error())
 	}
@@ -324,4 +323,18 @@ func Test_PublisherProxyPods(t *testing.T) {
 		return nil
 	})
 	require.NoError(t, err)
+}
+
+func Test_PriorityClass(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.TODO()
+
+	// Check if the PriorityClass exists in the cluster.
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.SchedulingV1().PriorityClasses().Get(
+			ctx, eventing.PriorityClassName, metav1.GetOptions{})
+		return getErr
+	})
+	require.Nil(t, err, fmt.Errorf("error while fetching PriorityClass: %v", err))
 }
