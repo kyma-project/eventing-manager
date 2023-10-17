@@ -1,4 +1,4 @@
-name: validate
+name: test
 
 env:
   KYMA_STABILITY: "unstable"
@@ -7,23 +7,18 @@ env:
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - 'api/**'
-      - 'config/crd/**'
     paths-ignore:
       - 'docs/**'
       - '**.md'
   pull_request:
     branches: [ "main" ]
-    paths:
-      - 'api/**'
-      - 'config/crd/**'
     paths-ignore:
       - 'docs/**'
       - '**.md'
 
+
 jobs:
-  crd:
+  unit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
