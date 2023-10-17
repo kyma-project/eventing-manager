@@ -5,14 +5,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 const (
@@ -239,7 +240,7 @@ func getReadinessProbe() *v1.Probe {
 		ProbeHandler: v1.ProbeHandler{
 			HTTPGet: &v1.HTTPGetAction{
 				Path:   "/readyz",
-				Port:   intstr.FromInt(8080),
+				Port:   intstr.FromInt32(8080),
 				Scheme: v1.URISchemeHTTP,
 			},
 		},
@@ -252,7 +253,7 @@ func getLivenessProbe() *v1.Probe {
 		ProbeHandler: v1.ProbeHandler{
 			HTTPGet: &v1.HTTPGetAction{
 				Path:   "/healthz",
-				Port:   intstr.FromInt(8080),
+				Port:   intstr.FromInt32(8080),
 				Scheme: v1.URISchemeHTTP,
 			},
 		},
