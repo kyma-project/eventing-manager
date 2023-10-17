@@ -102,7 +102,8 @@ func Test_NewDeploymentSecurityContext(t *testing.T) {
 		testutils.WithEventingCRNamespace("test-namespace"),
 	)
 	deployment := newDeployment(givenEventing, config.PublisherConfig,
-		WithContainers(config.PublisherConfig, givenEventing))
+		WithContainers(config.PublisherConfig, givenEventing),
+	)
 
 	// when
 	podSecurityContext := deployment.Spec.Template.Spec.SecurityContext
