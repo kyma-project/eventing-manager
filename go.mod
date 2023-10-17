@@ -8,7 +8,7 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.14.0
 	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zapr v1.2.4
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-incubator/api-gateway v0.0.0-20220819093753-296e6704d413
 	github.com/kyma-project/kyma/common/logging v0.0.0-20230616102347-ad6927dc28d5
