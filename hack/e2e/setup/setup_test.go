@@ -76,10 +76,7 @@ func Test_WebhookServerCertSecret(t *testing.T) {
 	ctx := context.TODO()
 	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
 		_, getErr := testEnvironment.K8sClientset.CoreV1().Secrets(NamespaceName).Get(ctx, WebhookServerCertSecretName, metav1.GetOptions{})
-		if getErr != nil {
-			return getErr
-		}
-		return nil
+		return getErr
 	})
 	require.NoError(t, err)
 }
@@ -89,10 +86,20 @@ func Test_WebhookServerCertJob(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
 	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
-		_, getErr := testEnvironment.K8sClientset.BatchV1().Jobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
+		job, getErr := testEnvironment.K8sClientset.BatchV1().Jobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
 		if getErr != nil {
 			return getErr
 		}
+
+		// Check if the PriorityClassName was set correctly.
+		if job.Spec.Template.Spec.PriorityClassName != eventing.PriorityClassName {
+			return fmt.Errorf("Job '%s' was expected to have PriorityClassName '%s' but has '%s'",
+				job.GetName(),
+				eventing.PriorityClassName,
+				job.Spec.Template.Spec.PriorityClassName,
+			)
+		}
+
 		return nil
 	})
 	require.NoError(t, err)
@@ -103,10 +110,24 @@ func Test_WebhookServerCertCronJob(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
 	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
-		_, getErr := testEnvironment.K8sClientset.BatchV1().CronJobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
+		job, getErr := testEnvironment.K8sClientset.BatchV1().CronJobs(NamespaceName).Get(
+			ctx,
+			WebhookServerCertJobName,
+			metav1.GetOptions{},
+		)
 		if getErr != nil {
 			return getErr
 		}
+
+		// Check if the PriorityClassName was set correctly.
+		if job.Spec.JobTemplate.Spec.Template.Spec.PriorityClassName != eventing.PriorityClassName {
+			return fmt.Errorf("ChronJob '%s' was expected to have PriorityClassName '%s' but has '%s'",
+				job.GetName(),
+				eventing.PriorityClassName,
+				job.Spec.JobTemplate.Spec.Template.Spec.PriorityClassName,
+			)
+		}
+
 		return nil
 	})
 	require.NoError(t, err)
