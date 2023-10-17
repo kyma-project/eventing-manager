@@ -40,7 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -90,7 +89,7 @@ type TestEnvironment struct {
 
 //nolint:funlen // Used in testing
 func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
-	allowedEventingCR *eventingv1alpha1.Eventing) (*TestEnvironment, error) {
+	allowedEventingCR *v1alpha1.Eventing) (*TestEnvironment, error) {
 	var err error
 	// setup context
 	ctx := context.Background()
@@ -114,7 +113,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	}
 
 	// add Eventing CRD scheme
-	err = eventingv1alpha1.AddToScheme(scheme.Scheme)
+	err = v1alpha1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, err
 	}
@@ -354,8 +353,8 @@ func (env TestEnvironment) TearDown() error {
 
 // GetEventingAssert fetches Eventing from k8s and allows making assertions on it.
 func (env TestEnvironment) GetEventingAssert(g *gomega.GomegaWithT,
-	eventing *eventingv1alpha1.Eventing) gomega.AsyncAssertion {
-	return g.Eventually(func() *eventingv1alpha1.Eventing {
+	eventing *v1alpha1.Eventing) gomega.AsyncAssertion {
+	return g.Eventually(func() *v1alpha1.Eventing {
 		gotEventing, err := env.GetEventingFromK8s(eventing.Name, eventing.Namespace)
 		if err != nil {
 			log.Printf("fetch eventing %s/%s failed: %v", eventing.Name, eventing.Namespace, err)
@@ -533,7 +532,7 @@ func (env TestEnvironment) EnsureHPANotFound(t *testing.T, name, namespace strin
 }
 
 func (env TestEnvironment) EnsureEventingResourceDeletion(t *testing.T, name, namespace string) {
-	eventing := &eventingv1alpha1.Eventing{
+	eventing := &v1alpha1.Eventing{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -547,7 +546,7 @@ func (env TestEnvironment) EnsureEventingResourceDeletion(t *testing.T, name, na
 }
 
 func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T, name, namespace string) {
-	eventing := &eventingv1alpha1.Eventing{
+	eventing := &v1alpha1.Eventing{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -556,7 +555,7 @@ func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T
 	env.EnsureK8sResourceDeleted(t, eventing)
 	require.Eventually(t, func() bool {
 		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: name, Namespace: namespace}, eventing)
-		return err == nil && eventing.Status.State == eventingv1alpha1.StateError
+		return err == nil && eventing.Status.State == v1alpha1.StateError
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure deletion of Eventing")
 }
 
@@ -918,8 +917,8 @@ func getTestBackendConfig() env.BackendConfig {
 	}
 }
 
-func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*eventingv1alpha1.Eventing, error) {
-	eventing := &eventingv1alpha1.Eventing{}
+func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*v1alpha1.Eventing, error) {
+	eventing := &v1alpha1.Eventing{}
 	err := env.k8sClient.Get(env.Context, types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -928,7 +927,7 @@ func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*eventing
 }
 
 func (env TestEnvironment) DeleteEventingFromK8s(name, namespace string) error {
-	cr := &eventingv1alpha1.Eventing{
+	cr := &v1alpha1.Eventing{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
