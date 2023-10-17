@@ -608,11 +608,7 @@ func Test_SyncSubscription(t *testing.T) {
 	subscription := fixtureValidSubscription("some-name", "some-namespace")
 	subscription.Status.Backend.EventMeshHash = 0
 	subscription.Status.Backend.Ev2hash = 0
-
-	apiRule := controllertesting.NewAPIRule(subscription,
-		controllertesting.WithPath(),
-		controllertesting.WithService("foo-svc", "foo-host"),
-	)
+	webhookURL := "http://foo-svc.foo-host"
 
 	// cases - reconcile same subscription multiple times
 	testCases := []struct {
@@ -642,7 +638,7 @@ func Test_SyncSubscription(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// when
 			subscription.Spec.Types[0] = tc.givenEventType
-			changed, err := eventMesh.SyncSubscription(subscription, cleaner.NewEventMeshCleaner(defaultLogger), apiRule)
+			changed, err := eventMesh.SyncSubscription(subscription, cleaner.NewEventMeshCleaner(defaultLogger), webhookURL)
 			require.NoError(t, err)
 			require.Equal(t, tc.wantIsChanged, changed)
 		})
@@ -700,17 +696,13 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			typesInfo, err := eventMesh.getProcessedEventTypes(kymaSub, cleaner.NewEventMeshCleaner(defaultLogger))
 			require.NoError(t, err)
 			require.NotNil(t, typesInfo)
-			apiRule := controllertesting.NewAPIRule(
-				kymaSub,
-				controllertesting.WithPath(),
-				controllertesting.WithService("test-service", "http://localhost"),
-			)
+			webhookURL := "http://test-service.localhost"
 
 			// convert Kyma Subscription to EventMesh Subscription
 			emSub, err := backendutils.ConvertKymaSubToEventMeshSub(
 				kymaSub,
 				typesInfo,
-				apiRule,
+				webhookURL,
 				eventMesh.webhookAuth,
 				eventMesh.protocolSettings,
 				eventMesh.namespace,

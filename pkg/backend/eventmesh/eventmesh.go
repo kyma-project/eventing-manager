@@ -7,7 +7,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/client"
@@ -31,13 +30,14 @@ const (
 // Perform a compile time check.
 var _ Backend = &EventMesh{}
 
+//go:generate mockery --name=Backend --outpkg=mocks --case=underscore
 type Backend interface {
 	// Initialize should initialize the communication layer with the messaging backend system
 	Initialize(cfg env.Config) error
 
 	// SyncSubscription should synchronize the Kyma eventing subscription with the subscriber infrastructure of messaging backend system.
 	// It should return true if Kyma eventing subscription status was changed during this synchronization process.
-	SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner, apiRule *apigatewayv1beta1.APIRule) (bool, error)
+	SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner, webhookURL string) (bool, error)
 
 	// DeleteSubscription should delete the corresponding subscriber data of messaging backend
 	DeleteSubscription(subscription *eventingv1alpha2.Subscription) error
@@ -98,7 +98,7 @@ func getWebHookAuth(credentials *OAuth2ClientCredentials) *types.WebhookAuth {
 // SyncSubscription synchronize the EV2 subscription with the EMS subscription.
 // It returns true, if the EV2 subscription status was changed.
 func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner,
-	apiRule *apigatewayv1beta1.APIRule) (bool, error) { //nolint:funlen,gocognit
+	webhookURL string) (bool, error) { //nolint:funlen,gocognit
 	// Format logger
 	log := backendutils.LoggerWithSubscription(em.namedLogger(), subscription)
 
@@ -110,7 +110,7 @@ func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscriptio
 	}
 
 	// convert Kyma Subscription to EventMesh Subscription object
-	eventMeshSub, err := backendutils.ConvertKymaSubToEventMeshSub(subscription, typesInfo, apiRule, em.webhookAuth,
+	eventMeshSub, err := backendutils.ConvertKymaSubToEventMeshSub(subscription, typesInfo, webhookURL, em.webhookAuth,
 		em.protocolSettings, em.namespace, em.SubNameMapper)
 	if err != nil {
 		log.Errorw("Failed to get Kyma subscription internal view", errorLogKey, err)

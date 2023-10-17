@@ -22,6 +22,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/kyma-project/eventing-manager/pkg/apigateway"
+
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -147,12 +149,16 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	metricsCollector := backendmetrics.NewCollector()
 	metricsCollector.RegisterMetrics()
 
+	// init api-gateway instance.
+	apiGateway := apigateway.NewGateway(kubeClient)
+
 	// init subscription manager factory.
 	subManagerFactory := subscriptionmanager.NewFactory(
 		k8sRestCfg,
 		":8080",
 		metricsCollector,
 		opts.ReconcilePeriod,
+		apiGateway,
 		ctrLogger,
 	)
 

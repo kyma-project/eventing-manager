@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	apigatewaymock "github.com/kyma-project/eventing-manager/pkg/apigateway/mocks"
+
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
@@ -144,6 +146,7 @@ func setupSuite() error {
 	}
 	emTestEnsemble.envConfig = getEnvConfig()
 	col := metrics.NewCollector()
+	apiGateway := new(apigatewaymock.APIGateway)
 	testReconciler := eventmeshreconciler.NewReconciler(
 		context.Background(),
 		k8sManager.GetClient(),
@@ -153,6 +156,7 @@ func setupSuite() error {
 		cleaner.NewEventMeshCleaner(defaultLogger),
 		backendeventmesh.NewEventMesh(credentials, emTestEnsemble.nameMapper, defaultLogger),
 		credentials,
+		apiGateway,
 		emTestEnsemble.nameMapper,
 		sinkValidator,
 		col,

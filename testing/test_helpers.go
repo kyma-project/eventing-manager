@@ -9,7 +9,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 
-	"github.com/kyma-project/eventing-manager/pkg/object"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
@@ -71,8 +70,6 @@ const (
 	CeSourceHeader      = "ce-source"
 	CeSpecVersionHeader = "ce-specversion"
 )
-
-type APIRuleOption func(r *apigatewayv1beta1.APIRule)
 
 // GetFreePort determines a free port on the host. It does so by delegating the job to net.ListenTCP.
 // Then providing a port of 0 to net.ListenTCP, it will automatically choose a port for us.
@@ -329,65 +326,6 @@ func PublisherDeploymentNotReadyEvent() corev1.Event {
 	return corev1.Event{
 		Reason: string(eventingv1alpha1.ConditionReasonPublisherDeploymentNotReady),
 		Type:   corev1.EventTypeWarning,
-	}
-}
-
-// NewAPIRule returns a valid APIRule.
-func NewAPIRule(subscription *eventingv1alpha2.Subscription, opts ...APIRuleOption) *apigatewayv1beta1.APIRule {
-	apiRule := &apigatewayv1beta1.APIRule{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "foo",
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: "eventing.kyma-project.io/v1alpha1",
-					Kind:       "subscriptions",
-					Name:       subscription.Name,
-					UID:        subscription.UID,
-				},
-			},
-		},
-	}
-
-	for _, opt := range opts {
-		opt(apiRule)
-	}
-	return apiRule
-}
-
-func WithService(name, host string) APIRuleOption {
-	return func(r *apigatewayv1beta1.APIRule) {
-		port := uint32(443) //nolint:gomnd // tests
-		isExternal := true
-		r.Spec.Host = &host
-		r.Spec.Service = &apigatewayv1beta1.Service{
-			Name:       &name,
-			Port:       &port,
-			IsExternal: &isExternal,
-		}
-	}
-}
-
-func WithPath() APIRuleOption {
-	return func(r *apigatewayv1beta1.APIRule) {
-		handlerOAuth := object.OAuthHandlerNameOAuth2Introspection
-		handler := apigatewayv1beta1.Handler{
-			Name: handlerOAuth,
-		}
-		authenticator := &apigatewayv1beta1.Authenticator{
-			Handler: &handler,
-		}
-		r.Spec.Rules = []apigatewayv1beta1.Rule{
-			{
-				Path: "/path",
-				Methods: []string{
-					http.MethodPost,
-					http.MethodOptions,
-				},
-				AccessStrategies: []*apigatewayv1beta1.Authenticator{
-					authenticator,
-				},
-			},
-		}
 	}
 }
 

@@ -3,8 +3,6 @@ package utils
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"net/url"
 
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/pkg/errors"
@@ -50,28 +48,6 @@ func ConvertMsgToCE(msg *nats.Msg) (*cev2event.Event, error) {
 		return nil, err
 	}
 	return &event, nil
-}
-
-func GetExposedURLFromAPIRule(apiRule *apigatewayv1beta1.APIRule, targetURL string) (string, error) {
-	// @TODO: Move this method to backend/eventmesh/utils.go once old BEB backend is depreciated
-	scheme := "https://"
-	path := ""
-
-	sURL, err := url.ParseRequestURI(targetURL)
-	if err != nil {
-		return "", err
-	}
-	sURLPath := sURL.Path
-	if sURL.Path == "" {
-		sURLPath = "/"
-	}
-	for _, rule := range apiRule.Spec.Rules {
-		if rule.Path == sURLPath {
-			path = rule.Path
-			break
-		}
-	}
-	return fmt.Sprintf("%s%s%s", scheme, *apiRule.Spec.Host, path), nil
 }
 
 // UpdateSubscriptionStatus updates the status of all Kyma subscriptions on k8s.

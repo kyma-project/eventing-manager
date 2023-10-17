@@ -3,6 +3,8 @@ package subscriptionmanager
 import (
 	"time"
 
+	"github.com/kyma-project/eventing-manager/pkg/apigateway"
+
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
@@ -28,6 +30,7 @@ type Factory struct {
 	metricsAddress   string
 	metricsCollector *metrics.Collector
 	resyncPeriod     time.Duration
+	apiGateway       apigateway.APIGateway
 	logger           *eclogger.Logger
 }
 
@@ -36,12 +39,14 @@ func NewFactory(
 	metricsAddress string,
 	metricsCollector *metrics.Collector,
 	resyncPeriod time.Duration,
+	apiGateway apigateway.APIGateway,
 	logger *eclogger.Logger) *Factory {
 	return &Factory{
 		k8sRestCfg:       k8sRestCfg,
 		metricsAddress:   metricsAddress,
 		metricsCollector: metricsCollector,
 		resyncPeriod:     resyncPeriod,
+		apiGateway:       apiGateway,
 		logger:           logger,
 	}
 }
@@ -52,5 +57,6 @@ func (f Factory) NewJetStreamManager(eventing v1alpha1.Eventing, natsConfig env.
 }
 
 func (f Factory) NewEventMeshManager() (manager.Manager, error) {
-	return eventmesh.NewSubscriptionManager(f.k8sRestCfg, f.metricsAddress, f.resyncPeriod, f.logger, f.metricsCollector), nil
+	return eventmesh.NewSubscriptionManager(f.k8sRestCfg, f.metricsAddress, f.resyncPeriod,
+		f.logger, f.metricsCollector, f.apiGateway), nil
 }

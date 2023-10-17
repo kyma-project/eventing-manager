@@ -8,7 +8,6 @@ import (
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
@@ -104,7 +103,7 @@ func getEventMeshEvents(typeInfos []EventTypeInfo, typeMatching eventingv1alpha2
 }
 
 func ConvertKymaSubToEventMeshSub(subscription *eventingv1alpha2.Subscription, typeInfos []EventTypeInfo,
-	apiRule *apigatewayv1beta1.APIRule, defaultWebhookAuth *types.WebhookAuth,
+	webhookURL string, defaultWebhookAuth *types.WebhookAuth,
 	defaultProtocolSettings *ProtocolSettings,
 	defaultNamespace string, nameMapper NameMapper) (*types.Subscription, error) { //nolint:gocognit
 	// get default EventMesh subscription object
@@ -127,11 +126,7 @@ func ConvertKymaSubToEventMeshSub(subscription *eventingv1alpha2.Subscription, t
 
 	// WebhookURL
 	// set WebhookURL of EventMesh subscription where the events will be dispatched to.
-	urlTobeRegistered, err := GetExposedURLFromAPIRule(apiRule, subscription.Spec.Sink)
-	if err != nil {
-		return nil, errors.Wrap(err, "get APIRule exposed URL failed")
-	}
-	eventMeshSubscription.WebhookURL = urlTobeRegistered
+	eventMeshSubscription.WebhookURL = webhookURL
 
 	// set webhook auth
 	eventMeshSubscription.WebhookAuth, err = getEventMeshWebhookAuth(subscription, defaultWebhookAuth)

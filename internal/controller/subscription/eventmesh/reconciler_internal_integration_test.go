@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	apigatewaymock "github.com/kyma-project/eventing-manager/pkg/apigateway/mocks"
+
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/pkg/errors"
@@ -105,6 +107,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.cleaner,
 					te.backend,
 					te.credentials,
+					te.apiGateway,
 					te.mapper,
 					happyValidator,
 					col)
@@ -126,6 +129,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.cleaner,
 					te.backend,
 					te.credentials,
+					te.apiGateway,
 					te.mapper,
 					unhappyValidator,
 					col)
@@ -148,6 +152,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.cleaner,
 					te.backend,
 					te.credentials,
+					te.apiGateway,
 					te.mapper,
 					happyValidator,
 					col)
@@ -170,6 +175,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.cleaner,
 					te.backend,
 					te.credentials,
+					te.apiGateway,
 					te.mapper,
 					happyValidator,
 					col)
@@ -191,6 +197,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.cleaner,
 					te.backend,
 					te.credentials,
+					te.apiGateway,
 					te.mapper,
 					unhappyValidator,
 					col)
@@ -213,6 +220,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.cleaner,
 					te.backend,
 					te.credentials,
+					te.apiGateway,
 					te.mapper,
 					happyValidator,
 					col)
@@ -285,6 +293,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 						te.cleaner,
 						te.backend,
 						te.credentials,
+						te.apiGateway,
 						te.mapper,
 						validator,
 						col),
@@ -314,6 +323,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 						te.cleaner,
 						te.backend,
 						te.credentials,
+						te.apiGateway,
 						te.mapper,
 						validator,
 						col),
@@ -413,6 +423,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 						te.cleaner,
 						te.backend,
 						te.credentials,
+						te.apiGateway,
 						te.mapper,
 						validator,
 						col),
@@ -448,6 +459,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 						te.cleaner,
 						te.backend,
 						te.credentials,
+						te.apiGateway,
 						te.mapper,
 						validator,
 						col),
@@ -606,7 +618,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(ctx, te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
-					te.backend, te.credentials, te.mapper, validator, collector), te.fakeClient
+					te.backend, te.credentials, te.apiGateway, te.mapper, validator, collector), te.fakeClient
 			},
 			wantEv2Hash:            ev2hash,
 			wantEventMeshHash:      eventMeshHash,
@@ -633,7 +645,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(ctx, te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
-					te.backend, te.credentials, te.mapper, validator, collector), te.fakeClient
+					te.backend, te.credentials, te.apiGateway, te.mapper, validator, collector), te.fakeClient
 			},
 			wantEv2Hash:            ev2hash,
 			wantEventMeshHash:      eventMeshHash,
@@ -1362,6 +1374,7 @@ type testEnvironment struct {
 	credentials *eventmesh.OAuth2ClientCredentials
 	mapper      backendutils.NameMapper
 	cleaner     cleaner.Cleaner
+	apiGateway  *apigatewaymock.APIGateway
 }
 
 // setupTestEnvironment is a testEnvironment constructor.
@@ -1377,6 +1390,7 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *testEnvironment 
 	credentials := &eventmesh.OAuth2ClientCredentials{}
 	nameMapper := backendutils.NewBEBSubscriptionNameMapper(domain, eventmesh.MaxSubscriptionNameLength)
 	eventMeshCleaner := cleaner.NewEventMeshCleaner(nil)
+	apiGateway := new(apigatewaymock.APIGateway)
 
 	return &testEnvironment{
 		fakeClient:  fakeClient,
@@ -1387,6 +1401,7 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *testEnvironment 
 		credentials: credentials,
 		mapper:      nameMapper,
 		cleaner:     eventMeshCleaner,
+		apiGateway:  apiGateway,
 	}
 }
 

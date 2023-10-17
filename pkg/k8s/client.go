@@ -5,6 +5,9 @@ import (
 	"errors"
 	"strings"
 
+	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
+	clientsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	v1 "k8s.io/api/apps/v1"
@@ -19,6 +22,7 @@ import (
 
 //go:generate mockery --name=Client --outpkg=mocks --case=underscore
 type Client interface {
+	GetService(context.Context, string, string) (*corev1.Service, error)
 	GetDeployment(context.Context, string, string) (*v1.Deployment, error)
 	UpdateDeployment(context.Context, *v1.Deployment) error
 	DeleteDeployment(context.Context, string, string) error
@@ -33,6 +37,9 @@ type Client interface {
 		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
 	GetCRD(context.Context, string) (*apiextensionsv1.CustomResourceDefinition, error)
 	ApplicationCRDExists(context.Context) (bool, error)
+	GetVirtualService(context.Context, string, string) (*networkingv1beta1.VirtualService, error)
+	GetRequestAuthentication(context.Context, string, string) (*clientsecurityv1beta1.RequestAuthentication, error)
+	GetAuthorizationPolicy(context.Context, string, string) (*clientsecurityv1beta1.AuthorizationPolicy, error)
 }
 
 type KubeClient struct {
@@ -47,6 +54,14 @@ func NewKubeClient(client client.Client, clientset k8sclientset.Interface, field
 		clientset:    clientset,
 		fieldManager: fieldManager,
 	}
+}
+
+func (c *KubeClient) GetService(ctx context.Context, name, namespace string) (*corev1.Service, error) {
+	svc := &corev1.Service{}
+	if err := c.client.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, svc); err != nil {
+		return nil, client.IgnoreNotFound(err)
+	}
+	return svc, nil
 }
 
 func (c *KubeClient) GetDeployment(ctx context.Context, name, namespace string) (*v1.Deployment, error) {
@@ -173,4 +188,22 @@ func (c *KubeClient) GetValidatingWebHookConfiguration(ctx context.Context,
 		return nil, err
 	}
 	return &validatingWH, nil
+}
+
+// GetVirtualService returns the Istio VirtualService k8s resource.
+func (c *KubeClient) GetVirtualService(ctx context.Context, name, namespace string) (*networkingv1beta1.VirtualService, error) {
+	// implement me
+	return nil, nil
+}
+
+// GetRequestAuthentication returns the Istio RequestAuthentication k8s resource.
+func (c *KubeClient) GetRequestAuthentication(ctx context.Context, name, namespace string) (*clientsecurityv1beta1.RequestAuthentication, error) {
+	// implement me
+	return nil, nil
+}
+
+// GetAuthorizationPolicy returns the Istio AuthorizationPolicy k8s resource.
+func (c *KubeClient) GetAuthorizationPolicy(ctx context.Context, name, namespace string) (*clientsecurityv1beta1.AuthorizationPolicy, error) {
+	// implement me
+	return nil, nil
 }
