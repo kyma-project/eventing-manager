@@ -377,7 +377,7 @@ func Test_PriorityClass(t *testing.T) {
 	})
 	require.Nil(t, err, fmt.Errorf("error while fetching PriorityClass: %v", err))
 
-	// Check if the Eventing-Manager Deployment has the right PriorityClassName. The right implicits that the
+	// Check if the Eventing-Manager Deployment has the right PriorityClassName. This implicits that the
 	// corresponding Pod also has the right PriorityClassName.
 	err = Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
 		deploy, getErr := testEnvironment.GetDeployment(ManagerDeploymentName, NamespaceName)
