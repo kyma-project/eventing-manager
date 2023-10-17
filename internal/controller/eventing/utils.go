@@ -32,7 +32,7 @@ func (r *Reconciler) removeFinalizer(ctx context.Context, eventing *eventingv1al
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) getNATSBackendConfigHash(defaultSubscriptionConfig env.DefaultSubscriptionConfig, natsConfig env.NATSConfig) (uint64, error) {
+func (r *Reconciler) getNATSBackendConfigHash(defaultSubscriptionConfig env.DefaultSubscriptionConfig, natsConfig env.NATSConfig) (int64, error) {
 	natsBackendConfig := struct {
 		env.DefaultSubscriptionConfig
 		env.NATSConfig
@@ -41,5 +41,15 @@ func (r *Reconciler) getNATSBackendConfigHash(defaultSubscriptionConfig env.Defa
 	if err != nil {
 		return 0, err
 	}
-	return hash, nil
+	return int64(hash), nil
+}
+
+func (r *Reconciler) getEventMeshBackendConfigHash(eventMeshSecret, eventTypePrefix string) (int64, error) {
+	eventMeshBackendConfig := eventMeshSecret + eventTypePrefix
+
+	hash, err := hashstructure.Hash(eventMeshBackendConfig, hashstructure.FormatV2, nil)
+	if err != nil {
+		return 0, err
+	}
+	return int64(hash), nil
 }
