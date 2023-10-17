@@ -36,7 +36,7 @@ var testEnvironment *testenvironment.TestEnvironment
 func TestMain(m *testing.M) {
 	testEnvironment = testenvironment.NewTestEnvironment()
 
-	// create test namespace,
+	// Create a test namespace.
 	if err := testEnvironment.CreateTestNamespace(); err != nil {
 		testEnvironment.Logger.Fatal(err.Error())
 	}
@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 		testEnvironment.Logger.Fatal(err.Error())
 	}
 
-	// wait for a testenvironment.Interval for reconciliation to update status.
+	// Wait for a testenvironment.Interval for reconciliation to update status.
 	time.Sleep(testenvironment.Interval)
 
 	// Wait for Eventing CR to get ready.
@@ -376,4 +376,23 @@ func Test_PriorityClass(t *testing.T) {
 		return getErr
 	})
 	require.Nil(t, err, fmt.Errorf("error while fetching PriorityClass: %v", err))
+
+	// Check if the Eventing-Manager Deployment has the right PriorityClassName. The right implicits that the
+	// corresponding Pod also has the right PriorityClassName.
+	err = Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		deploy, getErr := testEnvironment.GetDeployment(ManagerDeploymentName, NamespaceName)
+		if getErr != nil {
+			return getErr
+		}
+
+		if deploy.Spec.Template.Spec.PriorityClassName != eventing.PriorityClassName {
+			return fmt.Errorf("deployment '%s' should have the PriorityClassName %s but was %s",
+				deploy.GetName(),
+				eventing.PriorityClassName,
+				deploy.Spec.Template.Spec.PriorityClassName,
+			)
+		}
+
+		return nil
+	})
 }
