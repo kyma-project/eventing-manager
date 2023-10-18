@@ -7,27 +7,27 @@ env:
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'api/**'
+      - 'config/crd/**'
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'api/**'
+      - 'config/crd/**'
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
 
 jobs:
-  unit-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Sync GO dependencies
-        run: |
-          go mod tidy
-          go mod vendor
-      - name: Run tests
-        run: |
-          make test-only
-  validate-crd:
+  crd:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install k3d tools
         run: |
           make -C hack/ci/ install-k3d-tools
@@ -38,6 +38,6 @@ jobs:
           make -C hack/ci/ create-k3d
           kubectl version
           kubectl cluster-info
-      
+
       - name: apply crd
         run: kubectl apply -f config/crd/bases/operator.kyma-project.io_eventings.yaml

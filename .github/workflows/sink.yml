@@ -15,12 +15,18 @@ on:
     paths:
     - 'hack/e2e/sink/**'
     - '.github/workflows/sink.yml'
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   pull_request:
     branches:
     - main
     paths:
     - 'hack/e2e/sink/**'
     - '.github/workflows/sink.yml'
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
 
 jobs:
   build:
@@ -68,7 +74,7 @@ jobs:
           org.opencontainers.image.title=E2E Tests Sink
           org.opencontainers.image.description=A webserver imitating an eventing sink that receives events and stores in memory
           org.opencontainers.image.url=https://github.com/kyma-project/eventing-manager/${{ env.E2E_SINK_DIR }}
-    
+
     - name: Build Docker image
       id: build-and-push
       uses: docker/build-push-action@v5
