@@ -28,10 +28,6 @@ import (
 	controllertesting "github.com/kyma-project/eventing-manager/testing"
 )
 
-const (
-	domain = "domain.com"
-)
-
 type bebSubMgrMock struct {
 	Client           dynamic.Interface
 	eventMeshBackend backendeventmesh.Backend
