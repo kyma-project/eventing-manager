@@ -93,6 +93,15 @@ func (r *Reconciler) syncStatusWithWebhookErr(ctx context.Context,
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
+func (r *Reconciler) syncStatusWithDeletionErr(ctx context.Context,
+	eventing *eventingv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	// Set error state in status
+	eventing.Status.UpdateConditionDeletion(metav1.ConditionFalse,
+		eventingv1alpha1.ConditionReasonDeletionError, err.Error())
+
+	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
+}
+
 // syncEventingStatus syncs Eventing status.
 func (r *Reconciler) syncEventingStatus(ctx context.Context,
 	eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) error {

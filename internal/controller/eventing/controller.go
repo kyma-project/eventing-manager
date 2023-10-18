@@ -18,6 +18,7 @@ package eventing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/options"
@@ -266,16 +267,16 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 		return ctrl.Result{}, nil
 	}
 
-	// check if subscription CRs and API Rules exist.
+	// check if subscription resources exist
 	exists, err := r.eventingManager.SubscriptionExists(ctx)
 	if err != nil {
-		return ctrl.Result{}, err
+		eventing.Status.SetStateError()
+		return ctrl.Result{}, r.syncStatusWithDeletionErr(ctx, eventing, err, log)
 	}
 	if exists {
 		eventing.Status.SetStateWarning()
-		eventing.Status.UpdateConditionDeletion(metav1.ConditionFalse,
-			eventingv1alpha1.ConditionReasonDeletionError, SubscriptionExistsErrMessage)
-		return ctrl.Result{Requeue: true}, r.syncEventingStatus(ctx, eventing, log)
+		return ctrl.Result{Requeue: true}, r.syncStatusWithDeletionErr(ctx, eventing,
+			errors.New(SubscriptionExistsErrMessage), log)
 	}
 
 	log.Info("handling Eventing deletion...")
