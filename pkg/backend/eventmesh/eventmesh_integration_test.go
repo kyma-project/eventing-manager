@@ -595,8 +595,6 @@ func Test_SyncSubscription(t *testing.T) {
 		ClientSecret:             "client-secret",
 		TokenEndpoint:            eventMeshMock.TokenURL,
 		WebhookActivationTimeout: 0,
-		WebhookTokenEndpoint:     "webhook-token-endpoint",
-		Domain:                   "domain.com",
 		EventTypePrefix:          controllertesting.EventTypePrefix,
 		BEBNamespace:             "/default/ns",
 		Qos:                      string(types.QosAtLeastOnce),

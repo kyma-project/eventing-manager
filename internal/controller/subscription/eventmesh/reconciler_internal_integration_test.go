@@ -33,12 +33,9 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
 	eventinglogger "github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/object"
+	"github.com/kyma-project/eventing-manager/test/utils"
 	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-)
-
-const (
-	domain = "domain.com"
 )
 
 // TestReconciler_Reconcile tests the return values of the Reconcile() method of the reconciler.
@@ -107,7 +104,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.credentials,
 					te.mapper,
 					happyValidator,
-					col)
+					col,
+					utils.Domain)
 			},
 			wantReconcileResult: ctrl.Result{},
 			wantReconcileError:  nil,
@@ -128,7 +126,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.credentials,
 					te.mapper,
 					unhappyValidator,
-					col)
+					col,
+					utils.Domain)
 			},
 			wantReconcileResult: ctrl.Result{},
 			wantReconcileError:  nil,
@@ -150,7 +149,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.credentials,
 					te.mapper,
 					happyValidator,
-					col)
+					col,
+					utils.Domain)
 			},
 			wantReconcileResult: ctrl.Result{},
 			wantReconcileError:  backendSyncErr,
@@ -172,7 +172,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.credentials,
 					te.mapper,
 					happyValidator,
-					col)
+					col,
+					utils.Domain)
 			},
 			wantReconcileResult: ctrl.Result{},
 			wantReconcileError:  backendDeleteErr,
@@ -193,7 +194,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.credentials,
 					te.mapper,
 					unhappyValidator,
-					col)
+					col,
+					utils.Domain)
 			},
 			wantReconcileResult: ctrl.Result{},
 			wantReconcileError:  validatorErr,
@@ -215,7 +217,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 					te.credentials,
 					te.mapper,
 					happyValidator,
-					col)
+					col,
+					utils.Domain)
 			},
 			wantReconcileResult: ctrl.Result{
 				RequeueAfter: requeueAfterDuration,
@@ -287,7 +290,8 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 						te.credentials,
 						te.mapper,
 						validator,
-						col),
+						col,
+						utils.Domain),
 					te.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: false,
@@ -316,7 +320,8 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 						te.credentials,
 						te.mapper,
 						validator,
-						col),
+						col,
+						utils.Domain),
 					te.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: true,
@@ -415,7 +420,8 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 						te.credentials,
 						te.mapper,
 						validator,
-						col),
+						col,
+						utils.Domain),
 					te.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: false,
@@ -450,7 +456,8 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 						te.credentials,
 						te.mapper,
 						validator,
-						col),
+						col,
+						utils.Domain),
 					te.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: true,
@@ -606,7 +613,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(ctx, te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
-					te.backend, te.credentials, te.mapper, validator, collector), te.fakeClient
+					te.backend, te.credentials, te.mapper, validator, collector, utils.Domain), te.fakeClient
 			},
 			wantEv2Hash:            ev2hash,
 			wantEventMeshHash:      eventMeshHash,
@@ -633,7 +640,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(ctx, te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
-					te.backend, te.credentials, te.mapper, validator, collector), te.fakeClient
+					te.backend, te.credentials, te.mapper, validator, collector, utils.Domain), te.fakeClient
 			},
 			wantEv2Hash:            ev2hash,
 			wantEventMeshHash:      eventMeshHash,
@@ -885,7 +892,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 
 	r := Reconciler{
 		nameMapper: backendutils.NewBEBSubscriptionNameMapper(
-			domain,
+			utils.Domain,
 			eventmesh.MaxSubscriptionNameLength,
 		),
 		syncConditionWebhookCallStatus: syncConditionWebhookCallStatus,
@@ -989,7 +996,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 	}
 
 	r := Reconciler{
-		nameMapper: backendutils.NewBEBSubscriptionNameMapper(domain, eventmesh.MaxSubscriptionNameLength),
+		nameMapper: backendutils.NewBEBSubscriptionNameMapper(utils.Domain, eventmesh.MaxSubscriptionNameLength),
 		logger:     logger,
 	}
 
@@ -1375,7 +1382,7 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *testEnvironment 
 	}
 	emptyConfig := env.Config{}
 	credentials := &eventmesh.OAuth2ClientCredentials{}
-	nameMapper := backendutils.NewBEBSubscriptionNameMapper(domain, eventmesh.MaxSubscriptionNameLength)
+	nameMapper := backendutils.NewBEBSubscriptionNameMapper(utils.Domain, eventmesh.MaxSubscriptionNameLength)
 	eventMeshCleaner := cleaner.NewEventMeshCleaner(nil)
 
 	return &testEnvironment{

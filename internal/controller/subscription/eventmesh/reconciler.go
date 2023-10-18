@@ -78,7 +78,7 @@ const (
 func NewReconciler(ctx context.Context, client client.Client, logger *logger.Logger, recorder record.EventRecorder,
 	cfg env.Config, cleaner cleaner.Cleaner, eventMeshBackend eventmesh.Backend,
 	credential *eventmesh.OAuth2ClientCredentials, mapper backendutils.NameMapper, validator sink.Validator,
-	collector *metrics.Collector) *Reconciler {
+	collector *metrics.Collector, domain string) *Reconciler {
 	if err := eventMeshBackend.Initialize(cfg); err != nil {
 		logger.WithContext().Errorw("Failed to start reconciler", "name",
 			reconcilerName, "error", err)
@@ -90,7 +90,7 @@ func NewReconciler(ctx context.Context, client client.Client, logger *logger.Log
 		logger:                         logger,
 		recorder:                       recorder,
 		Backend:                        eventMeshBackend,
-		Domain:                         cfg.Domain,
+		Domain:                         domain,
 		cleaner:                        cleaner,
 		oauth2credentials:              credential,
 		nameMapper:                     mapper,

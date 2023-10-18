@@ -45,6 +45,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )
@@ -67,7 +68,6 @@ const (
 	bigTimeOut               = 40 * time.Second
 	smallTimeOut             = 5 * time.Second
 	smallPollingInterval     = 1 * time.Second
-	domain                   = "domain.com"
 	namespacePrefixLength    = 5
 	syncPeriodSeconds        = 2
 	maxReconnects            = 10
@@ -130,7 +130,7 @@ func setupSuite() error {
 	}
 
 	// setup nameMapper for EventMesh
-	emTestEnsemble.nameMapper = backendutils.NewBEBSubscriptionNameMapper(domain,
+	emTestEnsemble.nameMapper = backendutils.NewBEBSubscriptionNameMapper(testutils.Domain,
 		backendeventmesh.MaxSubscriptionNameLength)
 
 	// setup eventMesh reconciler
@@ -156,6 +156,7 @@ func setupSuite() error {
 		emTestEnsemble.nameMapper,
 		sinkValidator,
 		col,
+		testutils.Domain,
 	)
 
 	if err = testReconciler.SetupUnmanaged(k8sManager); err != nil {
@@ -240,8 +241,6 @@ func getEnvConfig() env.Config {
 		ClientSecret:             "foo-secret",
 		TokenEndpoint:            emTestEnsemble.eventMeshMock.TokenURL,
 		WebhookActivationTimeout: 0,
-		WebhookTokenEndpoint:     "foo-token-endpoint",
-		Domain:                   domain,
 		EventTypePrefix:          reconcilertesting.EventMeshPrefix,
 		BEBNamespace:             reconcilertesting.EventMeshNamespaceNS,
 		Qos:                      string(eventMeshtypes.QosAtLeastOnce),

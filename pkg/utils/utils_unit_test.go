@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/stretchr/testify/assert"
 	"net/url"
 	"reflect"
 	"testing"
@@ -210,4 +211,10 @@ func TestGetSinkData(t *testing.T) {
 			require.Equal(t, gotSubDomain, tc.wantSubDomains)
 		})
 	}
+}
+
+func Test_IsEmpty(t *testing.T) {
+	assert.True(t, IsEmpty(""))
+	assert.True(t, IsEmpty(" "))
+	assert.False(t, IsEmpty("value"))
 }

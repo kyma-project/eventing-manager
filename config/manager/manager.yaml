@@ -78,10 +78,6 @@ spec:
             value: "kyma-system"
           - name: NATS_URL
             value: eventing-nats.kyma-system.svc.cluster.local
-          - name: DOMAIN
-            value: kyma.example.com
-          - name: WEBHOOK_TOKEN_ENDPOINT
-            value: https://oauth2.kyma.example.com/oauth2/token
           - name: PUBLISHER_REQUESTS_CPU
             value: 10m
           - name: PUBLISHER_REQUESTS_MEMORY

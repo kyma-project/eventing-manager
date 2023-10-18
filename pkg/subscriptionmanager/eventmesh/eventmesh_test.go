@@ -78,8 +78,6 @@ func Test_cleanupEventMesh(t *testing.T) {
 		ClientSecret:             "client-secret",
 		TokenEndpoint:            bebMock.TokenURL,
 		WebhookActivationTimeout: 0,
-		WebhookTokenEndpoint:     "webhook-token-endpoint",
-		Domain:                   domain,
 		EventTypePrefix:          controllertesting.EventTypePrefix,
 		BEBNamespace:             "/default/ns",
 		Qos:                      string(types.QosAtLeastOnce),

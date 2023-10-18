@@ -1,0 +1,39 @@
+package eventing
+
+import (
+	"context"
+	"fmt"
+)
+
+const (
+	shootInfoConfigMapName      = "shoot-info"
+	shootInfoConfigMapNamespace = "kube-system"
+	shootInfoConfigMapKeyDomain = "domain"
+	domainMissingMessageFormat  = `domain configuration is missing. domain must be configured in either the Eventing` +
+		` CustomResource under "Spec.Backend.Config.Domain" or in the ConfigMap "%s/%s" under "data.%s"`
+	domainMissingMessageFormatWithError = domainMissingMessageFormat + `: %v`
+)
+
+func (r *Reconciler) readDomainFromConfigMap(ctx context.Context) (string, error) {
+	cm, err := r.kubeClient.GetConfigMap(ctx, shootInfoConfigMapName, shootInfoConfigMapNamespace)
+	if err != nil {
+		return "", err
+	}
+	return cm.Data[shootInfoConfigMapKeyDomain], nil
+}
+
+func domainMissingError(err error) error {
+	var e error = nil
+	if err != nil {
+		e = fmt.Errorf(
+			domainMissingMessageFormatWithError,
+			shootInfoConfigMapNamespace, shootInfoConfigMapName, shootInfoConfigMapKeyDomain, err,
+		)
+	} else {
+		e = fmt.Errorf(
+			domainMissingMessageFormat,
+			shootInfoConfigMapNamespace, shootInfoConfigMapName, shootInfoConfigMapKeyDomain,
+		)
+	}
+	return e
+}

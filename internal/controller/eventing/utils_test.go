@@ -2,6 +2,7 @@ package eventing
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
@@ -88,4 +89,21 @@ func Test_removeFinalizer(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, reconciler.containsFinalizer(&gotEventing))
 	})
+}
+
+func TestReconciler_getEventMeshBackendConfigHash(t *testing.T) {
+	hash, err := getEventMeshBackendConfigHash("kyma-system/eventing-backend", "sap.kyma.custom", "domain.com")
+	assert.NoError(t, err)
+	assert.NotEqual(t, 0, hash)
+}
+
+func TestReconciler_getEventMeshBackendConfigHash_EnsureConsistencyAndUniqueness(t *testing.T) {
+	hash1, err1 := getEventMeshBackendConfigHash("kyma-system/eventing-backend", "sap.kyma.custom", "domain.com")
+	hash2, err2 := getEventMeshBackendConfigHash("kyma-system/eventing-backend", "sap.kyma.custom", "domain.com")
+	hash3, err3 := getEventMeshBackendConfigHash("kyma-system/eventing-backen", "dsap.kyma.cust", "omdomain.com")
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+	assert.NoError(t, err3)
+	assert.Equal(t, hash1, hash2)
+	assert.NotEqual(t, hash1, hash3)
 }

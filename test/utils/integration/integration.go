@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -155,9 +154,6 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	}
 	recorder := ctrlMgr.GetEventRecorderFor("eventing-manager-test")
 
-	os.Setenv("WEBHOOK_TOKEN_ENDPOINT", "https://oauth2.ev-manager.kymatunas.shoot.canary.k8s-hana.ondemand.com/oauth2/token")
-	os.Setenv("DOMAIN", "my.test.domain")
-
 	// create k8s clients.
 	apiClientSet, err := apiclientset.NewForConfig(ctrlMgr.GetConfig())
 	if err != nil {
@@ -186,7 +182,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	// define subscription manager factory mock.
 	subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
 	subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(jetStreamSubManagerMock)
-	subManagerFactoryMock.On("NewEventMeshManager").Return(eventMeshSubManagerMock, nil)
+	subManagerFactoryMock.On("NewEventMeshManager", mock.Anything).Return(eventMeshSubManagerMock, nil)
 
 	// create a new watcher
 	eventingReconciler := eventingctrl.NewReconciler(

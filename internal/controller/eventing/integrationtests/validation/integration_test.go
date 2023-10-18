@@ -48,6 +48,7 @@ const (
 	msgsPerTopic           = 1000000
 	eventTypePrefix        = "eventTypePrefix"
 	eventMeshSecret        = "eventMeshSecret"
+	domain                 = "domain"
 	someSecret             = "namespace/name"
 	wrongSecret            = "gibberish"
 	publisher              = "publisher"
@@ -235,6 +236,192 @@ func Test_Validate_CreateEventing(t *testing.T) {
 				},
 			},
 		},
+
+		// validate the spec.backend.config.domain
+		{
+			name: `validation of spec.backend.config.domain passes if domain is nil`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							config: map[string]any{},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.backend.config.domain passes if domain is empty`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							config: map[string]any{
+								domain: "",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.backend.config.domain passes if domain is valid`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							config: map[string]any{
+								domain: "domain.com",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.backend.config.domain passes if domain is valid`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							config: map[string]any{
+								domain: "domain.part1.part2.part3.part4",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: `validation of spec.backend.config.domain fails if domain is invalid`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							config: map[string]any{
+								domain: " ",
+							},
+						},
+					},
+				},
+			},
+			wantErrMsg: `spec.backend.config.domain: Invalid value: " ": spec.backend.config.domain in body should match '^(?:([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*)?$'`,
+		},
+		{
+			name: `validation of spec.backend.config.domain fails if domain is invalid`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							config: map[string]any{
+								domain: "http://domain.com",
+							},
+						},
+					},
+				},
+			},
+			wantErrMsg: `spec.backend.config.domain: Invalid value: "http://domain.com": spec.backend.config.domain in body should match '^(?:([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*)?$'`,
+		},
+		{
+			name: `validation of spec.backend.config.domain fails if domain is invalid`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							config: map[string]any{
+								domain: "https://domain.com",
+							},
+						},
+					},
+				},
+			},
+			wantErrMsg: `spec.backend.config.domain: Invalid value: "https://domain.com": spec.backend.config.domain in body should match '^(?:([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*)?$'`,
+		},
+		{
+			name: `validation of spec.backend.config.domain fails if domain is invalid`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							config: map[string]any{
+								domain: "domain.com:8080",
+							},
+						},
+					},
+				},
+			},
+			wantErrMsg: `spec.backend.config.domain: Invalid value: "domain.com:8080": spec.backend.config.domain in body should match '^(?:([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*)?$'`,
+		},
+		{
+			name: `validation of spec.backend.config.domain fails if domain is invalid`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							config: map[string]any{
+								domain: "domain.com/endpoint",
+							},
+						},
+					},
+				},
+			},
+			wantErrMsg: `spec.backend.config.domain: Invalid value: "domain.com/endpoint": spec.backend.config.domain in body should match '^(?:([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*)?$'`,
+		},
+
 		{
 			name: `validation of spec.backend.type fails for values other than NATS or EventMesh`,
 			givenUnstructuredEventing: unstructured.Unstructured{

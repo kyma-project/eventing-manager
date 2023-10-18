@@ -73,12 +73,13 @@ type SubscriptionManager struct {
 	eventMeshBackend backendeventmesh.Backend
 	logger           *logger.Logger
 	collector        *metrics.Collector
+	domain           string
 }
 
 // NewSubscriptionManager creates the SubscriptionManager for BEB and initializes it as far as it
 // does not depend on non-common options.
 func NewSubscriptionManager(restCfg *rest.Config, metricsAddr string, resyncPeriod time.Duration, logger *logger.Logger,
-	collector *metrics.Collector) *SubscriptionManager {
+	collector *metrics.Collector, domain string) *SubscriptionManager {
 	return &SubscriptionManager{
 		envCfg:       env.GetConfig(),
 		restCfg:      restCfg,
@@ -86,13 +87,14 @@ func NewSubscriptionManager(restCfg *rest.Config, metricsAddr string, resyncPeri
 		resyncPeriod: resyncPeriod,
 		logger:       logger,
 		collector:    collector,
+		domain:       domain,
 	}
 }
 
 // Init implements the subscriptionmanager.Manager interface.
 func (c *SubscriptionManager) Init(mgr manager.Manager) error {
-	if len(c.envCfg.Domain) == 0 {
-		return fmt.Errorf("env var DOMAIN must be a non-empty value")
+	if len(c.domain) == 0 {
+		return fmt.Errorf("domain must be a non-empty value")
 	}
 	c.mgr = mgr
 	return nil
@@ -111,10 +113,10 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subs
 
 	// Need to read env to read BEB related secrets
 	c.envCfg = env.GetConfig()
-	nameMapper := backendutils.NewBEBSubscriptionNameMapper(strings.TrimSpace(c.envCfg.Domain),
+	nameMapper := backendutils.NewBEBSubscriptionNameMapper(strings.TrimSpace(c.domain),
 		backendeventmesh.MaxSubscriptionNameLength)
 	ctrl.Log.WithName("BEB-subscription-manager").Info("using BEB name mapper",
-		"domainName", c.envCfg.Domain,
+		"domainName", c.domain,
 		"maxNameLength", backendeventmesh.MaxSubscriptionNameLength)
 
 	client := c.mgr.GetClient()
@@ -139,6 +141,7 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subs
 		nameMapper,
 		sink.NewValidator(ctx, client, recorder),
 		c.collector,
+		c.domain,
 	)
 	c.eventMeshBackend = eventMeshReconciler.Backend
 	if err := eventMeshReconciler.SetupUnmanaged(c.mgr); err != nil {

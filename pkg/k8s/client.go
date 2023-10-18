@@ -47,6 +47,7 @@ type Client interface {
 	GetCRD(context.Context, string) (*apiextensionsv1.CustomResourceDefinition, error)
 	ApplicationCRDExists(context.Context) (bool, error)
 	GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error)
+	GetConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error)
 }
 
 type KubeClient struct {
@@ -215,4 +216,14 @@ func (c *KubeClient) GetSubscriptions(ctx context.Context) (*eventingv1alpha2.Su
 		return nil, err
 	}
 	return subscriptions, nil
+}
+
+// GetConfigMap returns a ConfigMap based on the given name and namespace.
+func (c *KubeClient) GetConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error) {
+	cm := &corev1.ConfigMap{}
+	key := client.ObjectKey{Name: name, Namespace: namespace}
+	if err := c.client.Get(ctx, key, cm); err != nil {
+		return nil, err
+	}
+	return cm, nil
 }

@@ -95,6 +95,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			givenNATS: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
@@ -115,6 +116,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				utils.WithEventingCRMinimal(),
 				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			givenNATS: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
@@ -517,6 +519,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 				utils.WithEventMeshBackend("test-secret-name2"),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			givenDeploymentReady: true,
 			wantMatches: gomega.And(
@@ -533,6 +536,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 				utils.WithEventMeshBackend("test-secret-name3"),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			wantMatches: gomega.And(
 				matchers.HaveStatusProcessing(),
@@ -619,6 +623,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 				utils.WithEventMeshBackend("test-secret-name"),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 		},
 		{

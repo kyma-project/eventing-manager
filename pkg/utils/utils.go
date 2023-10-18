@@ -119,3 +119,9 @@ func GetCloudEvent(eventType string) event.Event {
 	newEvent.SetID(GetRandString(randStringlength))
 	return newEvent
 }
+
+// IsEmpty returns true if the given string is empty.
+// If the given string consists of whitespaces only, it is treated as an empty string.
+func IsEmpty(s string) bool {
+	return len(strings.TrimSpace(s)) == 0
+}

@@ -24,6 +24,7 @@ const (
 	charset       = "abcdefghijklmnopqrstuvwxyz0123456789"
 	randomNameLen = 5
 
+	Domain               = "domain.com"
 	NameFormat           = "name-%s"
 	NamespaceFormat      = "namespace-%s"
 	PublisherProxySuffix = "publisher-proxy"
@@ -322,6 +323,30 @@ func NewSubscription(name, namespace string) *eventinv1alpha2.Subscription {
 			Source: "test-source",
 			Types:  []string{"test1.nats.type", "test2.nats.type"},
 		},
+	}
+}
+
+type ConfigMapOption func(*v1.ConfigMap)
+
+func NewConfigMap(name, namespace string, opts ...ConfigMapOption) *v1.ConfigMap {
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	for _, opt := range opts {
+		opt(cm)
+	}
+	return cm
+}
+
+func WithConfigMapData(key, value string) ConfigMapOption {
+	return func(cm *v1.ConfigMap) {
+		if cm.Data == nil {
+			cm.Data = map[string]string{}
+		}
+		cm.Data[key] = value
 	}
 }
 

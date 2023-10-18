@@ -171,6 +171,11 @@ type BackendConfig struct {
 	// +kubebuilder:default:="sap.kyma.custom"
 	// +kubebuilder:validation:XValidation:rule="self!=''", message="eventTypePrefix cannot be empty"
 	EventTypePrefix string `json:"eventTypePrefix,omitempty"`
+
+	// Domain defines the cluster public domain used to configure the EventMesh Subscriptions
+	// and their corresponding ApiRules.
+	// +kubebuilder:validation:Pattern:="^(?:([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*)?$"
+	Domain string `json:"domain,omitempty"`
 }
 
 // Publisher defines the configurations for eventing-publisher-proxy.
