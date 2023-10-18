@@ -16,7 +16,7 @@ require (
 	github.com/kyma-project/nats-manager v0.0.0-20230718133808-9241d3b926bd
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/nats-io/nats-server/v2 v2.10.3
-	github.com/nats-io/nats.go v1.30.2
+	github.com/nats-io/nats.go v1.31.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.28.0
 	github.com/pkg/errors v0.9.1
