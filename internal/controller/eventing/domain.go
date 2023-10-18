@@ -23,17 +23,15 @@ func (r *Reconciler) readDomainFromConfigMap(ctx context.Context) (string, error
 }
 
 func domainMissingError(err error) error {
-	var e error = nil
 	if err != nil {
-		e = fmt.Errorf(
+		return fmt.Errorf(
 			domainMissingMessageFormatWithError,
 			shootInfoConfigMapNamespace, shootInfoConfigMapName, shootInfoConfigMapKeyDomain, err,
 		)
-	} else {
-		e = fmt.Errorf(
-			domainMissingMessageFormat,
-			shootInfoConfigMapNamespace, shootInfoConfigMapName, shootInfoConfigMapKeyDomain,
-		)
 	}
-	return e
+
+	return fmt.Errorf(
+		domainMissingMessageFormat,
+		shootInfoConfigMapNamespace, shootInfoConfigMapName, shootInfoConfigMapKeyDomain,
+	)
 }
