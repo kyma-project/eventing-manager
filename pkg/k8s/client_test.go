@@ -677,7 +677,8 @@ func TestGetSubscriptions(t *testing.T) {
 			// given
 			ctx := context.Background()
 			scheme := runtime.NewScheme()
-			eventingv1alpha2.AddToScheme(scheme)
+			err := eventingv1alpha2.AddToScheme(scheme)
+			require.NoError(t, err)
 
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
