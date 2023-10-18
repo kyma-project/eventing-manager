@@ -21,6 +21,7 @@ import (
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/stretchr/testify/mock"
@@ -459,5 +460,71 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, testutils.HasOwnerReference(hpa, *tc.givenEventing))
 		})
+	}
+}
+
+func Test_SubscriptionExists(t *testing.T) {
+	// Define test cases
+	testCases := []struct {
+		name               string
+		givenSubscriptions *eventingv1alpha2.SubscriptionList
+		wantResult         bool
+		wantError          error
+	}{
+		{
+			name:               "no subscription should exist",
+			givenSubscriptions: &eventingv1alpha2.SubscriptionList{},
+			wantResult:         false,
+			wantError:          nil,
+		},
+		{
+			name: "subscriptions should exist",
+			givenSubscriptions: &eventingv1alpha2.SubscriptionList{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "SubscriptionList",
+					APIVersion: "eventing.kyma-project.io/v1alpha2",
+				},
+				Items: []eventingv1alpha2.Subscription{
+					{
+						TypeMeta: metav1.TypeMeta{
+							Kind:       "Subscription",
+							APIVersion: "eventing.kyma-project.io/v1alpha2",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-subscription",
+							Namespace: "test-namespace",
+						},
+					},
+				},
+			},
+			wantResult: true,
+			wantError:  nil,
+		},
+		{
+			name:       "error should have occurred",
+			wantResult: false,
+			wantError:  errors.New("client error"),
+		},
+	}
+
+	// Iterate over test cases
+	for _, tc := range testCases {
+		// Create a new instance of the mock client
+		kubeClient := new(k8smocks.Client)
+
+		// Set up the behavior of the mock client
+		kubeClient.On("GetSubscriptions", mock.Anything).Return(tc.givenSubscriptions, tc.wantError)
+
+		// Create a new instance of the EventingManager with the mock client
+		em := &EventingManager{
+			kubeClient: kubeClient,
+		}
+
+		// Call the SubscriptionExists method
+		result, err := em.SubscriptionExists(context.Background())
+
+		// Assert the result of the method
+		require.Equal(t, tc.wantResult, result, tc.name)
+		require.Equal(t, tc.wantError, err, tc.name)
 	}
 }

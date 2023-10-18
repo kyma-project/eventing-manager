@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
+	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	apiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
@@ -631,6 +632,73 @@ func Test_ApplicationCRDExists(t *testing.T) {
 			// then
 			require.NoError(t, err)
 			require.Equal(t, tc.wantResult, gotResult)
+		})
+	}
+}
+
+func TestGetSubscriptions(t *testing.T) {
+	// Define test cases
+	testCases := []struct {
+		name                 string
+		wantSubscriptionList *eventingv1alpha2.SubscriptionList
+	}{
+		{
+			name: "exists subscription",
+			wantSubscriptionList: &eventingv1alpha2.SubscriptionList{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "SubscriptionList",
+					APIVersion: "eventing.kyma-project.io/v1alpha2",
+				},
+				Items: []eventingv1alpha2.Subscription{
+					{
+						TypeMeta: metav1.TypeMeta{
+							Kind:       "Subscription",
+							APIVersion: "eventing.kyma-project.io/v1alpha2",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-subscription",
+							Namespace: "test-namespace",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:                 "no subscription",
+			wantSubscriptionList: &eventingv1alpha2.SubscriptionList{},
+		},
+	}
+
+	// Iterate over test cases
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			scheme := runtime.NewScheme()
+			eventingv1alpha2.AddToScheme(scheme)
+
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+			kubeClient := &KubeClient{
+				client: fakeClient,
+			}
+
+			// Create the secret if it should exist
+			if tc.wantSubscriptionList != nil && len(tc.wantSubscriptionList.Items) > 0 {
+				require.NoError(t, fakeClient.Create(ctx, &tc.wantSubscriptionList.Items[0]))
+			}
+
+			// Call the GetSubscriptions method
+			result, _ := kubeClient.GetSubscriptions(context.Background())
+
+			// Assert the result of the method
+			if tc.wantSubscriptionList != nil && len(tc.wantSubscriptionList.Items) > 0 {
+				require.True(t, len(result.Items) > 0)
+			} else {
+				require.Equal(t, 0, len(result.Items))
+			}
 		})
 	}
 }
