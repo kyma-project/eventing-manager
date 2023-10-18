@@ -95,7 +95,6 @@ func (r *Reconciler) syncStatusWithWebhookErr(ctx context.Context,
 
 func (r *Reconciler) syncStatusWithDeletionErr(ctx context.Context,
 	eventing *eventingv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
-	// Set error state in status
 	eventing.Status.UpdateConditionDeletion(metav1.ConditionFalse,
 		eventingv1alpha1.ConditionReasonDeletionError, err.Error())
 
