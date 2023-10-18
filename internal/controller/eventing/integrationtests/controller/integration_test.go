@@ -646,6 +646,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 				utils.WithEventMeshBackend("test-secret-name"),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			givenSubscription: utils.NewSubscription("test-eventmesh-subscription", "test-eventmesh-namespace"),
 			wantMatches: gomega.And(
