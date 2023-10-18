@@ -36,7 +36,7 @@ var testEnvironment *testenvironment.TestEnvironment
 func TestMain(m *testing.M) {
 	testEnvironment = testenvironment.NewTestEnvironment()
 
-	// create test namespace,
+	// Create a test namespace.
 	if err := testEnvironment.CreateTestNamespace(); err != nil {
 		testEnvironment.Logger.Fatal(err.Error())
 	}
@@ -53,12 +53,11 @@ func TestMain(m *testing.M) {
 	}
 
 	// Create the Eventing CR used for testing.
-
 	if err := testEnvironment.SetupEventingCR(); err != nil {
 		testEnvironment.Logger.Fatal(err.Error())
 	}
 
-	// wait for a testenvironment.Interval for reconciliation to update status.
+	// Wait for a testenvironment.Interval for reconciliation to update status.
 	time.Sleep(testenvironment.Interval)
 
 	// Wait for Eventing CR to get ready.
@@ -77,10 +76,7 @@ func Test_WebhookServerCertSecret(t *testing.T) {
 	ctx := context.TODO()
 	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
 		_, getErr := testEnvironment.K8sClientset.CoreV1().Secrets(NamespaceName).Get(ctx, WebhookServerCertSecretName, metav1.GetOptions{})
-		if getErr != nil {
-			return getErr
-		}
-		return nil
+		return getErr
 	})
 	require.NoError(t, err)
 }
@@ -90,10 +86,20 @@ func Test_WebhookServerCertJob(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
 	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
-		_, getErr := testEnvironment.K8sClientset.BatchV1().Jobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
+		job, getErr := testEnvironment.K8sClientset.BatchV1().Jobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
 		if getErr != nil {
 			return getErr
 		}
+
+		// Check if the PriorityClassName was set correctly.
+		if job.Spec.Template.Spec.PriorityClassName != eventing.PriorityClassName {
+			return fmt.Errorf("Job '%s' was expected to have PriorityClassName '%s' but has '%s'",
+				job.GetName(),
+				eventing.PriorityClassName,
+				job.Spec.Template.Spec.PriorityClassName,
+			)
+		}
+
 		return nil
 	})
 	require.NoError(t, err)
@@ -104,10 +110,24 @@ func Test_WebhookServerCertCronJob(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
 	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
-		_, getErr := testEnvironment.K8sClientset.BatchV1().CronJobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
+		job, getErr := testEnvironment.K8sClientset.BatchV1().CronJobs(NamespaceName).Get(
+			ctx,
+			WebhookServerCertJobName,
+			metav1.GetOptions{},
+		)
 		if getErr != nil {
 			return getErr
 		}
+
+		// Check if the PriorityClassName was set correctly.
+		if job.Spec.JobTemplate.Spec.Template.Spec.PriorityClassName != eventing.PriorityClassName {
+			return fmt.Errorf("ChronJob '%s' was expected to have PriorityClassName '%s' but has '%s'",
+				job.GetName(),
+				eventing.PriorityClassName,
+				job.Spec.JobTemplate.Spec.Template.Spec.PriorityClassName,
+			)
+		}
+
 		return nil
 	})
 	require.NoError(t, err)
@@ -240,6 +260,15 @@ func Test_PublisherProxyDeployment(t *testing.T) {
 			return err
 		}
 
+		if gotDeployment.Spec.Template.Spec.PriorityClassName != eventing.PriorityClassName {
+			return fmt.Errorf(
+				"error while checking deployment '%s'; PriorityClasssName was supposed to be %s, but was %s",
+				gotDeployment.GetName(),
+				eventing.PriorityClassName,
+				gotDeployment.Spec.Template.Spec.PriorityClassName,
+			)
+		}
+
 		return nil
 	})
 	require.NoError(t, err)
@@ -254,7 +283,7 @@ func Test_PublisherProxyPods(t *testing.T) {
 
 	ctx := context.TODO()
 	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
-	// RetryGet the Pods and test them.
+	// Retry to get the Pods and test them.
 	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
 		// get publisher deployment
 		gotDeployment, getErr := testEnvironment.GetDeployment(eventing.GetPublisherDeploymentName(*eventingCR), NamespaceName)
@@ -280,7 +309,7 @@ func Test_PublisherProxyPods(t *testing.T) {
 			)
 		}
 
-		// Go through all Pods, check its spec. It should be same as defined in Eventing CR
+		// Go through all Pods, check its spec. It should be same as defined in Eventing CR.
 		for _, pod := range pods.Items {
 			// find the container.
 			container := FindContainerInPod(pod, PublisherContainerName)
@@ -297,13 +326,22 @@ func Test_PublisherProxyPods(t *testing.T) {
 				)
 			}
 
-			// check if the ENV `BACKEND` is defined correctly.
+			// Check if the PriorityClassName was set as expected.
+			if pod.Spec.PriorityClassName != eventing.PriorityClassName {
+				return fmt.Errorf("'PriorityClassName' of Pod %v should be %v but was %v",
+					pod.GetName(),
+					eventing.PriorityClassName,
+					pod.Spec.PriorityClassName,
+				)
+			}
+
+			// Check if the ENV `BACKEND` is defined correctly.
 			wantBackendENVValue := "nats"
 			if eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType) == eventingv1alpha1.EventMeshBackendType {
 				wantBackendENVValue = "beb"
 			}
 
-			// get value of ENV `BACKEND`
+			// Get value of ENV `BACKEND`.
 			gotBackendENVValue := ""
 			for _, envVar := range container.Env {
 				if envVar.Name == "BACKEND" {
@@ -324,4 +362,37 @@ func Test_PublisherProxyPods(t *testing.T) {
 		return nil
 	})
 	require.NoError(t, err)
+}
+
+func Test_PriorityClass(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.TODO()
+
+	// Check if the PriorityClass exists in the cluster.
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.SchedulingV1().PriorityClasses().Get(
+			ctx, eventing.PriorityClassName, metav1.GetOptions{})
+		return getErr
+	})
+	require.Nil(t, err, fmt.Errorf("error while fetching PriorityClass: %v", err))
+
+	// Check if the Eventing-Manager Deployment has the right PriorityClassName. This implicits that the
+	// corresponding Pod also has the right PriorityClassName.
+	err = Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		deploy, getErr := testEnvironment.GetDeployment(ManagerDeploymentName, NamespaceName)
+		if getErr != nil {
+			return getErr
+		}
+
+		if deploy.Spec.Template.Spec.PriorityClassName != eventing.PriorityClassName {
+			return fmt.Errorf("deployment '%s' should have the PriorityClassName %s but was %s",
+				deploy.GetName(),
+				eventing.PriorityClassName,
+				deploy.Spec.Template.Spec.PriorityClassName,
+			)
+		}
+
+		return nil
+	})
 }

@@ -29,6 +29,7 @@ spec:
         app.kubernetes.io/instance: eventing-manager
         app.kubernetes.io/component: eventing-manager
     spec:
+      priorityClassName: "eventing-manager-priority-class"
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
       # according to the platforms which are supported by your solution.
       # It is considered best practice to support multiple architectures. You can

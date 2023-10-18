@@ -1,6 +1,7 @@
 resources:
 - manager.yaml
 - service.yaml
+- priority-class.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

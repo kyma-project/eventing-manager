@@ -5,14 +5,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 const (
@@ -38,6 +39,8 @@ const (
 
 	PublisherSecretEMSURLKey       = "ems-publish-url"
 	PublisherSecretBEBNamespaceKey = "beb-namespace"
+
+	PriorityClassName = "eventing-manager-priority-class"
 )
 
 var (
@@ -56,6 +59,7 @@ func newNATSPublisherDeployment(
 		WithNATSEnvVars(natsConfig, publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
 		WithAffinity(GetPublisherDeploymentName(*eventing)),
+		WithPriorityClassName(PriorityClassName),
 	)
 }
 
@@ -69,6 +73,7 @@ func newEventMeshPublisherDeployment(
 		WithContainers(publisherConfig, eventing),
 		WithBEBEnvVars(GetPublisherDeploymentName(*eventing), publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
+		WithPriorityClassName(PriorityClassName),
 	)
 }
 
@@ -132,6 +137,12 @@ func WithLabels(publisherName string, backendType v1alpha1.BackendType) DeployOp
 		// label the event-publisher proxy with the backendType label
 		labels[BackendLabelKey] = fmt.Sprint(getECBackendType(backendType))
 		d.ObjectMeta.Labels = labels
+	}
+}
+
+func WithPriorityClassName(name string) DeployOpt {
+	return func(deployment *appsv1.Deployment) {
+		deployment.Spec.Template.Spec.PriorityClassName = name
 	}
 }
 
@@ -239,7 +250,7 @@ func getReadinessProbe() *v1.Probe {
 		ProbeHandler: v1.ProbeHandler{
 			HTTPGet: &v1.HTTPGetAction{
 				Path:   "/readyz",
-				Port:   intstr.FromInt(8080),
+				Port:   intstr.FromInt32(8080),
 				Scheme: v1.URISchemeHTTP,
 			},
 		},
@@ -252,7 +263,7 @@ func getLivenessProbe() *v1.Probe {
 		ProbeHandler: v1.ProbeHandler{
 			HTTPGet: &v1.HTTPGetAction{
 				Path:   "/healthz",
-				Port:   intstr.FromInt(8080),
+				Port:   intstr.FromInt32(8080),
 				Scheme: v1.URISchemeHTTP,
 			},
 		},
