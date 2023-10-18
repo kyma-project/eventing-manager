@@ -6,5 +6,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: europe-docker.pkg.dev/kyma-project/prod/eventing-manager
-  newTag: v20230907-01f5bd76
+  newName: mfaizan21/eventing-manager-dev
+  newTag: latest

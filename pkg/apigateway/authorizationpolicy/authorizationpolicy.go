@@ -3,6 +3,7 @@ package authorizationpolicy
 import (
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	securityv1beta1 "istio.io/api/security/v1beta1"
+	istiotypesv1beta1 "istio.io/api/type/v1beta1"
 	clientsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -38,7 +39,7 @@ func WithOwnerReference(subscription eventingv1alpha2.Subscription) Option {
 			Kind:               subscription.Kind,
 			Name:               subscription.Name,
 			UID:                subscription.UID,
-			BlockOwnerDeletion: pointer.Bool(false),
+			BlockOwnerDeletion: pointer.Bool(true),
 			Controller:         pointer.Bool(false),
 		}
 		// append to OwnerReferences.
@@ -54,7 +55,9 @@ func WithLabels(labels map[string]string) Option {
 
 func WithSelectorLabels(labels map[string]string) Option {
 	return func(o *clientsecurityv1beta1.AuthorizationPolicy) {
-		o.Spec.Selector.MatchLabels = labels
+		o.Spec.Selector = &istiotypesv1beta1.WorkloadSelector{
+			MatchLabels: labels,
+		}
 	}
 }
 

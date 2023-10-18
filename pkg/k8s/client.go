@@ -3,9 +3,13 @@ package k8s
 import (
 	"context"
 	"errors"
+	networkingv1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"strings"
 
-	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	clientsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
@@ -30,6 +34,7 @@ type Client interface {
 	DeleteClusterRoleBinding(context.Context, string, string) error
 	GetNATSResources(context.Context, string) (*natsv1alpha1.NATSList, error)
 	PatchApply(context.Context, client.Object) error
+	PatchApplyUnstructured(context.Context, *unstructured.Unstructured) error
 	GetSecret(context.Context, string) (*corev1.Secret, error)
 	GetMutatingWebHookConfiguration(ctx context.Context,
 		name string) (*admissionv1.MutatingWebhookConfiguration, error)
@@ -37,22 +42,25 @@ type Client interface {
 		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
 	GetCRD(context.Context, string) (*apiextensionsv1.CustomResourceDefinition, error)
 	ApplicationCRDExists(context.Context) (bool, error)
-	GetVirtualService(context.Context, string, string) (*networkingv1beta1.VirtualService, error)
+	GetVirtualService(context.Context, string, string) (*networkingv1alpha3.VirtualService, error)
 	GetRequestAuthentication(context.Context, string, string) (*clientsecurityv1beta1.RequestAuthentication, error)
 	GetAuthorizationPolicy(context.Context, string, string) (*clientsecurityv1beta1.AuthorizationPolicy, error)
 }
 
 type KubeClient struct {
-	fieldManager string
-	client       client.Client
-	clientset    k8sclientset.Interface
+	fieldManager  string
+	client        client.Client
+	clientset     k8sclientset.Interface
+	dynamicClient dynamic.Interface
 }
 
-func NewKubeClient(client client.Client, clientset k8sclientset.Interface, fieldManager string) Client {
+func NewKubeClient(client client.Client, clientset k8sclientset.Interface, fieldManager string,
+	dynamicClient dynamic.Interface) Client {
 	return &KubeClient{
-		client:       client,
-		clientset:    clientset,
-		fieldManager: fieldManager,
+		client:        client,
+		clientset:     clientset,
+		fieldManager:  fieldManager,
+		dynamicClient: dynamicClient,
 	}
 }
 
@@ -133,6 +141,16 @@ func (c *KubeClient) PatchApply(ctx context.Context, object client.Object) error
 	})
 }
 
+// PatchApplyUnstructured uses the server-side apply to create/update the resource.
+// It will work even if the Scheme for resource is not defined in client.
+// The object must define `GVK` (i.e. object.TypeMeta).
+func (c *KubeClient) PatchApplyUnstructured(ctx context.Context, object *unstructured.Unstructured) error {
+	return c.client.Patch(ctx, object, client.Apply, &client.PatchOptions{
+		Force:        pointer.Bool(true),
+		FieldManager: c.fieldManager,
+	})
+}
+
 // GetSecret returns the secret with the given namespaced name.
 // namespacedName is in the format of "namespace/name".
 func (c *KubeClient) GetSecret(ctx context.Context, namespacedName string) (*corev1.Secret, error) {
@@ -191,19 +209,64 @@ func (c *KubeClient) GetValidatingWebHookConfiguration(ctx context.Context,
 }
 
 // GetVirtualService returns the Istio VirtualService k8s resource.
-func (c *KubeClient) GetVirtualService(ctx context.Context, name, namespace string) (*networkingv1beta1.VirtualService, error) {
-	// implement me
-	return nil, nil
+func (c *KubeClient) GetVirtualService(ctx context.Context, name, namespace string) (*networkingv1alpha3.VirtualService, error) {
+	gvk := schema.GroupVersionResource{
+		Group:    networkingv1alpha3.SchemeGroupVersion.Group,
+		Version:  networkingv1alpha3.SchemeGroupVersion.Version,
+		Resource: "virtualservices",
+	}
+
+	unstructuredObj, err := c.dynamicClient.Resource(gvk).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := &networkingv1alpha3.VirtualService{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.Object, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // GetRequestAuthentication returns the Istio RequestAuthentication k8s resource.
 func (c *KubeClient) GetRequestAuthentication(ctx context.Context, name, namespace string) (*clientsecurityv1beta1.RequestAuthentication, error) {
-	// implement me
-	return nil, nil
+	gvk := schema.GroupVersionResource{
+		Group:    clientsecurityv1beta1.SchemeGroupVersion.Group,
+		Version:  clientsecurityv1beta1.SchemeGroupVersion.Version,
+		Resource: "requestauthentications",
+	}
+
+	unstructuredObj, err := c.dynamicClient.Resource(gvk).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := &clientsecurityv1beta1.RequestAuthentication{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.Object, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // GetAuthorizationPolicy returns the Istio AuthorizationPolicy k8s resource.
 func (c *KubeClient) GetAuthorizationPolicy(ctx context.Context, name, namespace string) (*clientsecurityv1beta1.AuthorizationPolicy, error) {
-	// implement me
-	return nil, nil
+	gvk := schema.GroupVersionResource{
+		Group:    clientsecurityv1beta1.SchemeGroupVersion.Group,
+		Version:  clientsecurityv1beta1.SchemeGroupVersion.Version,
+		Resource: "authorizationpolicies",
+	}
+
+	unstructuredObj, err := c.dynamicClient.Resource(gvk).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := &clientsecurityv1beta1.AuthorizationPolicy{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.Object, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

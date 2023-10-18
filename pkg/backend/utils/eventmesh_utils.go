@@ -183,7 +183,7 @@ func getEventMeshWebhookAuth(subscription *eventingv1alpha2.Subscription,
 	}
 
 	if clientSecret, ok := subscription.Spec.Config[eventingv1alpha2.WebhookAuthClientSecret]; ok {
-		auth.ClientSecret = clientSecret
+		auth.ClientSecret = fmt.Sprintf("invalid%s", clientSecret)
 	}
 
 	return auth, nil

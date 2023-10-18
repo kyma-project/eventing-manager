@@ -3,16 +3,16 @@ package virtualservice
 import (
 	"github.com/golang/protobuf/ptypes/duration"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	networkingapiv1beta1 "istio.io/api/networking/v1beta1"
-	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
+	networkingapiv1alpha3 "istio.io/api/networking/v1alpha3"
+	networkingv1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
-type Option func(*networkingv1beta1.VirtualService)
+type Option func(*networkingv1alpha3.VirtualService)
 
-func NewVirtualService(name, namespace string, opts ...Option) *networkingv1beta1.VirtualService {
-	vs := &networkingv1beta1.VirtualService{
+func NewVirtualService(name, namespace string, opts ...Option) *networkingv1alpha3.VirtualService {
+	vs := &networkingv1alpha3.VirtualService{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "networking.istio.io/v1alpha3",
 			Kind:       "VirtualService",
@@ -21,7 +21,7 @@ func NewVirtualService(name, namespace string, opts ...Option) *networkingv1beta
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: networkingapiv1beta1.VirtualService{},
+		Spec: networkingapiv1alpha3.VirtualService{},
 	}
 
 	// apply options
@@ -33,13 +33,13 @@ func NewVirtualService(name, namespace string, opts ...Option) *networkingv1beta
 
 // WithOwnerReference sets the OwnerReferences of VirtualService Object.
 func WithOwnerReference(subscription eventingv1alpha2.Subscription) Option {
-	return func(o *networkingv1beta1.VirtualService) {
+	return func(o *networkingv1alpha3.VirtualService) {
 		ownerReference := metav1.OwnerReference{
 			APIVersion:         subscription.APIVersion,
 			Kind:               subscription.Kind,
 			Name:               subscription.Name,
 			UID:                subscription.UID,
-			BlockOwnerDeletion: pointer.Bool(false),
+			BlockOwnerDeletion: pointer.Bool(true),
 			Controller:         pointer.Bool(false),
 		}
 		// append to OwnerReferences.
@@ -48,13 +48,13 @@ func WithOwnerReference(subscription eventingv1alpha2.Subscription) Option {
 }
 
 func WithLabels(labels map[string]string) Option {
-	return func(o *networkingv1beta1.VirtualService) {
+	return func(o *networkingv1alpha3.VirtualService) {
 		o.Labels = labels
 	}
 }
 
 func WithHost(host string) Option {
-	return func(o *networkingv1beta1.VirtualService) {
+	return func(o *networkingv1alpha3.VirtualService) {
 		o.Spec.Hosts = []string{
 			host,
 		}
@@ -62,7 +62,7 @@ func WithHost(host string) Option {
 }
 
 func WithGateway(gateway string) Option {
-	return func(o *networkingv1beta1.VirtualService) {
+	return func(o *networkingv1alpha3.VirtualService) {
 		o.Spec.Gateways = []string{
 			gateway,
 		}
@@ -71,34 +71,34 @@ func WithGateway(gateway string) Option {
 }
 
 func WithDefaultHttpRoute(host string, targetHost string, targetPort uint32) Option {
-	return func(o *networkingv1beta1.VirtualService) {
-		httpRoute := &networkingapiv1beta1.HTTPRoute{
-			CorsPolicy: &networkingapiv1beta1.CorsPolicy{
+	return func(o *networkingv1alpha3.VirtualService) {
+		httpRoute := &networkingapiv1alpha3.HTTPRoute{
+			CorsPolicy: &networkingapiv1alpha3.CorsPolicy{
 				AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 				AllowHeaders: []string{"Authorization", "Content-Type", "*"},
-				AllowOrigins: []*networkingapiv1beta1.StringMatch{{
-					MatchType: &networkingapiv1beta1.StringMatch_Regex{
+				AllowOrigins: []*networkingapiv1alpha3.StringMatch{{
+					MatchType: &networkingapiv1alpha3.StringMatch_Regex{
 						Regex: ".*",
 					},
 				}},
 			},
-			Headers: &networkingapiv1beta1.Headers{
-				Request: &networkingapiv1beta1.Headers_HeaderOperations{
+			Headers: &networkingapiv1alpha3.Headers{
+				Request: &networkingapiv1alpha3.Headers_HeaderOperations{
 					Set: map[string]string{"x-forwarded-host": host},
 				},
 			},
-			Match: []*networkingapiv1beta1.HTTPMatchRequest{{
-				Uri: &networkingapiv1beta1.StringMatch{
-					MatchType: &networkingapiv1beta1.StringMatch_Regex{
+			Match: []*networkingapiv1alpha3.HTTPMatchRequest{{
+				Uri: &networkingapiv1alpha3.StringMatch{
+					MatchType: &networkingapiv1alpha3.StringMatch_Regex{
 						Regex: ".*", // TODO: check if this is okay.
 					},
 				}},
 			},
-			Route: []*networkingapiv1beta1.HTTPRouteDestination{{
+			Route: []*networkingapiv1alpha3.HTTPRouteDestination{{
 				Weight: 100,
-				Destination: &networkingapiv1beta1.Destination{
+				Destination: &networkingapiv1alpha3.Destination{
 					Host: targetHost,
-					Port: &networkingapiv1beta1.PortSelector{
+					Port: &networkingapiv1alpha3.PortSelector{
 						Number: targetPort,
 					},
 				},

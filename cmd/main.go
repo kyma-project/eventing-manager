@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	"k8s.io/client-go/dynamic"
 	"log"
 	"os"
 
@@ -127,6 +128,10 @@ func main() { //nolint:funlen // main function needs to initialize many object
 
 	// init custom kube client wrapper
 	k8sClient := mgr.GetClient()
+	dynamicClient, err := dynamic.NewForConfig(k8sRestCfg)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	// init custom kube client wrapper
 	apiClientSet, err := apiclientset.NewForConfig(mgr.GetConfig())
@@ -135,7 +140,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		os.Exit(1)
 	}
 
-	kubeClient := k8s.NewKubeClient(k8sClient, apiClientSet, "eventing-manager")
+	kubeClient := k8s.NewKubeClient(k8sClient, apiClientSet, "eventing-manager", dynamicClient)
 	recorder := mgr.GetEventRecorderFor("eventing-manager")
 	ctx := context.Background()
 

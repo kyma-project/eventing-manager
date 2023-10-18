@@ -78,7 +78,7 @@ spec:
           - name: NATS_URL
             value: eventing-nats.kyma-system.svc.cluster.local
           - name: DOMAIN
-            value: kyma.example.com
+            value: fzn-p2.kymatunas.shoot.canary.k8s-hana.ondemand.com
           - name: WEBHOOK_TOKEN_ENDPOINT
             value: https://oauth2.kyma.example.com/oauth2/token
           - name: PUBLISHER_REQUESTS_CPU

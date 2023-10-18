@@ -23,6 +23,10 @@ func GenerateWebhookHostName(name, domain string) string {
 	return fmt.Sprintf("%s-%s.%s", externalHostPrefix, name, domain)
 }
 
+func GenerateWebhookFQDN(hostName, path string) string {
+	return fmt.Sprintf("%s://%s%s", externalSinkScheme, hostName, path)
+}
+
 func GenerateServiceURI(name, namespace string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", name, namespace)
 }
@@ -48,10 +52,7 @@ func HasOwnerReference(list []metav1.OwnerReference, subscription eventingv1alph
 func AppendOwnerReference(list []metav1.OwnerReference, newOwner metav1.OwnerReference) []metav1.OwnerReference {
 	var result []metav1.OwnerReference
 	for _, o := range list {
-		if o.UID != newOwner.UID &&
-			o.Name != newOwner.Name &&
-			o.Kind != newOwner.Kind &&
-			o.APIVersion != newOwner.APIVersion {
+		if o.Name != newOwner.Name {
 			result = append(result, o)
 		}
 	}

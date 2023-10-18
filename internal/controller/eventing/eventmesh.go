@@ -5,8 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-project/eventing-manager/pkg/env"
 	"os"
+
+	"github.com/kyma-project/eventing-manager/pkg/env"
 
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 

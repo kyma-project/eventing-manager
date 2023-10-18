@@ -99,6 +99,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				te := setupTestEnvironment(t, testSub)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx,
 					te.fakeClient,
 					te.logger,
@@ -121,6 +122,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			givenReconcilerSetup: func() *Reconciler {
 				te := setupTestEnvironment(t)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx,
 					te.fakeClient,
 					te.logger,
@@ -144,6 +146,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				te := setupTestEnvironment(t, testSub)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(false, backendSyncErr)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx,
 					te.fakeClient,
 					te.logger,
@@ -167,6 +170,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				te := setupTestEnvironment(t, testSubUnderDeletion)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("DeleteSubscription", mock.Anything).Return(backendDeleteErr)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx,
 					te.fakeClient,
 					te.logger,
@@ -212,6 +216,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				te := setupTestEnvironment(t, testSubPaused)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx,
 					te.fakeClient,
 					te.logger,
@@ -285,6 +290,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 				te.credentials = credentials
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx,
 						te.fakeClient,
 						te.logger,
@@ -315,6 +321,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 				te.credentials = credentials
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx,
 						te.fakeClient,
 						te.logger,
@@ -415,6 +422,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 				te.credentials = credentials
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx,
 						te.fakeClient,
 						te.logger,
@@ -451,6 +459,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 				te.credentials = credentials
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx,
 						te.fakeClient,
 						te.logger,
@@ -617,6 +626,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				te := setupTestEnvironment(t, s)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx, te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
 					te.backend, te.credentials, te.apiGateway, te.mapper, validator, collector), te.fakeClient
 			},
@@ -644,6 +654,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				te := setupTestEnvironment(t, s)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				te.apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(domain, nil)
 				return NewReconciler(ctx, te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
 					te.backend, te.credentials, te.apiGateway, te.mapper, validator, collector), te.fakeClient
 			},

@@ -141,6 +141,10 @@ func NewReconciler(
 // +kubebuilder:rbac:groups=eventing.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="operator.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
 // +kubebuilder:rbac:groups=operator.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=networking.istio.io,resources=virtualservices,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=security.istio.io,resources=requestauthentications,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=security.istio.io,resources=authorizationpolicys,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=security.istio.io,resources=authorizationpolicies,verbs=get;list;watch;create;update;patch;delete
 // Generate required RBAC to emit kubernetes events in the controller.
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 

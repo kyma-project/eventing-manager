@@ -110,6 +110,7 @@ func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscriptio
 	}
 
 	// convert Kyma Subscription to EventMesh Subscription object
+	log.Infof("Using webhook URL: %s", webhookURL)
 	eventMeshSub, err := backendutils.ConvertKymaSubToEventMeshSub(subscription, typesInfo, webhookURL, em.webhookAuth,
 		em.protocolSettings, em.namespace, em.SubNameMapper)
 	if err != nil {

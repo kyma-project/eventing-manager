@@ -1,6 +1,9 @@
 package eventmesh
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 type HTTPStatusError struct {
 	StatusCode int
@@ -23,6 +26,19 @@ type OAuth2ClientCredentials struct {
 	ClientSecret string
 	TokenURL     string
 	CertsURL     string
+}
+
+func (o OAuth2ClientCredentials) GetIssuer() (string, error) {
+	// parsing it to extract hostname only.
+	parsedURL, err := url.ParseRequestURI(o.CertsURL)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host), nil
+}
+
+func (o OAuth2ClientCredentials) GetJwkURI() string {
+	return o.CertsURL
 }
 
 type Response struct {

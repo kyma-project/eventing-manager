@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/stretchr/testify/mock"
 	"log"
 	"net"
 	"net/http"
@@ -147,6 +148,8 @@ func setupSuite() error {
 	emTestEnsemble.envConfig = getEnvConfig()
 	col := metrics.NewCollector()
 	apiGateway := new(apigatewaymock.APIGateway)
+	apiGateway.On("ExposeSink", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything, mock.Anything).Return(domain, nil)
 	testReconciler := eventmeshreconciler.NewReconciler(
 		context.Background(),
 		k8sManager.GetClient(),

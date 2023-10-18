@@ -149,8 +149,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, xerrors.Errorf("failed to sync finalizer: %v", err)
 	}
 
+	// validate sink.
+	if err := r.sinkValidator.Validate(sub); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// sync APIRule for the desired subscription
-	webhookURL, err := r.apiGateway.ExposeSink(ctx, *sub, r.Domain, "", "") // TODO: fix the args.
+	webhookURL, err := r.apiGateway.ExposeSink(ctx, *sub, r.Domain, *r.oauth2credentials, log) // TODO: fix the args.
 	// sync the condition for webhook status.
 	sub.Status.SetConditionAPIRuleStatus(err)
 	if !recerrors.IsSkippable(err) {
