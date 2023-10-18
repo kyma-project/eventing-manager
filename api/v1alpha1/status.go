@@ -56,6 +56,18 @@ func (sm *EventingStatus) UpdateConditionSubscriptionManagerReady(status metav1.
 	meta.SetStatusCondition(&sm.Conditions, condition)
 }
 
+func (es *EventingStatus) UpdateConditionDeletion(status metav1.ConditionStatus, reason ConditionReason,
+	message string) {
+	condition := metav1.Condition{
+		Type:               string(ConditionDeleted),
+		Status:             status,
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(reason),
+		Message:            message,
+	}
+	meta.SetStatusCondition(&es.Conditions, condition)
+}
+
 func (es *EventingStatus) SetSubscriptionManagerReadyConditionToTrue() {
 	es.UpdateConditionSubscriptionManagerReady(metav1.ConditionTrue, ConditionReasonEventMeshSubManagerReady,
 		ConditionSubscriptionManagerReadyMessage)
@@ -65,6 +77,10 @@ func (es *EventingStatus) SetStateReady() {
 	es.State = StateReady
 	es.UpdateConditionNATSAvailable(metav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
 	es.UpdateConditionPublisherProxyReady(metav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)
+}
+
+func (ns *EventingStatus) SetStateWarning() {
+	ns.State = StateWarning
 }
 
 func (es *EventingStatus) SetNATSAvailableConditionToTrue() {

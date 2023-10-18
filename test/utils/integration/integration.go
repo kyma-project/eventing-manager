@@ -48,6 +48,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
+	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -116,6 +117,12 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	}
 
 	err = natsv1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, err
+	}
+
+	// add subscription CRD scheme
+	err = eventingv1alpha2.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, err
 	}
@@ -443,6 +450,13 @@ func (env TestEnvironment) EnsureHPAExists(t *testing.T, name, namespace string)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of HPA")
 }
 
+func (env TestEnvironment) EnsureSubscriptionExists(t *testing.T, name, namespace string) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetSubscriptionFromK8s(name, namespace)
+		return err == nil && result != nil
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of Subscription")
+}
+
 func (env TestEnvironment) EnsureK8sResourceUpdated(t *testing.T, obj client.Object) {
 	require.NoError(t, env.k8sClient.Update(env.Context, obj))
 }
@@ -555,6 +569,20 @@ func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T
 		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: name, Namespace: namespace}, eventing)
 		return err == nil && eventing.Status.State == eventingv1alpha1.StateError
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure deletion of Eventing")
+}
+
+func (env TestEnvironment) EnsureSubscriptionResourceDeletion(t *testing.T, name, namespace string) {
+	subscription := &eventingv1alpha2.Subscription{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	env.EnsureK8sResourceDeleted(t, subscription)
+	require.Eventually(t, func() bool {
+		_, err := env.GetSubscriptionFromK8s(name, namespace)
+		return err != nil && errors.IsNotFound(err)
+	}, BigTimeOut, BigPollingInterval, "failed to ensure deletion of Subscription")
 }
 
 func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *natsv1alpha1.NATS) {
@@ -1053,6 +1081,18 @@ func (env TestEnvironment) GetHPAFromK8s(name, namespace string) (*autoscalingv1
 		Namespace: namespace,
 	}
 	result := &autoscalingv1.HorizontalPodAutoscaler{}
+	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (env TestEnvironment) GetSubscriptionFromK8s(name, namespace string) (*eventingv1alpha2.Subscription, error) {
+	nn := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	result := &eventingv1alpha2.Subscription{}
 	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
 		return nil, err
 	}

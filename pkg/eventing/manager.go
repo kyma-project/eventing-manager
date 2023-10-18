@@ -39,6 +39,7 @@ type Manager interface {
 	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
 	GetBackendConfig() *env.BackendConfig
 	SetBackendConfig(env.BackendConfig)
+	SubscriptionExists(ctx context.Context) (bool, error)
 }
 
 type EventingManager struct {
@@ -213,6 +214,17 @@ func (em EventingManager) DeployPublisherProxyResources(
 		}
 	}
 	return nil
+}
+
+func (em *EventingManager) SubscriptionExists(ctx context.Context) (bool, error) {
+	subscriptionList, err := em.kubeClient.GetSubscriptions(ctx)
+	if err != nil {
+		return false, err
+	}
+	if len(subscriptionList.Items) > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 func convertECBackendType(backendType v1alpha1.BackendType) (ecv1alpha1.BackendType, error) {
