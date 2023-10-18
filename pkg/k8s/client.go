@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	v1 "k8s.io/api/apps/v1"
@@ -33,6 +34,7 @@ type Client interface {
 		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
 	GetCRD(context.Context, string) (*apiextensionsv1.CustomResourceDefinition, error)
 	ApplicationCRDExists(context.Context) (bool, error)
+	GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error)
 }
 
 type KubeClient struct {
@@ -173,4 +175,13 @@ func (c *KubeClient) GetValidatingWebHookConfiguration(ctx context.Context,
 		return nil, err
 	}
 	return &validatingWH, nil
+}
+
+func (c *KubeClient) GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error) {
+	subscriptions := &eventingv1alpha2.SubscriptionList{}
+	err := c.client.List(ctx, subscriptions)
+	if err != nil {
+		return nil, err
+	}
+	return subscriptions, nil
 }

@@ -7,7 +7,6 @@ import (
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
@@ -16,6 +15,7 @@ import (
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
 
+	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	v1 "k8s.io/api/apps/v1"
 )
@@ -560,9 +560,10 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 func Test_DeleteEventingCR(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		name                    string
-		givenEventing           *eventingv1alpha1.Eventing
-		subscriptionManagerMock *ecsubmanagermocks.Manager
+		name              string
+		givenEventing     *eventingv1alpha1.Eventing
+		givenSubscription *eventinv1alpha2.Subscription
+		wantMatches       gomegatypes.GomegaMatcher
 	}{
 		{
 			name: "Delete Eventing CR should delete the owned resources",
@@ -580,12 +581,42 @@ func Test_DeleteEventingCR(t *testing.T) {
 				utils.WithEventingEventTypePrefix("test-prefix"),
 			),
 		},
+		{
+			name: "Delete should be blocked as subscription exists for NATS",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			givenSubscription: utils.NewSubscription("test-nats-subscription", "test-nats-namespace"),
+			wantMatches: gomega.And(
+				matchers.HaveStatusWarning(),
+				matchers.HaveDeletionErrorCondition(eventingcontroller.SubscriptionExistsErrMessage),
+				matchers.HaveFinalizer(),
+			),
+		},
+		{
+			name: "Delete should be blocked as subscription exist for EventMesh",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventMeshBackend("test-secret-name"),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			givenSubscription: utils.NewSubscription("test-eventmesh-subscription", "test-eventmesh-namespace"),
+			wantMatches: gomega.And(
+				matchers.HaveStatusWarning(),
+				matchers.HaveDeletionErrorCondition(eventingcontroller.SubscriptionExistsErrMessage),
+				matchers.HaveFinalizer(),
+			),
+		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			g := gomega.NewWithT(t)
+
 			// given
 			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
@@ -615,6 +646,10 @@ func Test_DeleteEventingCR(t *testing.T) {
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
 
 			defer func() {
+				if tc.givenSubscription != nil {
+					testEnvironment.EnsureSubscriptionResourceDeletion(t, tc.givenSubscription.Name, tc.givenSubscription.Namespace)
+				}
+
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
@@ -627,30 +662,43 @@ func Test_DeleteEventingCR(t *testing.T) {
 			testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 			testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 
-			testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+			if tc.givenSubscription != nil {
+				// create subscriptions if given.
+				testEnvironment.EnsureNamespaceCreation(t, tc.givenSubscription.Namespace)
+				testEnvironment.EnsureK8sResourceCreated(t, tc.givenSubscription)
+				testEnvironment.EnsureSubscriptionExists(t, tc.givenSubscription.Name, tc.givenSubscription.Namespace)
 
-			// then
-			if *testEnvironment.EnvTestInstance.UseExistingCluster {
-				testEnvironment.EnsureDeploymentNotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureHPANotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetPublisherPublishServiceName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetPublisherMetricsServiceName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetPublisherHealthServiceName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceAccountNotFound(t,
-					eventing.GetPublisherServiceAccountName(*tc.givenEventing), givenNamespace)
+				//then
+				// givenSubscription existence means deletion of Eventing CR should be blocked.
+				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenEventing)
+				testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
 			} else {
-				// check if the owner reference is set.
-				// if owner reference is set then these resources would be garbage collected in real k8s cluster.
-				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
-				// ensure clusterrole and clusterrolebindings are deleted.
+				// then
+				// givenSubscription is nil means deletion of Eventing CR should be successful.
+				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+
+				// then
+				if *testEnvironment.EnvTestInstance.UseExistingCluster {
+					testEnvironment.EnsureDeploymentNotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureHPANotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureK8sServiceNotFound(t,
+						eventing.GetPublisherPublishServiceName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureK8sServiceNotFound(t,
+						eventing.GetPublisherMetricsServiceName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureK8sServiceNotFound(t,
+						eventing.GetPublisherHealthServiceName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureK8sServiceAccountNotFound(t,
+						eventing.GetPublisherServiceAccountName(*tc.givenEventing), givenNamespace)
+				} else {
+					// check if the owner reference is set.
+					// if owner reference is set then these resources would be garbage collected in real k8s cluster.
+					testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
+				}
+				testEnvironment.EnsureK8sClusterRoleNotFound(t,
+					eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
+					eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
 			}
-			testEnvironment.EnsureK8sClusterRoleNotFound(t,
-				eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
-			testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
-				eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
 		})
 	}
 }
