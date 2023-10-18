@@ -64,13 +64,13 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	require.NoError(t, err)
 
 	// Create a fake dynamic client
-	dynamicClient := fakedynamic.NewSimpleDynamicClient(newScheme)
+	fakeDynamicClient := fakedynamic.NewSimpleDynamicClient(newScheme)
 
 	fakeClientBuilder := fake.NewClientBuilder().WithScheme(newScheme)
 	fakeClient := fakeClientBuilder.WithObjects(objs...).WithStatusSubresource(objs...).Build()
 	fakeClientSet := apiclientsetfake.NewSimpleClientset()
 	recorder := &record.FakeRecorder{}
-	kubeClient := k8s.NewKubeClient(fakeClient, fakeClientSet, "eventing-manager", dynamicClient)
+	kubeClient := k8s.NewKubeClient(fakeClient, fakeClientSet, "eventing-manager", fakeDynamicClient)
 
 	// setup custom mocks
 	eventingManager := new(managermocks.Manager)
@@ -85,7 +85,7 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	reconciler := NewReconciler(
 		fakeClient,
 		kubeClient,
-		dynamicClient,
+		fakeDynamicClient,
 		newScheme,
 		ctrLogger,
 		recorder,

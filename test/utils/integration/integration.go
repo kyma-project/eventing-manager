@@ -558,7 +558,7 @@ func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T
 }
 
 func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *natsv1alpha1.NATS) {
-	env.makeNatsCrReady(t, nats)
+	env.makeNATSCrReady(t, nats)
 	require.Eventually(t, func() bool {
 		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
 		return err == nil && nats.Status.State == natsv1alpha1.StateReady
@@ -873,7 +873,7 @@ func (env TestEnvironment) UpdateNATSStatus(nats *natsv1alpha1.NATS) error {
 	return env.k8sClient.Status().Update(env.Context, baseNats)
 }
 
-func (env TestEnvironment) makeNatsCrReady(t *testing.T, nats *natsv1alpha1.NATS) {
+func (env TestEnvironment) makeNATSCrReady(t *testing.T, nats *natsv1alpha1.NATS) {
 	require.Eventually(t, func() bool {
 		nats.Status.State = natsv1alpha1.StateReady
 

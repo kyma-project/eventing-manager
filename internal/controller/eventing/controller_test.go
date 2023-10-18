@@ -350,7 +350,7 @@ func Test_startNatsCRWatch(t *testing.T) {
 			testEnv.Reconciler.controller = mockController
 
 			// when
-			err := testEnv.Reconciler.startNatsCRWatch(eventing)
+			err := testEnv.Reconciler.startNATSCRWatch(eventing)
 
 			// then
 			require.Equal(t, tc.watchErr, err)
@@ -392,7 +392,7 @@ func Test_stopNatsCRWatch(t *testing.T) {
 
 			testEnv.Reconciler.natsWatchers[eventing.Namespace] = natsWatcher
 
-			testEnv.Reconciler.stopNatsCRWatch(eventing)
+			testEnv.Reconciler.stopNATSCRWatch(eventing)
 
 			// Check the results
 			require.Equal(t, tc.watchNatsWatcher, nil)

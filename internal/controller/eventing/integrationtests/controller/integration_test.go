@@ -65,7 +65,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 		givenNATS            *natsv1alpha1.NATS
 		givenDeploymentReady bool
 		givenNATSReady       bool
-		givenNatsCRDMissing  bool
+		givenNATSCRDMissing  bool
 		wantMatches          gomegatypes.GomegaMatcher
 		wantEnsureK8sObjects bool
 	}{
@@ -136,7 +136,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			givenNATS: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
 			),
-			givenNatsCRDMissing: true,
+			givenNATSCRDMissing: true,
 			wantMatches: gomega.And(
 				matchers.HaveStatusError(),
 				matchers.HaveNATSNotAvailableConditionWith("NATS module has to be installed: "+
@@ -163,7 +163,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			// when
 			// create NATS.
 			originalKubeClient := testEnvironment.KubeClient
-			if !tc.givenNatsCRDMissing {
+			if !tc.givenNATSCRDMissing {
 				testEnvironment.EnsureK8sResourceCreated(t, tc.givenNATS)
 				if tc.givenNATSReady {
 					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenNATS)
@@ -185,7 +185,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				if tc.givenNATSReady && !*testEnvironment.EnvTestInstance.UseExistingCluster {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
-				if !tc.givenNatsCRDMissing {
+				if !tc.givenNATSCRDMissing {
 					testEnvironment.EnsureK8sResourceDeleted(t, tc.givenNATS)
 				}
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)

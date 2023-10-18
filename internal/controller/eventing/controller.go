@@ -257,7 +257,7 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 	return err
 }
 
-func (r *Reconciler) startNatsCRWatch(eventing *eventingv1alpha1.Eventing) error {
+func (r *Reconciler) startNATSCRWatch(eventing *eventingv1alpha1.Eventing) error {
 	natsWatcher, found := r.natsWatchers[eventing.Namespace]
 	if found && natsWatcher.IsStarted() {
 		return nil
@@ -286,7 +286,7 @@ func (r *Reconciler) startNatsCRWatch(eventing *eventingv1alpha1.Eventing) error
 	return nil
 }
 
-func (r *Reconciler) stopNatsCRWatch(eventing *eventingv1alpha1.Eventing) {
+func (r *Reconciler) stopNATSCRWatch(eventing *eventingv1alpha1.Eventing) {
 	natsWatcher, found := r.natsWatchers[eventing.Namespace]
 	if found {
 		natsWatcher.Stop()
@@ -411,7 +411,7 @@ func (r *Reconciler) handleBackendSwitching(
 		if err := r.stopNATSSubManager(true, log); err != nil {
 			return err
 		}
-		r.stopNatsCRWatch(eventing)
+		r.stopNATSCRWatch(eventing)
 	} else if eventing.Status.ActiveBackend == eventingv1alpha1.EventMeshBackendType {
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
 			return err
@@ -425,6 +425,7 @@ func (r *Reconciler) handleBackendSwitching(
 }
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+	// retrieves the NATS CRD
 	_, err := r.kubeClient.GetCRD(ctx, k8s.NatsGVK.GroupResource().String())
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -434,7 +435,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 		return ctrl.Result{}, err
 	}
 
-	if err = r.startNatsCRWatch(eventing); err != nil {
+	if err = r.startNATSCRWatch(eventing); err != nil {
 		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 
