@@ -3,7 +3,6 @@ package eventing
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/eventing-manager/test/utils"
 	"strings"
 	"testing"
 
@@ -11,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
+	"github.com/kyma-project/eventing-manager/test/utils"
 )
 
 func Test_readDomainFromConfigMap(t *testing.T) {

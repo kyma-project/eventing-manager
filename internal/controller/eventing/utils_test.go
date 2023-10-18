@@ -2,8 +2,9 @@ package eventing
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test/utils"

@@ -1,11 +1,11 @@
 package utils
 
 import (
-	"github.com/stretchr/testify/assert"
 	"net/url"
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
