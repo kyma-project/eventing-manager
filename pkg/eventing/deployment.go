@@ -39,6 +39,8 @@ const (
 
 	PublisherSecretEMSURLKey       = "ems-publish-url"
 	PublisherSecretBEBNamespaceKey = "beb-namespace"
+
+	PriorityClassName = "eventing-manager-priority-class"
 )
 
 var (
@@ -57,6 +59,7 @@ func newNATSPublisherDeployment(
 		WithNATSEnvVars(natsConfig, publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
 		WithAffinity(GetPublisherDeploymentName(*eventing)),
+		WithPriorityClassName(PriorityClassName),
 	)
 }
 
@@ -70,6 +73,7 @@ func newEventMeshPublisherDeployment(
 		WithContainers(publisherConfig, eventing),
 		WithBEBEnvVars(GetPublisherDeploymentName(*eventing), publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
+		WithPriorityClassName(PriorityClassName),
 	)
 }
 
@@ -133,6 +137,12 @@ func WithLabels(publisherName string, backendType v1alpha1.BackendType) DeployOp
 		// label the event-publisher proxy with the backendType label
 		labels[BackendLabelKey] = fmt.Sprint(getECBackendType(backendType))
 		d.ObjectMeta.Labels = labels
+	}
+}
+
+func WithPriorityClassName(name string) DeployOpt {
+	return func(deployment *appsv1.Deployment) {
+		deployment.Spec.Template.Spec.PriorityClassName = name
 	}
 }
 

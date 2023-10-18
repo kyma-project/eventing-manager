@@ -90,7 +90,7 @@ func (te *TestEnvironment) CreateTestNamespace() error {
 
 func (te *TestEnvironment) DeleteTestNamespace() error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		// It's fine if the Namespace not exists.
+		// It's fine if the Namespace does not exist.
 		return client.IgnoreNotFound(te.K8sClient.Delete(te.Context, fixtures.Namespace(te.TestConfigs.TestNamespace)))
 	})
 }
@@ -122,13 +122,13 @@ func (te *TestEnvironment) InitSinkClient() {
 
 func (te *TestEnvironment) CreateAllSubscriptions() error {
 	ctx := context.TODO()
-	// create v1alpha1 subscriptions if not exists.
+	// Create v1alpha1 subscriptions if not exists.
 	err := te.CreateV1Alpha1Subscriptions(ctx, fixtures.V1Alpha1SubscriptionsToTest())
 	if err != nil {
 		return err
 	}
 
-	// create v1alpha2 subscriptions if not exists.
+	// Create v1alpha2 subscriptions if not exists.
 	return te.CreateV1Alpha2Subscriptions(ctx, fixtures.V1Alpha2SubscriptionsToTest())
 }
 
@@ -140,7 +140,7 @@ func (te *TestEnvironment) DeleteAllSubscriptions() error {
 		}
 	}
 
-	// delete v1alpha2 subscriptions if not exists.
+	// Delete v1alpha2 subscriptions if not exists.
 	for _, subToTest := range fixtures.V1Alpha2SubscriptionsToTest() {
 		if err := te.DeleteSubscriptionFromK8s(subToTest.Name, te.TestConfigs.TestNamespace); err != nil {
 			return err
@@ -151,7 +151,7 @@ func (te *TestEnvironment) DeleteAllSubscriptions() error {
 
 func (te *TestEnvironment) WaitForAllSubscriptions() error {
 	ctx := context.TODO()
-	// wait for v1alpha1 subscriptions to get ready.
+	// Wait for v1alpha1 subscriptions to get ready.
 	err := te.WaitForSubscriptions(ctx, fixtures.V1Alpha1SubscriptionsToTest())
 	if err != nil {
 		return err
@@ -167,7 +167,7 @@ func (te *TestEnvironment) CreateV1Alpha1Subscriptions(ctx context.Context, subL
 			newSub := subInfo.ToSubscriptionV1Alpha1(te.TestConfigs.SubscriptionSinkURL, te.TestConfigs.TestNamespace)
 			return client.IgnoreAlreadyExists(te.K8sClient.Create(ctx, newSub))
 		})
-		// return error if all retries are exhausted.
+		// Return error if all retries are exhausted.
 		if err != nil {
 			return err
 		}
