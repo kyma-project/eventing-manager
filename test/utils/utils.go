@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"math/rand"
 	"reflect"
 	"time"
@@ -308,6 +309,20 @@ func NewOAuthSecret(name, namespace string) *v1.Secret {
 		Type: "Opaque",
 	}
 	return secret
+}
+
+func NewSubscription(name, namespace string) *eventinv1alpha2.Subscription {
+	return &eventinv1alpha2.Subscription{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: eventinv1alpha2.SubscriptionSpec{
+			Sink:   "test-sink",
+			Source: "test-source",
+			Types:  []string{"test1.nats.type", "test2.nats.type"},
+		},
+	}
 }
 
 func FindObjectByKind(kind string, objects []client.Object) (client.Object, error) {

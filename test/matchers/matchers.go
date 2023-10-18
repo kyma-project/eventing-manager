@@ -26,6 +26,13 @@ func HaveStatusProcessing() gomegatypes.GomegaMatcher {
 		}, gomega.Equal(v1alpha1.StateProcessing))
 }
 
+func HaveStatusWarning() gomegatypes.GomegaMatcher {
+	return gomega.WithTransform(
+		func(n *v1alpha1.Eventing) string {
+			return n.Status.State
+		}, gomega.Equal(v1alpha1.StateWarning))
+}
+
 func HaveStatusError() gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(
 		func(n *v1alpha1.Eventing) string {
@@ -116,11 +123,11 @@ func HaveEventMeshSubManagerNotReadyCondition(message string) gomegatypes.Gomega
 	})
 }
 
-func HaveEventMeshSubManagerStopFailedCondition(message string) gomegatypes.GomegaMatcher {
+func HaveDeletionErrorCondition(message string) gomegatypes.GomegaMatcher {
 	return HaveCondition(metav1.Condition{
-		Type:    string(v1alpha1.ConditionSubscriptionManagerReady),
+		Type:    string(v1alpha1.ConditionDeleted),
 		Status:  metav1.ConditionFalse,
-		Reason:  string(v1alpha1.ConditionReasonEventMeshSubManagerStopFailed),
+		Reason:  string(v1alpha1.ConditionReasonDeletionError),
 		Message: message,
 	})
 }

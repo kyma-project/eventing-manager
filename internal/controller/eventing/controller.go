@@ -18,8 +18,8 @@ package eventing
 
 import (
 	"context"
+	"errors"
 	"fmt"
-
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -60,6 +60,8 @@ const (
 	NamespacePrefix                       = "/"
 	EventMeshPublishEndpointForSubscriber = "/sap/ems/v1"
 	EventMeshPublishEndpointForPublisher  = "/sap/ems/v1/events"
+
+	SubscriptionExistsErrMessage = "cannot delete the eventing module as subscription exists"
 )
 
 // Reconciler reconciles an Eventing object
@@ -265,6 +267,18 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 		return ctrl.Result{}, nil
 	}
 
+	// check if subscription resources exist
+	exists, err := r.eventingManager.SubscriptionExists(ctx)
+	if err != nil {
+		eventing.Status.SetStateError()
+		return ctrl.Result{}, r.syncStatusWithDeletionErr(ctx, eventing, err, log)
+	}
+	if exists {
+		eventing.Status.SetStateWarning()
+		return ctrl.Result{Requeue: true}, r.syncStatusWithDeletionErr(ctx, eventing,
+			errors.New(SubscriptionExistsErrMessage), log)
+	}
+
 	log.Info("handling Eventing deletion...")
 	if eventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType {
 		if err := r.stopNATSSubManager(true, log); err != nil {
@@ -284,7 +298,7 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 	// delete cluster-scoped resources, such as clusterrole and clusterrolebinding.
 	if err := r.deleteClusterScopedResources(ctx, eventing); err != nil {
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErrWithReason(ctx,
-			eventingv1alpha1.ConditionReasonDeletedFailed, eventing, err, log)
+			eventingv1alpha1.ConditionReasonDeletionError, eventing, err, log)
 	}
 	eventing.Status.SetPublisherProxyConditionToFalse(
 		eventingv1alpha1.ConditionReasonDeleted,
