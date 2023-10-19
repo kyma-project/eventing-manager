@@ -1,6 +1,6 @@
 module-name: eventing
 protecode:
-  - europe-docker.pkg.dev/kyma-project/prod/eventing-manager:v20230928-152e94f8
+  - europe-docker.pkg.dev/kyma-project/prod/eventing-manager:v20231019-095e3b6b
 whitesource:
   language: golang-mod
   subprojects: false
