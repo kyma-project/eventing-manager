@@ -13,7 +13,7 @@ require (
 	github.com/kyma-incubator/api-gateway v0.0.0-20220819093753-296e6704d413
 	github.com/kyma-project/kyma/common/logging v0.0.0-20230616102347-ad6927dc28d5
 	github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20231006112231-696ba866d5ec
-	github.com/kyma-project/nats-manager v1.0.2-0.20231013094902-6091000ea996
+	github.com/kyma-project/nats-manager v1.0.2
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/nats-io/nats-server/v2 v2.10.3
 	github.com/nats-io/nats.go v1.31.0
