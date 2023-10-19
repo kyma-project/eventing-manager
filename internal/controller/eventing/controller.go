@@ -19,6 +19,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/options"
@@ -437,8 +438,17 @@ func (r *Reconciler) handlePublisherProxy(
 }
 
 func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+	// check if APIRule CRD is installed.
+	isAPIRuleCRDEnabled, err := r.kubeClient.ApplicationCRDExists(ctx)
+	if err != nil {
+		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
+	} else if isAPIRuleCRDEnabled == false {
+		apiRuleMissingErr := errors.Errorf("API-Gateway modules is needed for EventMesh backend. APIRules CRD is not installed.")
+		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, apiRuleMissingErr, log)
+	}
+
 	// Start the EventMesh subscription controller
-	err := r.reconcileEventMeshSubManager(ctx, eventing)
+	err = r.reconcileEventMeshSubManager(ctx, eventing)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}

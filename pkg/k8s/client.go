@@ -33,6 +33,7 @@ type Client interface {
 		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
 	GetCRD(context.Context, string) (*apiextensionsv1.CustomResourceDefinition, error)
 	ApplicationCRDExists(context.Context) (bool, error)
+	APIRuleCRDExists(context.Context) (bool, error)
 }
 
 type KubeClient struct {
@@ -142,6 +143,14 @@ func (c *KubeClient) GetCRD(ctx context.Context, name string) (*apiextensionsv1.
 
 func (c *KubeClient) ApplicationCRDExists(ctx context.Context) (bool, error) {
 	_, err := c.GetCRD(ctx, ApplicationCrdName)
+	if err != nil {
+		return false, client.IgnoreNotFound(err)
+	}
+	return true, nil
+}
+
+func (c *KubeClient) APIRuleCRDExists(ctx context.Context) (bool, error) {
+	_, err := c.GetCRD(ctx, APIRuleCrdName)
 	if err != nil {
 		return false, client.IgnoreNotFound(err)
 	}

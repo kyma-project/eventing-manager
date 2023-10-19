@@ -7,4 +7,7 @@ const (
 	ApplicationKind string = "Application"
 	// ApplicationAPIVersion defines the API version for Application of application-connector module.
 	ApplicationAPIVersion string = "applicationconnector.kyma-project.io/v1alpha1"
+
+	// APIRuleCrdName defines the CRD name for APIRule of kyma api-gateway module.
+	APIRuleCrdName string = "apirules.gateway.kyma-project.io"
 )

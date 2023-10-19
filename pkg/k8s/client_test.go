@@ -634,3 +634,47 @@ func Test_ApplicationCRDExists(t *testing.T) {
 		})
 	}
 }
+
+func Test_APIRuleCRDExists(t *testing.T) {
+	t.Parallel()
+
+	// define test cases
+	testCases := []struct {
+		name       string
+		wantResult bool
+	}{
+		{
+			name:       "should return false when CRD is missing in k8s",
+			wantResult: false,
+		},
+		{
+			name:       "should return true when CRD exists in k8s",
+			wantResult: true,
+		},
+	}
+
+	// run test cases
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// given
+			sampleCRD := testutils.NewAPIRuleCRD()
+			var objs []runtime.Object
+			if tc.wantResult {
+				objs = append(objs, sampleCRD)
+			}
+
+			fakeClientSet := apiclientsetfake.NewSimpleClientset(objs...)
+			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager)
+
+			// when
+			gotResult, err := kubeClient.APIRuleCRDExists(context.Background())
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, tc.wantResult, gotResult)
+		})
+	}
+}

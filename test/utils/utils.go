@@ -68,6 +68,25 @@ func NewApplicationCRD() *apiextensionsv1.CustomResourceDefinition {
 	return result
 }
 
+func NewAPIRuleCRD() *apiextensionsv1.CustomResourceDefinition {
+	result := &apiextensionsv1.CustomResourceDefinition{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apiextensions.k8s.io/v1",
+			Kind:       "CustomResourceDefinition",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "apirules.gateway.kyma-project.io",
+		},
+		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+			Names:                 apiextensionsv1.CustomResourceDefinitionNames{},
+			Scope:                 "Namespaced",
+			PreserveUnknownFields: false,
+		},
+	}
+
+	return result
+}
+
 func NewEventingCR(opts ...EventingOption) *v1alpha1.Eventing {
 	name := fmt.Sprintf(NameFormat, GetRandString(randomNameLen))
 	namespace := fmt.Sprintf(NamespaceFormat, GetRandString(randomNameLen))
