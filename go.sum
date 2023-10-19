@@ -99,8 +99,8 @@ github.com/kyma-project/kyma/components/application-operator v0.0.0-202301271650
 github.com/kyma-project/kyma/components/application-operator v0.0.0-20230127165033-ec8e43477eca/go.mod h1:Tog02gZ1VT7yvFmhSqmiuGZpDYt18zTF4kr6E0N9ttk=
 github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20231006112231-696ba866d5ec h1:P+V9r14NJKUFbIZIEMrjInABT+qN/ySLqWQ01aeq068=
 github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20231006112231-696ba866d5ec/go.mod h1:Ht1hT95iSKe5md3QhIZQrq3j9WXkiWe/qdDMaDrmdyI=
-github.com/kyma-project/nats-manager v1.0.2-0.20231013094902-6091000ea996 h1:BDN7EF2vo8Cn4ciDxB5ZQFIfwS1Ciis8CEPYK0b11ho=
-github.com/kyma-project/nats-manager v1.0.2-0.20231013094902-6091000ea996/go.mod h1:gC0W/C2NgpmVnG/5v5f76ijNw5aloQLEkSuVOElB9gk=
+github.com/kyma-project/nats-manager v1.0.2 h1:uJiVrLFFqnOsnz1IGNn76fm5cQoK+4L8GxP829mX2C8=
+github.com/kyma-project/nats-manager v1.0.2/go.mod h1:gC0W/C2NgpmVnG/5v5f76ijNw5aloQLEkSuVOElB9gk=
 github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0=
 github.com/mailru/easyjson v0.7.7/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=
 github.com/matttproud/golang_protobuf_extensions v1.0.4 h1:mmDVorXM7PCGKw94cs5zkfA9PSy5pEvNWRP0ET0TIVo=
