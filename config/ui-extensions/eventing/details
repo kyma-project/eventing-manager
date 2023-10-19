@@ -1,0 +1,31 @@
+header:
+  - name: State
+    source: status.state
+    widget: Badge
+
+body:
+  - name: Conditions
+    source: status.conditions
+    widget: Table
+    children:
+      - source: type
+        name: Type
+      - source: status
+        name: Status
+        widget: Badge
+        highlights:
+          positive:
+            - 'True'
+          negative:
+            - 'False'
+      - source: reason
+        name: Reason
+      - source: message
+        name: Message
+      - source: '$readableTimestamp(lastTransitionTime)'
+        name: Last transition
+        sort: true
+  - name: Events
+    widget: EventList
+    filter: '$matchEvents($$, $root.kind, $root.metadata.name)'
+    defaultType: information
