@@ -91,7 +91,7 @@ func Test_PatchApply(t *testing.T) {
 			}
 			fakeClientBuilder := fake.NewClientBuilder()
 			fakeClient := fakeClientBuilder.WithObjects(objs...).Build()
-			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager)
+			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager, nil)
 
 			// when
 			err := kubeClient.PatchApply(context.Background(), tc.givenUpdateDeployment)
@@ -575,7 +575,7 @@ func Test_GetCRD(t *testing.T) {
 			}
 
 			fakeClientSet := apiclientsetfake.NewSimpleClientset(objs...)
-			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager)
+			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
 			gotCRD, err := kubeClient.GetCRD(context.Background(), tc.givenCRDName)
@@ -624,7 +624,7 @@ func Test_ApplicationCRDExists(t *testing.T) {
 			}
 
 			fakeClientSet := apiclientsetfake.NewSimpleClientset(objs...)
-			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager)
+			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
 			gotResult, err := kubeClient.ApplicationCRDExists(context.Background())

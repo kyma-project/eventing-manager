@@ -20,6 +20,10 @@ spec:
       jsonPath: .status.state
       name: State
       type: string
+    - description: Type of Eventing backend, either NATS or EventMesh
+      jsonPath: .spec.backend.type
+      name: Backend
+      type: string
     - description: Age of the resource
       jsonPath: .metadata.creationTimestamp
       name: Age

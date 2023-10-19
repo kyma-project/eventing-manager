@@ -65,7 +65,7 @@ const (
 	testEnvStartAttempts     = 10
 	BigPollingInterval       = 3 * time.Second
 	BigTimeOut               = 60 * time.Second
-	SmallTimeOut             = 5 * time.Second
+	SmallTimeOut             = 6 * time.Second
 	SmallPollingInterval     = 1 * time.Second
 )
 
@@ -115,7 +115,6 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 		return nil, err
 	}
 
-	// add NATS CRD scheme
 	err = natsv1alpha1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, err
@@ -164,7 +163,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	if err != nil {
 		return nil, err
 	}
-	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), apiClientSet, "eventing-manager")
+	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), apiClientSet, "eventing-manager", dynamicClient)
 
 	// get backend configs.
 	backendConfig := env.GetBackendConfig()
@@ -189,9 +188,11 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(jetStreamSubManagerMock)
 	subManagerFactoryMock.On("NewEventMeshManager").Return(eventMeshSubManagerMock, nil)
 
+	// create a new watcher
 	eventingReconciler := eventingctrl.NewReconciler(
 		k8sClient,
 		kubeClient,
+		dynamicClient,
 		ctrlMgr.GetScheme(),
 		ctrLogger,
 		ctrlMgr.GetEventRecorderFor("eventing-manager-test"),
@@ -584,10 +585,18 @@ func (env TestEnvironment) EnsureSubscriptionResourceDeletion(t *testing.T, name
 }
 
 func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *natsv1alpha1.NATS) {
-	env.makeNatsCrReady(t, nats)
+	env.makeNATSCrReady(t, nats)
 	require.Eventually(t, func() bool {
 		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
 		return err == nil && nats.Status.State == natsv1alpha1.StateReady
+	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
+}
+
+func (env TestEnvironment) EnsureNATSResourceStateError(t *testing.T, nats *natsv1alpha1.NATS) {
+	env.makeNatsCrError(t, nats)
+	require.Eventually(t, func() bool {
+		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
+		return err == nil && nats.Status.State == natsv1alpha1.StateError
 	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
 }
 
@@ -818,6 +827,12 @@ func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, eventing *
 	env.EnsureK8sResourceCreated(t, secret)
 }
 
+func (env TestEnvironment) EnsureEventMeshSecretDeleted(t *testing.T, eventing *v1alpha1.Eventing) {
+	subarr := strings.Split(eventing.Spec.Backend.Config.EventMeshSecret, "/")
+	secret := evnttestutils.NewEventMeshSecret(subarr[1], subarr[0])
+	env.EnsureK8sResourceDeleted(t, secret)
+}
+
 func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
 	secret := evnttestutils.NewOAuthSecret("eventing-webhook-auth", eventing.Namespace)
 	env.EnsureK8sResourceCreated(t, secret)
@@ -873,12 +888,34 @@ func (env TestEnvironment) UpdateEventingStatus(eventing *v1alpha1.Eventing) err
 }
 
 func (env TestEnvironment) UpdateNATSStatus(nats *natsv1alpha1.NATS) error {
-	return env.k8sClient.Status().Update(env.Context, nats)
+	baseNats := &natsv1alpha1.NATS{}
+	if err := env.k8sClient.Get(env.Context,
+		types.NamespacedName{
+			Namespace: nats.Namespace,
+			Name:      nats.Name,
+		}, baseNats); err != nil {
+		return err
+	}
+	baseNats.Status = nats.Status
+	return env.k8sClient.Status().Update(env.Context, baseNats)
 }
 
-func (env TestEnvironment) makeNatsCrReady(t *testing.T, nats *natsv1alpha1.NATS) {
+func (env TestEnvironment) makeNATSCrReady(t *testing.T, nats *natsv1alpha1.NATS) {
 	require.Eventually(t, func() bool {
 		nats.Status.State = natsv1alpha1.StateReady
+
+		err := env.UpdateNATSStatus(nats)
+		if err != nil {
+			env.Logger.WithContext().Errorw("failed to update NATS CR status", err)
+			return false
+		}
+		return true
+	}, BigTimeOut, BigPollingInterval, "failed to update status of NATS CR")
+}
+
+func (env TestEnvironment) makeNatsCrError(t *testing.T, nats *natsv1alpha1.NATS) {
+	require.Eventually(t, func() bool {
+		nats.Status.State = natsv1alpha1.StateError
 
 		err := env.UpdateNATSStatus(nats)
 		if err != nil {

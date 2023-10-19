@@ -3,7 +3,13 @@ package k8s
 import (
 	"context"
 	"errors"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"strings"
+
+	"k8s.io/client-go/dynamic"
 
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
@@ -17,6 +23,12 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var NatsGVK = schema.GroupVersionResource{
+	Group:    natsv1alpha1.GroupVersion.Group,
+	Version:  natsv1alpha1.GroupVersion.Version,
+	Resource: "nats",
+}
 
 //go:generate mockery --name=Client --outpkg=mocks --case=underscore
 type Client interface {
@@ -38,16 +50,19 @@ type Client interface {
 }
 
 type KubeClient struct {
-	fieldManager string
-	client       client.Client
-	clientset    k8sclientset.Interface
+	fieldManager  string
+	client        client.Client
+	clientset     k8sclientset.Interface
+	dynamicClient dynamic.Interface
 }
 
-func NewKubeClient(client client.Client, clientset k8sclientset.Interface, fieldManager string) Client {
+func NewKubeClient(client client.Client, clientset k8sclientset.Interface, fieldManager string,
+	dynamicClient dynamic.Interface) Client {
 	return &KubeClient{
-		client:       client,
-		clientset:    clientset,
-		fieldManager: fieldManager,
+		client:        client,
+		clientset:     clientset,
+		fieldManager:  fieldManager,
+		dynamicClient: dynamicClient,
 	}
 }
 
@@ -103,10 +118,26 @@ func (c *KubeClient) DeleteClusterRoleBinding(ctx context.Context, name, namespa
 }
 
 func (c *KubeClient) GetNATSResources(ctx context.Context, namespace string) (*natsv1alpha1.NATSList, error) {
-	natsList := &natsv1alpha1.NATSList{}
-	err := c.client.List(ctx, natsList, &client.ListOptions{Namespace: namespace})
+	unstructuredList, err := c.dynamicClient.Resource(NatsGVK).Namespace(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
+	}
+
+	natsList := &natsv1alpha1.NATSList{
+		Items: []natsv1alpha1.NATS{},
+	}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredList.Object, natsList)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range unstructuredList.Items {
+		nats := &natsv1alpha1.NATS{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, nats)
+		if err != nil {
+			return nil, err
+		}
+		natsList.Items = append(natsList.Items, *nats)
 	}
 	return natsList, nil
 }

@@ -83,7 +83,7 @@ func Test_Switching(t *testing.T) {
 			),
 			wantPreSwitchMatches: gomega.And(
 				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSAvailableCondition(),
 				matchers.HavePublisherProxyReadyConditionDeployed(),
 				matchers.HaveFinalizer(),
 			),
@@ -119,7 +119,7 @@ func Test_Switching(t *testing.T) {
 			),
 			wantPostSwitchMatches: gomega.And(
 				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSAvailableCondition(),
 				matchers.HavePublisherProxyReadyConditionDeployed(),
 				matchers.HaveFinalizer(),
 			),

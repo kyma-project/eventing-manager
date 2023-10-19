@@ -45,6 +45,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	"k8s.io/client-go/dynamic"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -53,9 +54,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -68,8 +70,10 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(natsv1alpha1.AddToScheme(scheme))
+
 	utilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
+
+	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 
 	utilruntime.Must(jetstream.AddToScheme(scheme))
 	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
@@ -125,6 +129,10 @@ func main() { //nolint:funlen // main function needs to initialize many object
 
 	// init custom kube client wrapper
 	k8sClient := mgr.GetClient()
+	dynamicClient, err := dynamic.NewForConfig(k8sRestCfg)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	// init custom kube client wrapper
 	apiClientSet, err := apiclientset.NewForConfig(mgr.GetConfig())
@@ -133,7 +141,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		os.Exit(1)
 	}
 
-	kubeClient := k8s.NewKubeClient(k8sClient, apiClientSet, "eventing-manager")
+	kubeClient := k8s.NewKubeClient(k8sClient, apiClientSet, "eventing-manager", dynamicClient)
 	recorder := mgr.GetEventRecorderFor("eventing-manager")
 	ctx := context.Background()
 
@@ -160,6 +168,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	eventingReconciler := eventingcontroller.NewReconciler(
 		k8sClient,
 		kubeClient,
+		dynamicClient,
 		mgr.GetScheme(),
 		ctrLogger,
 		recorder,
