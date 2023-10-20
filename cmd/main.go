@@ -28,35 +28,40 @@ import (
 
 	"github.com/go-logr/zapr"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
 	subscriptionv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	subscriptionv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+
+	"github.com/kyma-project/eventing-manager/pkg/env"
 
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
 
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 
+	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/options"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
-	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	"k8s.io/client-go/dynamic"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
@@ -113,14 +118,15 @@ func main() { //nolint:funlen // main function needs to initialize many object
 
 	// setup ctrl manager
 	k8sRestCfg := ctrl.GetConfigOrDie()
+
 	mgr, err := ctrl.NewManager(k8sRestCfg, ctrl.Options{
 		Scheme:                 scheme,
-		MetricsBindAddress:     opts.MetricsAddr,
-		Port:                   9443,
 		HealthProbeBindAddress: opts.ProbeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       leaderElectionID,
-		SyncPeriod:             &opts.ReconcilePeriod,
+        WebhookServer:          webhook.NewServer(webhook.Options{Port: 9443}),
+        Cache:                  cache.Options{SyncPeriod: &opts.ReconcilePeriod},
+		Metrics:                server.Options{BindAddress: opts.MetricsAddr},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

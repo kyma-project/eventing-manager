@@ -10,7 +10,7 @@ import (
 
 	"github.com/kyma-project/eventing-manager/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -163,8 +163,8 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 					Kind:               "Deployment",
 					Name:               "eventing-controller",
 					UID:                "a3cdcc7b-6853-4772-99cc-fc1511399d63",
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
 				}}
 				return oldPublisher
 			},
@@ -191,8 +191,8 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 					Kind:               "Deployment",
 					Name:               "eventing-manager",
 					UID:                "a3cdcc7b-6853-4772-99cc-fc1511399d63",
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
 				}}
 				return oldPublisher
 			},
