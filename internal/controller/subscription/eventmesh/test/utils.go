@@ -15,6 +15,8 @@ import (
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,13 +27,15 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
+	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
 	eventmeshreconciler "github.com/kyma-project/eventing-manager/internal/controller/subscription/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
@@ -47,7 +51,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )
 
 type eventMeshTestEnsemble struct {
@@ -117,13 +120,15 @@ func setupSuite() error {
 	syncPeriod := syncPeriodSeconds * time.Second
 	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:                 scheme.Scheme,
-		SyncPeriod:             &syncPeriod,
-		Host:                   webhookInstallOptions.LocalServingHost,
-		Port:                   webhookInstallOptions.LocalServingPort,
-		CertDir:                webhookInstallOptions.LocalServingCertDir,
-		MetricsBindAddress:     "0", // disable
+		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
 		HealthProbeBindAddress: "0", // disable
+		Scheme:                 scheme.Scheme,
+		Metrics:                server.Options{BindAddress: "0"}, // disable
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port:    webhookInstallOptions.LocalServingPort,
+			Host:    webhookInstallOptions.LocalServingHost,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
 	})
 	if err != nil {
 		return err
