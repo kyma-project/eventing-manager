@@ -874,6 +874,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 					utils.WithEventMeshBackend("test-secret-name"),
 					utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 					utils.WithStatusState(tc.wantedOriginalEventingState),
+					utils.WithEventingDomain(utils.Domain),
 				)
 				// create necessary EventMesh secrets
 				testEnvironment.EnsureOAuthSecretCreated(t, eventingResource)
@@ -885,6 +886,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 					utils.WithEventingStreamData("Memory", "1M", 1, 1),
 					utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 					utils.WithStatusState(tc.wantedOriginalEventingState),
+					utils.WithEventingDomain(utils.Domain),
 				)
 			}
 			testEnvironment.EnsureK8sResourceCreated(t, eventingResource)
