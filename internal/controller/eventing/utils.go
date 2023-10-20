@@ -2,11 +2,11 @@ package eventing
 
 import (
 	"context"
+	"fmt"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/mitchellh/hashstructure/v2"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -44,9 +44,8 @@ func (r *Reconciler) getNATSBackendConfigHash(defaultSubscriptionConfig env.Defa
 	return int64(hash), nil
 }
 
-func (r *Reconciler) getEventMeshBackendConfigHash(eventMeshSecret, eventTypePrefix string) (int64, error) {
-	eventMeshBackendConfig := eventMeshSecret + eventTypePrefix
-
+func getEventMeshBackendConfigHash(eventMeshSecret, eventTypePrefix, domain string) (int64, error) {
+	eventMeshBackendConfig := fmt.Sprintf("[%s][%s][%s]", eventMeshSecret, eventTypePrefix, domain)
 	hash, err := hashstructure.Hash(eventMeshBackendConfig, hashstructure.FormatV2, nil)
 	if err != nil {
 		return 0, err

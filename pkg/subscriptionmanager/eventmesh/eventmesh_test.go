@@ -28,10 +28,6 @@ import (
 	controllertesting "github.com/kyma-project/eventing-manager/testing"
 )
 
-const (
-	domain = "domain.com"
-)
-
 type bebSubMgrMock struct {
 	Client           dynamic.Interface
 	eventMeshBackend backendeventmesh.Backend
@@ -78,8 +74,6 @@ func Test_cleanupEventMesh(t *testing.T) {
 		ClientSecret:             "client-secret",
 		TokenEndpoint:            bebMock.TokenURL,
 		WebhookActivationTimeout: 0,
-		WebhookTokenEndpoint:     "webhook-token-endpoint",
-		Domain:                   domain,
 		EventTypePrefix:          controllertesting.EventTypePrefix,
 		BEBNamespace:             "/default/ns",
 		Qos:                      string(types.QosAtLeastOnce),

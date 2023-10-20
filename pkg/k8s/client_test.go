@@ -703,3 +703,54 @@ func TestGetSubscriptions(t *testing.T) {
 		})
 	}
 }
+
+func Test_GetConfigMap(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name              string
+		givenName         string
+		givenNamespace    string
+		wantNotFoundError bool
+	}{
+		{
+			name:              "should return configmap",
+			givenName:         "test-name",
+			givenNamespace:    "test-namespace",
+			wantNotFoundError: false,
+		},
+		{
+			name:              "should not return configmap",
+			givenName:         "non-existing",
+			givenNamespace:    "non-existing",
+			wantNotFoundError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// given
+			ctx := context.Background()
+			kubeClient := &KubeClient{client: fake.NewClientBuilder().Build()}
+			givenCM := testutils.NewConfigMap(tc.givenName, tc.givenNamespace)
+			if !tc.wantNotFoundError {
+				require.NoError(t, kubeClient.client.Create(ctx, givenCM))
+			}
+
+			// when
+			gotCM, err := kubeClient.GetConfigMap(context.Background(), tc.givenName, tc.givenNamespace)
+
+			// then
+			if tc.wantNotFoundError {
+				require.Error(t, err)
+				require.True(t, apierrors.IsNotFound(err))
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, givenCM.GetName(), gotCM.Name)
+			}
+		})
+	}
+}

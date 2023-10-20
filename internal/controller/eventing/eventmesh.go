@@ -5,20 +5,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-project/eventing-manager/pkg/env"
 	"os"
 
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-
-	subscriptionmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
-
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	subscriptionmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -59,13 +57,31 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 		return fmt.Errorf("failed to setup environment variables for EventMesh controller: %v", err)
 	}
 
+	// Read the cluster domain from the Eventing CR, or
+	// read it from the configmap managed by gardener
+	domain := eventing.Spec.Backend.Config.Domain
+	if utils.IsEmpty(domain) {
+		r.namedLogger().Infof(
+			`Domain is not configured in the Eventing CR, reading it from the ConfigMap %s/%s`,
+			shootInfoConfigMapNamespace, shootInfoConfigMapName,
+		)
+		domain, err = r.readDomainFromConfigMap(ctx)
+		if err != nil || utils.IsEmpty(domain) {
+			return domainMissingError(err)
+		}
+	}
+	r.namedLogger().Infof(`Domain is %s`, domain)
+
 	// get the subscription config
 	defaultSubsConfig := r.getDefaultSubscriptionConfig()
 	// get the subManager parameters
 	eventMeshSubMgrParams := r.getEventMeshSubManagerParams()
 	// get the hash of current config
-	specHash, err := r.getEventMeshBackendConfigHash(eventing.Spec.Backend.Config.EventMeshSecret,
-		eventing.Spec.Backend.Config.EventTypePrefix)
+	specHash, err := getEventMeshBackendConfigHash(
+		eventing.Spec.Backend.Config.EventMeshSecret,
+		eventing.Spec.Backend.Config.EventTypePrefix,
+		domain,
+	)
 	if err != nil {
 		return err
 	}
@@ -80,7 +96,7 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 
 	if r.eventMeshSubManager == nil {
 		// create instance of EventMesh subscription manager
-		eventMeshSubManager, err := r.subManagerFactory.NewEventMeshManager()
+		eventMeshSubManager, err := r.subManagerFactory.NewEventMeshManager(domain)
 		if err != nil {
 			return err
 		}

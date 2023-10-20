@@ -273,6 +273,62 @@ func (_c *Client_GetCRD_Call) RunAndReturn(run func(context.Context, string) (*v
 	return _c
 }
 
+// GetConfigMap provides a mock function with given fields: ctx, name, namespace
+func (_m *Client) GetConfigMap(ctx context.Context, name string, namespace string) (*corev1.ConfigMap, error) {
+	ret := _m.Called(ctx, name, namespace)
+
+	var r0 *corev1.ConfigMap
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*corev1.ConfigMap, error)); ok {
+		return rf(ctx, name, namespace)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *corev1.ConfigMap); ok {
+		r0 = rf(ctx, name, namespace)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*corev1.ConfigMap)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, name, namespace)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_GetConfigMap_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetConfigMap'
+type Client_GetConfigMap_Call struct {
+	*mock.Call
+}
+
+// GetConfigMap is a helper method to define mock.On call
+//   - ctx context.Context
+//   - name string
+//   - namespace string
+func (_e *Client_Expecter) GetConfigMap(ctx interface{}, name interface{}, namespace interface{}) *Client_GetConfigMap_Call {
+	return &Client_GetConfigMap_Call{Call: _e.mock.On("GetConfigMap", ctx, name, namespace)}
+}
+
+func (_c *Client_GetConfigMap_Call) Run(run func(ctx context.Context, name string, namespace string)) *Client_GetConfigMap_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Client_GetConfigMap_Call) Return(_a0 *corev1.ConfigMap, _a1 error) *Client_GetConfigMap_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_GetConfigMap_Call) RunAndReturn(run func(context.Context, string, string) (*corev1.ConfigMap, error)) *Client_GetConfigMap_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetDeployment provides a mock function with given fields: _a0, _a1, _a2
 func (_m *Client) GetDeployment(_a0 context.Context, _a1 string, _a2 string) (*appsv1.Deployment, error) {
 	ret := _m.Called(_a0, _a1, _a2)

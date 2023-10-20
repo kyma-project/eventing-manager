@@ -92,6 +92,12 @@ spec:
                       natsStreamStorageType: File
                     description: Config defines configuration for eventing backend.
                     properties:
+                      domain:
+                        description: Domain defines the cluster public domain used
+                          to configure the EventMesh Subscriptions and their corresponding
+                          ApiRules.
+                        pattern: ^(?:([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*)?$
+                        type: string
                       eventMeshSecret:
                         description: EventMeshSecret defines the namespaced name of
                           K8s Secret containing EventMesh credentials. The format
