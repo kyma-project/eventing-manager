@@ -15,9 +15,7 @@ import (
 
 func Test_readDomainFromConfigMap(t *testing.T) {
 	// given
-	var (
-		ctx = context.TODO()
-	)
+	ctx := context.TODO()
 
 	cm := &corev1.ConfigMap{
 		Data: map[string]string{
