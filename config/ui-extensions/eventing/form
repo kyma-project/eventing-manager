@@ -1,2 +1,24 @@
 - path: spec.backend.type
-  name: Backend type
+  name: Backend Type
+  widget: FormGroup
+  defaultExpanded: true
+  enum:
+    - NATS
+    - EventMesh
+  description: Choose a backend type from the dropdown.
+
+- path: spec.backend.config.eventMeshSecret
+  widget: Resource
+  inputInfo: Only required if backend type is EventMesh.
+  resource:
+    scope: cluster
+    kind: Secret
+    version: v1
+
+- path: spec.publisher.replicas
+  name: Publisher Replicas
+  widget: FormGroup
+  defaultExpanded: true
+  children:
+    - path: max
+    - path: min
