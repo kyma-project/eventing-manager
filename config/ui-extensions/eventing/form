@@ -8,12 +8,16 @@
   description: Choose a backend type from the dropdown.
 
 - path: spec.backend.config.eventMeshSecret
-  widget: Resource
-  inputInfo: Only required if backend type is EventMesh.
+  widget: ResourceRef
   resource:
-    scope: cluster
     kind: Secret
     version: v1
+  toInternal: |
+    (
+      $values := $split($, '/');
+      { 'namespace': $values[0], 'name': $values[1] }
+    )
+  toExternal: namespace & '/' & name
 
 - path: spec.publisher.replicas
   name: Publisher Replicas
