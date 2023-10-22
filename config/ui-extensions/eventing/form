@@ -9,6 +9,7 @@
 
 - path: spec.backend.config.eventMeshSecret
   widget: ResourceRef
+  defaultExpanded: false
   resource:
     kind: Secret
     version: v1
@@ -22,7 +23,7 @@
 - path: spec.publisher.replicas
   name: Publisher Replicas
   widget: FormGroup
-  defaultExpanded: true
+  defaultExpanded: false
   children:
     - path: max
     - path: min
