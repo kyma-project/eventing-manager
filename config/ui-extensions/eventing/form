@@ -8,6 +8,7 @@
   description: Choose a backend type from the dropdown.
 
 - path: spec.backend.config.eventMeshSecret
+  visibility: "spec.backend.type = 'EventMesh'"
   widget: ResourceRef
   defaultExpanded: false
   resource:
