@@ -3,6 +3,7 @@ resources:
 - cronjob.yaml
 - webhook_configs.yaml
 - service.yaml
+- secret.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
