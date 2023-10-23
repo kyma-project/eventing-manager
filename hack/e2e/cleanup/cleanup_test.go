@@ -79,45 +79,43 @@ func Test_NoPublisherServiceAccountExists(t *testing.T) {
 	require.NoError(t, err)
 }
 
-//// Enable this test once https://github.com/kyma-project/eventing-manager/issues/34 is done!
-//// Test_NoPublisherClusterRoleExists tests if the publisher-proxy ClusterRole was deleted.
-//func Test_NoPublisherClusterRoleExists(t *testing.T) {
-//	t.Parallel()
-//	ctx := context.TODO()
-//	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
-//	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
-//		_, getErr := testEnvironment.K8sClientset.RbacV1().ClusterRoles().Get(ctx,
-//			eventing.GetPublisherClusterRoleName(*eventingCR), metav1.GetOptions{})
-//		if getErr == nil {
-//			return errors.New("PublisherClusterRole should have been deleted")
-//		}
-//		if !k8serrors.IsNotFound(getErr) {
-//			return getErr
-//		}
-//		return nil
-//	})
-//	require.NoError(t, err)
-//}
-//
-//// Enable this test once https://github.com/kyma-project/eventing-manager/issues/34 is done!
-//// Test_NoPublisherClusterRoleBindingExists tests if the publisher-proxy ClusterRoleBinding was deleted.
-//func Test_NoPublisherClusterRoleBindingExists(t *testing.T) {
-//	t.Parallel()
-//	ctx := context.TODO()
-//	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
-//	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
-//		_, getErr := testEnvironment.K8sClientset.RbacV1().ClusterRoleBindings().Get(ctx,
-//			eventing.GetPublisherClusterRoleBindingName(*eventingCR), metav1.GetOptions{})
-//		if getErr == nil {
-//			return errors.New("PublisherClusterRoleBinding should have been deleted")
-//		}
-//		if !k8serrors.IsNotFound(getErr) {
-//			return getErr
-//		}
-//		return nil
-//	})
-//	require.NoError(t, err)
-//}
+// Test_NoPublisherClusterRoleExists tests if the publisher-proxy ClusterRole was deleted.
+func Test_NoPublisherClusterRoleExists(t *testing.T) {
+	t.Parallel()
+	ctx := context.TODO()
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.RbacV1().ClusterRoles().Get(ctx,
+			eventing.GetPublisherClusterRoleName(*eventingCR), metav1.GetOptions{})
+		if getErr == nil {
+			return errors.New("PublisherClusterRole should have been deleted")
+		}
+		if !k8serrors.IsNotFound(getErr) {
+			return getErr
+		}
+		return nil
+	})
+	require.NoError(t, err)
+}
+
+// Test_NoPublisherClusterRoleBindingExists tests if the publisher-proxy ClusterRoleBinding was deleted.
+func Test_NoPublisherClusterRoleBindingExists(t *testing.T) {
+	t.Parallel()
+	ctx := context.TODO()
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.RbacV1().ClusterRoleBindings().Get(ctx,
+			eventing.GetPublisherClusterRoleBindingName(*eventingCR), metav1.GetOptions{})
+		if getErr == nil {
+			return errors.New("PublisherClusterRoleBinding should have been deleted")
+		}
+		if !k8serrors.IsNotFound(getErr) {
+			return getErr
+		}
+		return nil
+	})
+	require.NoError(t, err)
+}
 
 // Test_NoPublisherServicesExists tests if the publisher-proxy Services was deleted.
 func Test_NoPublisherServicesExists(t *testing.T) {
