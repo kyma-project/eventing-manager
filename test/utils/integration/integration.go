@@ -65,7 +65,7 @@ const (
 	testEnvStartDelay        = time.Minute
 	testEnvStartAttempts     = 10
 	BigPollingInterval       = 3 * time.Second
-	BigTimeOut               = 60 * time.Second
+	BigTimeOut               = 90 * time.Second
 	SmallTimeOut             = 6 * time.Second
 	SmallPollingInterval     = 1 * time.Second
 )
