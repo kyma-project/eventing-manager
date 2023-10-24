@@ -1,5 +1,5 @@
 configMapGenerator:
-  - name: operator.kyma-project.io
+  - name: eventings.operator.kyma-project.io
     namespace: kube-public
     files:
       - general
