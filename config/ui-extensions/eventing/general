@@ -1,0 +1,15 @@
+resource:
+  kind: Eventing
+  group: operator.kyma-project.io
+  version: v1alpha1
+urlPath: eventings
+category: Kyma
+name: Eventing
+scope: namespace
+features:
+  actions:
+    disableCreate: false
+    disableDelete: false
+description: >-
+  {{[Eventing CR](https://github.com/kyma-project/eventing-manager/blob/main/config/samples/default.yaml)}}
+  specifies eventing module.

@@ -1,0 +1,30 @@
+- path: spec.backend.type
+  name: Backend Type
+  widget: FormGroup
+  defaultExpanded: true
+  enum:
+    - NATS
+    - EventMesh
+  description: Choose a backend type from the dropdown.
+
+- path: spec.backend.config.eventMeshSecret
+  visibility: "spec.backend.type = 'EventMesh'"
+  widget: ResourceRef
+  defaultExpanded: false
+  resource:
+    kind: Secret
+    version: v1
+  toInternal: |
+    (
+      $values := $split($, '/');
+      { 'namespace': $values[0], 'name': $values[1] }
+    )
+  toExternal: namespace & '/' & name
+
+- path: spec.publisher.replicas
+  name: Publisher Replicas
+  widget: FormGroup
+  defaultExpanded: false
+  children:
+    - path: max
+    - path: min

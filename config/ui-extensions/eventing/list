@@ -1,0 +1,6 @@
+- name: State
+  source: status.state
+  widget: Badge
+  highlights:
+    positive:
+      - 'Ready'

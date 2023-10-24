@@ -1,0 +1,14 @@
+configMapGenerator:
+  - name: eventings.operator.kyma-project.io
+    namespace: kube-public
+    files:
+      - general
+      - form
+      - list
+      - details
+    options:
+      disableNameSuffixHash: true
+      labels:
+        app.kubernetes.io/name: eventings.operator.kyma-project.io
+        busola.io/extension: resource
+        busola.io/extension-version: "0.5"
