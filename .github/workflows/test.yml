@@ -10,11 +10,13 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**.md'
+      - 'sec-scanners-config.yaml'
   pull_request:
     branches: [ "main" ]
     paths-ignore:
       - 'docs/**'
       - '**.md'
+      - 'sec-scanners-config.yaml'
 
 jobs:
   unit:
