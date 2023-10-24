@@ -10,19 +10,17 @@ on:
     paths:
       - 'api/**'
       - 'config/crd/**'
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'sec-scanners-config.yaml'
+      - '!docs/**'
+      - '!**.md'
+      - '!sec-scanners-config.yaml'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'api/**'
       - 'config/crd/**'
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'sec-scanners-config.yaml'
+      - '!docs/**'
+      - '!**.md'
+      - '!sec-scanners-config.yaml'
 
 jobs:
   crd:
