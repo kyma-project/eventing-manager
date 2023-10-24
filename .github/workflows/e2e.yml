@@ -11,6 +11,7 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**.md'
+      - 'sec-scanners-config.yaml'
 
 jobs:
   nats:

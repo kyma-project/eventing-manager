@@ -7,3 +7,4 @@ whitesource:
   exclude:
     - "**/test/**"
     - "**/*_test.go"
+    - "/hack/**"
