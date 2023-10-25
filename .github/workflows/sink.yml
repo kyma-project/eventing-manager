@@ -13,22 +13,14 @@ on:
     - main
     tags: [ '*.*.*' ]
     paths:
-    - 'hack/e2e/sink/**'
-    - '.github/workflows/sink.yml'
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'sec-scanners-config.yaml'
+      - 'hack/e2e/sink/**'
+      - '.github/workflows/sink.yml'
   pull_request:
     branches:
     - main
     paths:
-    - 'hack/e2e/sink/**'
-    - '.github/workflows/sink.yml'
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'sec-scanners-config.yaml'
+      - 'hack/e2e/sink/**'
+      - '.github/workflows/sink.yml'
 
 jobs:
   build:
