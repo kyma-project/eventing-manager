@@ -15,18 +15,12 @@ on:
     paths:
       - 'hack/e2e/sink/**'
       - '.github/workflows/sink.yml'
-      - '!docs/**'
-      - '!**.md'
-      - '!sec-scanners-config.yaml'
   pull_request:
     branches:
     - main
     paths:
       - 'hack/e2e/sink/**'
       - '.github/workflows/sink.yml'
-      - '!docs/**'
-      - '!**.md'
-      - '!sec-scanners-config.yaml'
 
 jobs:
   build:

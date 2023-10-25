@@ -10,17 +10,11 @@ on:
     paths:
       - 'api/**'
       - 'config/crd/**'
-      - '!docs/**'
-      - '!**.md'
-      - '!sec-scanners-config.yaml'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'api/**'
       - 'config/crd/**'
-      - '!docs/**'
-      - '!**.md'
-      - '!sec-scanners-config.yaml'
 
 jobs:
   crd:
