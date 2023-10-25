@@ -87,7 +87,7 @@ spec:
           - name: PUBLISHER_LIMITS_MEMORY
             value: 128Mi
           - name: PUBLISHER_IMAGE
-            value: "europe-docker.pkg.dev/kyma-project/prod/event-publisher-proxy:v20231019-57b79ed0"
+            value: "europe-docker.pkg.dev/kyma-project/prod/event-publisher-proxy:v20231018-69698634"
           - name: PUBLISHER_IMAGE_PULL_POLICY
             value: "IfNotPresent"
           - name: PUBLISHER_REPLICAS
