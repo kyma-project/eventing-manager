@@ -46,9 +46,9 @@ type Client interface {
 		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
 	GetCRD(context.Context, string) (*apiextensionsv1.CustomResourceDefinition, error)
 	ApplicationCRDExists(context.Context) (bool, error)
+	APIRuleCRDExists(context.Context) (bool, error)
 	GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error)
 	GetConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error)
-	APIRuleCRDExists(context.Context) (bool, error)
 }
 
 type KubeClient struct {

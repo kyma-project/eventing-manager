@@ -516,7 +516,7 @@ func (r *Reconciler) handlePublisherProxy(
 
 func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
 	// check if APIRule CRD is installed.
-	isAPIRuleCRDEnabled, err := r.kubeClient.ApplicationCRDExists(ctx)
+	isAPIRuleCRDEnabled, err := r.kubeClient.APIRuleCRDExists(ctx)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	} else if !isAPIRuleCRDEnabled {
