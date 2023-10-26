@@ -787,7 +787,7 @@ func Test_APIRuleCRDExists(t *testing.T) {
 			}
 
 			fakeClientSet := apiclientsetfake.NewSimpleClientset(objs...)
-			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager)
+			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
 			gotResult, err := kubeClient.APIRuleCRDExists(context.Background())

@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 
 	"github.com/kyma-project/eventing-manager/pkg/watcher"
 
@@ -520,8 +519,8 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *ev
 	isAPIRuleCRDEnabled, err := r.kubeClient.ApplicationCRDExists(ctx)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
-	} else if isAPIRuleCRDEnabled == false {
-		apiRuleMissingErr := errors.Errorf("API-Gateway modules is needed for EventMesh backend. APIRules CRD is not installed.")
+	} else if !isAPIRuleCRDEnabled {
+		apiRuleMissingErr := errors.New("API-Gateway modules is needed for EventMesh backend. APIRules CRD is not installed")
 		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, apiRuleMissingErr, log)
 	}
 

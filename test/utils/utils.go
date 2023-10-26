@@ -3,10 +3,11 @@ package utils
 import (
 	"errors"
 	"fmt"
-	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"math/rand"
 	"reflect"
 	"time"
+
+	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
