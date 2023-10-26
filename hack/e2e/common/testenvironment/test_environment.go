@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
@@ -264,7 +264,7 @@ func (te *TestEnvironment) CreateSinkDeployment(name, namespace, image string) e
 		return te.K8sClient.Patch(te.Context, fixtures.NewSinkDeployment(name, namespace, image),
 			client.Apply,
 			&client.PatchOptions{
-				Force:        pointer.Bool(true),
+				Force:        ptr.To(true),
 				FieldManager: fixtures.FieldManager,
 			})
 	})
@@ -275,7 +275,7 @@ func (te *TestEnvironment) CreateSinkService(name, namespace string) error {
 		return te.K8sClient.Patch(te.Context, fixtures.NewSinkService(name, namespace),
 			client.Apply,
 			&client.PatchOptions{
-				Force:        pointer.Bool(true),
+				Force:        ptr.To(true),
 				FieldManager: fixtures.FieldManager,
 			})
 	})

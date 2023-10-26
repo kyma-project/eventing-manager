@@ -18,8 +18,13 @@ package eventing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/pkg/errors"
+
+	"github.com/kyma-project/eventing-manager/pkg/watcher"
+
+	"k8s.io/client-go/dynamic"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/options"
@@ -34,6 +39,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -61,6 +67,8 @@ const (
 	NamespacePrefix                       = "/"
 	EventMeshPublishEndpointForSubscriber = "/sap/ems/v1"
 	EventMeshPublishEndpointForPublisher  = "/sap/ems/v1/events"
+
+	SubscriptionExistsErrMessage = "cannot delete the eventing module as subscription exists"
 )
 
 // Reconciler reconciles an Eventing object
@@ -74,6 +82,7 @@ type Reconciler struct {
 	controller                    controller.Controller
 	eventingManager               eventing.Manager
 	kubeClient                    k8s.Client
+	dynamicClient                 dynamic.Interface
 	scheme                        *runtime.Scheme
 	recorder                      record.EventRecorder
 	subManagerFactory             subscriptionmanager.ManagerFactory
@@ -86,11 +95,14 @@ type Reconciler struct {
 	backendConfig                 env.BackendConfig
 	allowedEventingCR             *eventingv1alpha1.Eventing
 	clusterScopedResourcesWatched bool
+	natsCRWatchStarted            bool
+	natsWatchers                  map[string]watcher.Watcher
 }
 
 func NewReconciler(
 	client client.Client,
 	kubeClient k8s.Client,
+	dynamicClient dynamic.Interface,
 	scheme *runtime.Scheme,
 	logger *logger.Logger,
 	recorder record.EventRecorder,
@@ -106,6 +118,7 @@ func NewReconciler(
 		ctrlManager:             nil, // ctrlManager will be initialized in `SetupWithManager`.
 		eventingManager:         manager,
 		kubeClient:              kubeClient,
+		dynamicClient:           dynamicClient,
 		scheme:                  scheme,
 		recorder:                recorder,
 		backendConfig:           backendConfig,
@@ -115,6 +128,7 @@ func NewReconciler(
 		isNATSSubManagerStarted: false,
 		natsConfigHandler:       NewNatsConfigHandler(kubeClient, opts),
 		allowedEventingCR:       allowedEventingCR,
+		natsWatchers:            make(map[string]watcher.Watcher),
 	}
 }
 
@@ -247,6 +261,43 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 	return err
 }
 
+func (r *Reconciler) startNATSCRWatch(eventing *eventingv1alpha1.Eventing) error {
+	natsWatcher, found := r.natsWatchers[eventing.Namespace]
+	if found && natsWatcher.IsStarted() {
+		return nil
+	}
+
+	if !found {
+		natsWatcher = watcher.NewResourceWatcher(r.dynamicClient, k8s.NatsGVK, eventing.Namespace)
+		r.natsWatchers[eventing.Namespace] = natsWatcher
+	}
+
+	if err := r.controller.Watch(&source.Channel{Source: natsWatcher.GetEventsChannel()},
+		handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
+			return []reconcile.Request{
+				{NamespacedName: types.NamespacedName{
+					Namespace: eventing.Namespace,
+					Name:      eventing.Name,
+				}},
+			}
+		}),
+		predicate.ResourceVersionChangedPredicate{},
+	); err != nil {
+		return err
+	}
+	natsWatcher.Start()
+
+	return nil
+}
+
+func (r *Reconciler) stopNATSCRWatch(eventing *eventingv1alpha1.Eventing) {
+	natsWatcher, found := r.natsWatchers[eventing.Namespace]
+	if found {
+		natsWatcher.Stop()
+		delete(r.natsWatchers, eventing.Namespace)
+	}
+}
+
 // loggerWithEventing returns a logger with the given Eventing CR details.
 func (r *Reconciler) loggerWithEventing(eventing *eventingv1alpha1.Eventing) *zap.SugaredLogger {
 	return r.namedLogger().With(
@@ -264,6 +315,18 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 	if !r.containsFinalizer(eventing) {
 		log.Debug("skipped reconciliation for deletion as finalizer is not set.")
 		return ctrl.Result{}, nil
+	}
+
+	// check if subscription resources exist
+	exists, err := r.eventingManager.SubscriptionExists(ctx)
+	if err != nil {
+		eventing.Status.SetStateError()
+		return ctrl.Result{}, r.syncStatusWithDeletionErr(ctx, eventing, err, log)
+	}
+	if exists {
+		eventing.Status.SetStateWarning()
+		return ctrl.Result{Requeue: true}, r.syncStatusWithDeletionErr(ctx, eventing,
+			errors.New(SubscriptionExistsErrMessage), log)
 	}
 
 	log.Info("handling Eventing deletion...")
@@ -285,7 +348,7 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 	// delete cluster-scoped resources, such as clusterrole and clusterrolebinding.
 	if err := r.deleteClusterScopedResources(ctx, eventing); err != nil {
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErrWithReason(ctx,
-			eventingv1alpha1.ConditionReasonDeletedFailed, eventing, err, log)
+			eventingv1alpha1.ConditionReasonDeletionError, eventing, err, log)
 	}
 	eventing.Status.SetPublisherProxyConditionToFalse(
 		eventingv1alpha1.ConditionReasonDeleted,
@@ -364,6 +427,7 @@ func (r *Reconciler) handleBackendSwitching(
 		if err := r.stopNATSSubManager(true, log); err != nil {
 			return err
 		}
+		r.stopNATSCRWatch(eventing)
 	} else if eventing.Status.ActiveBackend == eventingv1alpha1.EventMeshBackendType {
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
 			return err
@@ -377,8 +441,22 @@ func (r *Reconciler) handleBackendSwitching(
 }
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+	// retrieves the NATS CRD
+	_, err := r.kubeClient.GetCRD(ctx, k8s.NatsGVK.GroupResource().String())
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			err = fmt.Errorf("NATS module has to be installed: %v", err)
+			return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+		}
+		return ctrl.Result{}, err
+	}
+
+	if err = r.startNATSCRWatch(eventing); err != nil {
+		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+	}
+
 	// check nats CR if it exists and is in natsAvailable state
-	err := r.checkNATSAvailability(ctx, eventing)
+	err = r.checkNATSAvailability(ctx, eventing)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
@@ -467,6 +545,10 @@ func (r *Reconciler) GetEventMeshSubManager() manager.Manager {
 
 func (r *Reconciler) SetEventMeshSubManager(eventMeshSubManager manager.Manager) {
 	r.eventMeshSubManager = eventMeshSubManager
+}
+
+func (r *Reconciler) SetKubeClient(kubeClient k8s.Client) {
+	r.kubeClient = kubeClient
 }
 
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {

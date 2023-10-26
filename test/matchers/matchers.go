@@ -26,6 +26,13 @@ func HaveStatusProcessing() gomegatypes.GomegaMatcher {
 		}, gomega.Equal(v1alpha1.StateProcessing))
 }
 
+func HaveStatusWarning() gomegatypes.GomegaMatcher {
+	return gomega.WithTransform(
+		func(n *v1alpha1.Eventing) string {
+			return n.Status.State
+		}, gomega.Equal(v1alpha1.StateWarning))
+}
+
 func HaveStatusError() gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(
 		func(n *v1alpha1.Eventing) string {
@@ -80,7 +87,7 @@ func HavePublisherProxyConditionForbiddenWithMsg(msg string) gomegatypes.GomegaM
 	})
 }
 
-func HaveNATSAvailableConditionAvailable() gomegatypes.GomegaMatcher {
+func HaveNATSAvailableCondition() gomegatypes.GomegaMatcher {
 	return HaveCondition(metav1.Condition{
 		Type:    string(v1alpha1.ConditionNATSAvailable),
 		Status:  metav1.ConditionTrue,
@@ -89,13 +96,17 @@ func HaveNATSAvailableConditionAvailable() gomegatypes.GomegaMatcher {
 	})
 }
 
-func HaveNATSAvailableConditionNotAvailable() gomegatypes.GomegaMatcher {
+func HaveNATSNotAvailableConditionWith(message string) gomegatypes.GomegaMatcher {
 	return HaveCondition(metav1.Condition{
 		Type:    string(v1alpha1.ConditionNATSAvailable),
 		Status:  metav1.ConditionFalse,
 		Reason:  string(v1alpha1.ConditionReasonNATSNotAvailable),
-		Message: eventing.NatsServerNotAvailableMsg,
+		Message: message,
 	})
+}
+
+func HaveNATSNotAvailableCondition() gomegatypes.GomegaMatcher {
+	return HaveNATSNotAvailableConditionWith(eventing.NatsServerNotAvailableMsg)
 }
 
 func HaveEventMeshSubManagerReadyCondition() gomegatypes.GomegaMatcher {
@@ -116,11 +127,11 @@ func HaveEventMeshSubManagerNotReadyCondition(message string) gomegatypes.Gomega
 	})
 }
 
-func HaveEventMeshSubManagerStopFailedCondition(message string) gomegatypes.GomegaMatcher {
+func HaveDeletionErrorCondition(message string) gomegatypes.GomegaMatcher {
 	return HaveCondition(metav1.Condition{
-		Type:    string(v1alpha1.ConditionSubscriptionManagerReady),
+		Type:    string(v1alpha1.ConditionDeleted),
 		Status:  metav1.ConditionFalse,
-		Reason:  string(v1alpha1.ConditionReasonEventMeshSubManagerStopFailed),
+		Reason:  string(v1alpha1.ConditionReasonDeletionError),
 		Message: message,
 	})
 }

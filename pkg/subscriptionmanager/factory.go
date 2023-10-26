@@ -20,7 +20,7 @@ var _ ManagerFactory = &Factory{}
 //go:generate mockery --name=ManagerFactory --outpkg=mocks --case=underscore
 type ManagerFactory interface {
 	NewJetStreamManager(v1alpha1.Eventing, env.NATSConfig) manager.Manager
-	NewEventMeshManager() (manager.Manager, error)
+	NewEventMeshManager(domain string) (manager.Manager, error)
 }
 
 type Factory struct {
@@ -51,6 +51,8 @@ func (f Factory) NewJetStreamManager(eventing v1alpha1.Eventing, natsConfig env.
 		f.metricsAddress, f.metricsCollector, f.logger)
 }
 
-func (f Factory) NewEventMeshManager() (manager.Manager, error) {
-	return eventmesh.NewSubscriptionManager(f.k8sRestCfg, f.metricsAddress, f.resyncPeriod, f.logger, f.metricsCollector), nil
+func (f Factory) NewEventMeshManager(domain string) (manager.Manager, error) {
+	return eventmesh.NewSubscriptionManager(
+		f.k8sRestCfg, f.metricsAddress, f.resyncPeriod, f.logger, f.metricsCollector, domain,
+	), nil
 }

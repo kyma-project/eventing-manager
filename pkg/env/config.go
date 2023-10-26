@@ -42,7 +42,6 @@ type Config struct {
 
 	// Following details are for BEB to communicate to Kyma
 	WebhookActivationTimeout time.Duration `envconfig:"WEBHOOK_ACTIVATION_TIMEOUT" default:"60s"`
-	WebhookTokenEndpoint     string        `envconfig:"WEBHOOK_TOKEN_ENDPOINT" required:"true"`
 
 	// Default protocol setting for BEB
 	ExemptHandshake bool   `envconfig:"EXEMPT_HANDSHAKE" default:"true"`
@@ -51,9 +50,6 @@ type Config struct {
 
 	// Default namespace for BEB
 	BEBNamespace string `envconfig:"BEB_NAMESPACE" default:"ns"`
-
-	// Domain holds the Kyma domain
-	Domain string `envconfig:"DOMAIN" required:"true"`
 
 	// EventTypePrefix prefix for the EventType
 	// note: eventType format is <prefix>.<application>.<event>.<version>

@@ -75,15 +75,17 @@ func Test_Switching(t *testing.T) {
 				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			givenSwitchedEventing: utils.NewEventingCR(
 				utils.WithEventMeshBackend("test-secret-name2"),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			wantPreSwitchMatches: gomega.And(
 				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSAvailableCondition(),
 				matchers.HavePublisherProxyReadyConditionDeployed(),
 				matchers.HaveFinalizer(),
 			),
@@ -104,12 +106,14 @@ func Test_Switching(t *testing.T) {
 				utils.WithEventMeshBackend("test-secret-name2"),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			givenSwitchedEventing: utils.NewEventingCR(
 				utils.WithEventingCRMinimal(),
 				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			wantPreSwitchMatches: gomega.And(
 				matchers.HaveStatusReady(),
@@ -119,7 +123,7 @@ func Test_Switching(t *testing.T) {
 			),
 			wantPostSwitchMatches: gomega.And(
 				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSAvailableCondition(),
 				matchers.HavePublisherProxyReadyConditionDeployed(),
 				matchers.HaveFinalizer(),
 			),

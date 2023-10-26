@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -38,9 +37,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -48,6 +48,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
+	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -63,14 +64,10 @@ const (
 	attachControlPlaneOutput = false
 	testEnvStartDelay        = time.Minute
 	testEnvStartAttempts     = 10
-	namespacePrefixLength    = 5
-	TwoMinTimeOut            = 120 * time.Second
 	BigPollingInterval       = 3 * time.Second
-	BigTimeOut               = 60 * time.Second
-	SmallTimeOut             = 5 * time.Second
+	BigTimeOut               = 120 * time.Second
+	SmallTimeOut             = 6 * time.Second
 	SmallPollingInterval     = 1 * time.Second
-	EventTypePrefix          = "prefix"
-	JSStreamName             = "kyma"
 )
 
 // TestEnvironment provides mocked resources for integration tests.
@@ -90,7 +87,7 @@ type TestEnvironment struct {
 
 //nolint:funlen // Used in testing
 func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
-	allowedEventingCR *eventingv1alpha1.Eventing) (*TestEnvironment, error) {
+	allowedEventingCR *v1alpha1.Eventing) (*TestEnvironment, error) {
 	var err error
 	// setup context
 	ctx := context.Background()
@@ -114,13 +111,18 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	}
 
 	// add Eventing CRD scheme
-	err = eventingv1alpha1.AddToScheme(scheme.Scheme)
+	err = v1alpha1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, err
 	}
 
-	// add NATS CRD scheme
 	err = natsv1alpha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, err
+	}
+
+	// add subscription CRD scheme
+	err = eventingv1alpha2.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, err
 	}
@@ -145,24 +147,21 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 
 	ctrlMgr, err := ctrl.NewManager(envTestKubeCfg, ctrl.Options{
 		Scheme:                 scheme.Scheme,
-		Port:                   metricsPort,
-		MetricsBindAddress:     "0", // disable
-		HealthProbeBindAddress: "0", // disable
+		HealthProbeBindAddress: "0",                              // disable
+		Metrics:                server.Options{BindAddress: "0"}, // disable
+		WebhookServer:          webhook.NewServer(webhook.Options{Port: metricsPort}),
 	})
 	if err != nil {
 		return nil, err
 	}
 	recorder := ctrlMgr.GetEventRecorderFor("eventing-manager-test")
 
-	os.Setenv("WEBHOOK_TOKEN_ENDPOINT", "https://oauth2.ev-manager.kymatunas.shoot.canary.k8s-hana.ondemand.com/oauth2/token")
-	os.Setenv("DOMAIN", "my.test.domain")
-
 	// create k8s clients.
 	apiClientSet, err := apiclientset.NewForConfig(ctrlMgr.GetConfig())
 	if err != nil {
 		return nil, err
 	}
-	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), apiClientSet, "eventing-manager")
+	kubeClient := k8s.NewKubeClient(ctrlMgr.GetClient(), apiClientSet, "eventing-manager", dynamicClient)
 
 	// get backend configs.
 	backendConfig := env.GetBackendConfig()
@@ -185,11 +184,13 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	// define subscription manager factory mock.
 	subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
 	subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(jetStreamSubManagerMock)
-	subManagerFactoryMock.On("NewEventMeshManager").Return(eventMeshSubManagerMock, nil)
+	subManagerFactoryMock.On("NewEventMeshManager", mock.Anything).Return(eventMeshSubManagerMock, nil)
 
+	// create a new watcher
 	eventingReconciler := eventingctrl.NewReconciler(
 		k8sClient,
 		kubeClient,
+		dynamicClient,
 		ctrlMgr.GetScheme(),
 		ctrLogger,
 		ctrlMgr.GetEventRecorderFor("eventing-manager-test"),
@@ -354,8 +355,8 @@ func (env TestEnvironment) TearDown() error {
 
 // GetEventingAssert fetches Eventing from k8s and allows making assertions on it.
 func (env TestEnvironment) GetEventingAssert(g *gomega.GomegaWithT,
-	eventing *eventingv1alpha1.Eventing) gomega.AsyncAssertion {
-	return g.Eventually(func() *eventingv1alpha1.Eventing {
+	eventing *v1alpha1.Eventing) gomega.AsyncAssertion {
+	return g.Eventually(func() *v1alpha1.Eventing {
 		gotEventing, err := env.GetEventingFromK8s(eventing.Name, eventing.Namespace)
 		if err != nil {
 			log.Printf("fetch eventing %s/%s failed: %v", eventing.Name, eventing.Namespace, err)
@@ -446,6 +447,13 @@ func (env TestEnvironment) EnsureHPAExists(t *testing.T, name, namespace string)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of HPA")
 }
 
+func (env TestEnvironment) EnsureSubscriptionExists(t *testing.T, name, namespace string) {
+	require.Eventually(t, func() bool {
+		result, err := env.GetSubscriptionFromK8s(name, namespace)
+		return err == nil && result != nil
+	}, SmallTimeOut, SmallPollingInterval, "failed to ensure existence of Subscription")
+}
+
 func (env TestEnvironment) EnsureK8sResourceUpdated(t *testing.T, obj client.Object) {
 	require.NoError(t, env.k8sClient.Update(env.Context, obj))
 }
@@ -533,7 +541,7 @@ func (env TestEnvironment) EnsureHPANotFound(t *testing.T, name, namespace strin
 }
 
 func (env TestEnvironment) EnsureEventingResourceDeletion(t *testing.T, name, namespace string) {
-	eventing := &eventingv1alpha1.Eventing{
+	eventing := &v1alpha1.Eventing{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -547,7 +555,7 @@ func (env TestEnvironment) EnsureEventingResourceDeletion(t *testing.T, name, na
 }
 
 func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T, name, namespace string) {
-	eventing := &eventingv1alpha1.Eventing{
+	eventing := &v1alpha1.Eventing{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -556,15 +564,37 @@ func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T
 	env.EnsureK8sResourceDeleted(t, eventing)
 	require.Eventually(t, func() bool {
 		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: name, Namespace: namespace}, eventing)
-		return err == nil && eventing.Status.State == eventingv1alpha1.StateError
+		return err == nil && eventing.Status.State == v1alpha1.StateError
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure deletion of Eventing")
 }
 
+func (env TestEnvironment) EnsureSubscriptionResourceDeletion(t *testing.T, name, namespace string) {
+	subscription := &eventingv1alpha2.Subscription{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	env.EnsureK8sResourceDeleted(t, subscription)
+	require.Eventually(t, func() bool {
+		_, err := env.GetSubscriptionFromK8s(name, namespace)
+		return err != nil && errors.IsNotFound(err)
+	}, BigTimeOut, BigPollingInterval, "failed to ensure deletion of Subscription")
+}
+
 func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *natsv1alpha1.NATS) {
-	env.makeNatsCrReady(t, nats)
+	env.makeNATSCrReady(t, nats)
 	require.Eventually(t, func() bool {
 		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
 		return err == nil && nats.Status.State == natsv1alpha1.StateReady
+	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
+}
+
+func (env TestEnvironment) EnsureNATSResourceStateError(t *testing.T, nats *natsv1alpha1.NATS) {
+	env.makeNatsCrError(t, nats)
+	require.Eventually(t, func() bool {
+		err := env.k8sClient.Get(env.Context, types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
+		return err == nil && nats.Status.State == natsv1alpha1.StateError
 	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
 }
 
@@ -795,6 +825,12 @@ func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, eventing *
 	env.EnsureK8sResourceCreated(t, secret)
 }
 
+func (env TestEnvironment) EnsureEventMeshSecretDeleted(t *testing.T, eventing *v1alpha1.Eventing) {
+	subarr := strings.Split(eventing.Spec.Backend.Config.EventMeshSecret, "/")
+	secret := evnttestutils.NewEventMeshSecret(subarr[1], subarr[0])
+	env.EnsureK8sResourceDeleted(t, secret)
+}
+
 func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
 	secret := evnttestutils.NewOAuthSecret("eventing-webhook-auth", eventing.Namespace)
 	env.EnsureK8sResourceCreated(t, secret)
@@ -850,12 +886,34 @@ func (env TestEnvironment) UpdateEventingStatus(eventing *v1alpha1.Eventing) err
 }
 
 func (env TestEnvironment) UpdateNATSStatus(nats *natsv1alpha1.NATS) error {
-	return env.k8sClient.Status().Update(env.Context, nats)
+	baseNats := &natsv1alpha1.NATS{}
+	if err := env.k8sClient.Get(env.Context,
+		types.NamespacedName{
+			Namespace: nats.Namespace,
+			Name:      nats.Name,
+		}, baseNats); err != nil {
+		return err
+	}
+	baseNats.Status = nats.Status
+	return env.k8sClient.Status().Update(env.Context, baseNats)
 }
 
-func (env TestEnvironment) makeNatsCrReady(t *testing.T, nats *natsv1alpha1.NATS) {
+func (env TestEnvironment) makeNATSCrReady(t *testing.T, nats *natsv1alpha1.NATS) {
 	require.Eventually(t, func() bool {
 		nats.Status.State = natsv1alpha1.StateReady
+
+		err := env.UpdateNATSStatus(nats)
+		if err != nil {
+			env.Logger.WithContext().Errorw("failed to update NATS CR status", err)
+			return false
+		}
+		return true
+	}, BigTimeOut, BigPollingInterval, "failed to update status of NATS CR")
+}
+
+func (env TestEnvironment) makeNatsCrError(t *testing.T, nats *natsv1alpha1.NATS) {
+	require.Eventually(t, func() bool {
+		nats.Status.State = natsv1alpha1.StateError
 
 		err := env.UpdateNATSStatus(nats)
 		if err != nil {
@@ -918,8 +976,8 @@ func getTestBackendConfig() env.BackendConfig {
 	}
 }
 
-func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*eventingv1alpha1.Eventing, error) {
-	eventing := &eventingv1alpha1.Eventing{}
+func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*v1alpha1.Eventing, error) {
+	eventing := &v1alpha1.Eventing{}
 	err := env.k8sClient.Get(env.Context, types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -928,7 +986,7 @@ func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*eventing
 }
 
 func (env TestEnvironment) DeleteEventingFromK8s(name, namespace string) error {
-	cr := &eventingv1alpha1.Eventing{
+	cr := &v1alpha1.Eventing{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -1020,6 +1078,18 @@ func (env TestEnvironment) GetHPAFromK8s(name, namespace string) (*autoscalingv1
 		Namespace: namespace,
 	}
 	result := &autoscalingv1.HorizontalPodAutoscaler{}
+	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (env TestEnvironment) GetSubscriptionFromK8s(name, namespace string) (*eventingv1alpha2.Subscription, error) {
+	nn := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	result := &eventingv1alpha2.Subscription{}
 	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
 		return nil, err
 	}

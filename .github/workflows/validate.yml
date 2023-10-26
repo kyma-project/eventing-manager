@@ -10,17 +10,11 @@ on:
     paths:
       - 'api/**'
       - 'config/crd/**'
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'api/**'
       - 'config/crd/**'
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
 
 jobs:
   crd:

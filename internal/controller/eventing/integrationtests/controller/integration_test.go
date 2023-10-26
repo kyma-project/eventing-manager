@@ -1,22 +1,30 @@
 package controller_test
 
 import (
+	"context"
+	"fmt"
+	"net/http"
 	"os"
 	"testing"
+
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	ecsubmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks/ec"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
 
-	natstestutils "github.com/kyma-project/nats-manager/testutils"
+	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	v1 "k8s.io/api/apps/v1"
 )
 
@@ -59,6 +67,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 		givenNATS            *natsv1alpha1.NATS
 		givenDeploymentReady bool
 		givenNATSReady       bool
+		givenNATSCRDMissing  bool
 		wantMatches          gomegatypes.GomegaMatcher
 		wantEnsureK8sObjects bool
 	}{
@@ -75,7 +84,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			givenNATSReady: false,
 			wantMatches: gomega.And(
 				matchers.HaveStatusError(),
-				matchers.HaveNATSAvailableConditionNotAvailable(),
+				matchers.HaveNATSNotAvailableCondition(),
 				matchers.HaveFinalizer(),
 			),
 		},
@@ -86,6 +95,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			givenNATS: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
@@ -94,7 +104,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			givenNATSReady:       true,
 			wantMatches: gomega.And(
 				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSAvailableCondition(),
 				matchers.HavePublisherProxyReadyConditionDeployed(),
 				matchers.HaveFinalizer(),
 			),
@@ -106,6 +116,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				utils.WithEventingCRMinimal(),
 				utils.WithEventingStreamData("Memory", "1M", 1, 1),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			givenNATS: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
@@ -114,8 +125,26 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			givenNATSReady:       true,
 			wantMatches: gomega.And(
 				matchers.HaveStatusProcessing(),
-				matchers.HaveNATSAvailableConditionAvailable(),
+				matchers.HaveNATSAvailableCondition(),
 				matchers.HavePublisherProxyReadyConditionProcessing(),
+				matchers.HaveFinalizer(),
+			),
+		},
+		{
+			name: "Eventing CR should error state due to NATS CRD is missing",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			givenNATS: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+			),
+			givenNATSCRDMissing: true,
+			wantMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveNATSNotAvailableConditionWith("NATS module has to be installed: "+
+					"customresourcedefinitions.apiextensions.k8s.io \"nats.operator.kyma-project.io\" not found"),
 				matchers.HaveFinalizer(),
 			),
 		},
@@ -137,19 +166,32 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 			// when
 			// create NATS.
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenNATS)
-			if tc.givenNATSReady {
-				testEnvironment.EnsureNATSResourceStateReady(t, tc.givenNATS)
+			originalKubeClient := testEnvironment.KubeClient
+			if !tc.givenNATSCRDMissing {
+				testEnvironment.EnsureK8sResourceCreated(t, tc.givenNATS)
+				if tc.givenNATSReady {
+					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenNATS)
+				}
+			} else {
+				mockedKubeClient := &MockKubeClient{
+					Client: originalKubeClient,
+				}
+				testEnvironment.KubeClient = mockedKubeClient
+				testEnvironment.Reconciler.SetKubeClient(mockedKubeClient)
 			}
 			// create Eventing CR.
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
 
 			defer func() {
+				testEnvironment.KubeClient = originalKubeClient
+				testEnvironment.Reconciler.SetKubeClient(originalKubeClient)
 				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
 				if tc.givenNATSReady && !*testEnvironment.EnvTestInstance.UseExistingCluster {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
-				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenNATS)
+				if !tc.givenNATSCRDMissing {
+					testEnvironment.EnsureK8sResourceDeleted(t, tc.givenNATS)
+				}
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
@@ -477,6 +519,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 				utils.WithEventMeshBackend("test-secret-name2"),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			givenDeploymentReady: true,
 			wantMatches: gomega.And(
@@ -493,6 +536,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 				utils.WithEventMeshBackend("test-secret-name3"),
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
 			),
 			wantMatches: gomega.And(
 				matchers.HaveStatusProcessing(),
@@ -560,9 +604,10 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 func Test_DeleteEventingCR(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		name                    string
-		givenEventing           *eventingv1alpha1.Eventing
-		subscriptionManagerMock *ecsubmanagermocks.Manager
+		name              string
+		givenEventing     *eventingv1alpha1.Eventing
+		givenSubscription *eventinv1alpha2.Subscription
+		wantMatches       gomegatypes.GomegaMatcher
 	}{
 		{
 			name: "Delete Eventing CR should delete the owned resources",
@@ -578,6 +623,36 @@ func Test_DeleteEventingCR(t *testing.T) {
 				utils.WithEventMeshBackend("test-secret-name"),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
+			),
+		},
+		{
+			name: "Delete should be blocked as subscription exists for NATS",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingCRMinimal(),
+				utils.WithEventingStreamData("Memory", "1M", 1, 1),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+			),
+			givenSubscription: utils.NewSubscription("test-nats-subscription", "test-nats-namespace"),
+			wantMatches: gomega.And(
+				matchers.HaveStatusWarning(),
+				matchers.HaveDeletionErrorCondition(eventingcontroller.SubscriptionExistsErrMessage),
+				matchers.HaveFinalizer(),
+			),
+		},
+		{
+			name: "Delete should be blocked as subscription exist for EventMesh",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventMeshBackend("test-secret-name"),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
+			),
+			givenSubscription: utils.NewSubscription("test-eventmesh-subscription", "test-eventmesh-namespace"),
+			wantMatches: gomega.And(
+				matchers.HaveStatusWarning(),
+				matchers.HaveDeletionErrorCondition(eventingcontroller.SubscriptionExistsErrMessage),
+				matchers.HaveFinalizer(),
 			),
 		},
 	}
@@ -586,6 +661,8 @@ func Test_DeleteEventingCR(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			g := gomega.NewWithT(t)
+
 			// given
 			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
@@ -615,6 +692,10 @@ func Test_DeleteEventingCR(t *testing.T) {
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
 
 			defer func() {
+				if tc.givenSubscription != nil {
+					testEnvironment.EnsureSubscriptionResourceDeletion(t, tc.givenSubscription.Name, tc.givenSubscription.Namespace)
+				}
+
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
@@ -627,30 +708,232 @@ func Test_DeleteEventingCR(t *testing.T) {
 			testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 			testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 
-			testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+			if tc.givenSubscription != nil {
+				// create subscriptions if given.
+				testEnvironment.EnsureNamespaceCreation(t, tc.givenSubscription.Namespace)
+				testEnvironment.EnsureK8sResourceCreated(t, tc.givenSubscription)
+				testEnvironment.EnsureSubscriptionExists(t, tc.givenSubscription.Name, tc.givenSubscription.Namespace)
 
-			// then
-			if *testEnvironment.EnvTestInstance.UseExistingCluster {
-				testEnvironment.EnsureDeploymentNotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureHPANotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetPublisherPublishServiceName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetPublisherMetricsServiceName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceNotFound(t,
-					eventing.GetPublisherHealthServiceName(*tc.givenEventing), givenNamespace)
-				testEnvironment.EnsureK8sServiceAccountNotFound(t,
-					eventing.GetPublisherServiceAccountName(*tc.givenEventing), givenNamespace)
+				//then
+				// givenSubscription existence means deletion of Eventing CR should be blocked.
+				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenEventing)
+				testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
 			} else {
-				// check if the owner reference is set.
-				// if owner reference is set then these resources would be garbage collected in real k8s cluster.
-				testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
-				// ensure clusterrole and clusterrolebindings are deleted.
+				// then
+				// givenSubscription is nil means deletion of Eventing CR should be successful.
+				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+
+				// then
+				if *testEnvironment.EnvTestInstance.UseExistingCluster {
+					testEnvironment.EnsureDeploymentNotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureHPANotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureK8sServiceNotFound(t,
+						eventing.GetPublisherPublishServiceName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureK8sServiceNotFound(t,
+						eventing.GetPublisherMetricsServiceName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureK8sServiceNotFound(t,
+						eventing.GetPublisherHealthServiceName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureK8sServiceAccountNotFound(t,
+						eventing.GetPublisherServiceAccountName(*tc.givenEventing), givenNamespace)
+				} else {
+					// check if the owner reference is set.
+					// if owner reference is set then these resources would be garbage collected in real k8s cluster.
+					testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
+				}
+				testEnvironment.EnsureK8sClusterRoleNotFound(t,
+					eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
+					eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
 			}
-			testEnvironment.EnsureK8sClusterRoleNotFound(t,
-				eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
-			testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
-				eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
+		})
+	}
+}
+
+func Test_WatcherNATSResource(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name                        string
+		givenOriginalNats           *natsv1alpha1.NATS
+		givenTargetNats             *natsv1alpha1.NATS
+		isEventMesh                 bool
+		wantedOriginalEventingState string
+		wantedTargetEventingState   string
+		wantOriginalEventingMatches gomegatypes.GomegaMatcher
+		wantTargetEventingMatches   gomegatypes.GomegaMatcher
+	}{
+		{
+			name: "should update Eventing CR state if NATS CR state changes from ready to error",
+			givenOriginalNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateReady(),
+			),
+			givenTargetNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateError(),
+			),
+			wantOriginalEventingMatches: gomega.And(
+				matchers.HaveStatusReady(),
+				matchers.HaveNATSAvailableCondition(),
+			),
+			wantTargetEventingMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveNATSNotAvailableCondition(),
+			),
+		},
+		{
+			name: "should update Eventing CR state if NATS CR state changes from error to ready",
+			givenOriginalNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateError(),
+			),
+			givenTargetNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateReady(),
+			),
+			wantOriginalEventingMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveNATSNotAvailableCondition(),
+			),
+			wantTargetEventingMatches: gomega.And(
+				matchers.HaveStatusReady(),
+				matchers.HaveNATSAvailableCondition(),
+			),
+		},
+		{
+			name: "should update Eventing CR state to error when NATS CR is deleted",
+			givenOriginalNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateReady(),
+			),
+			givenTargetNats: nil, // means, NATS CR is deleted.
+			wantOriginalEventingMatches: gomega.And(
+				matchers.HaveStatusReady(),
+				matchers.HaveNATSAvailableCondition(),
+			),
+			wantTargetEventingMatches: gomega.And(
+				matchers.HaveStatusError(),
+				matchers.HaveNATSNotAvailableCondition(),
+			),
+		},
+		{
+			name: "should not reconcile Eventing CR in EventMesh mode",
+			givenOriginalNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateReady(),
+			),
+			givenTargetNats: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+				natstestutils.WithNATSStateError(),
+			),
+			isEventMesh: true,
+			wantOriginalEventingMatches: gomega.And(
+				matchers.HaveStatusReady(),
+			),
+			wantTargetEventingMatches: gomega.And(
+				matchers.HaveStatusReady(),
+			),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			g := gomega.NewWithT(t)
+
+			// given
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+				return true
+			}
+
+			givenNamespace := tc.givenOriginalNats.Namespace
+			if tc.givenTargetNats != nil {
+				tc.givenTargetNats.Namespace = givenNamespace
+				tc.givenTargetNats.Name = tc.givenOriginalNats.Name
+			}
+
+			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
+
+			// create NATS CR.
+			originalNats := tc.givenOriginalNats.DeepCopy()
+			testEnvironment.EnsureK8sResourceCreated(t, originalNats)
+			// create original NATS CR.
+
+			if tc.givenOriginalNats.Status.State == natsv1alpha1.StateReady {
+				testEnvironment.EnsureNATSResourceStateReady(t, originalNats)
+			} else if tc.givenOriginalNats.Status.State == natsv1alpha1.StateError {
+				testEnvironment.EnsureNATSResourceStateError(t, originalNats)
+			}
+
+			// create Eventing CR.
+			var eventingResource *eventingv1alpha1.Eventing
+			if tc.isEventMesh {
+				eventingResource = utils.NewEventingCR(
+					utils.WithEventingCRNamespace(givenNamespace),
+					utils.WithEventMeshBackend("test-secret-name"),
+					utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+					utils.WithStatusState(tc.wantedOriginalEventingState),
+					utils.WithEventingDomain(utils.Domain),
+				)
+				// create necessary EventMesh secrets
+				testEnvironment.EnsureOAuthSecretCreated(t, eventingResource)
+				testEnvironment.EnsureEventMeshSecretCreated(t, eventingResource)
+			} else {
+				eventingResource = utils.NewEventingCR(
+					utils.WithEventingCRNamespace(givenNamespace),
+					utils.WithEventingCRMinimal(),
+					utils.WithEventingStreamData("Memory", "1M", 1, 1),
+					utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+					utils.WithStatusState(tc.wantedOriginalEventingState),
+					utils.WithEventingDomain(utils.Domain),
+				)
+			}
+			testEnvironment.EnsureK8sResourceCreated(t, eventingResource)
+
+			defer func() {
+				testEnvironment.EnsureEventingResourceDeletion(t, eventingResource.Name, givenNamespace)
+				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*eventingResource), givenNamespace)
+				}
+
+				if tc.givenOriginalNats != nil && tc.givenTargetNats != nil {
+					testEnvironment.EnsureK8sResourceDeleted(t, tc.givenOriginalNats)
+				}
+
+				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
+
+				if tc.isEventMesh {
+					testEnvironment.EnsureEventMeshSecretDeleted(t, eventingResource)
+				}
+			}()
+
+			// update target NATS CR to target NATS CR state
+			if tc.givenOriginalNats != nil {
+				if tc.givenOriginalNats.Status.State == natsv1alpha1.StateReady {
+					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenOriginalNats)
+				} else if tc.givenOriginalNats.Status.State == natsv1alpha1.StateError {
+					testEnvironment.EnsureNATSResourceStateError(t, tc.givenOriginalNats)
+				}
+			}
+
+			// check Eventing CR status.
+			testEnvironment.GetEventingAssert(g, eventingResource).Should(tc.wantOriginalEventingMatches)
+
+			// update target NATS CR to target NATS CR state
+			if tc.givenTargetNats != nil {
+				if tc.givenTargetNats.Status.State == natsv1alpha1.StateReady {
+					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenTargetNats)
+				} else if tc.givenTargetNats.Status.State == natsv1alpha1.StateError {
+					testEnvironment.EnsureNATSResourceStateError(t, tc.givenTargetNats)
+				}
+			} else {
+				// delete NATS CR
+				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenOriginalNats)
+			}
+
+			// check target Eventing CR status.
+			testEnvironment.GetEventingAssert(g, eventingResource).Should(tc.wantTargetEventingMatches)
 		})
 	}
 }
@@ -681,4 +964,20 @@ func ensureK8sResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, 
 	testEnvironment.EnsureEPPClusterRoleCorrect(t, *givenEventing)
 	// ClusterRoleBinding
 	testEnvironment.EnsureEPPClusterRoleBindingCorrect(t, *givenEventing)
+}
+
+type MockKubeClient struct {
+	k8s.Client
+}
+
+// mock only GetCRD and leave the rest as is.
+func (mkc *MockKubeClient) GetCRD(ctx context.Context, name string) (*apiextensionsv1.CustomResourceDefinition, error) {
+	notFoundError := &errors.StatusError{
+		ErrStatus: metav1.Status{
+			Code:    http.StatusNotFound,
+			Reason:  metav1.StatusReasonNotFound,
+			Message: fmt.Sprintf("customresourcedefinitions.apiextensions.k8s.io \"%s\" not found", name),
+		},
+	}
+	return nil, notFoundError
 }

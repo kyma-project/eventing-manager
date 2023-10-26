@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -210,4 +211,10 @@ func TestGetSinkData(t *testing.T) {
 			require.Equal(t, gotSubDomain, tc.wantSubDomains)
 		})
 	}
+}
+
+func Test_IsEmpty(t *testing.T) {
+	assert.True(t, IsEmpty(""))
+	assert.True(t, IsEmpty(" "))
+	assert.False(t, IsEmpty("value"))
 }

@@ -21,10 +21,13 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
@@ -40,6 +43,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )
@@ -60,7 +64,6 @@ const (
 	twoMinTimeOut            = 120 * time.Second
 	bigPollingInterval       = 3 * time.Second
 	bigTimeOut               = 40 * time.Second
-	domain                   = "domain.com"
 	namespacePrefixLength    = 5
 	syncPeriodSeconds        = 2
 	maxReconnects            = 10
@@ -119,19 +122,21 @@ func setupSuite() error {
 	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:                 scheme.Scheme,
-		SyncPeriod:             &syncPeriod,
-		Host:                   webhookInstallOptions.LocalServingHost,
-		Port:                   webhookInstallOptions.LocalServingPort,
-		CertDir:                webhookInstallOptions.LocalServingCertDir,
-		MetricsBindAddress:     "0", // disable
-		HealthProbeBindAddress: "0", // disable
+		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
+		Metrics:                server.Options{BindAddress: "0"}, // disable
+		HealthProbeBindAddress: "0",                              // disable
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host:    webhookInstallOptions.LocalServingHost,
+			Port:    webhookInstallOptions.LocalServingPort,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
 	})
 	if err != nil {
 		return err
 	}
 
 	// setup nameMapper for EventMesh
-	emTestEnsemble.nameMapper = backendutils.NewBEBSubscriptionNameMapper(domain,
+	emTestEnsemble.nameMapper = backendutils.NewBEBSubscriptionNameMapper(testutils.Domain,
 		backendeventmesh.MaxSubscriptionNameLength)
 
 	// setup eventMesh reconciler
@@ -152,6 +157,7 @@ func setupSuite() error {
 		emTestEnsemble.nameMapper,
 		sinkValidator,
 		col,
+		testutils.Domain,
 	)
 
 	if err = testReconciler.SetupUnmanaged(k8sManager); err != nil {
@@ -235,8 +241,6 @@ func getEnvConfig() env.Config {
 		ClientSecret:             "foo-secret",
 		TokenEndpoint:            emTestEnsemble.eventMeshMock.TokenURL,
 		WebhookActivationTimeout: 0,
-		WebhookTokenEndpoint:     "foo-token-endpoint",
-		Domain:                   domain,
 		EventTypePrefix:          reconcilertesting.EventMeshPrefix,
 		BEBNamespace:             reconcilertesting.EventMeshNamespaceNS,
 		Qos:                      string(eventmeshtypes.QosAtLeastOnce),

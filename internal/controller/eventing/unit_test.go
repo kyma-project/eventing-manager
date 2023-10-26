@@ -28,6 +28,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	fakedynamic "k8s.io/client-go/dynamic/fake"
 )
 
 // MockedUnitTestEnvironment provides mocked resources for unit tests.
@@ -61,11 +63,14 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	err = admissionv1.AddToScheme(newScheme)
 	require.NoError(t, err)
 
+	// Create a fake dynamic client
+	fakeDynamicClient := fakedynamic.NewSimpleDynamicClient(newScheme)
+
 	fakeClientBuilder := fake.NewClientBuilder().WithScheme(newScheme)
 	fakeClient := fakeClientBuilder.WithObjects(objs...).WithStatusSubresource(objs...).Build()
 	fakeClientSet := apiclientsetfake.NewSimpleClientset()
 	recorder := &record.FakeRecorder{}
-	kubeClient := k8s.NewKubeClient(fakeClient, fakeClientSet, "eventing-manager")
+	kubeClient := k8s.NewKubeClient(fakeClient, fakeClientSet, "eventing-manager", fakeDynamicClient)
 
 	// setup custom mocks
 	eventingManager := new(managermocks.Manager)
@@ -80,6 +85,7 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	reconciler := NewReconciler(
 		fakeClient,
 		kubeClient,
+		fakeDynamicClient,
 		newScheme,
 		ctrLogger,
 		recorder,

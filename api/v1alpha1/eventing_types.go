@@ -31,11 +31,13 @@ const (
 	StateReady      string = "Ready"
 	StateError      string = "Error"
 	StateProcessing string = "Processing"
+	StateWarning    string = "Warning"
 
 	ConditionNATSAvailable            ConditionType = "NATSAvailable"
 	ConditionPublisherProxyReady      ConditionType = "PublisherProxyReady"
 	ConditionWebhookReady             ConditionType = "WebhookReady"
 	ConditionSubscriptionManagerReady ConditionType = "SubscriptionManagerReady"
+	ConditionDeleted                  ConditionType = "Deleted"
 
 	// common reasons
 	ConditionReasonProcessing ConditionReason = "Processing"
@@ -51,7 +53,7 @@ const (
 	ConditionReasonForbidden                  ConditionReason = "Forbidden"
 	ConditionReasonWebhookFailed              ConditionReason = "WebhookFailed"
 	ConditionReasonWebhookReady               ConditionReason = "Ready"
-	ConditionReasonDeletedFailed              ConditionReason = "DeletionFailed"
+	ConditionReasonDeletionError              ConditionReason = "DeletionError"
 
 	// message for conditions
 	ConditionPublisherProxyReadyMessage        = "Publisher proxy is deployed"
@@ -66,7 +68,6 @@ const (
 	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"
 	ConditionReasonEventMeshSubManagerFailed     ConditionReason = "EventMeshSubscriptionManagerFailed"
 	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
-	ConditionReasonSubscriptionManagerProcessing ConditionReason = "SubscriptionManagerProcessing"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -75,6 +76,7 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.state",description="State of Eventing"
+// +kubebuilder:printcolumn:name="Backend",type="string",JSONPath=".spec.backend.type",description="Type of Eventing backend, either NATS or EventMesh"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Age of the resource"
 type Eventing struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -169,6 +171,11 @@ type BackendConfig struct {
 	// +kubebuilder:default:="sap.kyma.custom"
 	// +kubebuilder:validation:XValidation:rule="self!=''", message="eventTypePrefix cannot be empty"
 	EventTypePrefix string `json:"eventTypePrefix,omitempty"`
+
+	// Domain defines the cluster public domain used to configure the EventMesh Subscriptions
+	// and their corresponding ApiRules.
+	// +kubebuilder:validation:Pattern:="^(?:([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*)?$"
+	Domain string `json:"domain,omitempty"`
 }
 
 // Publisher defines the configurations for eventing-publisher-proxy.

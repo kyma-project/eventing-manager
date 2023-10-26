@@ -3,14 +3,19 @@ package eventing
 import (
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/mock"
 	"testing"
+
+	"github.com/kyma-project/eventing-manager/pkg/watcher"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
+	watchmock "github.com/kyma-project/eventing-manager/pkg/watcher/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 func Test_handleEventingCRAllowedCheck(t *testing.T) {
@@ -241,6 +246,12 @@ func Test_handleBackendSwitching(t *testing.T) {
 			testEnv.Reconciler.isNATSSubManagerStarted = true
 			testEnv.Reconciler.isEventMeshSubManagerStarted = true
 
+			mockNatsWatcher := new(watchmock.Watcher)
+			if tc.wantNATSStopped {
+				mockNatsWatcher.On("Stop").Once()
+			}
+			testEnv.Reconciler.natsWatchers[tc.givenEventing.Namespace] = mockNatsWatcher
+
 			// get mocks from test-case.
 			givenNATSSubManagerMock := tc.givenNATSSubManagerMock()
 			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
@@ -285,6 +296,107 @@ func Test_handleBackendSwitching(t *testing.T) {
 				require.NotNil(t, testEnv.Reconciler.eventMeshSubManager)
 				require.True(t, testEnv.Reconciler.isEventMeshSubManagerStarted)
 			}
+			mockNatsWatcher.AssertExpectations(t)
+		})
+	}
+}
+
+func Test_startNatsCRWatch(t *testing.T) {
+	testCases := []struct {
+		name         string
+		watchStarted bool
+		watchErr     error
+	}{
+		{
+			name:         "NATS CR watch not started",
+			watchStarted: false,
+			watchErr:     nil,
+		},
+		{
+			name:         "NATS CR watch already started",
+			watchStarted: true,
+			watchErr:     nil,
+		},
+		{
+			name:         "NATS watcher error",
+			watchStarted: false,
+			watchErr:     errors.New("NATS watcher error"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			testEnv := NewMockedUnitTestEnvironment(t)
+			testEnv.Reconciler.natsCRWatchStarted = tc.watchStarted
+
+			// Create a fake Eventing CR
+			eventing := testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-name"),
+				testutils.WithEventingCRNamespace("test-namespace"),
+			)
+
+			// Create mock watcher and controller
+			natsWatcher := new(watchmock.Watcher)
+			natsWatcher.On("IsStarted").Return(tc.watchStarted)
+			mockController := new(watchmock.Controller)
+			if !tc.watchStarted {
+				natsWatcher.On("Start").Once()
+				natsWatcher.On("GetEventsChannel").Return(make(<-chan event.GenericEvent)).Once()
+
+				mockController.On("Watch", mock.Anything, mock.Anything, mock.Anything).Return(tc.watchErr).Once()
+			}
+			testEnv.Reconciler.natsWatchers[eventing.Namespace] = natsWatcher
+			testEnv.Reconciler.controller = mockController
+
+			// when
+			err := testEnv.Reconciler.startNATSCRWatch(eventing)
+
+			// then
+			require.Equal(t, tc.watchErr, err)
+			require.NotNil(t, testEnv.Reconciler.natsWatchers[eventing.Namespace])
+			if tc.watchErr != nil {
+				require.False(t, testEnv.Reconciler.natsWatchers[eventing.Namespace].IsStarted())
+			}
+		})
+	}
+}
+
+func Test_stopNatsCRWatch(t *testing.T) {
+	testCases := []struct {
+		name               string
+		natsCRWatchStarted bool
+		watchNatsWatcher   watcher.Watcher
+	}{
+		{
+			name:               "NATS CR watch stopped",
+			watchNatsWatcher:   nil,
+			natsCRWatchStarted: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			testEnv := NewMockedUnitTestEnvironment(t)
+			testEnv.Reconciler.natsCRWatchStarted = tc.natsCRWatchStarted
+
+			// Create a fake Watcher
+			natsWatcher := new(watchmock.Watcher)
+			natsWatcher.On("Stop").Times(1)
+
+			eventing := testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-name"),
+				testutils.WithEventingCRNamespace("test-namespace"),
+			)
+
+			testEnv.Reconciler.natsWatchers[eventing.Namespace] = natsWatcher
+
+			testEnv.Reconciler.stopNATSCRWatch(eventing)
+
+			// Check the results
+			require.Equal(t, tc.watchNatsWatcher, nil)
+			require.Equal(t, tc.natsCRWatchStarted, false)
 		})
 	}
 }
