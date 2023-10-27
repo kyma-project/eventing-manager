@@ -1,15 +1,14 @@
-//go:generate mockery --name Backend
-//go:generate mockery --dir ../../../vendor/github.com/nats-io/nats.go --name JetStreamContext
+//go:generate go run github.com/vektra/mockery/v2 --name Backend
+//go:generate go run github.com/vektra/mockery/v2 --dir ../../../vendor/github.com/nats-io/nats.go --name JetStreamContext
 package jetstream
 
 import (
 	"sync"
 
 	backendutilsv2 "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-
-	cev2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/nats-io/nats.go"
 
+	cev2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -21,7 +20,7 @@ const (
 	separator = "/"
 )
 
-//go:generate mockery --name Backend
+//go:generate go run github.com/vektra/mockery/v2 --name Backend
 type Backend interface {
 	// Initialize should initialize the communication layer with the messaging backend system
 	Initialize(connCloseHandler backendutilsv2.ConnClosedHandler) error
