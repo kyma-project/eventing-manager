@@ -72,8 +72,8 @@ const (
 
 // Reconciler reconciles an Eventing object
 //
-//go:generate mockery --name=Controller --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/controller --outpkg=mocks --case=underscore
-//go:generate mockery --name=Manager --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/manager --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=Controller --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/controller --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=Manager --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/manager --outpkg=mocks --case=underscore
 type Reconciler struct {
 	client.Client
 	logger                        *logger.Logger

@@ -26,7 +26,7 @@ func NewResourceWatcher(client dynamic.Interface, gvk schema.GroupVersionResourc
 	}
 }
 
-//go:generate mockery --name=Watcher --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=Watcher --outpkg=mocks --case=underscore
 type Watcher interface {
 	Start()
 	Stop()
