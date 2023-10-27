@@ -780,9 +780,9 @@ func Test_APIRuleCRDExists(t *testing.T) {
 			t.Parallel()
 
 			// given
-			sampleCRD := testutils.NewAPIRuleCRD()
 			var objs []runtime.Object
 			if tc.wantResult {
+				sampleCRD := testutils.NewAPIRuleCRD()
 				objs = append(objs, sampleCRD)
 			}
 

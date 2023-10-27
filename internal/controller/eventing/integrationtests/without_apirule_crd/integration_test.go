@@ -70,7 +70,7 @@ func Test_EventMesh_APIRule_Dependency_Check(t *testing.T) {
 			wantMatches: gomega.And(
 				matchers.HaveStatusError(),
 				matchers.HaveEventMeshSubManagerNotReadyCondition(
-					"API-Gateway modules is needed for EventMesh backend. APIRules CRD is not installed"),
+					"API-Gateway module is needed for EventMesh backend. APIRules CRD is not installed"),
 			),
 		},
 	}

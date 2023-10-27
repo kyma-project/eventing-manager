@@ -520,7 +520,7 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *ev
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	} else if !isAPIRuleCRDEnabled {
-		apiRuleMissingErr := errors.New("API-Gateway modules is needed for EventMesh backend. APIRules CRD is not installed")
+		apiRuleMissingErr := errors.New("API-Gateway module is needed for EventMesh backend. APIRules CRD is not installed")
 		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, apiRuleMissingErr, log)
 	}
 
