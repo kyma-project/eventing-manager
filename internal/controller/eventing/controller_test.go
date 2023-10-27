@@ -3,8 +3,9 @@ package eventing
 import (
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/mock"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-project/eventing-manager/pkg/watcher"
 

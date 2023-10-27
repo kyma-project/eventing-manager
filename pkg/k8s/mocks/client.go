@@ -34,6 +34,58 @@ func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
 }
 
+// APIRuleCRDExists provides a mock function with given fields: _a0
+func (_m *Client) APIRuleCRDExists(_a0 context.Context) (bool, error) {
+	ret := _m.Called(_a0)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (bool, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) bool); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_APIRuleCRDExists_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'APIRuleCRDExists'
+type Client_APIRuleCRDExists_Call struct {
+	*mock.Call
+}
+
+// APIRuleCRDExists is a helper method to define mock.On call
+//   - _a0 context.Context
+func (_e *Client_Expecter) APIRuleCRDExists(_a0 interface{}) *Client_APIRuleCRDExists_Call {
+	return &Client_APIRuleCRDExists_Call{Call: _e.mock.On("APIRuleCRDExists", _a0)}
+}
+
+func (_c *Client_APIRuleCRDExists_Call) Run(run func(_a0 context.Context)) *Client_APIRuleCRDExists_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Client_APIRuleCRDExists_Call) Return(_a0 bool, _a1 error) *Client_APIRuleCRDExists_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_APIRuleCRDExists_Call) RunAndReturn(run func(context.Context) (bool, error)) *Client_APIRuleCRDExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ApplicationCRDExists provides a mock function with given fields: _a0
 func (_m *Client) ApplicationCRDExists(_a0 context.Context) (bool, error) {
 	ret := _m.Called(_a0)
