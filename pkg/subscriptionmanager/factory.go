@@ -17,7 +17,7 @@ import (
 // Perform a compile-time check.
 var _ ManagerFactory = &Factory{}
 
-//go:generate mockery --name=ManagerFactory --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=ManagerFactory --outpkg=mocks --case=underscore
 type ManagerFactory interface {
 	NewJetStreamManager(v1alpha1.Eventing, env.NATSConfig) manager.Manager
 	NewEventMeshManager(domain string) (manager.Manager, error)

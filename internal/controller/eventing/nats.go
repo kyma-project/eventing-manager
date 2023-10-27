@@ -112,7 +112,7 @@ func NewNatsConfigHandler(
 	}
 }
 
-//go:generate mockery --name=NatsConfigHandler --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=NatsConfigHandler --outpkg=mocks --case=underscore
 type NatsConfigHandler interface {
 	GetNatsConfig(ctx context.Context, eventing v1alpha1.Eventing) (*env.NATSConfig, error)
 }

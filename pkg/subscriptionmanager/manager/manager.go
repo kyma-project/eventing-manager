@@ -17,7 +17,7 @@ type Params map[string]interface{}
 
 // Manager defines the interface that subscription managers for different messaging backends should implement.
 //
-//go:generate mockery --name=Manager --outpkg=mocks --output=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=Manager --outpkg=mocks --output=mocks --case=underscore
 type Manager interface {
 	// Init initializes the subscription manager and passes the controller manager to use.
 	Init(mgr manager.Manager) error
