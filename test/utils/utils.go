@@ -3,10 +3,11 @@ package utils
 import (
 	"errors"
 	"fmt"
-	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"math/rand"
 	"reflect"
 	"time"
+
+	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
@@ -59,6 +60,25 @@ func NewApplicationCRD() *apiextensionsv1.CustomResourceDefinition {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "applications.applicationconnector.kyma-project.io",
+		},
+		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+			Names:                 apiextensionsv1.CustomResourceDefinitionNames{},
+			Scope:                 "Namespaced",
+			PreserveUnknownFields: false,
+		},
+	}
+
+	return result
+}
+
+func NewAPIRuleCRD() *apiextensionsv1.CustomResourceDefinition {
+	result := &apiextensionsv1.CustomResourceDefinition{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apiextensions.k8s.io/v1",
+			Kind:       "CustomResourceDefinition",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "apirules.gateway.kyma-project.io",
 		},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Names:                 apiextensionsv1.CustomResourceDefinitionNames{},
