@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -170,6 +171,9 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		ctrLogger,
 	)
 
+	if paErr := handlePeerAuthentication(ctx, backendConfig.Namespace, kubeClient); paErr != nil {
+		setupLog.Error(paErr, "error while handling PeerAuthentications")
+	}
 	// create Eventing reconciler instance
 	eventingReconciler := eventingcontroller.NewReconciler(
 		k8sClient,
@@ -196,7 +200,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 	//+kubebuilder:scaffold:builder
 
-	// setup webhooks.
+	// Setup webhooks.
 	if err = (&subscriptionv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
 		os.Exit(1)
@@ -207,18 +211,32 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		os.Exit(1)
 	}
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err = mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func handlePeerAuthentication(ctx context.Context, namespace string, client k8s.Client) error {
+	crd, err := client.GetCRD(ctx, "PeerAuthentication")
+	if err != nil {
+		return err
+	}
+
+	if crd == nil {
+		return fmt.Errorf("Could not find CRD 'PeerAuthentication'." +
+			"Unable to create PeerAuthentication for metrics endpoints.")
+	}
+
+	return client.CreatePeerAuthentication(ctx, namespace)
 }
