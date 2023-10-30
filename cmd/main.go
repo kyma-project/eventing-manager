@@ -234,8 +234,8 @@ func handlePeerAuthentication(ctx context.Context, namespace string, client k8s.
 	}
 
 	if crd == nil {
-		return fmt.Errorf("Could not find CRD 'PeerAuthentication'." +
-			"Unable to create PeerAuthentication for metrics endpoints.")
+		return fmt.Errorf("could not find CRD 'PeerAuthentication';" +
+			"unable to create PeerAuthentication for metrics endpoints")
 	}
 
 	return client.CreatePeerAuthentication(ctx, namespace)
