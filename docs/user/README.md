@@ -10,7 +10,7 @@ Kyma Eventing uses the following technology:
 
 - [NATS JetStream](https://docs.nats.io/) as backend within the cluster
 - [HTTP POST](https://www.w3schools.com/tags/ref_httpmethods.asp) requests to simplify sending and receiving events
-- Declarative [Subscription CR](evnt-50-cr-subscription) to subscribe to events
+- Declarative [Subscription CR](evnt-50-cr-subscription.md) to subscribe to events
 
 ## Kyma Eventing flow
 
@@ -22,22 +22,22 @@ Eventing in Kyma from a user’s perspective works as follows:
 
 - Offer an HTTP end point, for example a Function to receive the events.
 - Specify the events the user is interested in using the Kyma [Subscription CR](evnt-50-cr-subscription.md).
-- Send [CloudEvents](https://cloudevents.io/) or legacy events (deprecated) to the following HTTP end points on our [Event Publishing Proxy](https://github.com/kyma-project/kyma/tree/main/components/event-publisher-proxy) service.
+- Send [CloudEvents](https://cloudevents.io/) or legacy events (deprecated) to the following HTTP end points on our [Event Publisher Proxy](https://github.com/kyma-project/kyma/tree/main/components/event-publisher-proxy) service.
   - `/publish` for CloudEvents.
   - `<application_name>/v1/events` for legacy events.
 
-For more information, read the [Eventing architecture](evnt-10-architecture.md).
+For more information, read [Eventing Architecture](evnt-10-architecture.md).
 
 ## Glossary
 
 - **Event Types**
-  - `CloudEvents`: Events that confirm to the [CloudEvents specification](https://cloudevents.io/) - a common specification for describing event data. The specification is currently under [CNCF](https://www.cncf.io/).
+  - `CloudEvents`: Events that conform to the [CloudEvents specification](https://cloudevents.io/) - a common specification for describing event data. The specification is currently under [CNCF](https://www.cncf.io/).
   - `Legacy events` (deprecated): Events or messages published to Kyma that do not conform to the CloudEvents specification. All legacy events published to Kyma are converted to CloudEvents.
 - **Streams and Consumers**
   - `Streams`: A stream stores messages for the published events. Kyma uses only one stream, with _**file**_ storage, for all the events. You can configure the retention and delivery policies for the stream, depending on the use case.
   - `Consumers`: A consumer reads or consumes the messages from the stream. Kyma Subscription creates one consumer for each specified filter. Kyma uses push-based consumers.
 - **Delivery Guarantees**
-  - `at least once` delivery: With NATS JetStream, Kyma now ensures that for each event published, all the subscribers subscribed to that event receive the event at least once.
+  - `at least once` delivery: With NATS JetStream, Kyma ensures that for each event published, all the subscribers subscribed to that event receive the event at least once.
   - `max bytes and discard policy`: NATS JetStream uses these configurations to ensure that no messages are lost when the storage is almost full. By default, Kyma ensures that no new messages are accepted when the storage reaches 90% capacity.  
 
 ## Documentation Overview
@@ -49,7 +49,7 @@ To learn more about how Eventing works, see:
 - [EventingBackend CR](evnt-51-cr-eventingbackend.md) - describes the EventingBackend custom resource, which shows the current status of Kyma Eventing.
 - [Subscription CR](evnt-50-cr-subscription.md) - describes the Subscription custom resource, which you need to subscribe to events.
 - [CloudEvents](https://cloudevents.io/) - provides information about the CloudEvents specification used in Kyma.
-- [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) - provides more information about the backend technology behind Eventing in Kyma. [Eventing Architecture](evnt-10-architecture.md#jet-stream) provides details on the new functionalities and higher qualities of service on top of Core NATS.
+- [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) - provides more information about the backend technology behind Eventing in Kyma. [Eventing Architecture](evnt-10-architecture.md#jet-stream) provides details on the functionalities and higher qualities of service on top of Core NATS.
 
 To perform tasks with Eventing, go through these tutorials:
 
