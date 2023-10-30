@@ -24,7 +24,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/eventing-manager/internal/istio/peerauthentication"
+	"github.com/kyma-project/eventing-manager/internal/controller/istio/peerauthentication"
 )
 
 var NatsGVK = schema.GroupVersionResource{
