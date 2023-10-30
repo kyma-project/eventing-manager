@@ -29,7 +29,7 @@ var (
 	}
 )
 
-//go:generate mockery --name=Manager --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=Manager --outpkg=mocks --case=underscore
 type Manager interface {
 	IsNATSAvailable(ctx context.Context, namespace string) (bool, error)
 	DeployPublisherProxy(

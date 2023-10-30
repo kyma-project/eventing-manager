@@ -936,7 +936,7 @@ func defaultPublisherResources() corev1.ResourceRequirements {
 			"memory": resource.MustParse("512Mi"),
 		},
 		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("10m"),
+			"cpu":    resource.MustParse("40m"),
 			"memory": resource.MustParse("256Mi"),
 		},
 	}

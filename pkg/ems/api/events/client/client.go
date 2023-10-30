@@ -43,7 +43,7 @@ type PublisherManager interface {
 	SubscriptionManager
 }
 
-//go:generate mockery --name PublisherManager
+//go:generate go run github.com/vektra/mockery/v2 --name PublisherManager
 type Client struct {
 	client httpclient.BaseURLAwareClient
 }

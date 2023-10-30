@@ -37,7 +37,7 @@ var NatsGVK = schema.GroupVersionResource{
 	Resource: "nats",
 }
 
-//go:generate mockery --name=Client --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=Client --outpkg=mocks --case=underscore
 type Client interface {
 	GetDeployment(context.Context, string, string) (*v1.Deployment, error)
 	UpdateDeployment(context.Context, *v1.Deployment) error
