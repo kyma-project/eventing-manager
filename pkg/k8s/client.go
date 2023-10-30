@@ -23,8 +23,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/kyma-project/eventing-manager/internal/controller/istio/peerauthentication"
 )
 
 var NatsGVK = schema.GroupVersionResource{
@@ -52,7 +50,7 @@ type Client interface {
 	APIRuleCRDExists(context.Context) (bool, error)
 	GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error)
 	GetConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error)
-	CreatePeerAuthentication(ctx context.Context, namespace string, ref []metav1.OwnerReference) error
+	CreatePeerAuthentication(ctx context.Context, authentication *istiosec.PeerAuthentication) error
 }
 
 type KubeClient struct {
@@ -74,18 +72,9 @@ func NewKubeClient(client client.Client, clientset k8sclientset.Interface, field
 }
 
 // CreatePeerAuthentication creates the required Istio PeerAuthentications.
-func (c *KubeClient) CreatePeerAuthentication(ctx context.Context, namespace string, ref []metav1.OwnerReference) error {
-	ref := c.GetDeployment()
-	for _, pa := range []*istiosec.PeerAuthentication{
-		peerauthentication.EventPublisherProxyMetrics(namespace, ref),
-		peerauthentication.EventingManagerMetrics(namespace, ref),
-	} {
-		_, err := c.istioClient.SecurityV1beta1().PeerAuthentications(namespace).Create(ctx, pa, metav1.CreateOptions{})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func (c *KubeClient) CreatePeerAuthentication(ctx context.Context, pa *istiosec.PeerAuthentication) error {
+	_, err := c.istioClient.SecurityV1beta1().PeerAuthentications(pa.Namespace).Create(ctx, pa, metav1.CreateOptions{})
+	return err
 }
 
 func (c *KubeClient) GetDeployment(ctx context.Context, name, namespace string) (*v1.Deployment, error) {
