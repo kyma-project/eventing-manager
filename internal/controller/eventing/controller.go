@@ -25,14 +25,6 @@ import (
 
 	"k8s.io/client-go/dynamic"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	"github.com/kyma-project/eventing-manager/options"
-	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
-	"github.com/kyma-project/eventing-manager/pkg/logger"
-	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
-	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -51,6 +43,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/options"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 )
 
 const (
@@ -199,6 +200,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// handle reconciliation
 	return r.handleEventingReconcile(ctx, eventing, log)
+
+	// handle
 }
 
 // handleEventingCRAllowedCheck checks if Eventing CR is allowed to be created or not.

@@ -8,7 +8,7 @@ import (
 )
 
 // EventPublisherProxyMetrics returns the PeerAuthentication for the Event-Publisher-Proxy metrics endpoint.
-func EventPublisherProxyMetrics(namespace string) *istio.PeerAuthentication {
+func EventPublisherProxyMetrics(namespace string, ref []metav1.OwnerReference) *istio.PeerAuthentication {
 	return &istio.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "eventing-publisher-proxy-metrics",
@@ -17,7 +17,7 @@ func EventPublisherProxyMetrics(namespace string) *istio.PeerAuthentication {
 				"app.kubernetes.io/name":    "eventing-publisher-proxy",
 				"app.kubernetes.io/version": "0.1.0",
 			},
-			OwnerReferences: nil, // todo
+			OwnerReferences: ref,
 		},
 		Spec: istiosecv1beta1.PeerAuthentication{
 			Selector: &istiotypes.WorkloadSelector{MatchLabels: map[string]string{
@@ -31,7 +31,7 @@ func EventPublisherProxyMetrics(namespace string) *istio.PeerAuthentication {
 }
 
 // EventingManagerMetrics returns the PeerAuthentication for the Eventing-Manager metrics endpoint.
-func EventingManagerMetrics(namespace string) *istio.PeerAuthentication {
+func EventingManagerMetrics(namespace string, ref []metav1.OwnerReference) *istio.PeerAuthentication {
 	return &istio.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "eventing-manager-metrics",
@@ -40,7 +40,7 @@ func EventingManagerMetrics(namespace string) *istio.PeerAuthentication {
 				"app.kubernetes.io/name":     "controller",
 				"app.kubernetes.io/instance": "eventing",
 			},
-			OwnerReferences: nil, // todo
+			OwnerReferences: ref,
 		},
 		Spec: istiosecv1beta1.PeerAuthentication{
 			Selector: &istiotypes.WorkloadSelector{MatchLabels: map[string]string{

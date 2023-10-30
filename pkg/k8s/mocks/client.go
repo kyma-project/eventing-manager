@@ -4,6 +4,8 @@ package mocks
 
 import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
 	appsv1 "k8s.io/api/apps/v1"
 
 	client "sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,7 +16,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 
@@ -138,13 +140,13 @@ func (_c *Client_ApplicationCRDExists_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
-// CreatePeerAuthentication provides a mock function with given fields: ctx, namespace
-func (_m *Client) CreatePeerAuthentication(ctx context.Context, namespace string) error {
-	ret := _m.Called(ctx, namespace)
+// CreatePeerAuthentication provides a mock function with given fields: ctx, namespace, ref
+func (_m *Client) CreatePeerAuthentication(ctx context.Context, namespace string, ref []v1.OwnerReference) error {
+	ret := _m.Called(ctx, namespace, ref)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, namespace)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []v1.OwnerReference) error); ok {
+		r0 = rf(ctx, namespace, ref)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -160,13 +162,14 @@ type Client_CreatePeerAuthentication_Call struct {
 // CreatePeerAuthentication is a helper method to define mock.On call
 //   - ctx context.Context
 //   - namespace string
-func (_e *Client_Expecter) CreatePeerAuthentication(ctx interface{}, namespace interface{}) *Client_CreatePeerAuthentication_Call {
-	return &Client_CreatePeerAuthentication_Call{Call: _e.mock.On("CreatePeerAuthentication", ctx, namespace)}
+//   - ref []v1.OwnerReference
+func (_e *Client_Expecter) CreatePeerAuthentication(ctx interface{}, namespace interface{}, ref interface{}) *Client_CreatePeerAuthentication_Call {
+	return &Client_CreatePeerAuthentication_Call{Call: _e.mock.On("CreatePeerAuthentication", ctx, namespace, ref)}
 }
 
-func (_c *Client_CreatePeerAuthentication_Call) Run(run func(ctx context.Context, namespace string)) *Client_CreatePeerAuthentication_Call {
+func (_c *Client_CreatePeerAuthentication_Call) Run(run func(ctx context.Context, namespace string, ref []v1.OwnerReference)) *Client_CreatePeerAuthentication_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].([]v1.OwnerReference))
 	})
 	return _c
 }
@@ -176,7 +179,7 @@ func (_c *Client_CreatePeerAuthentication_Call) Return(_a0 error) *Client_Create
 	return _c
 }
 
-func (_c *Client_CreatePeerAuthentication_Call) RunAndReturn(run func(context.Context, string) error) *Client_CreatePeerAuthentication_Call {
+func (_c *Client_CreatePeerAuthentication_Call) RunAndReturn(run func(context.Context, string, []v1.OwnerReference) error) *Client_CreatePeerAuthentication_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -314,19 +317,19 @@ func (_c *Client_DeleteDeployment_Call) RunAndReturn(run func(context.Context, s
 }
 
 // GetCRD provides a mock function with given fields: _a0, _a1
-func (_m *Client) GetCRD(_a0 context.Context, _a1 string) (*v1.CustomResourceDefinition, error) {
+func (_m *Client) GetCRD(_a0 context.Context, _a1 string) (*apiextensionsv1.CustomResourceDefinition, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *v1.CustomResourceDefinition
+	var r0 *apiextensionsv1.CustomResourceDefinition
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*v1.CustomResourceDefinition, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*apiextensionsv1.CustomResourceDefinition, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *v1.CustomResourceDefinition); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) *apiextensionsv1.CustomResourceDefinition); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*v1.CustomResourceDefinition)
+			r0 = ret.Get(0).(*apiextensionsv1.CustomResourceDefinition)
 		}
 	}
 
@@ -358,12 +361,12 @@ func (_c *Client_GetCRD_Call) Run(run func(_a0 context.Context, _a1 string)) *Cl
 	return _c
 }
 
-func (_c *Client_GetCRD_Call) Return(_a0 *v1.CustomResourceDefinition, _a1 error) *Client_GetCRD_Call {
+func (_c *Client_GetCRD_Call) Return(_a0 *apiextensionsv1.CustomResourceDefinition, _a1 error) *Client_GetCRD_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Client_GetCRD_Call) RunAndReturn(run func(context.Context, string) (*v1.CustomResourceDefinition, error)) *Client_GetCRD_Call {
+func (_c *Client_GetCRD_Call) RunAndReturn(run func(context.Context, string) (*apiextensionsv1.CustomResourceDefinition, error)) *Client_GetCRD_Call {
 	_c.Call.Return(run)
 	return _c
 }

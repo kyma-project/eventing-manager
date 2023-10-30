@@ -163,7 +163,8 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		ctrLogger,
 	)
 
-	if paErr := handlePeerAuthentication(ctx, backendConfig.Namespace, kubeClient); paErr != nil {
+	ownref := eventingMana
+	if paErr := handlePeerAuthentication(ctx, backendConfig.Namespace, or, kubeClient); paErr != nil {
 		setupLog.Error(paErr, "error while handling PeerAuthentications")
 	}
 	// create Eventing reconciler instance
@@ -219,7 +220,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 }
 
-func handlePeerAuthentication(ctx context.Context, namespace string, client k8s.Client) error {
+func handlePeerAuthentication(ctx context.Context, namespace string, ref []metav1.OwnerReference, client k8s.Client) error {
 	crd, err := client.GetCRD(ctx, "PeerAuthentication")
 	if err != nil {
 		return err
@@ -230,5 +231,5 @@ func handlePeerAuthentication(ctx context.Context, namespace string, client k8s.
 			"unable to create PeerAuthentication for metrics endpoints")
 	}
 
-	return client.CreatePeerAuthentication(ctx, namespace)
+	return client.CreatePeerAuthentication(ctx, namespace, ref)
 }
