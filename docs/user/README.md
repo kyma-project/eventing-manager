@@ -16,7 +16,7 @@ Kyma Eventing uses the following technology:
 
 Kyma Eventing follows the PubSub messaging pattern: Kyma publishes messages to a messaging backend, which filters these messages and sends them to interested subscribers. Kyma does not send messages directly to the subscribers as shown below:
 
-![PubSub](/docs/assets/pubsub.svg)
+![PubSub](/docs/assets/evnt-pubsub.svg)
 
 Eventing in Kyma from a user’s perspective works as follows:
 
