@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 
+	istio "istio.io/client-go/pkg/apis/security/v1beta1"
+
 	"github.com/kyma-project/eventing-manager/pkg/utils/istio/peerauthentication"
 	"github.com/kyma-project/eventing-manager/pkg/watcher"
 
@@ -389,9 +391,13 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 
 	// Handle PeerAuthentication for the Eveneting-Manager metrics endpoint.
 	if paCRD, _ := r.kubeClient.GetCRD(ctx, "PeerAuthentication"); paCRD != nil {
-		pa := peerauthentication.EventingManagerMetrics(eventing.Namespace, eventing.OwnerReferences)
-		if err := r.kubeClient.CreatePeerAuthentication(ctx, pa); err != nil {
-			log.Error(err)
+		for _, pa := range []*istio.PeerAuthentication{
+			peerauthentication.EventingManagerMetrics(eventing.Namespace, eventing.OwnerReferences),
+			peerauthentication.EventPublisherProxyMetrics(eventing.Namespace, eventing.OwnerReferences),
+		} {
+			if err := r.kubeClient.CreatePeerAuthentication(ctx, pa); err != nil {
+				log.Error(err)
+			}
 		}
 	}
 

@@ -426,17 +426,17 @@ func (_c *Client_GetConfigMap_Call) RunAndReturn(run func(context.Context, strin
 	return _c
 }
 
-// GetDeployment provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Client) GetDeployment(_a0 context.Context, _a1 string, _a2 string) (*appsv1.Deployment, error) {
-	ret := _m.Called(_a0, _a1, _a2)
+// GetDeployment provides a mock function with given fields: ctx, name, namespace
+func (_m *Client) GetDeployment(ctx context.Context, name string, namespace string) (*appsv1.Deployment, error) {
+	ret := _m.Called(ctx, name, namespace)
 
 	var r0 *appsv1.Deployment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*appsv1.Deployment, error)); ok {
-		return rf(_a0, _a1, _a2)
+		return rf(ctx, name, namespace)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *appsv1.Deployment); ok {
-		r0 = rf(_a0, _a1, _a2)
+		r0 = rf(ctx, name, namespace)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*appsv1.Deployment)
@@ -444,7 +444,7 @@ func (_m *Client) GetDeployment(_a0 context.Context, _a1 string, _a2 string) (*a
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(_a0, _a1, _a2)
+		r1 = rf(ctx, name, namespace)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -458,14 +458,14 @@ type Client_GetDeployment_Call struct {
 }
 
 // GetDeployment is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 string
-//   - _a2 string
-func (_e *Client_Expecter) GetDeployment(_a0 interface{}, _a1 interface{}, _a2 interface{}) *Client_GetDeployment_Call {
-	return &Client_GetDeployment_Call{Call: _e.mock.On("GetDeployment", _a0, _a1, _a2)}
+//   - ctx context.Context
+//   - name string
+//   - namespace string
+func (_e *Client_Expecter) GetDeployment(ctx interface{}, name interface{}, namespace interface{}) *Client_GetDeployment_Call {
+	return &Client_GetDeployment_Call{Call: _e.mock.On("GetDeployment", ctx, name, namespace)}
 }
 
-func (_c *Client_GetDeployment_Call) Run(run func(_a0 context.Context, _a1 string, _a2 string)) *Client_GetDeployment_Call {
+func (_c *Client_GetDeployment_Call) Run(run func(ctx context.Context, name string, namespace string)) *Client_GetDeployment_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})

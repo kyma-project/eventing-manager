@@ -33,7 +33,7 @@ var NatsGVK = schema.GroupVersionResource{
 
 //go:generate go run github.com/vektra/mockery/v2 --name=Client --outpkg=mocks --case=underscore
 type Client interface {
-	GetDeployment(context.Context, string, string) (*v1.Deployment, error)
+	GetDeployment(ctx context.Context, name, namespace string) (*v1.Deployment, error)
 	UpdateDeployment(context.Context, *v1.Deployment) error
 	DeleteDeployment(context.Context, string, string) error
 	DeleteClusterRole(context.Context, string, string) error

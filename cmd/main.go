@@ -25,10 +25,15 @@ import (
 	"github.com/go-logr/zapr"
 	subscriptionv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	subscriptionv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	istio "istio.io/client-go/pkg/apis/security/v1beta1"
 	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/options"
@@ -39,10 +44,8 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/utils/istio/peerauthentication"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	"k8s.io/client-go/dynamic"
@@ -187,6 +190,20 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
+
+	deploy, err := kubeClient.GetDeployment(ctx, "eventing-manager", backendConfig.EventingCRNamespace)
+	if err != nil {
+		setupLog.Error(err, "could not fetch eventing deployment")
+	} else if paCRD, _ := kubeClient.GetCRD(ctx, "PeerAuthentication"); paCRD != nil {
+		for _, pa := range []*istio.PeerAuthentication{
+			peerauthentication.EventingManagerMetrics(deploy.Namespace, deploy.OwnerReferences),
+			peerauthentication.EventPublisherProxyMetrics(deploy.Namespace, deploy.OwnerReferences),
+		} {
+			if paErr := kubeClient.CreatePeerAuthentication(ctx, pa); err != nil {
+				setupLog.Error(paErr, "failed to create PeerAuthentication")
+			}
+		}
+	}
 
 	// Setup webhooks.
 	if err = (&subscriptionv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
