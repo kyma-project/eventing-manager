@@ -194,7 +194,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
      channel: regular
    ```
 
-4. Apply the module template to the K8s cluster:
+4. Apply the module template to the Kubernetes cluster:
 
    ```sh
    kubectl apply -f template.yaml
@@ -206,7 +206,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    kubectl edit -n kyma-system kyma default-kyma
    ```
 
-   The spec part should have the following:
+   The spec part should contain the following:
 
    ```yaml
    ...
@@ -230,7 +230,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    kubectl get -n kyma-system kyma
    ```
 
-   If it doesn't have the ready state, troubleshoot it by checking the Pods under `eventing-manager-system` Namespace where the module is installed:
+   If it doesn't have the ready state, troubleshoot it by checking the Pods in the `eventing-manager-system` Namespace, where the module is installed:
 
    ```shell
    kubectl get pods -n eventing-manager-system
@@ -238,9 +238,9 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 
 ### Uninstalling controller with [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
 
-1. Delete eventing from `kyma` resource `spec.modules` `kubectl edit -n kyma-system kyma default-kyma`:
+1. Delete Eventing from `kyma` resource `spec.modules` `kubectl edit -n kyma-system kyma default-kyma`:
 
-2. Check whether the `eventing` resource and module namespace were deleted:
+2. Check whether the `eventing` resource and module Namespace were deleted:
 
    ```shell
    kubectl get -n kyma-system eventing
