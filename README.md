@@ -1,25 +1,23 @@
-[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/eventing-manager)](https://api.reuse.software/info/github.com/kyma-project/eventing-manager)
-
 # Eventing Manager
 
-Manages the lifecycle of Eventing resources.
+## Status
 
-## Description
+[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/eventing-manager)](https://api.reuse.software/info/github.com/kyma-project/eventing-manager)
 
-It is a standard Kubernetes operator which observes the state of Eventing resources and reconciles its state according to the desired state.
+![GitHub tag checks state](https://img.shields.io/github/checks-status/kyma-project/eventing-manager/main?label=eventing-operator&link=https%3A%2F%2Fgithub.com%2Fkyma-project%2Feventing-manager%2Fcommits%2Fmain)
 
-## Getting Started
+## Overview
 
-You’ll need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
-
-### How it works
-
-This project follows the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
+Eventing Manager is a standard Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that observes the state of Eventing resources and reconciles their state according to the desired state.
 
 It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/), which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
 
 This project is scaffolded using [Kubebuilder](https://book.kubebuilder.io), and all the Kubebuilder `makefile` helpers mentioned [here](https://book.kubebuilder.io/reference/makefile-helpers.html) can be used.
+
+## Getting Started
+
+You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
+**Note:** Your controller automatically uses the current context in your kubeconfig file (that is, whatever cluster `kubectl cluster-info` shows).
 
 ## Development
 

@@ -9,7 +9,7 @@ Eventing uses Event Publisher Proxy and Eventing Controller to connect to the de
 The event processing and delivery flow uses the NATS server to process events and send them to subscribers.
 This diagram explains the event flow in Kyma, from the moment an event source sends an event, to the point when the event triggers the Function.
 
-![Eventing flow](./assets/evnt-architecture.svg)
+![Eventing flow](../assets/evnt-architecture.svg)
 
 1. The Eventing Controller watches the Subscription custom resource. It detects if there are any new incoming events.
 

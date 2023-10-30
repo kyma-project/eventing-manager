@@ -10,7 +10,7 @@ Kyma Eventing uses the following technology:
 
 - [NATS JetStream](https://docs.nats.io/) as backend within the cluster
 - [HTTP POST](https://www.w3schools.com/tags/ref_httpmethods.asp) requests to simplify sending and receiving events
-- Declarative [Subscription CR](evnt-50-cr-subscription.md) to subscribe to events
+- Declarative [Subscription CR](./resources/evnt-cr-subscription.md) to subscribe to events
 
 ## Kyma Eventing flow
 
@@ -21,12 +21,12 @@ Kyma Eventing follows the PubSub messaging pattern: Kyma publishes messages to a
 Eventing in Kyma from a user’s perspective works as follows:
 
 - Offer an HTTP end point, for example a Function to receive the events.
-- Specify the events the user is interested in using the Kyma [Subscription CR](evnt-50-cr-subscription.md).
+- Specify the events the user is interested in using the Kyma [Subscription CR](./resources/evnt-cr-subscription.md).
 - Send [CloudEvents](https://cloudevents.io/) or legacy events (deprecated) to the following HTTP end points on our [Event Publisher Proxy](https://github.com/kyma-project/kyma/tree/main/components/event-publisher-proxy) service.
   - `/publish` for CloudEvents.
   - `<application_name>/v1/events` for legacy events.
 
-For more information, read [Eventing Architecture](evnt-10-architecture.md).
+For more information, read [Eventing Architecture](evnt-architecture.md).
 
 ## Glossary
 
@@ -44,12 +44,12 @@ For more information, read [Eventing Architecture](evnt-10-architecture.md).
 
 To learn more about how Eventing works, see:
 
-- [Eventing architecture](evnt-10-architecture.md) - describes how Eventing works and the main actors involved, such as the Eventing Controller and Event Publisher Proxy.
-- [Event names](evnt-20-event-names.md) - contains information about event names and event name cleanup.
-- [EventingBackend CR](evnt-51-cr-eventingbackend.md) - describes the EventingBackend custom resource, which shows the current status of Kyma Eventing.
-- [Subscription CR](evnt-50-cr-subscription.md) - describes the Subscription custom resource, which you need to subscribe to events.
+- [Eventing architecture](evnt-architecture.md) - describes how Eventing works and the main actors involved, such as the Eventing Controller and Event Publisher Proxy.
+- [Event names](evnt-event-names.md) - contains information about event names and event name cleanup.
+- [EventingBackend CR](./resources/evnt-cr-eventingbackend.md) - describes the EventingBackend custom resource, which shows the current status of Kyma Eventing.
+- [Subscription CR](./resources/evnt-cr-subscription.md) - describes the Subscription custom resource, which you need to subscribe to events.
 - [CloudEvents](https://cloudevents.io/) - provides information about the CloudEvents specification used in Kyma.
-- [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) - provides more information about the backend technology behind Eventing in Kyma. [Eventing Architecture](evnt-10-architecture.md#jet-stream) provides details on the functionalities and higher qualities of service on top of Core NATS.
+- [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) - provides more information about the backend technology behind Eventing in Kyma. [Eventing Architecture](evnt-architecture.md#jet-stream) provides details on the functionalities and higher qualities of service on top of Core NATS.
 
 To perform tasks with Eventing, go through these tutorials:
 
@@ -72,4 +72,4 @@ For other technical resources, check out these links on the Kyma GitHub reposito
 - [Eventing Helm chart](https://github.com/kyma-project/kyma/tree/main/resources/eventing)
 - [Event Publishing Proxy](https://github.com/kyma-project/kyma/tree/main/components/event-publisher-proxy)
 - [Eventing Controller](https://github.com/kyma-project/kyma/tree/main/components/eventing-controller)
-- [Eventing Metrics](evnt-60-eventing-metrics.md)
+- [Eventing Metrics](evnt-eventing-metrics.md)
