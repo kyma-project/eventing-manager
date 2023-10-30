@@ -1,6 +1,4 @@
----
-title: Eventing backend stopped receiving events due to full storage
----
+# Eventing backend stopped receiving events due to full storage
 
 ## Symptom
 

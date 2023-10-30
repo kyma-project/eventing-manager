@@ -1,6 +1,4 @@
----
-title: Troubleshooting - Eventing
----
+# Troubleshooting - Eventing
 
 The troubleshooting section aims to identify the most common recurring problems the users face with Kyma Eventing, as well as the most suitable solutions to these problems.
 

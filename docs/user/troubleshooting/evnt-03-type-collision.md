@@ -1,6 +1,4 @@
----
-title: Subscriber receives irrelevant events
----
+# Subscriber receives irrelevant events
 
 ## Symptom
 

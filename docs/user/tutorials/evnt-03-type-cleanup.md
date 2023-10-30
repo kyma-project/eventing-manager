@@ -1,6 +1,4 @@
----
-title: Event name cleanup in Subscriptions
----
+# Event name cleanup in Subscriptions
 
 To conform to Cloud Event specifications, sometimes Eventing must modify the event names to filter out prohibited characters. This tutorial presents one example of event name cleanup.
 You learn how Eventing behaves when you create a [Subscription](../../05-technical-reference/00-custom-resources/evnt-01-subscription.md) having prohibited characters in the event names. Read more about [Event name format and cleanup](../../05-technical-reference/evnt-01-event-names.md).

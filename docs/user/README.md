@@ -58,7 +58,7 @@ To perform tasks with Eventing, go through these tutorials:
 - [Tutorial: Event name cleanup in Subscriptions](tutorials/evnt-03-type-cleanup.md) - explains how Kyma Eventing filters out prohibited characters from event names.
 - [Tutorial: Changing Events Max-In-Flight in Subscriptions](tutorials/evnt-04-change-max-in-flight-in-sub.md) - shows how to set idle "in-flight messages" limit in Kyma Subscriptions.
 - [Tutorial: Publish legacy events using Kyma Eventing](tutorials/evnt-05-send-legacy-events.md) - demonstrates how to send legacy events using Kyma Eventing.
-- [Acquiring NATS server system account credentials](tutorials/evnt-03-nats-server-system-events.md)
+- [Acquiring NATS server system account credentials](tutorials/evnt-10-nats-server-system-events.md)
 
 To troubleshoot Eventing-related issues:
 

@@ -1,6 +1,5 @@
----
-title: Event names
----
+
+# Event names
 
 Event names depend on the type of event. Eventing supports the following event types:
 - [CloudEvents](https://cloudevents.io/) - they use a specification for describing event data in a common way.

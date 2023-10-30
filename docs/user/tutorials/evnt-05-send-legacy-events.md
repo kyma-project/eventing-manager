@@ -1,6 +1,4 @@
----
-title: Publish legacy events using Kyma Eventing
----
+# Publish legacy events using Kyma Eventing
 
 Kyma Eventing also supports sending and receiving of legacy events. In this tutorial we will show how to send legacy events.
 

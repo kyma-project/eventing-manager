@@ -1,6 +1,4 @@
----
-title: Kyma Eventing - Basic Diagnostics
----
+# Kyma Eventing - Basic Diagnostics
 
 ## Symptom
 

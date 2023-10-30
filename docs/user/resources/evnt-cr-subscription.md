@@ -1,6 +1,4 @@
----
-title: Subscription
----
+# Subscription
 
 The `subscriptions.eventing.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to subscribe to events. To get the up-to-date CRD and show the output in the YAML format, run this command:
 

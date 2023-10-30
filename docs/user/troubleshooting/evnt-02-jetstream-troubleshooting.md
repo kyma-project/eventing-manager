@@ -1,6 +1,5 @@
----
-title: NATS JetStream backend troubleshooting
----
+# NATS JetStream backend troubleshooting
+
 
 ## Symptom
 

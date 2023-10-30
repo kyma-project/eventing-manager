@@ -6,15 +6,15 @@
 * Tutorials
   * [Prerequisites](./tutorials/evnt-01-prerequisites.md)
   * [Create Subscription subscribing to multiple event types](./tutorials/evnt-02-subs-with-multiple-filters.md)
-  * [Acquiring NATS server system account credentials](./tutorials/evnt-03-nats-server-system-events.md)
   * [Event name cleanup in Subscriptions](./tutorials/evnt-03-type-cleanup.md)
   * [Changing Events Max-In-Flight in Subscriptions](./tutorials/evnt-04-change-max-in-flight-in-sub.md)
   * [Publish legacy events using Kyma Eventing](./tutorials/evnt-05-send-legacy-events.md)
+  * [Acquiring NATS server system account credentials](./tutorials/evnt-10-nats-server-system-events.md)
 * Resources
   * [Subscription CR](./resources/evnt-cr-subscription.md)
   * [Eventing Backend CR](./resources/evnt-cr-eventingbackend.md)
 * Troubleshooting
-  * [Basic Diagnostics](./troubleshooting/evnt-01-eventing-troubleshooting.md)
+  * [Kyma Eventing - Basic Diagnostics](./troubleshooting/evnt-01-eventing-troubleshooting.md)
   * [NATS JetStream backend troubleshooting](./troubleshooting/evnt-02-jetstream-troubleshooting.md)
   * [Subscriber receives irrelevant events](./troubleshooting/evnt-03-type-collision.md)
   * [Eventing backend stopped receiving events due to full storage](./troubleshooting/evnt-04-free-jetstream-storage.md)

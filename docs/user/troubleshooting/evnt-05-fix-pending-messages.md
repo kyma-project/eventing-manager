@@ -1,6 +1,5 @@
----
-title: Published events are pending in the stream
----
+
+# Published events are pending in the stream
 
 ## Symptom
 

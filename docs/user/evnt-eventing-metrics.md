@@ -1,6 +1,4 @@
----
-title: Kyma Eventing Metrics
----
+# Kyma Eventing Metrics
 
 Kyma Eventing provides various metrics, so you can monitor statistics and other information in real time.
 The metrics follow the [Prometheus naming convention](https://prometheus.io/docs/practices/naming/).
