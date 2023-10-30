@@ -5,16 +5,9 @@ import (
 	"errors"
 	"strings"
 
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
-
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
-	// istiosecv1beta1 "istio.io/api/security/v1beta1"
-	// istiotypes "istio.io/api/type/v1beta1"
-	// todo remove ^ this
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	istiosec "istio.io/client-go/pkg/apis/security/v1beta1"
 	istioclient "istio.io/client-go/pkg/clientset/versioned"
 
@@ -25,6 +18,9 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8sclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
