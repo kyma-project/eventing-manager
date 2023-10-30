@@ -138,6 +138,49 @@ func (_c *Client_ApplicationCRDExists_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
+// CreatePeerAuthentication provides a mock function with given fields: ctx, namespace
+func (_m *Client) CreatePeerAuthentication(ctx context.Context, namespace string) error {
+	ret := _m.Called(ctx, namespace)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, namespace)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Client_CreatePeerAuthentication_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreatePeerAuthentication'
+type Client_CreatePeerAuthentication_Call struct {
+	*mock.Call
+}
+
+// CreatePeerAuthentication is a helper method to define mock.On call
+//   - ctx context.Context
+//   - namespace string
+func (_e *Client_Expecter) CreatePeerAuthentication(ctx interface{}, namespace interface{}) *Client_CreatePeerAuthentication_Call {
+	return &Client_CreatePeerAuthentication_Call{Call: _e.mock.On("CreatePeerAuthentication", ctx, namespace)}
+}
+
+func (_c *Client_CreatePeerAuthentication_Call) Run(run func(ctx context.Context, namespace string)) *Client_CreatePeerAuthentication_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Client_CreatePeerAuthentication_Call) Return(_a0 error) *Client_CreatePeerAuthentication_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Client_CreatePeerAuthentication_Call) RunAndReturn(run func(context.Context, string) error) *Client_CreatePeerAuthentication_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeleteClusterRole provides a mock function with given fields: _a0, _a1, _a2
 func (_m *Client) DeleteClusterRole(_a0 context.Context, _a1 string, _a2 string) error {
 	ret := _m.Called(_a0, _a1, _a2)
