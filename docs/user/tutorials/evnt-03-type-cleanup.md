@@ -1,7 +1,7 @@
 # Event name cleanup in Subscriptions
 
 To conform to Cloud Event specifications, sometimes Eventing must modify the event names to filter out prohibited characters. This tutorial presents one example of event name cleanup.
-You learn how Eventing behaves when you create a [Subscription](../../05-technical-reference/00-custom-resources/evnt-01-subscription.md) having prohibited characters in the event names. Read more about [Event name format and cleanup](../../05-technical-reference/evnt-01-event-names.md).
+You learn how Eventing behaves when you create a [Subscription](../resources/evnt-cr-subscription.md) having prohibited characters in the event names. Read more about [Event name format and cleanup](../evnt-event-names.md).
 
 ## Prerequisites
 
@@ -64,7 +64,7 @@ You learn how Eventing behaves when you create a [Subscription](../../05-technic
 
 ## Create a Subscription with Event type consisting of alphanumeric characters
 
-Create a [Subscription](../../05-technical-reference/00-custom-resources/evnt-01-subscription.md) custom resource and subscribe for events of the type: `order.payment*success.v1`. Note that `order.payment*success.v1` contains a prohibited character, the asterisk `*`.
+Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource and subscribe for events of the type: `order.payment*success.v1`. Note that `order.payment*success.v1` contains a prohibited character, the asterisk `*`.
 
 <div tabs name="Create a Subscription" group="create-subscription">
   <details open>
@@ -129,7 +129,7 @@ Note that the returned event type `["order.paymentsuccess.v1"]` does not contain
 You created the `lastorder` Function, and subscribed to the `order.payment*success.v1` events by creating a Subscription CR. 
 Next, you see that you can still publish events with the original Event name (i.e. `order.payment*success.v1`) even though it contains the prohibited character, and it triggers the Function.
 
-1. Port-forward the [Event Publisher Proxy](../../05-technical-reference/00-architecture/evnt-01-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
    ```
@@ -185,4 +185,4 @@ Note that the `Event Type` of the received event is not the same as defined in t
 
 You see that Kyma Eventing modifies the event names to filter out prohibited characters to conform to Cloud Event specifications. 
 
-> **CAUTION:** This cleanup modification is abstract; you can still publish and subscribe to the original Event names. However, in some cases, it can lead to a naming collision as explained in [Event names](../../05-technical-reference/evnt-01-event-names.md).
+> **CAUTION:** This cleanup modification is abstract; you can still publish and subscribe to the original Event names. However, in some cases, it can lead to a naming collision as explained in [Event names](../evnt-event-names.md).

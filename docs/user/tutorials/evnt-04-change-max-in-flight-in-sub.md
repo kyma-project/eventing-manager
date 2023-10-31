@@ -70,7 +70,7 @@ The "in-flight messages" config defines the number of events that Kyma Eventing 
 
 ## Create a Subscription with Max-In-Flight config
 
-Create a [Subscription](../../05-technical-reference/00-custom-resources/evnt-01-subscription.md) custom resource. Subscribe for events of the type: `order.received.v1` and set the `maxInFlightMessages` to `5`, so that Kyma Eventing forwards maximum 5 events in parallel to the sink without waiting for a response.
+Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource. Subscribe for events of the type: `order.received.v1` and set the `maxInFlightMessages` to `5`, so that Kyma Eventing forwards maximum 5 events in parallel to the sink without waiting for a response.
 
 <div tabs name="Create a Subscription" group="create-subscription">
   <details open>
@@ -88,8 +88,8 @@ Create a [Subscription](../../05-technical-reference/00-custom-resources/evnt-01
    - **Type matching:**: `standard`
    - **Source**: `myapp`
      
-5. Click **Create**.
-6. Wait a few seconds for the Subscription to have status `READY`.
+4. Click **Create**.
+5. Wait a few seconds for the Subscription to have status `READY`.
 
   </details>
   <details>
@@ -129,7 +129,7 @@ The operation was successful if the returned status says `true`.
 You created the `lastorder` Function, and subscribed to the `order.received.v1` events by creating a Subscription CR.
 Next, publish 15 events at once and see how Kyma Eventing triggers the workload.
 
-1. Port-forward the [Event Publisher Proxy](../../05-technical-reference/00-architecture/evnt-01-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
    ```

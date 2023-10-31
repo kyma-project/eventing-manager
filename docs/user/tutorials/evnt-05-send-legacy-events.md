@@ -13,7 +13,7 @@ Kyma Eventing also supports sending and receiving of legacy events. In this tuto
 
 ## Create a Subscription
 
-To subscribe to events, we need a [Subscription](../../05-technical-reference/00-custom-resources/evnt-01-subscription.md) custom resource. We're going to subscribe to events of the type `order.received.v1`.
+To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscription.md) custom resource. We're going to subscribe to events of the type `order.received.v1`.
 
 <div tabs name="Create a Subscription" group="trigger-workload">
   <details open>
@@ -69,7 +69,7 @@ The operation was successful if the command returns `true`.
 
 You created the `lastorder` Function, and subscribed to the `order.received.v1` events by creating a Subscription CR. Now it's time to send an event and trigger the Function.
 
-1. Port-forward the [Event Publisher Proxy](../../05-technical-reference/00-architecture/evnt-01-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
    ```

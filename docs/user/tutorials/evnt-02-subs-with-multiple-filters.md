@@ -6,12 +6,12 @@ The [Subscription](../../05-technical-reference/00-custom-resources/evnt-01-subs
 
 >**NOTE:** Read about [Istio sidecars in Kyma and why you want them](https://kyma-project.io/#/istio/user/00-overview/00-30-overview-istio-sidecars). Then, check how to [enable automatic Istio sidecar proxy injection](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-20-enable-sidecar-injection). For more details, see [Default Istio setup in Kyma](https://kyma-project.io/#/istio/user/00-overview/00-40-overview-istio-setup).
 
-1. Follow the [Prerequisites steps](./) for the Eventing tutorials.
+1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
 2. [Create a Function](../../02-get-started/04-trigger-workload-with-event.md#create-a-function).
 
 ## Create a Subscription with multiple event types
 
-To subscribe to multiple events, you need a [Subscription](../../05-technical-reference/00-custom-resources/evnt-01-subscription.md) custom resource. In the following example, you learn how to subscribe to events of two types: `order.received.v1` and `order.changed.v1`.
+To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-subscription.md) custom resource. In the following example, you learn how to subscribe to events of two types: `order.received.v1` and `order.changed.v1`.
 
 <div tabs name="Create a Subscription" group="create-subscription">
   <details open>
@@ -69,9 +69,9 @@ The operation was successful if the returned status says `true`.
 ## Trigger the workload with an event
 
 You created the `lastorder` Function, and subscribed to the `order.received.v1` and `order.changed.v1` events by creating a Subscription CR. Now it's time to publish the events and trigger the Function.
-In the following example, you port-forward the [Event Publisher Proxy](../../05-technical-reference/00-architecture/evnt-01-architecture.md) Service to localhost.
+In the following example, you port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost.
 
-1. Port-forward the [Event Publisher Proxy](../../05-technical-reference/00-architecture/evnt-01-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
    ```
