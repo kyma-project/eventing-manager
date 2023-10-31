@@ -132,7 +132,7 @@ jobs:
 
       - name: Setup and test the eventing-manager
         run: |
-          e2e-setup-with-pa
+          go test -v ./hack/e2e/setup/setup_test.go --tags=e2e --peerauthentication
 
       - name: On error get NATS CR
         if: failure()
