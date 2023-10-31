@@ -14,10 +14,10 @@ It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controlle
 
 This project is scaffolded using [Kubebuilder](https://book.kubebuilder.io), and all the Kubebuilder `makefile` helpers mentioned [here](https://book.kubebuilder.io/reference/makefile-helpers.html) can be used.
 
-## Getting Started
+## Get started
 
 You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller automatically uses the current context in your kubeconfig file (that is, whatever cluster `kubectl cluster-info` shows).
+> **Note:** Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
 
 ## Development
 
@@ -30,7 +30,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 - [kustomize](https://kustomize.io/)
 - Access to Kubernetes cluster ([k3d](https://k3d.io/) / k8s)
 
-### Running locally
+### Run Eventing Manager locally
 
 1. Install the CRDs into the cluster:
 
@@ -44,9 +44,9 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    make run
    ```
 
-**NOTE:** You can also run this in one step by running: `make install run`
+> **NOTE:** You can also run this in one step with the command: `make install run`.
 
-### Running tests
+### Run tests
 
 Run the unit and integration tests:
 
@@ -69,7 +69,7 @@ make test-only
    make lint-thoroughly
    ```
 
-### Modifying the API definitions
+### Modify the API definitions
 
 If you are editing the API definitions, generate the manifests such as CRs or CRDs:
 
@@ -77,9 +77,9 @@ If you are editing the API definitions, generate the manifests such as CRs or CR
 make manifests
 ```
 
-**NOTE:** Run `make --help` for more information on all potential `make` targets
+> **NOTE:** Run `make --help` for more information on all potential `make` targets.
 
-For more information, see the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+For more information, see the [Kubebuilder documentation](https://book.kubebuilder.io/introduction.html).
 
 ### Build container images
 
@@ -89,7 +89,7 @@ Build and push your image to the location specified by `IMG`:
 make docker-build docker-push IMG=<container-registry>/eventing-manager:<tag> # If using docker, <container-registry> is your username.
 ```
 
-**NOTE**: For MacBook M1 devices, run:
+> **NOTE**: For MacBook M1 devices, run:
 
 ```sh
 make docker-buildx IMG=<container-registry>/eventing-manager:<tag>
@@ -98,9 +98,9 @@ make docker-buildx IMG=<container-registry>/eventing-manager:<tag>
 ## Deployment
 
 You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller automatically uses the current context in your kubeconfig file (that is, whatever cluster `kubectl cluster-info` shows).
+> **Note:** Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
 
-### Deploying on the cluster
+### Deploy Eventing Manager on the cluster
 
 1. Install the CRDs to the cluster:
 
@@ -126,14 +126,14 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    kubectl apply -f config/samples/default.yaml
    ```
 
-5. [Optional] For EventMesh backend, set env var `DOMAIN` to the cluster domain in the deployment resource; for example:
+5. [Optional] For EventMesh backend, set env var **DOMAIN** to the cluster domain in the deployment resource; for example:
 
    ```yaml
    - name: DOMAIN
      value: {CLUSTER_NAME}.kymatunas.shoot.canary.k8s-hana.ondemand.com
    ```
 
-### Removing from the cluster
+### Remove Eventing Manager from the cluster
 
 1. To undeploy the controller from the cluster, run:
 
@@ -147,7 +147,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    make uninstall
    ```
 
-### Deploying with [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
+### Deploy with [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
 
 1. Deploy the Lifecycle Manager and Module Manager to the Control Plane cluster:
 
@@ -155,7 +155,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    kyma alpha deploy
    ```
 
-   **NOTE**: For single-cluster mode, edit the Lifecycle Manager role to give access to all resources. Run `kubectl edit clusterrole lifecycle-manager-manager-role` and have the following under `rules`:
+  > **NOTE**: For single-cluster mode, edit the Lifecycle Manager role to give it access to all resources. Run `kubectl edit clusterrole lifecycle-manager-manager-role` and have the following under `rules`:
 
    ```shell
    - apiGroups:
@@ -168,13 +168,13 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 
 2. Prepare OCI container registry:
 
-   Supported registries are Github, DockerHub, GCP or local registry.
-   If you do not have a registry available, hereread the following resources to guide you through the setup:
+   Supported registries are GitHub, DockerHub, GCP, or local registry.
+   If you do not have a registry available, read the following resources to guide you through the setup:
 
-   - Lifecycle manager [provision-cluster-and-registry](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer/provision-cluster-and-registry.md) documentation
-   - [Github container registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry). Change the visibility of a GH package to public if you don't provide a registry secret.
+   - Lifecycle manager [provision-cluster-and-registry](https://github.com/kyma-project/lifecycle-manager/blob/main/docs/developer-tutorials/provision-cluster-and-registry.md) documentation
+   - [GitHub container registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry). Change the visibility of a GH package to public if you don't provide a registry secret.
 
-3. Generate a module template and push the container image by running the following command in the project root director:
+3. Generate a module template and push the container image by running the following command in the project root directory:
 
    ```sh
    kyma alpha create module -n kyma-project.io/module/eventing --version 0.0.1 --registry ghcr.io/{GH_USERNAME}/eventing-manager -c {REGISTRY_USER_NAME}:{REGISTRY_AUTH_TOKEN} -w
@@ -184,7 +184,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 
    The command generates a ModuleTemplate `template.yaml` file in the project folder.
 
-   **NOTE:** Change `template.yaml` content with `spec.target=remote` to `spec.target=control-plane` for **single-cluster** mode as follows:
+  > **NOTE:** Change `template.yaml` content with `spec.target=remote` to `spec.target=control-plane` for **single-cluster** mode as follows:
 
    ```yaml
    spec:
@@ -216,7 +216,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 
 6. Check whether your module is deployed properly:
 
-   Check eventing resource if it has ready state:
+   Check if the `eventing` resource has the ready state:
 
    ```shell
    kubectl get -n kyma-system eventing
@@ -234,7 +234,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    kubectl get pods -n eventing-manager-system
    ```
 
-### Uninstalling controller with [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
+### Uninstall Eventing Manager with [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
 
 1. Delete Eventing from `kyma` resource `spec.modules` `kubectl edit -n kyma-system kyma default-kyma`:
 
