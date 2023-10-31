@@ -18,20 +18,23 @@ import (
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 )
 
-func GetK8sClients() (*kubernetes.Clientset, client.Client, error) {
+func GetRestConfig() (*rest.Config, error) {
 	kubeConfigPath := ""
 	if _, ok := os.LookupEnv("KUBECONFIG"); ok {
 		kubeConfigPath = os.Getenv("KUBECONFIG")
 	} else {
 		userHomeDir, err := os.UserHomeDir()
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		kubeConfigPath = filepath.Join(userHomeDir, ".kube", "config")
 	}
 
-	var kubeConfig *rest.Config
-	kubeConfig, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+	return clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+}
+
+func GetK8sClients() (*kubernetes.Clientset, client.Client, error) {
+	kubeConfig, err := GetRestConfig()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -77,3 +80,5 @@ func GetK8sClients() (*kubernetes.Clientset, client.Client, error) {
 
 	return clientSet, k8sClient, nil
 }
+
+

@@ -7,8 +7,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
 	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
 )
 
 var testEnvironment *testenvironment.TestEnvironment

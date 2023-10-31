@@ -183,13 +183,13 @@ func (_c *Client_CreatePeerAuthentication_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
-// DeleteClusterRole provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Client) DeleteClusterRole(_a0 context.Context, _a1 string, _a2 string) error {
-	ret := _m.Called(_a0, _a1, _a2)
+// DeleteClusterRole provides a mock function with given fields: ctx, name, namespace
+func (_m *Client) DeleteClusterRole(ctx context.Context, name string, namespace string) error {
+	ret := _m.Called(ctx, name, namespace)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(_a0, _a1, _a2)
+		r0 = rf(ctx, name, namespace)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -203,14 +203,14 @@ type Client_DeleteClusterRole_Call struct {
 }
 
 // DeleteClusterRole is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 string
-//   - _a2 string
-func (_e *Client_Expecter) DeleteClusterRole(_a0 interface{}, _a1 interface{}, _a2 interface{}) *Client_DeleteClusterRole_Call {
-	return &Client_DeleteClusterRole_Call{Call: _e.mock.On("DeleteClusterRole", _a0, _a1, _a2)}
+//   - ctx context.Context
+//   - name string
+//   - namespace string
+func (_e *Client_Expecter) DeleteClusterRole(ctx interface{}, name interface{}, namespace interface{}) *Client_DeleteClusterRole_Call {
+	return &Client_DeleteClusterRole_Call{Call: _e.mock.On("DeleteClusterRole", ctx, name, namespace)}
 }
 
-func (_c *Client_DeleteClusterRole_Call) Run(run func(_a0 context.Context, _a1 string, _a2 string)) *Client_DeleteClusterRole_Call {
+func (_c *Client_DeleteClusterRole_Call) Run(run func(ctx context.Context, name string, namespace string)) *Client_DeleteClusterRole_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
@@ -227,13 +227,13 @@ func (_c *Client_DeleteClusterRole_Call) RunAndReturn(run func(context.Context, 
 	return _c
 }
 
-// DeleteClusterRoleBinding provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Client) DeleteClusterRoleBinding(_a0 context.Context, _a1 string, _a2 string) error {
-	ret := _m.Called(_a0, _a1, _a2)
+// DeleteClusterRoleBinding provides a mock function with given fields: ctx, name, namespace
+func (_m *Client) DeleteClusterRoleBinding(ctx context.Context, name string, namespace string) error {
+	ret := _m.Called(ctx, name, namespace)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(_a0, _a1, _a2)
+		r0 = rf(ctx, name, namespace)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -247,14 +247,14 @@ type Client_DeleteClusterRoleBinding_Call struct {
 }
 
 // DeleteClusterRoleBinding is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 string
-//   - _a2 string
-func (_e *Client_Expecter) DeleteClusterRoleBinding(_a0 interface{}, _a1 interface{}, _a2 interface{}) *Client_DeleteClusterRoleBinding_Call {
-	return &Client_DeleteClusterRoleBinding_Call{Call: _e.mock.On("DeleteClusterRoleBinding", _a0, _a1, _a2)}
+//   - ctx context.Context
+//   - name string
+//   - namespace string
+func (_e *Client_Expecter) DeleteClusterRoleBinding(ctx interface{}, name interface{}, namespace interface{}) *Client_DeleteClusterRoleBinding_Call {
+	return &Client_DeleteClusterRoleBinding_Call{Call: _e.mock.On("DeleteClusterRoleBinding", ctx, name, namespace)}
 }
 
-func (_c *Client_DeleteClusterRoleBinding_Call) Run(run func(_a0 context.Context, _a1 string, _a2 string)) *Client_DeleteClusterRoleBinding_Call {
+func (_c *Client_DeleteClusterRoleBinding_Call) Run(run func(ctx context.Context, name string, namespace string)) *Client_DeleteClusterRoleBinding_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
@@ -271,13 +271,13 @@ func (_c *Client_DeleteClusterRoleBinding_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
-// DeleteDeployment provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Client) DeleteDeployment(_a0 context.Context, _a1 string, _a2 string) error {
-	ret := _m.Called(_a0, _a1, _a2)
+// DeleteDeployment provides a mock function with given fields: ctx, name, namespace
+func (_m *Client) DeleteDeployment(ctx context.Context, name string, namespace string) error {
+	ret := _m.Called(ctx, name, namespace)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(_a0, _a1, _a2)
+		r0 = rf(ctx, name, namespace)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -291,14 +291,14 @@ type Client_DeleteDeployment_Call struct {
 }
 
 // DeleteDeployment is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 string
-//   - _a2 string
-func (_e *Client_Expecter) DeleteDeployment(_a0 interface{}, _a1 interface{}, _a2 interface{}) *Client_DeleteDeployment_Call {
-	return &Client_DeleteDeployment_Call{Call: _e.mock.On("DeleteDeployment", _a0, _a1, _a2)}
+//   - ctx context.Context
+//   - name string
+//   - namespace string
+func (_e *Client_Expecter) DeleteDeployment(ctx interface{}, name interface{}, namespace interface{}) *Client_DeleteDeployment_Call {
+	return &Client_DeleteDeployment_Call{Call: _e.mock.On("DeleteDeployment", ctx, name, namespace)}
 }
 
-func (_c *Client_DeleteDeployment_Call) Run(run func(_a0 context.Context, _a1 string, _a2 string)) *Client_DeleteDeployment_Call {
+func (_c *Client_DeleteDeployment_Call) Run(run func(ctx context.Context, name string, namespace string)) *Client_DeleteDeployment_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
@@ -315,17 +315,17 @@ func (_c *Client_DeleteDeployment_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
-// GetCRD provides a mock function with given fields: _a0, _a1
-func (_m *Client) GetCRD(_a0 context.Context, _a1 string) (*v1.CustomResourceDefinition, error) {
-	ret := _m.Called(_a0, _a1)
+// GetCRD provides a mock function with given fields: ctx, name
+func (_m *Client) GetCRD(ctx context.Context, name string) (*v1.CustomResourceDefinition, error) {
+	ret := _m.Called(ctx, name)
 
 	var r0 *v1.CustomResourceDefinition
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*v1.CustomResourceDefinition, error)); ok {
-		return rf(_a0, _a1)
+		return rf(ctx, name)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *v1.CustomResourceDefinition); ok {
-		r0 = rf(_a0, _a1)
+		r0 = rf(ctx, name)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.CustomResourceDefinition)
@@ -333,7 +333,7 @@ func (_m *Client) GetCRD(_a0 context.Context, _a1 string) (*v1.CustomResourceDef
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(_a0, _a1)
+		r1 = rf(ctx, name)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -347,13 +347,13 @@ type Client_GetCRD_Call struct {
 }
 
 // GetCRD is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 string
-func (_e *Client_Expecter) GetCRD(_a0 interface{}, _a1 interface{}) *Client_GetCRD_Call {
-	return &Client_GetCRD_Call{Call: _e.mock.On("GetCRD", _a0, _a1)}
+//   - ctx context.Context
+//   - name string
+func (_e *Client_Expecter) GetCRD(ctx interface{}, name interface{}) *Client_GetCRD_Call {
+	return &Client_GetCRD_Call{Call: _e.mock.On("GetCRD", ctx, name)}
 }
 
-func (_c *Client_GetCRD_Call) Run(run func(_a0 context.Context, _a1 string)) *Client_GetCRD_Call {
+func (_c *Client_GetCRD_Call) Run(run func(ctx context.Context, name string)) *Client_GetCRD_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
@@ -537,17 +537,17 @@ func (_c *Client_GetMutatingWebHookConfiguration_Call) RunAndReturn(run func(con
 	return _c
 }
 
-// GetNATSResources provides a mock function with given fields: _a0, _a1
-func (_m *Client) GetNATSResources(_a0 context.Context, _a1 string) (*v1alpha1.NATSList, error) {
-	ret := _m.Called(_a0, _a1)
+// GetNATSResources provides a mock function with given fields: ctx, namespace
+func (_m *Client) GetNATSResources(ctx context.Context, namespace string) (*v1alpha1.NATSList, error) {
+	ret := _m.Called(ctx, namespace)
 
 	var r0 *v1alpha1.NATSList
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*v1alpha1.NATSList, error)); ok {
-		return rf(_a0, _a1)
+		return rf(ctx, namespace)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *v1alpha1.NATSList); ok {
-		r0 = rf(_a0, _a1)
+		r0 = rf(ctx, namespace)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1alpha1.NATSList)
@@ -555,7 +555,7 @@ func (_m *Client) GetNATSResources(_a0 context.Context, _a1 string) (*v1alpha1.N
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(_a0, _a1)
+		r1 = rf(ctx, namespace)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -569,13 +569,13 @@ type Client_GetNATSResources_Call struct {
 }
 
 // GetNATSResources is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 string
-func (_e *Client_Expecter) GetNATSResources(_a0 interface{}, _a1 interface{}) *Client_GetNATSResources_Call {
-	return &Client_GetNATSResources_Call{Call: _e.mock.On("GetNATSResources", _a0, _a1)}
+//   - ctx context.Context
+//   - namespace string
+func (_e *Client_Expecter) GetNATSResources(ctx interface{}, namespace interface{}) *Client_GetNATSResources_Call {
+	return &Client_GetNATSResources_Call{Call: _e.mock.On("GetNATSResources", ctx, namespace)}
 }
 
-func (_c *Client_GetNATSResources_Call) Run(run func(_a0 context.Context, _a1 string)) *Client_GetNATSResources_Call {
+func (_c *Client_GetNATSResources_Call) Run(run func(ctx context.Context, namespace string)) *Client_GetNATSResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})

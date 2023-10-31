@@ -288,6 +288,10 @@ $(KYMA):
 e2e-setup:
 	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e
 
+.PHONY: e2e-setup-with-pa
+e2e-setup-with-pa:
+	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e --peerauthentication
+
 # e2e-cleanup will delete the Eventing CR and check if the required resources are de-provisioned or not.
 .PHONY: e2e-cleanup
 e2e-cleanup: e2e-eventing-cleanup
