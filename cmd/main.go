@@ -193,7 +193,12 @@ func main() { //nolint:funlen // main function needs to initialize many object
 
 	// Handle PeerAuthentications.
 	// Only attempt to create PAs if the corresponding CRD exists on the cluster.
-	if paCRD, _ := kubeClient.GetCRD(ctx, "PeerAuthentication"); paCRD != nil {
+	crdExists, err := kubeClient.PeerAuthenticationCRDExists(ctx)
+	if err != nil {
+		setupLog.Error(err, "error while fetching PeerAuthentication CRD")
+		os.Exit(1)
+	}
+	if crdExists {
 		// Get the eventing deployment for the OwnerReference.
 		deploy, deployErr := kubeClient.GetDeployment(ctx, "eventing-manager", backendConfig.EventingCRNamespace)
 		if deployErr != nil || deploy == nil {

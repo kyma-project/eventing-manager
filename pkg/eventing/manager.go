@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
-	"github.com/kyma-project/eventing-manager/pkg/utils/istio/peerauthentication"
 )
 
 const (
@@ -201,13 +200,6 @@ func (em EventingManager) DeployPublisherProxyResources(
 		// HPA to auto-scale publisher proxy.
 		newHorizontalPodAutoscaler(publisherDeployment, int32(eventing.Spec.Publisher.Min),
 			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization),
-	}
-
-	// If the PeerAuthentication CRD is available, create a PA for the EPP metrics endpoint.
-	pa, _ := em.kubeClient.GetCRD(ctx, "PeerAuthentication")
-	if pa != nil {
-		resources = append(resources,
-			peerauthentication.EventPublisherProxyMetrics(eventing.Namespace, publisherDeployment.OwnerReferences))
 	}
 
 	// create the resources on k8s.

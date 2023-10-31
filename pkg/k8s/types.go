@@ -10,4 +10,6 @@ const (
 
 	// APIRuleCrdName defines the CRD name for APIRule of kyma api-gateway module.
 	APIRuleCrdName string = "apirules.gateway.kyma-project.io"
+	// PeerAuthenticationCRDName is the name of the Istio peer authentication CRD.
+	PeerAuthenticationCRDName = "PeerAuthentication"
 )
