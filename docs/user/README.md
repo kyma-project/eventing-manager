@@ -46,7 +46,6 @@ To learn more about how Eventing works, see:
 
 - [Eventing architecture](evnt-architecture.md) - describes how Eventing works and the main actors involved, such as the Eventing Manager and Event Publisher Proxy.
 - [Event names](evnt-event-names.md) - contains information about event names and event name cleanup.
-- [EventingBackend CR](./resources/evnt-cr-eventingbackend.md) - describes the EventingBackend custom resource, which shows the current status of Kyma Eventing.
 - [Subscription CR](./resources/evnt-cr-subscription.md) - describes the Subscription custom resource, which you need to subscribe to events.
 - [CloudEvents](https://cloudevents.io/) - provides information about the CloudEvents specification used in Kyma.
 - [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) - provides more information about the backend technology behind Eventing in Kyma. [Eventing Architecture](evnt-architecture.md#jet-stream) provides details on the functionalities and higher qualities of service on top of Core NATS.

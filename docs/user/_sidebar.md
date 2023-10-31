@@ -12,7 +12,6 @@
   * [Acquiring NATS server system account credentials](./tutorials/evnt-10-nats-server-system-events.md)
 * Resources
   * [Subscription CR](./resources/evnt-cr-subscription.md)
-  * [Eventing Backend CR](./resources/evnt-cr-eventingbackend.md)
 * Troubleshooting
   * [Kyma Eventing - Basic Diagnostics](./troubleshooting/evnt-01-eventing-troubleshooting.md)
   * [NATS JetStream backend troubleshooting](./troubleshooting/evnt-02-jetstream-troubleshooting.md)
