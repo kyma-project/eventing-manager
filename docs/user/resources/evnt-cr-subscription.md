@@ -151,5 +151,5 @@ These components use this CR:
 
 | Component   |   Description |
 |-------------|---------------|
-| [Eventing Controller](../00-architecture/evnt-01-architecture.md#eventing-controller) | The Eventing Controller reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend. |
-| [Event Publisher Proxy](../00-architecture/evnt-01-architecture.md#event-publisher-proxy) | The Event Publisher Proxy reads the Subscriptions to find out how events are used for each Application. |
+| [Eventing Manager](../evnt-architecture.md#eventing-manager) | The Eventing Manager reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend. |
+| [Event Publisher Proxy](../evnt-architecture.md#event-publisher-proxy) | The Event Publisher Proxy reads the Subscriptions to find out how events are used for each Application. |

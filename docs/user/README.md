@@ -44,7 +44,7 @@ For more information, read [Eventing Architecture](evnt-architecture.md).
 
 To learn more about how Eventing works, see:
 
-- [Eventing architecture](evnt-architecture.md) - describes how Eventing works and the main actors involved, such as the Eventing Controller and Event Publisher Proxy.
+- [Eventing architecture](evnt-architecture.md) - describes how Eventing works and the main actors involved, such as the Eventing Manager and Event Publisher Proxy.
 - [Event names](evnt-event-names.md) - contains information about event names and event name cleanup.
 - [EventingBackend CR](./resources/evnt-cr-eventingbackend.md) - describes the EventingBackend custom resource, which shows the current status of Kyma Eventing.
 - [Subscription CR](./resources/evnt-cr-subscription.md) - describes the Subscription custom resource, which you need to subscribe to events.
@@ -71,5 +71,5 @@ For other technical resources, check out these links on the Kyma GitHub reposito
 
 - [Eventing Helm chart](https://github.com/kyma-project/kyma/tree/main/resources/eventing)
 - [Event Publishing Proxy](https://github.com/kyma-project/kyma/tree/main/components/event-publisher-proxy)
-- [Eventing Controller](https://github.com/kyma-project/kyma/tree/main/components/eventing-controller)
+- [Eventing Manager](https://github.com/kyma-project/kyma/tree/main/components/eventing-controller)
 - [Eventing Metrics](evnt-eventing-metrics.md)

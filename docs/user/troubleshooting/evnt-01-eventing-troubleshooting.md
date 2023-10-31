@@ -19,7 +19,7 @@ Follow these steps to detect the source of the problem:
 ### Step 1: Check the status of the EventingBackend CR
 
 1. Check the EventingBackend CR. Is the field **EVENTINGREADY** `true`?
-   
+
     ```bash
     kubectl -n kyma-system get eventingbackends.eventing.kyma-project.io
     ```
@@ -54,23 +54,22 @@ Follow these steps to detect the source of the problem:
 
 1. Check the HTTP status code returned after sending an event.
 
-    - If the HTTP status code is 4xx, check if you are sending the events in correct formats. Eventing supports two event formats (legacy and CloudEvents); see the [Eventing tutorials](../../../03-tutorials/00-eventing) for more information.
+   - If the HTTP status code is 4xx, check if you are sending the events in correct formats. Eventing supports two event formats (legacy and CloudEvents); see the [Eventing tutorials](../tutorials/evnt-01-prerequisites.md) for more information.
+   - If the HTTP status code is 5xx, check the logs from the Eventing publisher proxy Pod for any errors. To fetch these logs, run this command:
 
-    -  If the HTTP status code is 5xx, check the logs from the Eventing publisher proxy Pod for any errors. To fetch these logs, run this command:
-   
-        ```bash
-        kubectl -n kyma-system logs -l app.kubernetes.io/instance=eventing,app.kubernetes.io/name=eventing-publisher-proxy
-        ```
+      ```bash
+      kubectl -n kyma-system logs -l app.kubernetes.io/instance=eventing,app.kubernetes.io/name=eventing-publisher-proxy
+      ```
 
-    - If the HTTP status code is 2xx but it's still not working, verify if you are sending the event on same event type as defined in the Subscription.
-  
-        ```bash
-        kubectl -n {NAMESPACE} get subscriptions.eventing.kyma-project.io {NAME} -o jsonpath='{.spec.filter.filters}'
-        ```
+   - If the HTTP status code is 2xx but it's still not working, verify if you are sending the event on same event type as defined in the Subscription.
 
-### Step 4: Check the Eventing Controller logs
+      ```bash
+      kubectl -n {NAMESPACE} get subscriptions.eventing.kyma-project.io {NAME} -o jsonpath='{.spec.filter.filters}'
+      ```
 
-1. Check the logs from the Eventing Controller Pod for any errors and to verify that the event is dispatched.
+### Step 4: Check the Eventing Manager logs
+
+1. Check the logs from the Eventing Manager Pod for any errors and to verify that the event is dispatched.
    To fetch these logs, run this command:
 
     ```bash
@@ -83,7 +82,7 @@ Follow these steps to detect the source of the problem:
 
    - The event was published in a wrong format.
 
-   - Eventing Controller cannot connect to NATS Server.
+   - Eventing Manager cannot connect to NATS Server.
 
 ### Step 5: Check if the Subscription sink is healthy
 
