@@ -9,8 +9,6 @@ import (
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	istiosec "istio.io/client-go/pkg/apis/security/v1beta1"
-	istioclient "istio.io/client-go/pkg/clientset/versioned"
-
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -57,7 +55,6 @@ type KubeClient struct {
 	fieldManager  string
 	client        client.Client
 	clientset     k8sclientset.Interface
-	istioClient   istioclient.Interface
 	dynamicClient dynamic.Interface
 }
 
@@ -73,8 +70,7 @@ func NewKubeClient(client client.Client, clientset k8sclientset.Interface, field
 
 // CreatePeerAuthentication creates the required Istio PeerAuthentications.
 func (c *KubeClient) CreatePeerAuthentication(ctx context.Context, pa *istiosec.PeerAuthentication) error {
-	_, err := c.istioClient.SecurityV1beta1().PeerAuthentications(pa.Namespace).Create(ctx, pa, metav1.CreateOptions{})
-	return err
+	return c.PatchApply(ctx, pa)
 }
 
 func (c *KubeClient) GetDeployment(ctx context.Context, name, namespace string) (*v1.Deployment, error) {
