@@ -38,6 +38,7 @@ var istioClient *istio.Clientset
 // test functions. It will then run the tests and finally shuts everything down.
 func TestMain(m *testing.M) {
 	testPeerauthentication = *flag.Bool("peerauthentication", false, "Tests if PeerAuthentication was created")
+	flag.Parse()
 
 	env = test.NewTestEnvironment()
 
