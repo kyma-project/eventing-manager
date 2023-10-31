@@ -93,16 +93,16 @@ jobs:
         run: |
           make -C hack/ci/ install-k3d-tools
 
-      - name: Install Istio
-        run: |
-          make -C hack/ci/ apply-peerauthentication-crd
-
       - name: Install Kyma CLI & setup k3d cluster using kyma CLI
         run: |
           make kyma
           make -C hack/ci/ create-k3d
           kubectl version
           kubectl cluster-info
+
+      - name: Install Istio
+        run: |
+          make -C hack/ci/ apply-peerauthentication-crd
 
       - name: Install eventing-manager
         run: |
