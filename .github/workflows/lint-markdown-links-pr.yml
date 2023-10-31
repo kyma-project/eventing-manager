@@ -7,16 +7,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Hello world
-        run: |
-          echo "Hello world!"
-
-#      - uses: gaurav-nelson/github-action-markdown-link-check@v1
-#        with:
-#          use-quiet-mode: 'yes'
-#          use-verbose-mode: 'yes'
-#          config-file: '.mlc.config.json'
-#          folder-path: '.'
-#          max-depth: -1
-#          check-modified-files-only: 'yes'
-#          base-branch: ${{ github.base_ref }}
+      - uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          use-verbose-mode: 'yes'
+          config-file: '.mlc.config.json'
+          folder-path: '.'
+          max-depth: -1
+          check-modified-files-only: 'yes'
+          base-branch: ${{ github.base_ref }}
