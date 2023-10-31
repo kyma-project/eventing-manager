@@ -191,32 +191,9 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 	//+kubebuilder:scaffold:builder
 
-	// Handle PeerAuthentications.
-	// Only attempt to create PAs if the corresponding CRD exists on the cluster.
-	crdExists, crdErr := kubeClient.PeerAuthenticationCRDExists(ctx)
-	if crdErr != nil {
-		setupLog.Error(err, "error while fetching PeerAuthentication CRD")
-		os.Exit(1)
-	}
-	if crdExists {
-		// Get the eventing Deployment for the OwnerReference.
-		deploy, deployErr := kubeClient.GetDeployment(ctx, "eventing-manager", backendConfig.EventingCRNamespace)
-		if deployErr != nil {
-			setupLog.Error(err, "error while fetching eventing Deployment")
-			os.Exit(1)
-		}
-		if deploy != nil {
-			for _, pa := range []*istio.PeerAuthentication{
-				peerauthentication.EventingManagerMetrics(deploy.Namespace, deploy.OwnerReferences),
-				peerauthentication.EventPublisherProxyMetrics(deploy.Namespace, deploy.OwnerReferences),
-			} {
-				if paErr := kubeClient.CreatePeerAuthentication(ctx, pa); err != nil {
-					setupLog.Error(paErr, "failed to create PeerAuthentication")
-				}
-			}
-		}
-	} else {
-		setupLog.Info("skipping Istio PeerAuthentication creation; CRD is missing")
+	err = handlePeerAuthentications(ctx, kubeClient)
+	if err != nil {
+		setupLog.Error(err, "unable to handle PeerAuthentication")
 	}
 
 	// Setup webhooks.
@@ -244,4 +221,35 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func handlePeerAuthentications(ctx context.Context, kubeClient k8s.Client) error {
+	// Only attempt to create PAs if the corresponding CRD exists on the cluster.
+	crdExists, err := kubeClient.PeerAuthenticationCRDExists(ctx)
+	if err != nil {
+		setupLog.Error(err, "error while fetching PeerAuthentication CRD")
+		return err
+	}
+	if crdExists {
+		// Get the eventing Deployment for the OwnerReference.
+		deploy, deployErr := kubeClient.GetDeployment(ctx, "eventing-manager", "kyma-system")
+		if deployErr != nil {
+			setupLog.Error(err, "error while fetching eventing Deployment")
+			return err
+		}
+		if deploy != nil {
+			for _, pa := range []*istio.PeerAuthentication{
+				peerauthentication.EventingManagerMetrics(deploy.Namespace, deploy.OwnerReferences),
+				peerauthentication.EventPublisherProxyMetrics(deploy.Namespace, deploy.OwnerReferences),
+			} {
+				if paErr := kubeClient.CreatePeerAuthentication(ctx, pa); paErr != nil {
+					setupLog.Error(paErr, "failed to create PeerAuthentication")
+					return paErr
+				}
+			}
+		}
+	} else {
+		setupLog.Info("skipping Istio PeerAuthentication creation; CRD is missing")
+	}
+	return nil
 }
