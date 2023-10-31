@@ -31,7 +31,7 @@ Eventing Manager manages the internal infrastructure in order to receive an even
 
 ## JetStream
 
-Kyma now supports JetStream by default, which is a persistence offering from NATS, that guarantees `at least once` delivery. It is built-in within our default NATS backend.
+The Eventing module now supports JetStream by default, which is a persistence offering from NATS, that guarantees `at least once` delivery. It is built-in within our default NATS backend.
 
 The key advantages of JetStream over Core NATS are:
 

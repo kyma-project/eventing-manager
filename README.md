@@ -8,9 +8,7 @@
 
 ## Overview
 
-Eventing Manager is a standard Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that observes the state of Eventing resources and reconciles their state according to the desired state.
-
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/), which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
+Eventing Manager is a standard Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that observes the state of Eventing resources and reconciles their state according to the desired state. It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/), which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
 
 This project is scaffolded using [Kubebuilder](https://book.kubebuilder.io), and all the Kubebuilder `makefile` helpers mentioned [here](https://book.kubebuilder.io/reference/makefile-helpers.html) can be used.
 
@@ -38,7 +36,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    make install
    ```
 
-1. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
+2. Run Eventing Manager. It runs in the foreground, so if you want to leave it running, switch to a new terminal.
 
    ```sh
    make run
@@ -135,7 +133,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 
 ### Remove Eventing Manager from the cluster
 
-1. To undeploy the controller from the cluster, run:
+1. To undeploy the Eventing Manager from the cluster, run:
 
    ```sh
    make undeploy
