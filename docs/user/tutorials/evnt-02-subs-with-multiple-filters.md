@@ -1,13 +1,13 @@
 # Create Subscription subscribing to multiple event types
 
-The [Subscription](../../05-technical-reference/00-custom-resources/evnt-01-subscription.md) CustomResourceDefinition (CRD) is used to subscribe to events. In this tutorial, you learn how to subscribe to one or more event types using the Kyma Subscription.
+The [Subscription](../resources/evnt-cr-subscription.md) CustomResourceDefinition (CRD) is used to subscribe to events. In this tutorial, you learn how to subscribe to one or more event types using the Kyma Subscription.
 
 ## Prerequisites
 
 >**NOTE:** Read about [Istio sidecars in Kyma and why you want them](https://kyma-project.io/#/istio/user/00-overview/00-30-overview-istio-sidecars). Then, check how to [enable automatic Istio sidecar proxy injection](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-20-enable-sidecar-injection). For more details, see [Default Istio setup in Kyma](https://kyma-project.io/#/istio/user/00-overview/00-40-overview-istio-setup).
 
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
-2. [Create a Function](../../02-get-started/04-trigger-workload-with-event.md#create-a-function).
+2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event#create-a-function).
 
 ## Create a Subscription with multiple event types
 

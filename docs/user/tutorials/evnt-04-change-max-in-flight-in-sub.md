@@ -8,7 +8,7 @@ The "in-flight messages" config defines the number of events that Kyma Eventing 
 >**NOTE:** Read about [Istio sidecars in Kyma and why you want them](https://kyma-project.io/#/istio/user/00-overview/00-30-overview-istio-sidecars). Then, check how to [enable automatic Istio sidecar proxy injection](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-20-enable-sidecar-injection). For more details, see [Default Istio setup in Kyma](https://kyma-project.io/#/istio/user/00-overview/00-40-overview-istio-setup).
 
 1. Follow the [Prerequisites steps](./) for the Eventing tutorials.
-2. [Create a Function](../../02-get-started/04-trigger-workload-with-event.md#create-a-function).
+2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event).
 3. For this tutorial, instead of the default code sample, replace the Function source with the following code. To simulate prolonged event processing, the Function waits for 5 seconds before returning the response.
 
    <div tabs name="Deploy a Function" group="create-workload">
@@ -179,7 +179,7 @@ Next, publish 15 events at once and see how Kyma Eventing triggers the workload.
 
 ## Verify the event delivery
 
-To verify that the events ware properly delivered, check the logs of the Function (see [Verify the event delivery](../../02-get-started/04-trigger-workload-with-event.md#verify-the-event-delivery)).
+To verify that the events ware properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event#verify-the-event-delivery)).
 
 You will see the received events in the logs as:
 ```

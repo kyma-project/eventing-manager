@@ -8,7 +8,7 @@ You learn how Eventing behaves when you create a [Subscription](../resources/evn
 >**NOTE:** Read about [Istio sidecars in Kyma and why you want them](https://kyma-project.io/#/istio/user/00-overview/00-30-overview-istio-sidecars). Then, check how to [enable automatic Istio sidecar proxy injection](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-20-enable-sidecar-injection). For more details, see [Default Istio setup in Kyma](https://kyma-project.io/#/istio/user/00-overview/00-40-overview-istio-setup).
 
 1. Follow the [Prerequisites steps](./) for the Eventing tutorials.
-2. [Create a Function](../../02-get-started/04-trigger-workload-with-event.md#create-a-function).
+2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event).
 3. For this tutorial, instead of the default code sample, replace the Function source with the following code:
 
    <div tabs name="Deploy a Function" group="create-workload">
