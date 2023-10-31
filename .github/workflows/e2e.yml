@@ -143,3 +143,8 @@ jobs:
         if: failure()
         run: |
           kubectl get eventing -n kyma-system -o yaml
+
+      - name: On error get all PeerAuthentications
+        run: |
+          kubectl get peerauthentications.security.istio.io --all-namespaces -o yaml
+          
