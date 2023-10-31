@@ -191,10 +191,16 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 	//+kubebuilder:scaffold:builder
 
-	deploy, err := kubeClient.GetDeployment(ctx, "eventing-manager", backendConfig.EventingCRNamespace)
-	if err != nil {
-		setupLog.Error(err, "could not fetch eventing deployment")
-	} else if paCRD, _ := kubeClient.GetCRD(ctx, "PeerAuthentication"); paCRD != nil {
+	// Handle PeerAuthentications.
+	// Only attempt to create PAs if the corresponding CRD exists on the cluster.
+	if paCRD, _ := kubeClient.GetCRD(ctx, "PeerAuthentication"); paCRD != nil {
+		// Get the eventing deployment for the OwnerReference.
+		deploy, deployErr := kubeClient.GetDeployment(ctx, "eventing-manager", backendConfig.EventingCRNamespace)
+		if deployErr != nil || deploy == nil {
+			setupLog.Error(err, "could not fetch eventing deployment")
+			goto SkipPA
+		}
+
 		for _, pa := range []*istio.PeerAuthentication{
 			peerauthentication.EventingManagerMetrics(deploy.Namespace, deploy.OwnerReferences),
 			peerauthentication.EventPublisherProxyMetrics(deploy.Namespace, deploy.OwnerReferences),
@@ -204,6 +210,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 			}
 		}
 	}
+SkipPA:
 
 	// Setup webhooks.
 	if err = (&subscriptionv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
