@@ -95,10 +95,7 @@ jobs:
 
       - name: Install Istio
         run: |
-          helm repo add istio https://istio-release.storage.googleapis.com/charts
-          helm repo update
-          kubectl create namespace istio-system
-          helm install istio-base istio/base -n istio-system --set defaultRevision=default
+          make -C hack/ci/ apply-peerauthentication-crd
 
       - name: Install Kyma CLI & setup k3d cluster using kyma CLI
         run: |
