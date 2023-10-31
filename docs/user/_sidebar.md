@@ -9,7 +9,6 @@
   * [Event name cleanup in Subscriptions](./tutorials/evnt-03-type-cleanup.md)
   * [Changing Events Max-In-Flight in Subscriptions](./tutorials/evnt-04-change-max-in-flight-in-sub.md)
   * [Publish legacy events using Kyma Eventing](./tutorials/evnt-05-send-legacy-events.md)
-  * [Acquiring NATS server system account credentials](./tutorials/evnt-10-nats-server-system-events.md)
 * Resources
   * [Subscription CR](./resources/evnt-cr-subscription.md)
 * Troubleshooting
