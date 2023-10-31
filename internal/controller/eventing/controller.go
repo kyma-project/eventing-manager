@@ -21,9 +21,6 @@ import (
 	"errors"
 	"fmt"
 
-	istio "istio.io/client-go/pkg/apis/security/v1beta1"
-
-	"github.com/kyma-project/eventing-manager/pkg/utils/istio/peerauthentication"
 	"github.com/kyma-project/eventing-manager/pkg/watcher"
 
 	"k8s.io/client-go/dynamic"
@@ -388,18 +385,6 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	}
 	// set webhook condition to true.
 	eventing.Status.SetWebhookReadyConditionToTrue()
-
-	// Handle PeerAuthentication for the Eveneting-Manager metrics endpoint.
-	if paCRD, _ := r.kubeClient.GetCRD(ctx, "PeerAuthentication"); paCRD != nil {
-		for _, pa := range []*istio.PeerAuthentication{
-			peerauthentication.EventingManagerMetrics(eventing.Namespace, eventing.OwnerReferences),
-			peerauthentication.EventPublisherProxyMetrics(eventing.Namespace, eventing.OwnerReferences),
-		} {
-			if err := r.kubeClient.CreatePeerAuthentication(ctx, pa); err != nil {
-				log.Error(err)
-			}
-		}
-	}
 
 	// handle switching of backend.
 	if eventing.Status.ActiveBackend != "" {
