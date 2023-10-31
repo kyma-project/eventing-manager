@@ -173,7 +173,7 @@ Next, you see that you can still publish events with the original Event name (i.
 
 ## Verify the event delivery
 
-To verify that the event was properly delivered, check the logs of the Function (see [Verify the event delivery](../../02-get-started/04-trigger-workload-with-event.md#verify-the-event-delivery)).
+To verify that the event was properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event#verify-the-event-delivery)).
 
 You see the received event in the logs:
 ```

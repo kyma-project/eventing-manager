@@ -48,7 +48,7 @@ Follow these steps to detect the source of the problem:
 
     If the status of the Subscription informs you that the sink is not a valid cluster local svc, investigate the Subscription sink. Verify if the sink is a valid HTTP endpoint, for example: `test.test.svc.cluster.local`.
 
-3. Check if the event type defined in the Subscription is correctly formatted as specified in the [event names](../../../05-technical-reference/evnt-01-event-names.md) guidelines.
+3. Check if the event type defined in the Subscription is correctly formatted as specified in the [event names](../evnt-event-names.md) guidelines.
 
 ### Step 3: Check if the event was published correctly
 

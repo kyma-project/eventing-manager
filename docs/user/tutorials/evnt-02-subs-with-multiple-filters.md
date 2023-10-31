@@ -153,7 +153,7 @@ In the following example, you port-forward the [Event Publisher Proxy](../evnt-a
 
 ## Verify the event delivery
 
-To verify that the events were properly delivered, check the logs of the Function (see [Verify the event delivery](../../02-get-started/04-trigger-workload-with-event.md#verify-the-event-delivery)).
+To verify that the events were properly delivered, check the logs of the Function (see [Verify the event delivery](#verify-the-event-delivery)).
 
 You will see the received event in the logs:
 ```
