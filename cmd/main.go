@@ -124,8 +124,8 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		HealthProbeBindAddress: opts.ProbeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       leaderElectionID,
-        WebhookServer:          webhook.NewServer(webhook.Options{Port: 9443}),
-        Cache:                  cache.Options{SyncPeriod: &opts.ReconcilePeriod},
+		WebhookServer:          webhook.NewServer(webhook.Options{Port: 9443}),
+		Cache:                  cache.Options{SyncPeriod: &opts.ReconcilePeriod},
 		Metrics:                server.Options{BindAddress: opts.MetricsAddr},
 	})
 	if err != nil {
