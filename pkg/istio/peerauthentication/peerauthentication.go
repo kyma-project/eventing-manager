@@ -88,7 +88,8 @@ func EventingManagerMetrics(namespace string, ref []metav1.OwnerReference) *isti
 		TypeMeta: typeMeta(),
 		Spec: istiosecv1beta1.PeerAuthentication{
 			Selector: &istiotypes.WorkloadSelector{MatchLabels: map[string]string{
-				"app.kubernetes.io/name": "eventing-publisher-proxy",
+				"app.kubernetes.io/name":     "eventing-manager",
+				"app.kubernetes.io/instance": "eventing-manager",
 			}},
 			PortLevelMtls: map[uint32]*istiosecv1beta1.PeerAuthentication_MutualTLS{
 				8080: {Mode: istiosecv1beta1.PeerAuthentication_MutualTLS_PERMISSIVE},
