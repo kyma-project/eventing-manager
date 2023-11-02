@@ -19,14 +19,15 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/tracing"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
 )
 
 var _ Backend = &JetStream{}
@@ -85,7 +86,7 @@ func (js *JetStream) SyncSubscription(subscription *eventingv1alpha2.Subscriptio
 	}
 
 	// async callback for maxInflight messages
-	callback := js.getCallback(subKeyPrefix, subscription.Name)
+	callback := js.getCallback(subKeyPrefix, subscription.Name, subscription.Namespace)
 	asyncCallback := func(m *nats.Msg) {
 		go callback(m)
 	}
@@ -481,7 +482,7 @@ func (js *JetStream) revertEventTypeToOriginal(event *cev2.Event, sugaredLogger 
 	sugaredLogger.Debugw("type reverted to original type by trimming prefixes")
 }
 
-func (js *JetStream) getCallback(subKeyPrefix, subscriptionName string) nats.MsgHandler {
+func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNamespace string) nats.MsgHandler {
 	return func(msg *nats.Msg) {
 		// fetch sink info from storage
 		sinkValue, ok := js.sinks.Load(subKeyPrefix)
@@ -526,8 +527,8 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName string) nats.Msg
 				status = res.StatusCode
 			}
 
-			js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, ce.Type(), sink, status)
-			js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, ce.Type(), sink, status)
+			js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, ce.Type(), sink, status)
+			js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, subscriptionNamespace, ce.Type(), sink, status)
 
 			// NAK the msg with a delay so it is redelivered after jsConsumerNakDelay period.
 			if err := msg.NakWithDelay(jsConsumerNakDelay); err != nil {
@@ -549,8 +550,8 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName string) nats.Msg
 			status = res.StatusCode
 		}
 
-		js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, ce.Type(), sink, status)
-		js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, ce.Type(), sink, status)
+		js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, ce.Type(), sink, status)
+		js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, subscriptionNamespace, ce.Type(), sink, status)
 		ceLogger.Debugw("CloudEvent was dispatched")
 	}
 }
