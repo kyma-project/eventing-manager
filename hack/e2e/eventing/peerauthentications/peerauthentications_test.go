@@ -4,13 +4,16 @@
 package peerauthentications
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
 	"github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
 	"github.com/stretchr/testify/require"
+	"istio.io/api/security/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"testing"
 )
 
 var testEnvironment *testenvironment.TestEnvironment

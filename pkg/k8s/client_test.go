@@ -6,6 +6,9 @@ import (
 	"errors"
 	"testing"
 
+	istio "istio.io/client-go/pkg/apis/security/v1beta1"
+	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
+
 	"k8s.io/apimachinery/pkg/runtime"
 
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
@@ -105,6 +108,90 @@ func Test_PatchApply(t *testing.T) {
 			require.Equal(t, tc.givenUpdateDeployment.GetName(), gotSTS.Name)
 			require.Equal(t, tc.givenUpdateDeployment.GetNamespace(), gotSTS.Namespace)
 			require.Equal(t, *tc.givenUpdateDeployment.Spec.Replicas, *gotSTS.Spec.Replicas)
+		})
+	}
+}
+
+func Test_PatchApplyPeerAuthentication(t *testing.T) {
+	t.Parallel()
+
+	// NOTE: In real k8s client, the kubeClient.PatchApply creates the resource
+	// if it does not exist on the cluster. But in the fake client the behaviour
+	// is not properly replicated. As mentioned: "ObjectMeta's `Generation` and
+	// `ResourceVersion` don't behave properly, Patch or Update operations that
+	// rely on these fields will fail, or give false positives." in docs
+	// https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client/fake
+	// This scenario will be tested in integration tests with envTest pkg.
+
+	// define test cases
+	testCases := []struct {
+		name                          string
+		givenPeerAuthentication       *istio.PeerAuthentication
+		givenUpdatePeerAuthentication *istio.PeerAuthentication
+	}{
+		{
+			name: "should update resource when exists in k8s",
+			givenPeerAuthentication: &istio.PeerAuthentication{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "eventing-publisher-proxy-metrics",
+					Namespace: "test",
+					Labels: map[string]string{
+						"app.kubernetes.io/name":    "eventing-publisher-proxy-old",
+						"app.kubernetes.io/version": "0.1.0",
+					},
+				},
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "PeerAuthentication",
+					APIVersion: "security.istio.io/v1beta1",
+				},
+			},
+			givenUpdatePeerAuthentication: &istio.PeerAuthentication{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "eventing-publisher-proxy-metrics",
+					Namespace: "test",
+					Labels: map[string]string{
+						"app.kubernetes.io/name":    "eventing-publisher-proxy-new",
+						"app.kubernetes.io/version": "0.1.0",
+					},
+				},
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "PeerAuthentication",
+					APIVersion: "security.istio.io/v1beta1",
+				},
+			},
+		},
+	}
+
+	// run test cases
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// get crd
+			paCRD, err := testutils.NewPeerAuthenticationCRD()
+			require.NoError(t, err)
+
+			// given
+			var objs []client.Object
+			objs = append(objs, paCRD)
+			if tc.givenPeerAuthentication != nil {
+				objs = append(objs, tc.givenPeerAuthentication)
+			}
+
+			// define scheme
+			fakeClientBuilder := fake.NewClientBuilder()
+			newScheme := scheme.Scheme
+			require.NoError(t, istio.AddToScheme(newScheme))
+
+			fakeClient := fakeClientBuilder.WithScheme(newScheme).WithObjects(objs...).Build()
+			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager, nil)
+
+			// when
+			err = kubeClient.PatchApplyPeerAuthentication(context.Background(), tc.givenUpdatePeerAuthentication)
+
+			// then
+			require.NoError(t, err)
 		})
 	}
 }
@@ -628,6 +715,51 @@ func Test_ApplicationCRDExists(t *testing.T) {
 
 			// when
 			gotResult, err := kubeClient.ApplicationCRDExists(context.Background())
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, tc.wantResult, gotResult)
+		})
+	}
+}
+
+func Test_PeerAuthenticationCRDExists(t *testing.T) {
+	t.Parallel()
+
+	// define test cases
+	testCases := []struct {
+		name       string
+		wantResult bool
+	}{
+		{
+			name:       "should return false when CRD is missing in k8s",
+			wantResult: false,
+		},
+		{
+			name:       "should return true when CRD exists in k8s",
+			wantResult: true,
+		},
+	}
+
+	// run test cases
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// given
+			sampleCRD, err := testutils.NewPeerAuthenticationCRD()
+			require.NoError(t, err)
+			var objs []runtime.Object
+			if tc.wantResult {
+				objs = append(objs, sampleCRD)
+			}
+
+			fakeClientSet := apiclientsetfake.NewSimpleClientset(objs...)
+			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
+
+			// when
+			gotResult, err := kubeClient.PeerAuthenticationCRDExists(context.Background())
 
 			// then
 			require.NoError(t, err)

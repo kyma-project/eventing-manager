@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"go.uber.org/zap"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/pkg/errors"
@@ -111,8 +111,8 @@ func ownerReferences(deploy appsv1.Deployment) []metav1.OwnerReference {
 			Kind:               "Deployment",
 			Name:               deploy.Name,
 			UID:                deploy.UID,
-			Controller:         pointer.Bool(true),
-			BlockOwnerDeletion: pointer.Bool(false),
+			Controller:         ptr.To(true),
+			BlockOwnerDeletion: ptr.To(false),
 		},
 	}
 }
