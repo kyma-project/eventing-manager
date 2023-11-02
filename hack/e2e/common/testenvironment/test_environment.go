@@ -8,6 +8,10 @@ import (
 	"strings"
 	"time"
 
+	istio "istio.io/client-go/pkg/apis/security/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
 
@@ -41,13 +45,14 @@ const (
 
 // TestEnvironment provides mocked resources for integration tests.
 type TestEnvironment struct {
-	Context        context.Context
-	Logger         *zap.Logger
-	K8sClientset   *kubernetes.Clientset
-	K8sClient      client.Client
-	EventPublisher *eventing.Publisher
-	SinkClient     *eventing.SinkClient
-	TestConfigs    *env.E2EConfig
+	Context          context.Context
+	Logger           *zap.Logger
+	K8sClientset     *kubernetes.Clientset
+	K8sClient        client.Client
+	K8sDynamicClient *dynamic.DynamicClient
+	EventPublisher   *eventing.Publisher
+	SinkClient       *eventing.SinkClient
+	TestConfigs      *env.E2EConfig
 }
 
 func NewTestEnvironment() *TestEnvironment {
@@ -66,18 +71,19 @@ func NewTestEnvironment() *TestEnvironment {
 	}
 	logger.Info(fmt.Sprintf("##### NOTE: Tests will run w.r.t. backend: %s", testConfigs.BackendType))
 
-	clientSet, k8sClient, err := common.GetK8sClients()
+	clientSet, k8sClient, k8sDynamicClient, err := common.GetK8sClients()
 	if err != nil {
 		logger.Error(err.Error())
 		panic(err)
 	}
 
 	return &TestEnvironment{
-		Context:      context.TODO(),
-		Logger:       logger,
-		K8sClientset: clientSet,
-		K8sClient:    k8sClient,
-		TestConfigs:  testConfigs,
+		Context:          context.TODO(),
+		Logger:           logger,
+		K8sClientset:     clientSet,
+		K8sClient:        k8sClient,
+		K8sDynamicClient: k8sDynamicClient,
+		TestConfigs:      testConfigs,
 	}
 }
 
@@ -565,4 +571,19 @@ func (te *TestEnvironment) WaitForEventingCRReady() error {
 			"CR name: %s, namespace: %s", fixtures.CRName, fixtures.NamespaceName))
 		return nil
 	})
+}
+
+func (env *TestEnvironment) GetPeerAuthenticationFromK8s(name, namespace string) (*istio.PeerAuthentication, error) {
+	result, err := env.K8sDynamicClient.Resource(fixtures.PeerAuthenticationGVR()).Namespace(
+		namespace).Get(env.Context, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// convert from unstructured to structured.
+	pa := &istio.PeerAuthentication{}
+	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(result.Object, pa); err != nil {
+		return nil, err
+	}
+	return pa, nil
 }
