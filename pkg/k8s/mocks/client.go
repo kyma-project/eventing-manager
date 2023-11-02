@@ -36,23 +36,23 @@ func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
 }
 
-// APIRuleCRDExists provides a mock function with given fields: _a0
-func (_m *Client) APIRuleCRDExists(_a0 context.Context) (bool, error) {
-	ret := _m.Called(_a0)
+// APIRuleCRDExists provides a mock function with given fields: ctx
+func (_m *Client) APIRuleCRDExists(ctx context.Context) (bool, error) {
+	ret := _m.Called(ctx)
 
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context) (bool, error)); ok {
-		return rf(_a0)
+		return rf(ctx)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context) bool); ok {
-		r0 = rf(_a0)
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(_a0)
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -66,12 +66,12 @@ type Client_APIRuleCRDExists_Call struct {
 }
 
 // APIRuleCRDExists is a helper method to define mock.On call
-//   - _a0 context.Context
-func (_e *Client_Expecter) APIRuleCRDExists(_a0 interface{}) *Client_APIRuleCRDExists_Call {
-	return &Client_APIRuleCRDExists_Call{Call: _e.mock.On("APIRuleCRDExists", _a0)}
+//   - ctx context.Context
+func (_e *Client_Expecter) APIRuleCRDExists(ctx interface{}) *Client_APIRuleCRDExists_Call {
+	return &Client_APIRuleCRDExists_Call{Call: _e.mock.On("APIRuleCRDExists", ctx)}
 }
 
-func (_c *Client_APIRuleCRDExists_Call) Run(run func(_a0 context.Context)) *Client_APIRuleCRDExists_Call {
+func (_c *Client_APIRuleCRDExists_Call) Run(run func(ctx context.Context)) *Client_APIRuleCRDExists_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context))
 	})
@@ -88,23 +88,23 @@ func (_c *Client_APIRuleCRDExists_Call) RunAndReturn(run func(context.Context) (
 	return _c
 }
 
-// ApplicationCRDExists provides a mock function with given fields: _a0
-func (_m *Client) ApplicationCRDExists(_a0 context.Context) (bool, error) {
-	ret := _m.Called(_a0)
+// ApplicationCRDExists provides a mock function with given fields: ctx
+func (_m *Client) ApplicationCRDExists(ctx context.Context) (bool, error) {
+	ret := _m.Called(ctx)
 
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context) (bool, error)); ok {
-		return rf(_a0)
+		return rf(ctx)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context) bool); ok {
-		r0 = rf(_a0)
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(_a0)
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -118,12 +118,12 @@ type Client_ApplicationCRDExists_Call struct {
 }
 
 // ApplicationCRDExists is a helper method to define mock.On call
-//   - _a0 context.Context
-func (_e *Client_Expecter) ApplicationCRDExists(_a0 interface{}) *Client_ApplicationCRDExists_Call {
-	return &Client_ApplicationCRDExists_Call{Call: _e.mock.On("ApplicationCRDExists", _a0)}
+//   - ctx context.Context
+func (_e *Client_Expecter) ApplicationCRDExists(ctx interface{}) *Client_ApplicationCRDExists_Call {
+	return &Client_ApplicationCRDExists_Call{Call: _e.mock.On("ApplicationCRDExists", ctx)}
 }
 
-func (_c *Client_ApplicationCRDExists_Call) Run(run func(_a0 context.Context)) *Client_ApplicationCRDExists_Call {
+func (_c *Client_ApplicationCRDExists_Call) Run(run func(ctx context.Context)) *Client_ApplicationCRDExists_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context))
 	})
@@ -605,17 +605,17 @@ func (_c *Client_GetNATSResources_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
-// GetSecret provides a mock function with given fields: _a0, _a1
-func (_m *Client) GetSecret(_a0 context.Context, _a1 string) (*corev1.Secret, error) {
-	ret := _m.Called(_a0, _a1)
+// GetSecret provides a mock function with given fields: ctx, namespacedName
+func (_m *Client) GetSecret(ctx context.Context, namespacedName string) (*corev1.Secret, error) {
+	ret := _m.Called(ctx, namespacedName)
 
 	var r0 *corev1.Secret
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*corev1.Secret, error)); ok {
-		return rf(_a0, _a1)
+		return rf(ctx, namespacedName)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *corev1.Secret); ok {
-		r0 = rf(_a0, _a1)
+		r0 = rf(ctx, namespacedName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*corev1.Secret)
@@ -623,7 +623,7 @@ func (_m *Client) GetSecret(_a0 context.Context, _a1 string) (*corev1.Secret, er
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(_a0, _a1)
+		r1 = rf(ctx, namespacedName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -637,13 +637,13 @@ type Client_GetSecret_Call struct {
 }
 
 // GetSecret is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 string
-func (_e *Client_Expecter) GetSecret(_a0 interface{}, _a1 interface{}) *Client_GetSecret_Call {
-	return &Client_GetSecret_Call{Call: _e.mock.On("GetSecret", _a0, _a1)}
+//   - ctx context.Context
+//   - namespacedName string
+func (_e *Client_Expecter) GetSecret(ctx interface{}, namespacedName interface{}) *Client_GetSecret_Call {
+	return &Client_GetSecret_Call{Call: _e.mock.On("GetSecret", ctx, namespacedName)}
 }
 
-func (_c *Client_GetSecret_Call) Run(run func(_a0 context.Context, _a1 string)) *Client_GetSecret_Call {
+func (_c *Client_GetSecret_Call) Run(run func(ctx context.Context, namespacedName string)) *Client_GetSecret_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
@@ -769,13 +769,13 @@ func (_c *Client_GetValidatingWebHookConfiguration_Call) RunAndReturn(run func(c
 	return _c
 }
 
-// PatchApply provides a mock function with given fields: _a0, _a1
-func (_m *Client) PatchApply(_a0 context.Context, _a1 client.Object) error {
-	ret := _m.Called(_a0, _a1)
+// PatchApply provides a mock function with given fields: ctx, object
+func (_m *Client) PatchApply(ctx context.Context, object client.Object) error {
+	ret := _m.Called(ctx, object)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, client.Object) error); ok {
-		r0 = rf(_a0, _a1)
+		r0 = rf(ctx, object)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -789,13 +789,13 @@ type Client_PatchApply_Call struct {
 }
 
 // PatchApply is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 client.Object
-func (_e *Client_Expecter) PatchApply(_a0 interface{}, _a1 interface{}) *Client_PatchApply_Call {
-	return &Client_PatchApply_Call{Call: _e.mock.On("PatchApply", _a0, _a1)}
+//   - ctx context.Context
+//   - object client.Object
+func (_e *Client_Expecter) PatchApply(ctx interface{}, object interface{}) *Client_PatchApply_Call {
+	return &Client_PatchApply_Call{Call: _e.mock.On("PatchApply", ctx, object)}
 }
 
-func (_c *Client_PatchApply_Call) Run(run func(_a0 context.Context, _a1 client.Object)) *Client_PatchApply_Call {
+func (_c *Client_PatchApply_Call) Run(run func(ctx context.Context, object client.Object)) *Client_PatchApply_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(client.Object))
 	})
@@ -855,23 +855,23 @@ func (_c *Client_PatchApplyPeerAuthentication_Call) RunAndReturn(run func(contex
 	return _c
 }
 
-// PeerAuthenticationCRDExists provides a mock function with given fields: _a0
-func (_m *Client) PeerAuthenticationCRDExists(_a0 context.Context) (bool, error) {
-	ret := _m.Called(_a0)
+// PeerAuthenticationCRDExists provides a mock function with given fields: ctx
+func (_m *Client) PeerAuthenticationCRDExists(ctx context.Context) (bool, error) {
+	ret := _m.Called(ctx)
 
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context) (bool, error)); ok {
-		return rf(_a0)
+		return rf(ctx)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context) bool); ok {
-		r0 = rf(_a0)
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(_a0)
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -885,12 +885,12 @@ type Client_PeerAuthenticationCRDExists_Call struct {
 }
 
 // PeerAuthenticationCRDExists is a helper method to define mock.On call
-//   - _a0 context.Context
-func (_e *Client_Expecter) PeerAuthenticationCRDExists(_a0 interface{}) *Client_PeerAuthenticationCRDExists_Call {
-	return &Client_PeerAuthenticationCRDExists_Call{Call: _e.mock.On("PeerAuthenticationCRDExists", _a0)}
+//   - ctx context.Context
+func (_e *Client_Expecter) PeerAuthenticationCRDExists(ctx interface{}) *Client_PeerAuthenticationCRDExists_Call {
+	return &Client_PeerAuthenticationCRDExists_Call{Call: _e.mock.On("PeerAuthenticationCRDExists", ctx)}
 }
 
-func (_c *Client_PeerAuthenticationCRDExists_Call) Run(run func(_a0 context.Context)) *Client_PeerAuthenticationCRDExists_Call {
+func (_c *Client_PeerAuthenticationCRDExists_Call) Run(run func(ctx context.Context)) *Client_PeerAuthenticationCRDExists_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context))
 	})
@@ -907,13 +907,13 @@ func (_c *Client_PeerAuthenticationCRDExists_Call) RunAndReturn(run func(context
 	return _c
 }
 
-// UpdateDeployment provides a mock function with given fields: _a0, _a1
-func (_m *Client) UpdateDeployment(_a0 context.Context, _a1 *appsv1.Deployment) error {
-	ret := _m.Called(_a0, _a1)
+// UpdateDeployment provides a mock function with given fields: ctx, deployment
+func (_m *Client) UpdateDeployment(ctx context.Context, deployment *appsv1.Deployment) error {
+	ret := _m.Called(ctx, deployment)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *appsv1.Deployment) error); ok {
-		r0 = rf(_a0, _a1)
+		r0 = rf(ctx, deployment)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -927,13 +927,13 @@ type Client_UpdateDeployment_Call struct {
 }
 
 // UpdateDeployment is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 *appsv1.Deployment
-func (_e *Client_Expecter) UpdateDeployment(_a0 interface{}, _a1 interface{}) *Client_UpdateDeployment_Call {
-	return &Client_UpdateDeployment_Call{Call: _e.mock.On("UpdateDeployment", _a0, _a1)}
+//   - ctx context.Context
+//   - deployment *appsv1.Deployment
+func (_e *Client_Expecter) UpdateDeployment(ctx interface{}, deployment interface{}) *Client_UpdateDeployment_Call {
+	return &Client_UpdateDeployment_Call{Call: _e.mock.On("UpdateDeployment", ctx, deployment)}
 }
 
-func (_c *Client_UpdateDeployment_Call) Run(run func(_a0 context.Context, _a1 *appsv1.Deployment)) *Client_UpdateDeployment_Call {
+func (_c *Client_UpdateDeployment_Call) Run(run func(ctx context.Context, deployment *appsv1.Deployment)) *Client_UpdateDeployment_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*appsv1.Deployment))
 	})

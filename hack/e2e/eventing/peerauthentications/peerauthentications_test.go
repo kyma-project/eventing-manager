@@ -19,15 +19,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testEnvironment *testenvironment.TestEnvironment
+var testEnv *testenvironment.TestEnvironment
 
 // TestMain runs before all the other test functions.
 func TestMain(m *testing.M) {
-	testEnvironment = testenvironment.NewTestEnvironment()
+	testEnv = testenvironment.NewTestEnvironment()
 
 	// Wait for eventing-manager deployment to get ready.
-	if err := testEnvironment.WaitForDeploymentReady(ManagerDeploymentName, NamespaceName, ""); err != nil {
-		testEnvironment.Logger.Fatal(err.Error())
+	if err := testEnv.WaitForDeploymentReady(ManagerDeploymentName, NamespaceName, ""); err != nil {
+		testEnv.Logger.Fatal(err.Error())
 	}
 
 	// Run the tests and exit.
@@ -35,19 +35,19 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// Test_EventPublisherProxyMetricsPeerAuthentication checks if the Istio PeerAuthentication for the metrics endpoint of
+// Test_PublisherProxyPeerAuthentication_Created checks if the Istio PeerAuthentication for the metrics endpoint of
 // Event-Publisher-Proxy was created.
-func Test_EventPublisherProxyMetricsPeerAuthentication(t *testing.T) {
+func Test_PublisherProxyPeerAuthentication_Created(t *testing.T) {
 	t.Parallel()
 	peerAuthName := "eventing-publisher-proxy-metrics"
 
-	deploy, err := testEnvironment.GetDeploymentFromK8s(ManagerDeploymentName, NamespaceName)
+	deploy, err := testEnv.GetDeploymentFromK8s(ManagerDeploymentName, NamespaceName)
 	require.NoError(t, err)
 
 	var gotPeerAuth *istio.PeerAuthentication
 	retryErr := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
 		var err error
-		gotPeerAuth, err = testEnvironment.GetPeerAuthenticationFromK8s(peerAuthName, NamespaceName)
+		gotPeerAuth, err = testEnv.GetPeerAuthenticationFromK8s(peerAuthName, NamespaceName)
 		if err != nil {
 			return err
 		}
@@ -83,19 +83,19 @@ func Test_EventPublisherProxyMetricsPeerAuthentication(t *testing.T) {
 	require.Equal(t, istiosecv1beta1.PeerAuthentication_MutualTLS_PERMISSIVE, gotPeerAuth.Spec.PortLevelMtls[9090].Mode)
 }
 
-// Test_EventingManagerMetricsPeerAuthentication checks if the Istio PeerAuthentication for the metrics endpoint of
+// Test_EventingManagerPeerAuthentication_Created checks if the Istio PeerAuthentication for the metrics endpoint of
 // Eventing-Manager was created.
-func Test_EventingManagerMetricsPeerAuthentication(t *testing.T) {
+func Test_EventingManagerPeerAuthentication_Created(t *testing.T) {
 	t.Parallel()
 	peerAuthName := "eventing-manager-metrics"
 
-	deploy, err := testEnvironment.GetDeploymentFromK8s(ManagerDeploymentName, NamespaceName)
+	deploy, err := testEnv.GetDeploymentFromK8s(ManagerDeploymentName, NamespaceName)
 	require.NoError(t, err)
 
 	var gotPeerAuth *istio.PeerAuthentication
 	retryErr := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
 		var err error
-		gotPeerAuth, err = testEnvironment.GetPeerAuthenticationFromK8s(peerAuthName, NamespaceName)
+		gotPeerAuth, err = testEnv.GetPeerAuthenticationFromK8s(peerAuthName, NamespaceName)
 		if err != nil {
 			return err
 		}

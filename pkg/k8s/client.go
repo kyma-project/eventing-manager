@@ -35,20 +35,20 @@ var NatsGVK = schema.GroupVersionResource{
 type Client interface {
 	GetDeployment(ctx context.Context, name, namespace string) (*v1.Deployment, error)
 	GetDeploymentDynamic(ctx context.Context, name, namespace string) (*v1.Deployment, error)
-	UpdateDeployment(context.Context, *v1.Deployment) error
+	UpdateDeployment(ctx context.Context, deployment *v1.Deployment) error
 	DeleteDeployment(ctx context.Context, name, namespace string) error
 	DeleteClusterRole(ctx context.Context, name, namespace string) error
 	DeleteClusterRoleBinding(ctx context.Context, name, namespace string) error
 	GetNATSResources(ctx context.Context, namespace string) (*natsv1alpha1.NATSList, error)
-	PatchApply(context.Context, client.Object) error
-	GetSecret(context.Context, string) (*corev1.Secret, error)
+	PatchApply(ctx context.Context, object client.Object) error
+	GetSecret(ctx context.Context, namespacedName string) (*corev1.Secret, error)
 	GetMutatingWebHookConfiguration(ctx context.Context, name string) (*admissionv1.MutatingWebhookConfiguration, error)
 	GetValidatingWebHookConfiguration(ctx context.Context,
 		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
 	GetCRD(ctx context.Context, name string) (*apiextensionsv1.CustomResourceDefinition, error)
-	ApplicationCRDExists(context.Context) (bool, error)
-	PeerAuthenticationCRDExists(context.Context) (bool, error)
-	APIRuleCRDExists(context.Context) (bool, error)
+	ApplicationCRDExists(ctx context.Context) (bool, error)
+	PeerAuthenticationCRDExists(ctx context.Context) (bool, error)
+	APIRuleCRDExists(ctx context.Context) (bool, error)
 	GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error)
 	GetConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error)
 	PatchApplyPeerAuthentication(ctx context.Context, authentication *istiosec.PeerAuthentication) error
