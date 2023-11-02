@@ -124,8 +124,8 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    kubectl apply -f config/samples/default.yaml
    ```
 
-5. [Optional] For EventMesh backend, set the **spec.backend.config.domain** to the cluster public domain in the Eventing Custom Resource; for example:
-
+5. For EventMesh backend, if the Kyma Kubernetes cluster is managed by Gardener, then the Eventing Manager reads the cluster public domain from the ConfigMap **kube-system/shoot-info**.
+   Otherwise, set the **spec.backend.config.domain** to the cluster public domain in the Eventing Custom Resource; for example:
    ```yaml
    spec:
      backend:
@@ -135,8 +135,6 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
          eventMeshSecret: "kyma-system/eventing-backend"
          eventTypePrefix: "sap.kyma.custom"
    ```
-   
-   or, if the Kyma Kubernetes cluster is managed by Gardener, then the Eventing Manager reads the cluster public domain from the ConfigMap **kube-system/shoot-info**.
 
 ### Remove Eventing Manager from the cluster
 
