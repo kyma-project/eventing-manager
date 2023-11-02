@@ -81,4 +81,4 @@ jobs:
       - name: On error get eventing CR
         if: failure()
         run: |
-          kubectl get eventing -n kyma-system -o yaml          
+          kubectl get eventing -n kyma-system -o yaml
