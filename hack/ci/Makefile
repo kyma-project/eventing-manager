@@ -82,4 +82,4 @@ install-k3d-tools: ## Create k3d with kyma CRDs.
 
 .PHONY: apply-peerauthentication-crd
 apply-peerauthentication-crd:
-	kubectl apply -f ./security.istio.io_peerauthentication.yaml
+	kubectl apply -f ../../config/crd/for-tests/security.istio.io_peerauthentication.yaml

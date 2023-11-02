@@ -22,10 +22,11 @@ import (
 	"log"
 	"os"
 
+	istiopeerauthentication "github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
+
 	"github.com/go-logr/zapr"
 	subscriptionv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	subscriptionv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	istio "istio.io/client-go/pkg/apis/security/v1beta1"
 	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -44,7 +45,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
-	"github.com/kyma-project/eventing-manager/pkg/utils/istio/peerauthentication"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -191,11 +191,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 	//+kubebuilder:scaffold:builder
 
-	err = handlePeerAuthentications(ctx, kubeClient)
-	if err != nil {
-		setupLog.Error(err, "unable to handle PeerAuthentication")
-	}
-
 	// Setup webhooks.
 	if err = (&subscriptionv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
@@ -204,6 +199,13 @@ func main() { //nolint:funlen // main function needs to initialize many object
 
 	if err = (&subscriptionv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
+		os.Exit(1)
+	}
+
+	// sync PeerAuthentications
+	err = istiopeerauthentication.SyncPeerAuthentications(ctx, kubeClient, ctrLogger.WithContext().Named("main"))
+	if err != nil {
+		setupLog.Error(err, "unable to sync PeerAuthentication")
 		os.Exit(1)
 	}
 
@@ -221,35 +223,4 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-func handlePeerAuthentications(ctx context.Context, kubeClient k8s.Client) error {
-	// Only attempt to create PAs if the corresponding CRD exists on the cluster.
-	crdExists, err := kubeClient.PeerAuthenticationCRDExists(ctx)
-	if err != nil {
-		setupLog.Error(err, "error while fetching PeerAuthentication CRD")
-		return err
-	}
-	if crdExists {
-		// Get the eventing Deployment for the OwnerReference.
-		deploy, deployErr := kubeClient.GetDeployment(ctx, "eventing-manager", "kyma-system")
-		if deployErr != nil {
-			setupLog.Error(err, "error while fetching eventing Deployment")
-			return err
-		}
-		if deploy != nil {
-			for _, pa := range []*istio.PeerAuthentication{
-				peerauthentication.EventingManagerMetrics(deploy.Namespace, deploy.OwnerReferences),
-				peerauthentication.EventPublisherProxyMetrics(deploy.Namespace, deploy.OwnerReferences),
-			} {
-				if paErr := kubeClient.CreatePeerAuthentication(ctx, pa); paErr != nil {
-					setupLog.Error(paErr, "failed to create PeerAuthentication")
-					return paErr
-				}
-			}
-		}
-	} else {
-		setupLog.Info("skipping Istio PeerAuthentication creation; CRD is missing")
-	}
-	return nil
 }

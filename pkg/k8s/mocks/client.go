@@ -140,49 +140,6 @@ func (_c *Client_ApplicationCRDExists_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
-// CreatePeerAuthentication provides a mock function with given fields: ctx, authentication
-func (_m *Client) CreatePeerAuthentication(ctx context.Context, authentication *v1beta1.PeerAuthentication) error {
-	ret := _m.Called(ctx, authentication)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *v1beta1.PeerAuthentication) error); ok {
-		r0 = rf(ctx, authentication)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Client_CreatePeerAuthentication_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreatePeerAuthentication'
-type Client_CreatePeerAuthentication_Call struct {
-	*mock.Call
-}
-
-// CreatePeerAuthentication is a helper method to define mock.On call
-//   - ctx context.Context
-//   - authentication *v1beta1.PeerAuthentication
-func (_e *Client_Expecter) CreatePeerAuthentication(ctx interface{}, authentication interface{}) *Client_CreatePeerAuthentication_Call {
-	return &Client_CreatePeerAuthentication_Call{Call: _e.mock.On("CreatePeerAuthentication", ctx, authentication)}
-}
-
-func (_c *Client_CreatePeerAuthentication_Call) Run(run func(ctx context.Context, authentication *v1beta1.PeerAuthentication)) *Client_CreatePeerAuthentication_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*v1beta1.PeerAuthentication))
-	})
-	return _c
-}
-
-func (_c *Client_CreatePeerAuthentication_Call) Return(_a0 error) *Client_CreatePeerAuthentication_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Client_CreatePeerAuthentication_Call) RunAndReturn(run func(context.Context, *v1beta1.PeerAuthentication) error) *Client_CreatePeerAuthentication_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // DeleteClusterRole provides a mock function with given fields: ctx, name, namespace
 func (_m *Client) DeleteClusterRole(ctx context.Context, name string, namespace string) error {
 	ret := _m.Called(ctx, name, namespace)
@@ -478,6 +435,62 @@ func (_c *Client_GetDeployment_Call) Return(_a0 *appsv1.Deployment, _a1 error) *
 }
 
 func (_c *Client_GetDeployment_Call) RunAndReturn(run func(context.Context, string, string) (*appsv1.Deployment, error)) *Client_GetDeployment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetDeploymentDynamic provides a mock function with given fields: ctx, name, namespace
+func (_m *Client) GetDeploymentDynamic(ctx context.Context, name string, namespace string) (*appsv1.Deployment, error) {
+	ret := _m.Called(ctx, name, namespace)
+
+	var r0 *appsv1.Deployment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*appsv1.Deployment, error)); ok {
+		return rf(ctx, name, namespace)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *appsv1.Deployment); ok {
+		r0 = rf(ctx, name, namespace)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*appsv1.Deployment)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, name, namespace)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_GetDeploymentDynamic_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDeploymentDynamic'
+type Client_GetDeploymentDynamic_Call struct {
+	*mock.Call
+}
+
+// GetDeploymentDynamic is a helper method to define mock.On call
+//   - ctx context.Context
+//   - name string
+//   - namespace string
+func (_e *Client_Expecter) GetDeploymentDynamic(ctx interface{}, name interface{}, namespace interface{}) *Client_GetDeploymentDynamic_Call {
+	return &Client_GetDeploymentDynamic_Call{Call: _e.mock.On("GetDeploymentDynamic", ctx, name, namespace)}
+}
+
+func (_c *Client_GetDeploymentDynamic_Call) Run(run func(ctx context.Context, name string, namespace string)) *Client_GetDeploymentDynamic_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Client_GetDeploymentDynamic_Call) Return(_a0 *appsv1.Deployment, _a1 error) *Client_GetDeploymentDynamic_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_GetDeploymentDynamic_Call) RunAndReturn(run func(context.Context, string, string) (*appsv1.Deployment, error)) *Client_GetDeploymentDynamic_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -795,6 +808,49 @@ func (_c *Client_PatchApply_Call) Return(_a0 error) *Client_PatchApply_Call {
 }
 
 func (_c *Client_PatchApply_Call) RunAndReturn(run func(context.Context, client.Object) error) *Client_PatchApply_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// PatchApplyPeerAuthentication provides a mock function with given fields: ctx, authentication
+func (_m *Client) PatchApplyPeerAuthentication(ctx context.Context, authentication *v1beta1.PeerAuthentication) error {
+	ret := _m.Called(ctx, authentication)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *v1beta1.PeerAuthentication) error); ok {
+		r0 = rf(ctx, authentication)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Client_PatchApplyPeerAuthentication_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PatchApplyPeerAuthentication'
+type Client_PatchApplyPeerAuthentication_Call struct {
+	*mock.Call
+}
+
+// PatchApplyPeerAuthentication is a helper method to define mock.On call
+//   - ctx context.Context
+//   - authentication *v1beta1.PeerAuthentication
+func (_e *Client_Expecter) PatchApplyPeerAuthentication(ctx interface{}, authentication interface{}) *Client_PatchApplyPeerAuthentication_Call {
+	return &Client_PatchApplyPeerAuthentication_Call{Call: _e.mock.On("PatchApplyPeerAuthentication", ctx, authentication)}
+}
+
+func (_c *Client_PatchApplyPeerAuthentication_Call) Run(run func(ctx context.Context, authentication *v1beta1.PeerAuthentication)) *Client_PatchApplyPeerAuthentication_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*v1beta1.PeerAuthentication))
+	})
+	return _c
+}
+
+func (_c *Client_PatchApplyPeerAuthentication_Call) Return(_a0 error) *Client_PatchApplyPeerAuthentication_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Client_PatchApplyPeerAuthentication_Call) RunAndReturn(run func(context.Context, *v1beta1.PeerAuthentication) error) *Client_PatchApplyPeerAuthentication_Call {
 	_c.Call.Return(run)
 	return _c
 }

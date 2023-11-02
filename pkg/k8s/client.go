@@ -5,6 +5,8 @@ import (
 	"errors"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
@@ -32,6 +34,7 @@ var NatsGVK = schema.GroupVersionResource{
 //go:generate go run github.com/vektra/mockery/v2 --name=Client --outpkg=mocks --case=underscore
 type Client interface {
 	GetDeployment(ctx context.Context, name, namespace string) (*v1.Deployment, error)
+	GetDeploymentDynamic(ctx context.Context, name, namespace string) (*v1.Deployment, error)
 	UpdateDeployment(context.Context, *v1.Deployment) error
 	DeleteDeployment(ctx context.Context, name, namespace string) error
 	DeleteClusterRole(ctx context.Context, name, namespace string) error
@@ -48,7 +51,7 @@ type Client interface {
 	APIRuleCRDExists(context.Context) (bool, error)
 	GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error)
 	GetConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error)
-	CreatePeerAuthentication(ctx context.Context, authentication *istiosec.PeerAuthentication) error
+	PatchApplyPeerAuthentication(ctx context.Context, authentication *istiosec.PeerAuthentication) error
 }
 
 type KubeClient struct {
@@ -68,15 +71,34 @@ func NewKubeClient(client client.Client, clientset k8sclientset.Interface, field
 	}
 }
 
-// CreatePeerAuthentication creates the required Istio PeerAuthentications.
-func (c *KubeClient) CreatePeerAuthentication(ctx context.Context, pa *istiosec.PeerAuthentication) error {
-	return c.PatchApply(ctx, pa)
+// PatchApplyPeerAuthentication creates the Istio PeerAuthentications.
+func (c *KubeClient) PatchApplyPeerAuthentication(ctx context.Context, pa *istiosec.PeerAuthentication) error {
+	// patch apply as unstructured because the GVK is not registered in Scheme.
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(pa)
+	if err != nil {
+		return err
+	}
+	return c.PatchApply(ctx, &unstructured.Unstructured{Object: obj})
 }
 
 func (c *KubeClient) GetDeployment(ctx context.Context, name, namespace string) (*v1.Deployment, error) {
 	deployment := &v1.Deployment{}
 	if err := c.client.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, deployment); err != nil {
 		return nil, client.IgnoreNotFound(err)
+	}
+	return deployment, nil
+}
+
+func (c *KubeClient) GetDeploymentDynamic(ctx context.Context, name, namespace string) (*v1.Deployment, error) {
+	deploymentRes := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+	result, err := c.dynamicClient.Resource(deploymentRes).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, client.IgnoreNotFound(err)
+	}
+
+	deployment := &v1.Deployment{}
+	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(result.Object, deployment); err != nil {
+		return nil, err
 	}
 	return deployment, nil
 }

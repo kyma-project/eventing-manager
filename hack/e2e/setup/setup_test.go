@@ -9,78 +9,60 @@ package setup_test
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
+
 	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
-	"istio.io/client-go/pkg/apis/security/v1beta1"
-	istio "istio.io/client-go/pkg/clientset/versioned"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common"
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
-	test "github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	"github.com/kyma-project/eventing-manager/pkg/utils/istio/peerauthentication"
 )
 
-var testPeerauthentication bool
-var env *test.TestEnvironment
-var istioClient *istio.Clientset
+var testEnvironment *testenvironment.TestEnvironment
 
 // TestMain runs before all the other test functions. It sets up all the resources that are shared between the different
 // test functions. It will then run the tests and finally shuts everything down.
 func TestMain(m *testing.M) {
-	testPeerauthentication = *flag.Bool("peerauthentication", false, "Tests if PeerAuthentication was created")
-	flag.Parse()
-
-	env = test.NewTestEnvironment()
+	testEnvironment = testenvironment.NewTestEnvironment()
 
 	// Create a test namespace.
-	if err := env.CreateTestNamespace(); err != nil {
-		env.Logger.Fatal(err.Error())
+	if err := testEnvironment.CreateTestNamespace(); err != nil {
+		testEnvironment.Logger.Fatal(err.Error())
 	}
 
 	// Wait for eventing-manager deployment to get ready.
-	if env.TestConfigs.ManagerImage == "" {
-		env.Logger.Warn(
+	if testEnvironment.TestConfigs.ManagerImage == "" {
+		testEnvironment.Logger.Warn(
 			"ENV `MANAGER_IMAGE` is not set. Test will not verify if the " +
 				"manager deployment image is correct or not.",
 		)
 	}
-	if err := env.WaitForDeploymentReady(ManagerDeploymentName, NamespaceName, env.TestConfigs.ManagerImage); err != nil {
-		env.Logger.Fatal(err.Error())
+	if err := testEnvironment.WaitForDeploymentReady(ManagerDeploymentName, NamespaceName, testEnvironment.TestConfigs.ManagerImage); err != nil {
+		testEnvironment.Logger.Fatal(err.Error())
 	}
 
 	// Create the Eventing CR used for testing.
-	if err := env.SetupEventingCR(); err != nil {
-		env.Logger.Fatal(err.Error())
+	if err := testEnvironment.SetupEventingCR(); err != nil {
+		testEnvironment.Logger.Fatal(err.Error())
 	}
 
-	// Wait for a test.Interval for reconciliation to update status.
-	time.Sleep(test.Interval)
+	// Wait for a testenvironment.Interval for reconciliation to update status.
+	time.Sleep(testenvironment.Interval)
 
 	// Wait for Eventing CR to get ready.
-	if err := env.WaitForEventingCRReady(); err != nil {
-		env.Logger.Fatal(err.Error())
-	}
-
-	if testPeerauthentication {
-		config, err := GetRestConfig()
-		if err != nil {
-			env.Logger.Fatal(err.Error())
-		}
-
-		istioClient, err = istio.NewForConfig(config)
-		if err != nil {
-			env.Logger.Fatal(err.Error())
-		}
+	if err := testEnvironment.WaitForEventingCRReady(); err != nil {
+		testEnvironment.Logger.Fatal(err.Error())
 	}
 
 	// Run the tests and exit.
@@ -88,69 +70,12 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// Test_EventPublisherProxyMetricsPeerAuthentication checks if the Istio PeerAuthentication for the metrics endpoint of
-// Event-Publisher-Proxy was created.
-func Test_EventPublisherProxyMetricsPeerAuthentication(t *testing.T) {
-	t.Parallel()
-	if !testPeerauthentication {
-		return
-	}
-
-	deploy, err := env.GetDeploymentFromK8s(ManagerDeploymentName, NamespaceName)
-	require.NoError(t, err)
-
-	wantPeerAuth := peerauthentication.EventPublisherProxyMetrics(NamespaceName, deploy.OwnerReferences)
-	var givenPeerAuth *v1beta1.PeerAuthentication
-	eppErr := Retry(test.Attempts, test.Interval, func() error {
-		givenPeerAuth, err = istioClient.SecurityV1beta1().PeerAuthentications(NamespaceName).Get(
-			context.TODO(), wantPeerAuth.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if givenPeerAuth == nil {
-			return fmt.Errorf("could not fetch PeerAuthentication %s", wantPeerAuth.Name)
-		}
-		return err
-	})
-	require.NoError(t, eppErr)
-
-	require.Equal(t, wantPeerAuth.OwnerReferences, givenPeerAuth.OwnerReferences)
-}
-
-// Test_EventingManagerMetricsPeerAuthentication checks if the Istio PeerAuthentication for the metrics endpoint of
-// Eventing-Manager was created.
-func Test_EventingManagerMetricsPeerAuthentication(t *testing.T) {
-	t.Parallel()
-	if !testPeerauthentication {
-		return
-	}
-
-	deploy, err := env.GetDeploymentFromK8s(ManagerDeploymentName, NamespaceName)
-	require.NoError(t, err)
-
-	wantPeerAuth := peerauthentication.EventingManagerMetrics(NamespaceName, deploy.OwnerReferences)
-	var givenPeerAuth *v1beta1.PeerAuthentication
-	emErr := Retry(test.Attempts, test.Interval, func() error {
-		givenPeerAuth, err = istioClient.SecurityV1beta1().PeerAuthentications(NamespaceName).Get(
-			context.TODO(), wantPeerAuth.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if givenPeerAuth == nil {
-			return fmt.Errorf("could not fetch PeerAuthentication %s", wantPeerAuth.Name)
-		}
-		return err
-	})
-	require.NoError(t, emErr)
-
-	require.Equal(t, wantPeerAuth.OwnerReferences, givenPeerAuth.OwnerReferences)
-}
-
 // Test_WebhookServerCertSecret tests if the Secret exists.
 func Test_WebhookServerCertSecret(t *testing.T) {
 	t.Parallel()
-	err := Retry(test.Attempts, test.Interval, func() error {
-		_, getErr := env.K8sClientset.CoreV1().Secrets(NamespaceName).Get(context.TODO(), WebhookServerCertSecretName, metav1.GetOptions{})
+	ctx := context.TODO()
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.CoreV1().Secrets(NamespaceName).Get(ctx, WebhookServerCertSecretName, metav1.GetOptions{})
 		return getErr
 	})
 	require.NoError(t, err)
@@ -160,8 +85,8 @@ func Test_WebhookServerCertSecret(t *testing.T) {
 func Test_WebhookServerCertJob(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	err := Retry(test.Attempts, test.Interval, func() error {
-		job, getErr := env.K8sClientset.BatchV1().Jobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		job, getErr := testEnvironment.K8sClientset.BatchV1().Jobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
 		if getErr != nil {
 			return getErr
 		}
@@ -184,8 +109,8 @@ func Test_WebhookServerCertJob(t *testing.T) {
 func Test_WebhookServerCertCronJob(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	err := Retry(test.Attempts, test.Interval, func() error {
-		job, getErr := env.K8sClientset.BatchV1().CronJobs(NamespaceName).Get(
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		job, getErr := testEnvironment.K8sClientset.BatchV1().CronJobs(NamespaceName).Get(
 			ctx,
 			WebhookServerCertJobName,
 			metav1.GetOptions{},
@@ -212,9 +137,9 @@ func Test_WebhookServerCertCronJob(t *testing.T) {
 func Test_PublisherServiceAccount(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(env.TestConfigs.BackendType))
-	err := Retry(test.Attempts, test.Interval, func() error {
-		_, getErr := env.K8sClientset.CoreV1().ServiceAccounts(NamespaceName).Get(ctx,
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.CoreV1().ServiceAccounts(NamespaceName).Get(ctx,
 			eventing.GetPublisherServiceAccountName(*eventingCR), metav1.GetOptions{})
 		if getErr != nil {
 			return getErr
@@ -228,9 +153,9 @@ func Test_PublisherServiceAccount(t *testing.T) {
 func Test_PublisherClusterRole(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(env.TestConfigs.BackendType))
-	err := Retry(test.Attempts, test.Interval, func() error {
-		_, getErr := env.K8sClientset.RbacV1().ClusterRoles().Get(ctx,
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.RbacV1().ClusterRoles().Get(ctx,
 			eventing.GetPublisherClusterRoleName(*eventingCR), metav1.GetOptions{})
 		if getErr != nil {
 			return getErr
@@ -244,9 +169,9 @@ func Test_PublisherClusterRole(t *testing.T) {
 func Test_PublisherClusterRoleBinding(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(env.TestConfigs.BackendType))
-	err := Retry(test.Attempts, test.Interval, func() error {
-		_, getErr := env.K8sClientset.RbacV1().ClusterRoleBindings().Get(ctx,
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.RbacV1().ClusterRoleBindings().Get(ctx,
 			eventing.GetPublisherClusterRoleBindingName(*eventingCR), metav1.GetOptions{})
 		if getErr != nil {
 			return getErr
@@ -260,24 +185,24 @@ func Test_PublisherClusterRoleBinding(t *testing.T) {
 func Test_PublisherServices(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(env.TestConfigs.BackendType))
-	err := Retry(test.Attempts, test.Interval, func() error {
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
 		// check service to expose event publishing endpoint.
-		_, getErr := env.K8sClientset.CoreV1().Services(NamespaceName).Get(ctx,
+		_, getErr := testEnvironment.K8sClientset.CoreV1().Services(NamespaceName).Get(ctx,
 			eventing.GetPublisherPublishServiceName(*eventingCR), metav1.GetOptions{})
 		if getErr != nil {
 			return errors.Wrap(getErr, "failed to ensure existence of publish service")
 		}
 
 		// check service to expose metrics endpoint.
-		_, getErr = env.K8sClientset.CoreV1().Services(NamespaceName).Get(ctx,
+		_, getErr = testEnvironment.K8sClientset.CoreV1().Services(NamespaceName).Get(ctx,
 			eventing.GetPublisherMetricsServiceName(*eventingCR), metav1.GetOptions{})
 		if getErr != nil {
 			return errors.Wrap(getErr, "failed to ensure existence of metrics service")
 		}
 
 		// check service to expose health endpoint.
-		_, getErr = env.K8sClientset.CoreV1().Services(NamespaceName).Get(ctx,
+		_, getErr = testEnvironment.K8sClientset.CoreV1().Services(NamespaceName).Get(ctx,
 			eventing.GetPublisherHealthServiceName(*eventingCR), metav1.GetOptions{})
 		if getErr != nil {
 			return errors.Wrap(getErr, "failed to ensure existence of health service")
@@ -292,9 +217,9 @@ func Test_PublisherServices(t *testing.T) {
 func Test_PublisherHPA(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(env.TestConfigs.BackendType))
-	err := Retry(test.Attempts, test.Interval, func() error {
-		gotHPA, getErr := env.K8sClientset.AutoscalingV2().HorizontalPodAutoscalers(NamespaceName).Get(ctx,
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		gotHPA, getErr := testEnvironment.K8sClientset.AutoscalingV2().HorizontalPodAutoscalers(NamespaceName).Get(ctx,
 			eventing.GetPublisherDeploymentName(*eventingCR), metav1.GetOptions{})
 		if getErr != nil {
 			return getErr
@@ -320,9 +245,9 @@ func Test_PublisherHPA(t *testing.T) {
 // Test_PublisherProxyDeployment checks the publisher-proxy deployment.
 func Test_PublisherProxyDeployment(t *testing.T) {
 	t.Parallel()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(env.TestConfigs.BackendType))
-	err := Retry(test.Attempts, test.Interval, func() error {
-		gotDeployment, getErr := env.GetDeployment(eventing.GetPublisherDeploymentName(*eventingCR), NamespaceName)
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		gotDeployment, getErr := testEnvironment.GetDeployment(eventing.GetPublisherDeploymentName(*eventingCR), NamespaceName)
 		if getErr != nil {
 			return getErr
 		}
@@ -331,7 +256,7 @@ func Test_PublisherProxyDeployment(t *testing.T) {
 		if gotDeployment.Status.Replicas != gotDeployment.Status.UpdatedReplicas ||
 			gotDeployment.Status.Replicas != gotDeployment.Status.ReadyReplicas {
 			err := fmt.Errorf("waiting for publisher-proxy deployment to get ready")
-			env.Logger.Debug(err.Error())
+			testEnvironment.Logger.Debug(err.Error())
 			return err
 		}
 
@@ -357,17 +282,17 @@ func Test_PublisherProxyPods(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.TODO()
-	eventingCR := EventingCR(eventingv1alpha1.BackendType(env.TestConfigs.BackendType))
+	eventingCR := EventingCR(eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType))
 	// Retry to get the Pods and test them.
-	err := Retry(test.Attempts, test.Interval, func() error {
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
 		// get publisher deployment
-		gotDeployment, getErr := env.GetDeployment(eventing.GetPublisherDeploymentName(*eventingCR), NamespaceName)
+		gotDeployment, getErr := testEnvironment.GetDeployment(eventing.GetPublisherDeploymentName(*eventingCR), NamespaceName)
 		if getErr != nil {
 			return getErr
 		}
 
 		// RetryGet the Pods via labels.
-		pods, err := env.K8sClientset.CoreV1().Pods(NamespaceName).List(ctx, metav1.ListOptions{
+		pods, err := testEnvironment.K8sClientset.CoreV1().Pods(NamespaceName).List(ctx, metav1.ListOptions{
 			LabelSelector: ConvertSelectorLabelsToString(gotDeployment.Spec.Selector.MatchLabels)})
 		if err != nil {
 			return err
@@ -412,7 +337,7 @@ func Test_PublisherProxyPods(t *testing.T) {
 
 			// Check if the ENV `BACKEND` is defined correctly.
 			wantBackendENVValue := "nats"
-			if eventingv1alpha1.BackendType(env.TestConfigs.BackendType) == eventingv1alpha1.EventMeshBackendType {
+			if eventingv1alpha1.BackendType(testEnvironment.TestConfigs.BackendType) == eventingv1alpha1.EventMeshBackendType {
 				wantBackendENVValue = "beb"
 			}
 
@@ -445,8 +370,8 @@ func Test_PriorityClass(t *testing.T) {
 	ctx := context.TODO()
 
 	// Check if the PriorityClass exists in the cluster.
-	err := Retry(test.Attempts, test.Interval, func() error {
-		_, getErr := env.K8sClientset.SchedulingV1().PriorityClasses().Get(
+	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		_, getErr := testEnvironment.K8sClientset.SchedulingV1().PriorityClasses().Get(
 			ctx, eventing.PriorityClassName, metav1.GetOptions{})
 		return getErr
 	})
@@ -454,8 +379,8 @@ func Test_PriorityClass(t *testing.T) {
 
 	// Check if the Eventing-Manager Deployment has the right PriorityClassName. This implicits that the
 	// corresponding Pod also has the right PriorityClassName.
-	err = Retry(test.Attempts, test.Interval, func() error {
-		deploy, getErr := env.GetDeployment(ManagerDeploymentName, NamespaceName)
+	err = Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+		deploy, getErr := testEnvironment.GetDeployment(ManagerDeploymentName, NamespaceName)
 		if getErr != nil {
 			return getErr
 		}

@@ -308,6 +308,11 @@ e2e-eventing:
 e2e-eventing-cleanup:
 	go test -v ./hack/e2e/eventing/cleanup/cleanup_test.go --tags=e2e
 
+# e2e-eventing-peerauthentications will check if the peerauthentications are created as intended.
+.PHONY: e2e-eventing-peerauthentications
+e2e-eventing-peerauthentications:
+	go test -v ./hack/e2e/eventing/peerauthentications/peerauthentications_test.go --tags=e2e
+
 # e2e will run the whole suite of end-to-end tests for eventing-manager.
 .PHONY: e2e
 e2e: e2e-setup e2e-eventing-setup e2e-eventing e2e-cleanup
