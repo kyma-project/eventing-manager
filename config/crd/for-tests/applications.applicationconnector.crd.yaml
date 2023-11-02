@@ -20,14 +20,14 @@ spec:
                 compassMetadata:
                   type: object
                   required:
-                  - "authentication"
+                    - "authentication"
                   properties:
                     applicationId:
                       type: string
                     authentication:
                       type: object
                       required:
-                      - "clientIds"
+                        - "clientIds"
                       properties:
                         clientIds:
                           type: array
@@ -72,12 +72,12 @@ spec:
                   items:
                     type: object
                     required:
-                    - "id"
-                    - "name"
-                    - "displayName"
-                    - "providerDisplayName"
-                    - "description"
-                    - "entries"
+                      - "id"
+                      - "name"
+                      - "displayName"
+                      - "providerDisplayName"
+                      - "description"
+                      - "entries"
                     properties:
                       id:
                         type: string
@@ -107,15 +107,15 @@ spec:
                         items:
                           type: object
                           required:
-                          - "type"
+                            - "type"
                           properties:
                             apiType:
                               type: string
                             type:
                               type: string
                               enum:
-                              - "API"
-                              - "Events"
+                                - "API"
+                                - "Events"
                             gatewayUrl:
                               type: string
                             centralGatewayUrl:
@@ -138,8 +138,8 @@ spec:
                             credentials:
                               type: object
                               required:
-                              - "type"
-                              - "secretName"
+                                - "type"
+                                - "secretName"
                               properties:
                                 type:
                                   type: string
@@ -150,7 +150,7 @@ spec:
                                 csrfInfo:
                                   type: object
                                   required:
-                                  - "tokenEndpointURL"
+                                    - "tokenEndpointURL"
                                   properties:
                                     tokenEndpointURL:
                                       type: string
@@ -169,10 +169,10 @@ spec:
                     status:
                       type: string
                   required:
-                  - status
+                    - status
                   type: object
               required:
-              - installationStatus
+                - installationStatus
               type: object
   scope: Cluster
   names:
@@ -180,4 +180,4 @@ spec:
     singular: application
     kind: Application
     shortNames:
-    - app
+      - app

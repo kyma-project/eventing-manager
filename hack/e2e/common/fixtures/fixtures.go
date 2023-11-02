@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -42,6 +44,14 @@ func EventingCR(backendType eventingv1alpha1.BackendType) *eventingv1alpha1.Even
 		return EventingEventMeshCR()
 	}
 	return EventingNATSCR()
+}
+
+func PeerAuthenticationGVR() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "security.istio.io",
+		Version:  "v1beta1",
+		Resource: "peerauthentications",
+	}
 }
 
 func EventingNATSCR() *eventingv1alpha1.Eventing {

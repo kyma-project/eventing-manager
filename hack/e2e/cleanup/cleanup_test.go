@@ -12,13 +12,14 @@ import (
 	"os"
 	"testing"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
 
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common"
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"

@@ -4,8 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"reflect"
 	"time"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
@@ -69,6 +73,20 @@ func NewApplicationCRD() *apiextensionsv1.CustomResourceDefinition {
 	}
 
 	return result
+}
+
+func NewPeerAuthenticationCRD() (*apiextensionsv1.CustomResourceDefinition, error) {
+	crdYAML, err := os.ReadFile("../../config/crd/for-tests/security.istio.io_peerauthentication.yaml")
+	if err != nil {
+		return nil, err
+	}
+
+	crd := &apiextensionsv1.CustomResourceDefinition{}
+	decoder := serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
+	if _, _, err = decoder.Decode(crdYAML, nil, crd); err != nil {
+		return nil, err
+	}
+	return crd, nil
 }
 
 func NewAPIRuleCRD() *apiextensionsv1.CustomResourceDefinition {

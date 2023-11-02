@@ -160,8 +160,6 @@ install: download-external-crds manifests kustomize ## Install CRDs into the K8s
 .PHONY: download-external-crds
 download-external-crds:
 	curl -s -L -o config/crd/external/subscriptions.eventing.kyma-project.io.crd.yaml https://raw.githubusercontent.com/kyma-project/kyma/main/installation/resources/crds/eventing/subscriptions.eventing.kyma-project.io.crd.yaml
-	curl -s -L -o config/crd/for-tests/applications.applicationconnector.crd.yaml https://raw.githubusercontent.com/kyma-project/kyma/main/installation/resources/crds/application-connector/applications.applicationconnector.crd.yaml
-	curl -s -L -o config/crd/for-tests/apirules.gateway.crd.yaml https://raw.githubusercontent.com/kyma-project/kyma/main/installation/resources/crds/api-gateway/apirules.gateway.crd.yaml
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
@@ -307,6 +305,11 @@ e2e-eventing:
 .PHONY: e2e-eventing-cleanup
 e2e-eventing-cleanup:
 	go test -v ./hack/e2e/eventing/cleanup/cleanup_test.go --tags=e2e
+
+# e2e-eventing-peerauthentications will check if the peerauthentications are created as intended.
+.PHONY: e2e-eventing-peerauthentications
+e2e-eventing-peerauthentications:
+	go test -v ./hack/e2e/eventing/peerauthentications/peerauthentications_test.go --tags=e2e
 
 # e2e will run the whole suite of end-to-end tests for eventing-manager.
 .PHONY: e2e
