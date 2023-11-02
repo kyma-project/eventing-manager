@@ -32,7 +32,14 @@ func TestMain(m *testing.M) {
 
 	// setup env test
 	var err error
-	testEnvironment, err = testutils.NewTestEnvironment(projectRootDir, false, nil)
+	testEnvironment, err = testutils.NewTestEnvironment(testutils.TestEnvironmentConfig{
+		ProjectRootDir:            projectRootDir,
+		CELValidationEnabled:      false,
+		APIRuleCRDEnabled:         true,
+		ApplicationRuleCRDEnabled: true,
+		NATSCRDEnabled:            true,
+		AllowedEventingCR:         nil,
+	})
 	if err != nil {
 		panic(err)
 	}

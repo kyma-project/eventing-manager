@@ -83,7 +83,14 @@ func TestMain(m *testing.M) {
 
 	// setup env test
 	var err error
-	testEnvironment, err = integration.NewTestEnvironment(projectRootDir, true, nil)
+	testEnvironment, err = integration.NewTestEnvironment(integration.TestEnvironmentConfig{
+		ProjectRootDir:            projectRootDir,
+		CELValidationEnabled:      true,
+		APIRuleCRDEnabled:         true,
+		ApplicationRuleCRDEnabled: true,
+		NATSCRDEnabled:            true,
+		AllowedEventingCR:         nil,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -929,7 +936,7 @@ func defaultPublisherResources() corev1.ResourceRequirements {
 			"memory": resource.MustParse("512Mi"),
 		},
 		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("10m"),
+			"cpu":    resource.MustParse("40m"),
 			"memory": resource.MustParse("256Mi"),
 		},
 	}

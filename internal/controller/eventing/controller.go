@@ -72,8 +72,8 @@ const (
 
 // Reconciler reconciles an Eventing object
 //
-//go:generate mockery --name=Controller --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/controller --outpkg=mocks --case=underscore
-//go:generate mockery --name=Manager --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/manager --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=Controller --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/controller --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=Manager --dir=../../../vendor/sigs.k8s.io/controller-runtime/pkg/manager --outpkg=mocks --case=underscore
 type Reconciler struct {
 	client.Client
 	logger                        *logger.Logger
@@ -515,8 +515,17 @@ func (r *Reconciler) handlePublisherProxy(
 }
 
 func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+	// check if APIRule CRD is installed.
+	isAPIRuleCRDEnabled, err := r.kubeClient.APIRuleCRDExists(ctx)
+	if err != nil {
+		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
+	} else if !isAPIRuleCRDEnabled {
+		apiRuleMissingErr := errors.New("API-Gateway module is needed for EventMesh backend. APIRules CRD is not installed")
+		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, apiRuleMissingErr, log)
+	}
+
 	// Start the EventMesh subscription controller
-	err := r.reconcileEventMeshSubManager(ctx, eventing)
+	err = r.reconcileEventMeshSubManager(ctx, eventing)
 	if err != nil {
 		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}

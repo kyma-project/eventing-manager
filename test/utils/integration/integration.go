@@ -85,9 +85,17 @@ type TestEnvironment struct {
 	JetStreamSubManager manager.Manager
 }
 
+type TestEnvironmentConfig struct {
+	ProjectRootDir            string
+	CELValidationEnabled      bool
+	APIRuleCRDEnabled         bool
+	ApplicationRuleCRDEnabled bool
+	NATSCRDEnabled            bool
+	AllowedEventingCR         *v1alpha1.Eventing
+}
+
 //nolint:funlen // Used in testing
-func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
-	allowedEventingCR *v1alpha1.Eventing) (*TestEnvironment, error) {
+func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) {
 	var err error
 	// setup context
 	ctx := context.Background()
@@ -105,7 +113,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	// Set controller core logger.
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 
-	testEnv, envTestKubeCfg, err := StartEnvTest(projectRootDir, celValidationEnabled)
+	testEnv, envTestKubeCfg, err := StartEnvTest(config)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +206,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 		backendConfig,
 		subManagerFactoryMock,
 		opts,
-		allowedEventingCR,
+		config.AllowedEventingCR,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(ctrlMgr); err != nil {
@@ -247,7 +255,7 @@ func NewTestEnvironment(projectRootDir string, celValidationEnabled bool,
 	}, nil
 }
 
-func StartEnvTest(projectRootDir string, celValidationEnabled bool) (*envtest.Environment, *rest.Config, error) {
+func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Config, error) {
 	// Reference: https://book.kubebuilder.io/reference/envtest.html
 	useExistingCluster := useExistingCluster
 
@@ -285,11 +293,26 @@ func StartEnvTest(projectRootDir string, celValidationEnabled bool) (*envtest.En
 	})
 	vwh.Name = getTestBackendConfig().ValidatingWebhookName
 
+	// define CRDs to include.
+	includedCRDs := []string{
+		filepath.Join(config.ProjectRootDir, "config", "crd", "bases"),
+		filepath.Join(config.ProjectRootDir, "config", "crd", "external"),
+	}
+	if config.ApplicationRuleCRDEnabled {
+		includedCRDs = append(includedCRDs,
+			filepath.Join(config.ProjectRootDir, "config", "crd", "for-tests", "applications.applicationconnector.crd.yaml"))
+	}
+	if config.APIRuleCRDEnabled {
+		includedCRDs = append(includedCRDs,
+			filepath.Join(config.ProjectRootDir, "config", "crd", "for-tests", "apirules.gateway.crd.yaml"))
+	}
+	if config.NATSCRDEnabled {
+		includedCRDs = append(includedCRDs,
+			filepath.Join(config.ProjectRootDir, "config", "crd", "for-tests", "operator.kyma-project.io_nats.yaml"))
+	}
+
 	testEnv := &envtest.Environment{
-		CRDDirectoryPaths: []string{
-			filepath.Join(projectRootDir, "config", "crd", "bases"),
-			filepath.Join(projectRootDir, "config", "crd", "external"),
-		},
+		CRDDirectoryPaths:        includedCRDs,
 		ErrorIfCRDPathMissing:    true,
 		AttachControlPlaneOutput: attachControlPlaneOutput,
 		UseExistingCluster:       &useExistingCluster,
@@ -300,7 +323,7 @@ func StartEnvTest(projectRootDir string, celValidationEnabled bool) (*envtest.En
 	}
 
 	args := testEnv.ControlPlane.GetAPIServer().Configure()
-	if celValidationEnabled {
+	if config.CELValidationEnabled {
 		args.Set("feature-gates", "CustomResourceValidationExpressions=true")
 	} else {
 		args.Set("feature-gates", "CustomResourceValidationExpressions=false")
