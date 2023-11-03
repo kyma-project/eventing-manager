@@ -8,4 +8,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: europe-docker.pkg.dev/kyma-project/prod/eventing-manager
-  newTag: v20230907-01f5bd76
+  newTag: v20231102-88a52f17
