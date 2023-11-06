@@ -502,6 +502,11 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 			js.namedLogger().Errorw("Failed to convert sink value to string", "sinkValue", sinkValue)
 			return
 		}
+		ci, err := msg.Sub.ConsumerInfo()
+		if err != nil {
+			js.namedLogger().Errorw("Failed to extract consumer info", "error", err)
+			return
+		}
 		ce, err := backendutils.ConvertMsgToCE(msg)
 		if err != nil {
 			js.namedLogger().Errorw("Failed to convert JetStream message to CloudEvent", "error", err)
@@ -533,8 +538,8 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 				status = res.StatusCode
 			}
 
-			js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, ce.Type(), sink, status)
-			js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, subscriptionNamespace, ce.Type(), sink, status)
+			js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, ce.Type(), ci.Config.Name, sink, status)
+			js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, subscriptionNamespace, ce.Type(), ci.Config.Name, sink, status)
 
 			// NAK the msg with a delay so it is redelivered after jsConsumerNakDelay period.
 			if err := msg.NakWithDelay(jsConsumerNakDelay); err != nil {
@@ -556,8 +561,8 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 			status = res.StatusCode
 		}
 
-		js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, ce.Type(), sink, status)
-		js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, subscriptionNamespace, ce.Type(), sink, status)
+		js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, ce.Type(), ci.Config.Name, sink, status)
+		js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, subscriptionNamespace, ce.Type(), ci.Config.Name, sink, status)
 		ceLogger.Debugw("CloudEvent was dispatched")
 	}
 }
