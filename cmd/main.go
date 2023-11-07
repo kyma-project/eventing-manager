@@ -194,6 +194,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	// Setup webhooks.
 	if err = (&subscriptionv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
+
 		os.Exit(1)
 	}
 
