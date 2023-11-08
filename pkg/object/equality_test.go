@@ -531,18 +531,6 @@ func TestPublisherProxyDeploymentEqual(t *testing.T) {
 			},
 			expectedResult: false,
 		},
-		"should be unequal if replicas changes": {
-			getPublisher1: func() *appsv1.Deployment {
-				replicas := int32(2)
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Replicas = &replicas
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				return defaultNATSPublisher.DeepCopy()
-			},
-			expectedResult: false,
-		},
 		"should be equal if spec annotations are nil and empty": {
 			getPublisher1: func() *appsv1.Deployment {
 				p := defaultNATSPublisher.DeepCopy()

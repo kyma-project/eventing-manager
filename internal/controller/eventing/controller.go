@@ -20,10 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
-	"github.com/kyma-project/eventing-manager/pkg/watcher"
-
-	"k8s.io/client-go/dynamic"
+	"reflect"
 
 	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
@@ -34,8 +31,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -52,6 +51,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	"github.com/kyma-project/eventing-manager/pkg/watcher"
 )
 
 const (
@@ -230,7 +230,21 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	r.controller, err = ctrl.NewControllerManagedBy(mgr).
 		For(&eventingv1alpha1.Eventing{}).
-		Owns(&v1.Deployment{}).
+		Owns(&v1.Deployment{}, builder.WithPredicates(
+			predicate.Funcs{
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					o := e.ObjectOld.(*v1.Deployment).DeepCopy()
+					n := e.ObjectNew.(*v1.Deployment).DeepCopy()
+
+					// Ignore the replicas during equality check
+					// because the HPA changes it in the EPP deployment.
+					o.Spec.Replicas = nil
+					n.Spec.Replicas = nil
+
+					return !reflect.DeepEqual(o, n)
+				},
+			},
+		)).
 		Owns(&corev1.Service{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).

@@ -3,7 +3,7 @@ package eventing
 import (
 	"context"
 	"fmt"
-
+	"github.com/kyma-project/eventing-manager/pkg/object"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/tools/record"
@@ -121,7 +121,15 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 		if err := em.migratePublisherDeploymentFromEC(ctx, eventing, *currentPublisher, *desiredPublisher); err != nil {
 			return nil, fmt.Errorf("failed to migrate publisher: %v", err)
 		}
+
+		if object.Semantic.DeepEqual(currentPublisher, desiredPublisher) {
+			em.logger.WithContext().Debug(
+				"skip updating the EPP deployment because its desired and actual states are equal",
+			)
+			return currentPublisher, nil
+		}
 	}
+
 	// Update publisher proxy deployment
 	if err := em.kubeClient.PatchApply(ctx, desiredPublisher); err != nil {
 		return nil, fmt.Errorf("failed to apply Publisher Proxy deployment: %v", err)
