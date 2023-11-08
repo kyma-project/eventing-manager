@@ -34,4 +34,4 @@ jobs:
           go mod vendor
       - name: Run tests
         run: |
-          make test-only
+          make test
