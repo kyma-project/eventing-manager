@@ -98,10 +98,6 @@ generate: go-gen controller-gen ## Generate code containing DeepCopy, DeepCopyIn
 vendor:
 	go mod vendor
 
-.PHONY: fmt
-fmt: ## Run go fmt against code.
-	go fmt ./...
-
 .PHONY: vet
 vet: ## Run go vet against code.
 	go vet ./...
@@ -253,7 +249,7 @@ $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 lint:
-	golangci-lint run --fix
+	golangci-lint run --fix --timeout 5m
 
 go-gen:
 	go generate ./...
