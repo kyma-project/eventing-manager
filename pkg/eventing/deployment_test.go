@@ -66,13 +66,13 @@ func TestNewDeployment(t *testing.T) {
 					testutils.WithEventingCRName(tc.givenPublisherName),
 					testutils.WithEventingCRNamespace(publisherNamespace),
 					testutils.WithEventingEventTypePrefix(eventTypePrefix),
-				), natsConfig, publisherConfig)
+				), natsConfig, publisherConfig, nil)
 			case "EventMesh":
 				deployment = newEventMeshPublisherDeployment(testutils.NewEventingCR(
 					testutils.WithEventingCRName(tc.givenPublisherName),
 					testutils.WithEventingCRNamespace(publisherNamespace),
 					testutils.WithEventMeshBackend("test-namespace/test-name"),
-				), publisherConfig)
+				), publisherConfig, nil)
 			default:
 				t.Errorf("Invalid backend!")
 			}

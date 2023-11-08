@@ -233,14 +233,11 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&v1.Deployment{}, builder.WithPredicates(
 			predicate.Funcs{
 				UpdateFunc: func(e event.UpdateEvent) bool {
+					// Ignore the replicas equality check because the HPA changes it in the EPP deployment.
 					o := e.ObjectOld.(*v1.Deployment).DeepCopy()
 					n := e.ObjectNew.(*v1.Deployment).DeepCopy()
-
-					// Ignore the replicas during equality check
-					// because the HPA changes it in the EPP deployment.
 					o.Spec.Replicas = nil
 					n.Spec.Replicas = nil
-
 					return !reflect.DeepEqual(o, n)
 				},
 			},

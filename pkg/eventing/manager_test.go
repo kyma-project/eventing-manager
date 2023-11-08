@@ -108,6 +108,7 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 			kubeClient.On("UpdateDeployment", ctx, mock.Anything).Return(nil)
 			kubeClient.On("Create", ctx, mock.Anything).Return(nil)
 			kubeClient.On("PatchApply", ctx, mock.Anything).Return(tc.patchApplyErr)
+			kubeClient.On("GetHPA", ctx, mock.Anything, mock.Anything).Return(nil, nil)
 
 			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
 

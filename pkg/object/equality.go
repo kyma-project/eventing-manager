@@ -99,8 +99,7 @@ func eventingBackendEqual(b1, b2 *eventingv1alpha1.EventingBackend) bool {
 }
 
 // publisherProxyDeploymentEqual asserts the equality of two Deployment objects
-// for event publisher proxy deployments. It ignores checking the equality of the
-// spec replicas because it is managed by the HPA.
+// for event publisher proxy deployments.
 func publisherProxyDeploymentEqual(d1, d2 *appsv1.Deployment) bool {
 	if d1 == nil || d2 == nil {
 		return false
@@ -109,6 +108,9 @@ func publisherProxyDeploymentEqual(d1, d2 *appsv1.Deployment) bool {
 		return true
 	}
 	if !reflect.DeepEqual(d1.Labels, d2.Labels) {
+		return false
+	}
+	if !reflect.DeepEqual(d1.Spec.Replicas, d2.Spec.Replicas) {
 		return false
 	}
 

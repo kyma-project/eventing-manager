@@ -7,6 +7,7 @@ import (
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -90,11 +91,19 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	var desiredPublisher *appsv1.Deployment
 
+	var replicas *int32
+	hpa, err := em.kubeClient.GetHPA(ctx, GetPublisherDeploymentName(*eventing), eventing.Namespace)
+	if err == nil && hpa != nil {
+		replicas = hpa.Spec.MinReplicas
+	} else {
+		replicas = pointer.Int32(int32(eventing.Spec.Publisher.Replicas.Min))
+	}
+
 	switch backendType {
 	case v1alpha1.NatsBackendType:
-		desiredPublisher = newNATSPublisherDeployment(eventing, *natsConfig, em.backendConfig.PublisherConfig)
+		desiredPublisher = newNATSPublisherDeployment(eventing, *natsConfig, em.backendConfig.PublisherConfig, replicas)
 	case v1alpha1.EventMeshBackendType:
-		desiredPublisher = newEventMeshPublisherDeployment(eventing, em.backendConfig.PublisherConfig)
+		desiredPublisher = newEventMeshPublisherDeployment(eventing, em.backendConfig.PublisherConfig, replicas)
 	default:
 		return nil, fmt.Errorf("unknown EventingBackend type %q", backendType)
 	}
