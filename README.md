@@ -17,6 +17,20 @@ This project is scaffolded using [Kubebuilder](https://book.kubebuilder.io), and
 You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
 > **Note:** Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
 
+## Install
+
+1. To install the latest version of the Eventing manager on your cluster, run:
+
+   ```bash
+   kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing-manager.yaml
+   ```
+
+2. To install the latest version of the default Eventing CR on your cluster, run:
+
+   ```bash
+   kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing_default_cr.yaml
+   ```
+
 ## Development
 
 ### Prerequisites
