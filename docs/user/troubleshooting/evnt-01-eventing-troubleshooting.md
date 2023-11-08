@@ -16,9 +16,9 @@ Trouble with Kyma Eventing may be caused by various issues, so this document gui
 
 Follow these steps to detect the source of the problem:
 
-### Step 1: Check the status of the Eventing CR
+### Step 1: Check the status of the Eventing custom resource (CR)
 
-1. Check the Eventing CR. Is the field **State** `Ready`?
+1. Check the Eventing CR. Is the **State** field `Ready`?
 
     ```bash
     kubectl -n kyma-system get eventings.operator.kyma-project.io
@@ -30,7 +30,7 @@ Follow these steps to detect the source of the problem:
     kubectl -n kyma-system get eventings.operator.kyma-project.io eventing -o yaml
     ```
 
-3. If **State** is `Ready`, the Eventing CR is not an issue. Follow the next steps to find the source of the problem.
+3. If the **State** is `Ready`, the Eventing CR is not an issue. Follow the next steps to find the source of the problem.
 
 ### Step 2: Check the status of the Subscription
 

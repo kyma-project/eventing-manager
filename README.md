@@ -19,13 +19,13 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 
 ## Install
 
-1. To install the latest version of the Eventing manager on your cluster, run:
+1. To install the latest version of the Eventing Manager on your cluster, run:
 
    ```bash
    kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing-manager.yaml
    ```
 
-2. To install the latest version of the default Eventing CR on your cluster, run:
+2. To install the latest version of the default Eventing custom resource (CR) on your cluster, run:
 
    ```bash
    kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing_default_cr.yaml
@@ -153,7 +153,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 
 ### Undeploy Eventing Manager
 
-Undeploy the Eventing Manager from the cluster:
+Undeploy Eventing Manager from the cluster:
 
    ```sh
    make undeploy
@@ -191,7 +191,7 @@ To delete the CRDs from the cluster:
 
 4. If you want to verify whether your Eventing module is deployed properly, perform the following checks:
 
-   - Check if the Eventing resource has the ready state:
+   - Check if the Eventing resource has the `ready` state:
 
      ```shell
      kubectl get -n kyma-system eventing
@@ -205,7 +205,7 @@ To delete the CRDs from the cluster:
 
 ### Uninstall Eventing Manager module with [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
 
-1. Delete Eventing Custom Resource (CR) from the Kubernetes cluster (if exists):
+1. Delete Eventing custom resource (CR) from the Kubernetes cluster (if exists):
 
     ```sh
     kubectl delete -n kyma-system eventing eventing
@@ -232,7 +232,7 @@ To delete the CRDs from the cluster:
      kubectl get -n kyma-system eventing eventing -o yaml
      ```
 
-   - Check if the Kyma resource has the ready state:
+   - Check if the Kyma resource has the `ready` state:
 
      ```shell
      kubectl get -n kyma-system kyma
