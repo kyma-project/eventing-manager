@@ -94,19 +94,19 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 generate: go-gen controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-.PHONY: fmt
-fmt: ## Run go fmt against code.
-	go fmt ./...
+.PHONY: vendor
+vendor:
+	go mod vendor
 
 .PHONY: vet
 vet: ## Run go vet against code.
 	go vet ./...
 
-.PHONY: test
-test: manifests generate fmt vet envtest lint-thoroughly ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+.PHONY: generate-and-test
+generate-and-test: vendor manifests generate fmt imports vet lint test;
 
-test-only: envtest ## Run only tests.
+.PHONY: test
+test: envtest	## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
@@ -248,16 +248,16 @@ envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
-lint-thoroughly:
-	golangci-lint run
+lint:
+	golangci-lint run --fix --timeout 5m
 
 go-gen:
 	go generate ./...
 
-fmt-local: ## Reformat files using `go fmt`
+fmt: ## Reformat files using `go fmt`
 	go fmt $$($(DIRS_TO_CHECK))
 
-imports-local: ## Optimize imports
+imports: ## Optimize imports
 	goimports -w -l $$($(FILES_TO_CHECK))
 
 ########## Kyma CLI ###########

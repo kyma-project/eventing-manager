@@ -16,21 +16,21 @@ Trouble with Kyma Eventing may be caused by various issues, so this document gui
 
 Follow these steps to detect the source of the problem:
 
-### Step 1: Check the status of the EventingBackend CR
+### Step 1: Check the status of the Eventing custom resource (CR)
 
-1. Check the EventingBackend CR. Is the field **EVENTINGREADY** `true`?
-
-    ```bash
-    kubectl -n kyma-system get eventingbackends.eventing.kyma-project.io
-    ```
-
-2. If **EVENTINGREADY** is `false`, check the exact reason of the error in the status of the CR by running the command:
+1. Check the Eventing CR. Is the **State** field `Ready`?
 
     ```bash
-    kubectl -n kyma-system get eventingbackends.eventing.kyma-project.io eventing-backend -o yaml
+    kubectl -n kyma-system get eventings.operator.kyma-project.io
     ```
 
-3. If **EVENTINGREADY** is `true`, the EventingBackend CR is not an issue. Follow the next steps to find the source of the problem.
+2. If **State** is not `Ready`, check the exact reason of the error in the status of the CR by running the command:
+
+    ```bash
+    kubectl -n kyma-system get eventings.operator.kyma-project.io eventing -o yaml
+    ```
+
+3. If the **State** is `Ready`, the Eventing CR is not an issue. Follow the next steps to find the source of the problem.
 
 ### Step 2: Check the status of the Subscription
 
@@ -73,7 +73,7 @@ Follow these steps to detect the source of the problem:
    To fetch these logs, run this command:
 
     ```bash
-    kubectl -n kyma-system logs -l app.kubernetes.io/instance=eventing,app.kubernetes.io/name=controller
+    kubectl -n kyma-system logs -l app.kubernetes.io/instance=eventing-manager,app.kubernetes.io/name=eventing-manager
     ```
 
 2. Check for any error messages in the logs. If the event dispatch log `"message":"event dispatched"` is not present for NATS backend, the issue could be one of the following:
