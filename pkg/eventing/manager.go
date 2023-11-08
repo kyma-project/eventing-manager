@@ -3,11 +3,10 @@ package eventing
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/eventing-manager/pkg/object"
-	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -15,6 +14,8 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/object"
+	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 )
 
 const (
@@ -96,7 +97,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	if err == nil && hpa != nil {
 		replicas = hpa.Spec.MinReplicas
 	} else {
-		replicas = pointer.Int32(int32(eventing.Spec.Publisher.Replicas.Min))
+		replicas = ptr.To(int32(eventing.Spec.Publisher.Replicas.Min))
 	}
 
 	switch backendType {
