@@ -211,7 +211,7 @@ To delete the CRDs from the cluster:
     kubectl delete -n kyma-system eventing eventing
     ```
 
-2. Disable the NATS module:
+2. Disable the Eventing module:
 
    ```sh
    kyma alpha disable module eventing
@@ -226,7 +226,7 @@ To delete the CRDs from the cluster:
 
 4. Check whether your Eventing module is uninstalled properly:
 
-   - Make sure that the Eventing Custom Resource (CR) does not exist. If it exists, then check the status of NATS CR:
+   - Make sure that the Eventing Custom Resource (CR) does not exist. If it exists, then check the status of Eventing CR:
 
      ```shell
      kubectl get -n kyma-system eventing eventing -o yaml
