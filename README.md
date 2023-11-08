@@ -226,7 +226,7 @@ To delete the CRDs from the cluster:
 
 4. Check whether your Eventing module is uninstalled properly:
 
-   - Make sure that the Eventing Custom Resource (CR) does not exist. If it exists, then check the status of Eventing CR:
+   - Make sure that the Eventing CR does not exist. If it exists, check its status:
 
      ```shell
      kubectl get -n kyma-system eventing eventing -o yaml
