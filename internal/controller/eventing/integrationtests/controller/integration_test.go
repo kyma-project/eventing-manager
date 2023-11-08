@@ -222,7 +222,6 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 }
 
 func Test_UpdateEventingCR(t *testing.T) {
-	t.Parallel()
 	testCases := []struct {
 		name                      string
 		givenExistingEventing     *eventingv1alpha1.Eventing
