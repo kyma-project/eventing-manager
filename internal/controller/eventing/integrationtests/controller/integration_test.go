@@ -66,8 +66,6 @@ func TestMain(m *testing.M) {
 }
 
 func Test_CreateEventingCR_NATS(t *testing.T) {
-	t.Parallel()
-
 	testCases := []struct {
 		name                 string
 		givenEventing        *eventingv1alpha1.Eventing
@@ -298,8 +296,6 @@ func Test_UpdateEventingCR(t *testing.T) {
 // Test_WatcherEventingCRK8sObjects tests that deleting the k8s objects deployed by Eventing CR
 // should trigger reconciliation.
 func Test_WatcherEventingCRK8sObjects(t *testing.T) {
-	t.Parallel()
-
 	type deletionFunc func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error
 
 	deletePublishServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
@@ -497,7 +493,6 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 }
 
 func Test_CreateEventingCR_EventMesh(t *testing.T) {
-	t.Parallel()
 	testCases := []struct {
 		name                 string
 		givenEventing        *eventingv1alpha1.Eventing
@@ -610,7 +605,6 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 }
 
 func Test_DeleteEventingCR(t *testing.T) {
-	t.Parallel()
 	testCases := []struct {
 		name              string
 		givenEventing     *eventingv1alpha1.Eventing
@@ -758,8 +752,6 @@ func Test_DeleteEventingCR(t *testing.T) {
 }
 
 func Test_WatcherNATSResource(t *testing.T) {
-	t.Parallel()
-
 	testCases := []struct {
 		name                        string
 		givenOriginalNATS           *natsv1alpha1.NATS
