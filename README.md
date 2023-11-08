@@ -159,7 +159,7 @@ Undeploy Eventing Manager from the cluster:
    make undeploy
    ```
 
-### Undeploy Eventing Manager
+### Uninstall CRDs
 
 To delete the CRDs from the cluster:
 
