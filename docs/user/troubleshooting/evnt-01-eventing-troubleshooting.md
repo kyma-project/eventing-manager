@@ -34,7 +34,7 @@ Follow these steps to detect the source of the problem:
 
 ### Step 2: Check the status of the Subscription
 
-1. Check whether the Subscription is `Ready``. Run the command:
+1. Check whether the Subscription is `Ready`. Run the command:
 
     ```bash
     kubectl -n {NAMESPACE} get subscriptions.eventing.kyma-project.io {NAME}

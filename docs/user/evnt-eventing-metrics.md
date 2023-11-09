@@ -3,7 +3,7 @@
 Kyma Eventing provides various metrics, so you can monitor statistics and other information in real time.
 The metrics follow the [Prometheus naming convention](https://prometheus.io/docs/practices/naming/).
 
-## Metrics Emitted by Eventing Publisher Proxy
+## Metrics emitted by Eventing Publisher Proxy
 
 | Metric                                         | Description                                                                      |
 | ---------------------------------------------- | :------------------------------------------------------------------------------- |
@@ -13,7 +13,7 @@ The metrics follow the [Prometheus naming convention](https://prometheus.io/docs
 | **eventing_epp_requests_duration_seconds**     | The duration of processing an incoming request (includes sending to the backend) |
 | **eventing_epp_requests_total**                | The total number of requests                                                     |
 
-## Metrics Emitted by Eventing Manager
+## Metrics emitted by Eventing Manager
 
 | Metric                                                    | Description                                                                                                                 |
 | --------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
