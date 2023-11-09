@@ -1,4 +1,4 @@
-# Eventing Architecture
+# Eventing architecture
 
 Eventing uses Event Publisher Proxy and Eventing Manager to connect to the default NATS JetStream backend. They work together to process and deliver events in Kyma.
 

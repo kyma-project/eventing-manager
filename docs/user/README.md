@@ -1,4 +1,4 @@
-# Eventing Manager Module
+# Eventing module
 
 This module ships the Eventing Manager, which is a standard Kubernetes operator that observes the state of Eventing resources and reconciles them according to the desired state.
 
@@ -10,7 +10,7 @@ Kyma Eventing uses the following technology:
 
 - [NATS JetStream](https://docs.nats.io/) as backend within the cluster
 - [HTTP POST](https://www.w3schools.com/tags/ref_httpmethods.asp) requests to simplify sending and receiving events
-- Declarative [Subscription CR](./resources/evnt-cr-subscription.md) to subscribe to events
+- Declarative [Subscription custom resource (CR)](./resources/evnt-cr-subscription.md) to subscribe to events
 
 ## Kyma Eventing flow
 
@@ -26,7 +26,7 @@ Eventing in Kyma from a user’s perspective works as follows:
   - `/publish` for CloudEvents.
   - `<application_name>/v1/events` for legacy events.
 
-For more information, read [Eventing Architecture](evnt-architecture.md).
+For more information, read [Eventing architecture](evnt-architecture.md).
 
 ## Glossary
 
@@ -40,7 +40,7 @@ For more information, read [Eventing Architecture](evnt-architecture.md).
   - `at least once` delivery: With NATS JetStream, Kyma ensures that for each event published, all the subscribers subscribed to that event receive the event at least once.
   - `max bytes and discard policy`: NATS JetStream uses these configurations to ensure that no messages are lost when the storage is almost full. By default, Kyma ensures that no new messages are accepted when the storage reaches 90% capacity.  
 
-## Documentation Overview
+## Documentation overview
 
 To learn more about how Eventing works, see:
 
