@@ -11,7 +11,7 @@ The [Subscription](../resources/evnt-cr-subscription.md) CustomResourceDefinitio
 
 ## Create a Subscription with multiple event types
 
-To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-subscription.md) custom resource. In the following example, you learn how to subscribe to events of two types: `order.received.v1` and `order.changed.v1`.
+To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). In the following example, you learn how to subscribe to events of two types: `order.received.v1` and `order.changed.v1`.
 
 <div tabs name="Create a Subscription" group="create-subscription">
   <details open>
@@ -153,7 +153,7 @@ In the following example, you port-forward the [Event Publisher Proxy](../evnt-a
 
 ## Verify the event delivery
 
-To verify that the events were properly delivered, check the logs of the Function (see [Verify the event delivery](#verify-the-event-delivery)).
+To verify that the events were properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
 
 You will see the received event in the logs:
 ```

@@ -62,7 +62,7 @@ This table lists all the possible parameters of a given resource together with t
 | **backend.&#x200b;emsTypes.&#x200b;eventMeshType** (required) | string | Event type that is used on the EventMesh backend. |
 | **backend.&#x200b;emsTypes.&#x200b;originalType** (required) | string | Event type that was originally used to subscribe. |
 | **backend.&#x200b;emshash**  | integer | Hash used to identify an EventMesh Subscription retrieved from the server without the WebhookAuth config. |
-| **backend.&#x200b;ev2hash**  | integer | Checksum for the Subscription custom resource. |
+| **backend.&#x200b;ev2hash**  | integer | Checksum for the Subscription CR. |
 | **backend.&#x200b;eventMeshLocalHash**  | integer | Hash used to identify an EventMesh Subscription posted to the server without the WebhookAuth config. |
 | **backend.&#x200b;externalSink**  | string | Webhook URL used by EventMesh to trigger subscribers. |
 | **backend.&#x200b;failedActivation**  | string | Provides the reason if a Subscription failed activation in EventMesh. |
@@ -138,7 +138,7 @@ This table lists all the possible parameters of a given resource together with t
 | **emsSubscriptionStatus.&#x200b;subscriptionStatus**  | string | Status of the Subscription as reported by EventMesh. |
 | **emsSubscriptionStatus.&#x200b;subscriptionStatusReason**  | string | Reason for the current status. |
 | **emshash**  | integer | Defines the checksum for the Subscription in EventMesh. |
-| **ev2hash**  | integer | Defines the checksum for the Subscription custom resource. |
+| **ev2hash**  | integer | Defines the checksum for the Subscription CR. |
 | **externalSink**  | string | Defines the webhook URL which is used by EventMesh to trigger subscribers. |
 | **failedActivation**  | string | Defines the reason if a Subscription failed activation in EventMesh. |
 | **ready** (required) | boolean | Overall readiness of the Subscription. |

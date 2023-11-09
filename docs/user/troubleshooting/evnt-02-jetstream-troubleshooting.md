@@ -9,13 +9,13 @@ Events were not received by the consumers.
 
 1. Follow the diagnostic steps as mentioned in [Eventing Troubleshooting](evnt-01-eventing-troubleshooting.md).
 
-2. Use the [nats CLI](https://github.com/nats-io/natscli) to check if the stream was created:
+2. Use the [NATS CLI](https://github.com/nats-io/natscli) to check if the stream was created:
 
        1. Port forward the Kyma Eventing NATS Service to localhost. Use port `4222`. Run:
            ```bash
            kubectl -n kyma-system port-forward svc/eventing-nats 4222
            ```
-       2. Use the [nats CLI](https://github.com/nats-io/natscli) to list the streams:
+       2. Use the [NATS CLI](https://github.com/nats-io/natscli) to list the streams:
           ```bash
            $ nats stream ls
            ╭────────────────────────────────────────────────────────────────────────────╮
