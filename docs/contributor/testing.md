@@ -39,7 +39,7 @@ Because E2E tests need a Kubernetes cluster to run on, they are separate from th
 
    ```sh
    export BACKEND_TYPE="NATS"         # if using NATS Backend
-   export BACKEND_Type="EventMesh"    # if using EventMesh Backend
+   export BACKEND_TYPE="EventMesh"    # if using EventMesh Backend
    ```
 
 2. Execute the whole E2E test suite.
