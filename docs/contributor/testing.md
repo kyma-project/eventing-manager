@@ -60,7 +60,7 @@ The aim is to verify the functional correctness of Eventing Manager.
 ### Prow Jobs
 
 The Prow Jobs that cover the code of this repository reside in [their own repository](https://github.com/kyma-project/test-infra/tree/main/prow/jobs/kyma-project/eventing-manager).
-Presubmit jobs run on PRs and are marked with the prefix `pull`. Postsubmit jobs run on main after a PR was merged and carry the prefix `post`.
+Presubmit Jobs run on pull requests (PRs) and are marked with the prefix `pull`. Postsubmit jobs run on branch `main` after a PR has been merged and carry the prefix `post`.
 
 For more information on execution details of each Job, refer to their `description` field and the `command` and `args` fields.
 Alternatively, you can access this information from your PR by inspecting the details to the job and viewing the Prow job `.yaml` file.

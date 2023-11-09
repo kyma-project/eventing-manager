@@ -50,52 +50,52 @@ For information about the prerequisites, refer to [Development](./development.md
 6. To start the reconciliation process, apply the Eventing Custom Resource.
 This step depends on your desired backend: NATS or EventMesh.
 
-  - **Backend: NATS**
+    - **Backend: NATS**
 
-    For NATS Backend you can apply the default Custom Resource using the following command:  
+      For NATS Backend you can apply the default Custom Resource using the following command:  
 
-    ```sh
-    kubectl apply -f config/samples/default.yaml
-    ```
+      ```sh
+      kubectl apply -f config/samples/default.yaml
+      ```
     
-    The `spec.backend.type` needs to be set to `NATS`. You can configure the backend using the `NATS` related field in `spec.backend.config`.
+      The `spec.backend.type` needs to be set to `NATS`. You can configure the backend using the `NATS` related field in `spec.backend.config`.
     
-    ```sh
-    spec:
-      backend:
-        type: NATS
-        config:
-          natsStreamStorageType: File
-          natsStreamReplicas: 3
-          natsStreamMaxSize: 700M
-          natsMaxMsgsPerTopic: 1000000
-    ```
+      ```sh
+      spec:
+        backend:
+          type: NATS
+          config:
+            natsStreamStorageType: File
+            natsStreamReplicas: 3
+            natsStreamMaxSize: 700M
+            natsMaxMsgsPerTopic: 1000000
+      ```
 
-  - **Backend: EventMesh**
+    - **Backend: EventMesh**
 
-    For EventMesh Backend you can apply the default Custom Resource using the following command:
+      For EventMesh Backend you can apply the default Custom Resource using the following command:
 
-    ```sh
-    kubectl apply -f config/samples/default_eventmesh.yaml
-    ```
+      ```sh
+      kubectl apply -f config/samples/default_eventmesh.yaml
+      ```
    
-    - `spec.backend.type`: set to `EventMesh`
-    - `spec.backend.config.eventMeshSecret`: set it to the `<namespace>/<name>` where you applied the secret
-    - `spec.backend.config.eventTypePrefix`: change to your desired value or leave as is
-    - `spec.backend.config.domain`: set to the cluster public domain
+      - `spec.backend.type`: set to `EventMesh`
+      - `spec.backend.config.eventMeshSecret`: set it to the `<namespace>/<name>` where you applied the secret
+      - `spec.backend.config.eventTypePrefix`: change to your desired value or leave as is
+      - `spec.backend.config.domain`: set to the cluster public domain
     
-    If the Kyma Kubernetes cluster is managed by Gardener, Eventing Manager reads the cluster public domain automatically from the ConfigMap `kube-system/shoot-info`.
-    Otherwise, you need to additionally set `spec.backend.config.domain` in the configuration. 
+      If the Kyma Kubernetes cluster is managed by Gardener, Eventing Manager reads the cluster public domain automatically from the ConfigMap `kube-system/shoot-info`.
+      Otherwise, you need to additionally set `spec.backend.config.domain` in the configuration. 
 
-    ```sh
-    spec:
-      backend:
-        type: "EventMesh"
-        config:
-          eventMeshSecret: "<namespace>/<name>"
-          eventTypePrefix: "<prefix>"
-          domain: "<example.domain.com>"
-    ```
+      ```sh
+      spec:
+        backend:
+          type: "EventMesh"
+          config:
+            eventMeshSecret: "<namespace>/<name>"
+            eventTypePrefix: "<prefix>"
+            domain: "<example.domain.com>"
+      ```
 
 7. Check the `status` section to see if deployment was successful.
 
