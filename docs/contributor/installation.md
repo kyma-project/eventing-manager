@@ -47,12 +47,12 @@ For information about the prerequisites, refer to [Development](./development.md
    make deploy IMG=$IMG
    ```
 
-6. To start the reconciliation process, apply the Eventing Custom Resource.
+6. To start the reconciliation process, apply the Eventing custom resource (CR).
 This step depends on your desired backend: NATS or EventMesh.
 
     - **Backend: NATS**
 
-      For NATS Backend you can apply the default Custom Resource using the following command:  
+      For NATS Backend you can apply the default CR using the following command:  
 
       ```sh
       kubectl apply -f config/samples/default.yaml
@@ -73,7 +73,7 @@ This step depends on your desired backend: NATS or EventMesh.
 
     - **Backend: EventMesh**
 
-      For EventMesh Backend you can apply the default Custom Resource using the following command:
+      For EventMesh Backend you can apply the default CR using the following command:
 
       ```sh
       kubectl apply -f config/samples/default_eventmesh.yaml
