@@ -44,11 +44,20 @@ For more information, read [Eventing Architecture](evnt-architecture.md).
 
 To learn more about how Eventing works, see:
 
+- [Eventing Module](./01-manager.md) - provides a general overview of the Eventing module
+- [Eventing Module Configuration](02-configuration.md) - 
 - [Eventing architecture](evnt-architecture.md) - describes how Eventing works and the main actors involved, such as the Eventing Manager and Event Publisher Proxy.
 - [Event names](evnt-event-names.md) - contains information about event names and event name cleanup.
 - [Subscription CR](./resources/evnt-cr-subscription.md) - describes the Subscription custom resource, which you need to subscribe to events.
 - [CloudEvents](https://cloudevents.io/) - provides information about the CloudEvents specification used in Kyma.
 - [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) - provides more information about the backend technology behind Eventing in Kyma. [Eventing Architecture](evnt-architecture.md#jet-stream) provides details on the functionalities and higher qualities of service on top of Core NATS.
+
+To learn more about technical details aimed at possible contributors, check out the following documents:
+- [Development](../contributor/development.md) - provides general information about the setup
+- [Governance](../contributor/governance.md) - provides information about the rules and norms of this project
+- [Installation guide](../contributor/installation.md) - contains information about the different ways to install the Eventing Module
+- [Testing](../contributor/testing.md) - describes the test coverage of the project
+- [Troubleshooting](../contributor/troubleshooting.md) - provides general information about troubleshooting the module
 
 To perform tasks with Eventing, go through these tutorials:
 
