@@ -19,7 +19,7 @@ The Eventing Manager reactes to changes of the Eventing CR to adapt the resource
 
 ## Backend
 
-The Eventing Manager supports switching between two different backends. [NATS](https://nats.io/about/), an open source messaging system and [EventMesh](https://www.sap.com/germany/products/technology-platform/integration-suite/capabilities/event-mesh.html), a SAP solution for event-based architecture.
+The Eventing Manager supports switching between two different backends. [NATS](https://nats.io/about/), an open source messaging system and [EventMesh](https://help.sap.com/docs/event-mesh/event-mesh/what-is-sap-event-mesh), a SAP solution for event-based architecture.
 
 - **NATS**
   
