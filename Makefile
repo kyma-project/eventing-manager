@@ -89,6 +89,7 @@ help: ## Display this help.
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=eventing-manager crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(MAKE) crd-docs-gen
 
 .PHONY: generate
 generate: go-gen controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -318,3 +319,15 @@ e2e-eventing-peerauthentications:
 # e2e will run the whole suite of end-to-end tests for eventing-manager.
 .PHONY: e2e
 e2e: e2e-setup e2e-eventing-setup e2e-eventing e2e-cleanup
+
+TABLE_GEN ?= $(LOCALBIN)/table-gen
+TABLE_GEN_VERSION ?= v0.0.0-20230523174756-3dae9f177ffd
+
+.PHONY: tablegen
+tablegen: $(TABLE_GEN) ## Download table-gen locally if necessary.
+$(TABLE_GEN): $(LOCALBIN)
+	test -s $(TABLE_GEN) || GOBIN=$(LOCALBIN) go install github.com/kyma-project/kyma/hack/table-gen@$(TABLE_GEN_VERSION)
+
+.PHONY: crd-docs-gen
+crd-docs-gen: tablegen ## Generates CRD spec into docs folder
+	${TABLE_GEN} --crd-filename ./config/crd/bases/operator.kyma-project.io_eventings.yaml --md-filename ./docs/user/02-configuration.md
