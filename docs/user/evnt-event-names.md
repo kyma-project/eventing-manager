@@ -7,7 +7,7 @@ Event names depend on the type of event. Eventing supports the following event t
 
 ## Event name format
 
-For a Subscription Custom Resource, the fully qualified event name takes the sample form of `order.created.v1` or `Account.Root.Created.v1`.
+For a Subscription custom resource (CR), the fully qualified event name takes the sample form of `order.created.v1` or `Account.Root.Created.v1`.
 
 The event type is composed of the following components:
 - Event: can have two or more segments separated by `.`; for example, `order.created` or `Account.Root.Created`
