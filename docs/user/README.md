@@ -1,6 +1,6 @@
 # Eventing module
 
-This module ships the Eventing Manager, which is a standard Kubernetes operator that observes the state of Eventing resources and reconciles them according to the desired state.
+This module ships Eventing Manager, which is a standard Kubernetes operator that observes the state of Eventing resources and reconciles them according to the desired state.
 
 With Kyma Eventing, you can focus on your business workflows and trigger them with events to implement asynchronous flows within Kyma. Generally, eventing consists of event producers (or publishers) and consumers (or subscribers) that send events to or receive events from an event processing backend.
 
@@ -44,9 +44,9 @@ For more information, read [Eventing architecture](evnt-architecture.md).
 
 To learn more about how Eventing works, see:
 
-- [Eventing Module](01-manager.md) - provides a general overview of the Eventing module
-- [Eventing Module Configuration](02-configuration.md) - contains information about configuring the Eventing module
-- [Eventing architecture](evnt-architecture.md) - describes how Eventing works and the main actors involved, such as the Eventing Manager and Event Publisher Proxy.
+- [Eventing module](01-manager.md) - provides a general overview of the Eventing module
+- [Eventing module configuration](02-configuration.md) - contains information about configuring the Eventing module
+- [Eventing architecture](evnt-architecture.md) - describes how Eventing works and the main actors involved, such as Eventing Manager and Event Publisher Proxy.
 - [Event names](evnt-event-names.md) - contains information about event names and event name cleanup.
 - [Subscription CR](./resources/evnt-cr-subscription.md) - describes the Subscription custom resource, which you need to subscribe to events.
 - [CloudEvents](https://cloudevents.io/) - provides information about the CloudEvents specification used in Kyma.
@@ -55,7 +55,7 @@ To learn more about how Eventing works, see:
 To learn more about technical details aimed at possible contributors, check out the following documents:
 - [Development](../contributor/development.md) - provides general information about the setup
 - [Governance](../contributor/governance.md) - provides information about the rules and norms of this project
-- [Installation guide](../contributor/installation.md) - contains information about the different ways to install the Eventing Module
+- [Installation guide](../contributor/installation.md) - contains information about the different ways to install the Eventing module
 - [Testing](../contributor/testing.md) - describes the test coverage of the project
 - [Troubleshooting](../contributor/troubleshooting.md) - provides general information about troubleshooting the module
 

@@ -1,6 +1,6 @@
-# Installation and Uninstallation
+# Installation and uninstallation
 
-There are several ways to install the Eventing Manager.
+There are several ways to install Eventing Manager.
 For development, you must run some make targets beforehand.
 For information about the prerequisites, refer to [Development](./development.md) and for a detailed guide to the development flow, visit [Governance](./governance.md).
 
@@ -15,7 +15,7 @@ For information about the prerequisites, refer to [Development](./development.md
 
     > **NOTE:** Alternatively to a k3d cluster, the Kubecontext can also point to any existing Kubernetes cluster.
 
-2. Install the CRD of the Eventing Manager.
+2. Install the CRD of Eventing Manager.
 
    ```sh
    make install
@@ -84,7 +84,7 @@ This step depends on your desired backend: NATS or EventMesh.
     - `spec.backend.config.eventTypePrefix`: change to your desired value or leave as is
     - `spec.backend.config.domain`: set to the cluster public domain
     
-    If the Kyma Kubernetes cluster is managed by Gardener, the Eventing Manager reads the cluster public domain automatically from the ConfigMap `kube-system/shoot-info`.
+    If the Kyma Kubernetes cluster is managed by Gardener, Eventing Manager reads the cluster public domain automatically from the ConfigMap `kube-system/shoot-info`.
     Otherwise, you need to additionally set `spec.backend.config.domain` in the configuration. 
 
     ```sh
@@ -123,13 +123,13 @@ This step depends on your desired backend: NATS or EventMesh.
    make uninstall
    ```
 
-## Run the manager on a cluster using the Go runtime environment
+## Run Eventing Manager on a cluster using the Go runtime environment
 
 ### Installation
 
 1. Ensure you have the Kubecontext pointing to an existing Kubernetes cluster.
 
-2. Clone the Eventing Manager project.
+2. Clone Eventing Manager project.
 
 3. Download Go packages.
 
@@ -137,13 +137,13 @@ This step depends on your desired backend: NATS or EventMesh.
    go mod vendor && go mod tidy
    ```
 
-4. Install the CRD of the Eventing Manager.
+4. Install the CRD of Eventing Manager.
 
    ```sh
    make install
    ```
 
-5. Run the Eventing Manager locally.
+5. Run Eventing Manager locally.
 
    ```sh
    make run
@@ -157,8 +157,8 @@ Remove the resources.
    make uninstall
    ```
 
-## Run the Eventing Manager using Kyma's Lifecycle Manager
+## Run Eventing Manager using Kyma's Lifecycle Manager
 
-[Kyma's Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager) helps manage the lifecycle of each module in the cluster and can be used to install the Eventing Manager.
+[Kyma's Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager) helps manage the lifecycle of each module in the cluster and can be used to install Eventing Manager.
 
-To run the Eventing Manager, follow the steps detailed in the [Lifecycle Manager documentation](https://github.com/kyma-project/lifecycle-manager/tree/main/docs).
+To run Eventing Manager, follow the steps detailed in the [Lifecycle Manager documentation](https://github.com/kyma-project/lifecycle-manager/tree/main/docs).
