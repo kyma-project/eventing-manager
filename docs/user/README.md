@@ -44,8 +44,8 @@ For more information, read [Eventing Architecture](evnt-architecture.md).
 
 To learn more about how Eventing works, see:
 
-- [Eventing Module](./01-manager.md) - provides a general overview of the Eventing module
-- [Eventing Module Configuration](02-configuration.md) - 
+- [Eventing Module](01-manager.md) - provides a general overview of the Eventing module
+- [Eventing Module Configuration](02-configuration.md) - contains information about configuring the Eventing module
 - [Eventing architecture](evnt-architecture.md) - describes how Eventing works and the main actors involved, such as the Eventing Manager and Event Publisher Proxy.
 - [Event names](evnt-event-names.md) - contains information about event names and event name cleanup.
 - [Subscription CR](./resources/evnt-cr-subscription.md) - describes the Subscription custom resource, which you need to subscribe to events.

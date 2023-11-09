@@ -4,7 +4,7 @@ This module ships the Eventing Manager. Once this module is enabled, it provides
 
 ## Module Lifecycle
 
-Upon starting the Eventing Manager, the controller (following the [Kubebuilder concept](link)) creates, watches and reconciles the following resources:
+Upon starting the Eventing Manager, the controller (following the [Kubebuilder concept](https://book.kubebuilder.io/architecture.html)) creates, watches and reconciles the following resources:
 
 - ConfigMap
 - Secret
@@ -19,19 +19,17 @@ The Eventing Manager reactes to changes of the Eventing CR to adapt the resource
 
 ## Backend
 
-The Eventing Manager supports switching between two different backends. [NATS](https://nats.io/about/), an open source messaging system and [EventMesh](https://www.sap.com/germany/products/technology-platform/integration-suite/capabilities/event-mesh.html) a SAP solution for event-based architecture.
+The Eventing Manager supports switching between two different backends. [NATS](https://nats.io/about/), an open source messaging system and [EventMesh](https://www.sap.com/germany/products/technology-platform/integration-suite/capabilities/event-mesh.html), a SAP solution for event-based architecture.
 
-### NATS
+- **NATS**
+  
+  If you want to use the Eventing Manager with NATS backend, you need to deploy the [NATS Module](https://github.com/kyma-project/nats-manager).
 
-If you want to use the Eventing Manager with NATS backend, you need to deploy the [NATS Module](https://github.com/kyma-project/nats-manager).
+- **SAP EventMesh**
 
-More information about the possible configuration of the Eventing Manager using NATS backend, refer to the [NATS backend configuration](link).
+  If you want to use the Eventing Manager with EventMesh backend, you need to deploy the [API-Gateway Module](https://github.com/kyma-project/api-gateway).
 
-### SAP EventMesh
-
-If you want to use the Eventing Manager with EventMesh backend, you need to deploy the [API-Gateway Module](https://github.com/kyma-project/api-gateway).
-
-More information about the possible configuration of the Eventing Manager using EventMesh backend, refer to the [EventMesh backend configuration](link).
+For more information about the possible configuration of the Eventing Manager using NATS or EventMesh backend, refer to the [backend configuration](02-configuration.md#reference).
 
 ## Removing the Module
 
