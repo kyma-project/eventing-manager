@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 
 	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
@@ -49,6 +48,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/object"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	"github.com/kyma-project/eventing-manager/pkg/watcher"
@@ -238,7 +238,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 					n := e.ObjectNew.(*v1.Deployment).DeepCopy()
 					o.Spec.Replicas = nil
 					n.Spec.Replicas = nil
-					return !reflect.DeepEqual(o, n)
+					return !object.Semantic.DeepEqual(o, n)
 				},
 			},
 		)).
