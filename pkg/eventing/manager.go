@@ -6,7 +6,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -92,12 +91,10 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	var desiredPublisher *appsv1.Deployment
 
-	var replicas *int32
+	var replicas *int32 = nil
 	hpa, err := em.kubeClient.GetHPA(ctx, GetPublisherDeploymentName(*eventing), eventing.Namespace)
 	if err == nil && hpa != nil {
 		replicas = hpa.Spec.MinReplicas
-	} else {
-		replicas = ptr.To(int32(eventing.Spec.Publisher.Replicas.Min))
 	}
 
 	switch backendType {
