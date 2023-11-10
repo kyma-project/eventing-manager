@@ -33,6 +33,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -222,14 +223,17 @@ func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing 
 	return false, r.syncEventingStatus(ctx, eventing, log)
 }
 
-func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(e event.UpdateEvent) bool {
-	res := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
-	r.namedLogger().With("result", res).
-		With("GVK", e.ObjectOld.GetObjectKind()).
-		With("Name", e.ObjectOld.GetName()).
-		With("Namespace", e.ObjectOld.GetNamespace()).
-		Info("UpdateEvent received")
-	return res
+func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(t string) func(event.UpdateEvent) bool {
+	return func(e event.UpdateEvent) bool {
+		res := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+		r.namedLogger().With("result", res).
+			With("Type", t).
+			With("GVK", e.ObjectOld.GetObjectKind()).
+			With("Name", e.ObjectOld.GetName()).
+			With("Namespace", e.ObjectOld.GetNamespace()).
+			Info("UpdateEvent received")
+		return res
+	}
 }
 func (r *Reconciler) SkipEnqueueOnCreate(e event.CreateEvent) bool {
 	r.namedLogger().
@@ -247,30 +251,31 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	r.controller, err = ctrl.NewControllerManagedBy(mgr).
 		For(&eventingv1alpha1.Eventing{}).
-		Owns(&v1.Deployment{}).//builder.WithPredicates(
+		Owns(&v1.Deployment{}). //builder.WithPredicates(
 		//	predicate.Funcs{
 		//		CreateFunc: r.SkipEnqueueOnCreate,
-		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("deployment"),
 		//	}),
 
-		Owns(&corev1.Service{}).//builder.WithPredicates(
+		Owns(&corev1.Service{}). //builder.WithPredicates(
 		//	predicate.Funcs{
 		//		CreateFunc: r.SkipEnqueueOnCreate,
-		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("service"),
 		//	}),
 
-		Owns(&corev1.ServiceAccount{}).//builder.WithPredicates(
+		Owns(&corev1.ServiceAccount{}). //builder.WithPredicates(
 		//	predicate.Funcs{
 		//		CreateFunc: r.SkipEnqueueOnCreate,
-		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("serviceAccount"),
 		//	}),
 
-		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).//builder.WithPredicates(
-		//	predicate.Funcs{
-		//		CreateFunc: r.SkipEnqueueOnCreate,
-		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
-		//	}),
-
+		Owns(&autoscalingv2.HorizontalPodAutoscaler{},
+			builder.WithPredicates(
+				predicate.Funcs{
+					CreateFunc: r.SkipEnqueueOnCreate,
+					UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("hpa"),
+				}),
+		).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 0,
 		}).
@@ -295,10 +300,7 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 		predicate.Funcs{
 			// don't reconcile for create events
 			CreateFunc: r.SkipEnqueueOnCreate,
-			UpdateFunc: func(updateEvent event.UpdateEvent) bool {
-				r.namedLogger().With("CR / CRB").Info("Update Called")
-				return r.SkipEnqueueOnUpdateAfterSemanticCompare(updateEvent)
-			},
+			UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("CR / CRB"),
 		},
 	)
 	return err
