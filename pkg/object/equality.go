@@ -110,9 +110,9 @@ func publisherProxyDeploymentEqual(d1, d2 *appsv1.Deployment) bool {
 	if !reflect.DeepEqual(d1.Labels, d2.Labels) {
 		return false
 	}
-	if !reflect.DeepEqual(d1.Spec.Replicas, d2.Spec.Replicas) {
-		return false
-	}
+	//if !reflect.DeepEqual(d1.Spec.Replicas, d2.Spec.Replicas) {
+	//	return false
+	//}
 
 	cst1 := d1.Spec.Template
 	cst2 := d2.Spec.Template

@@ -96,6 +96,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	if err == nil && hpa != nil {
 		replicas = hpa.Spec.MinReplicas
 	}
+	replicas = nil
 
 	switch backendType {
 	case v1alpha1.NatsBackendType:
@@ -128,13 +129,13 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 		if err := em.migratePublisherDeploymentFromEC(ctx, eventing, *currentPublisher, *desiredPublisher); err != nil {
 			return nil, fmt.Errorf("failed to migrate publisher: %v", err)
 		}
+	}
 
-		if object.Semantic.DeepEqual(currentPublisher, desiredPublisher) {
-			em.logger.WithContext().Debug(
-				"skip updating the EPP deployment because its desired and actual states are equal",
-			)
-			return currentPublisher, nil
-		}
+	if object.Semantic.DeepEqual(currentPublisher, desiredPublisher) {
+		em.logger.WithContext().Debug(
+			"skip updating the EPP deployment because its desired and actual states are equal",
+		)
+		return currentPublisher, nil
 	}
 
 	// Update publisher proxy deployment
