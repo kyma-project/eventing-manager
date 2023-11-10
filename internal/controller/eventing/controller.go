@@ -232,6 +232,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&eventingv1alpha1.Eventing{}).
 		Owns(&v1.Deployment{}, builder.WithPredicates(
 			predicate.Funcs{
+				CreateFunc: func(_ event.CreateEvent) bool { return false },
 				UpdateFunc: func(e event.UpdateEvent) bool {
 					res := !object.Semantic.DeepEqual(e.ObjectOld.(*v1.Deployment), e.ObjectNew.(*v1.Deployment))
 					r.namedLogger().Info("change triggered for depl", "res", res)
@@ -241,6 +242,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		)).
 		Owns(&corev1.Service{}, builder.WithPredicates(
 			predicate.Funcs{
+				CreateFunc: func(_ event.CreateEvent) bool { return false },
 				UpdateFunc: func(e event.UpdateEvent) bool {
 					res := !object.Semantic.DeepEqual(e.ObjectOld.(*corev1.Service), e.ObjectNew.(*corev1.Service))
 					r.namedLogger().Info("change triggered for svc", "res", res)
@@ -249,6 +251,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			})).
 		Owns(&corev1.ServiceAccount{}, builder.WithPredicates(
 			predicate.Funcs{
+				CreateFunc: func(_ event.CreateEvent) bool { return false },
 				UpdateFunc: func(e event.UpdateEvent) bool {
 					res := !object.Semantic.DeepEqual(e.ObjectOld.(*corev1.ServiceAccount), e.ObjectNew.(*corev1.ServiceAccount))
 					r.namedLogger().Info("change triggered for sa", "res", res)
@@ -257,6 +260,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			})).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}, builder.WithPredicates(
 			predicate.Funcs{
+				CreateFunc: func(_ event.CreateEvent) bool { return false },
 				UpdateFunc: func(e event.UpdateEvent) bool {
 					res := !object.Semantic.DeepEqual(e.ObjectOld.(*autoscalingv2.HorizontalPodAutoscaler), e.ObjectNew.(*autoscalingv2.HorizontalPodAutoscaler))
 					r.namedLogger().Info("change triggered for hpa", "res", res)
