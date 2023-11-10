@@ -245,6 +245,9 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Service{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 0,
+		}).
 		Build(r)
 
 	return err
@@ -436,6 +439,7 @@ func (r *Reconciler) handleBackendSwitching(
 
 	// stop the previously active backend.
 	if eventing.Status.ActiveBackend == eventingv1alpha1.NatsBackendType {
+		log.Info("Stopping the NATS subscription manager because backend is switched")
 		if err := r.stopNATSSubManager(true, log); err != nil {
 			return err
 		}
