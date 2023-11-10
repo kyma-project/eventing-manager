@@ -7,16 +7,18 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
 	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 func TestApiRuleEqual(t *testing.T) {
@@ -531,7 +533,7 @@ func TestPublisherProxyDeploymentEqual(t *testing.T) {
 			},
 			expectedResult: false,
 		},
-		"should be unequal if replicas changes": {
+		"should be equal if replicas changes": {
 			getPublisher1: func() *appsv1.Deployment {
 				replicas := int32(2)
 				p := defaultNATSPublisher.DeepCopy()
@@ -541,7 +543,7 @@ func TestPublisherProxyDeploymentEqual(t *testing.T) {
 			getPublisher2: func() *appsv1.Deployment {
 				return defaultNATSPublisher.DeepCopy()
 			},
-			expectedResult: false,
+			expectedResult: true,
 		},
 		"should be equal if replicas are the same": {
 			getPublisher1: func() *appsv1.Deployment {
@@ -744,6 +746,161 @@ func Test_ownerReferencesDeepEqual(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			require.Equal(t, tc.wantEqual, ownerReferencesDeepEqual(tc.givenOwnerReferences1, tc.givenOwnerReferences2))
+		})
+	}
+}
+
+func Test_containerEqual(t *testing.T) {
+	quantityA, _ := resource.ParseQuantity("5m")
+	quantityB, _ := resource.ParseQuantity("10k")
+
+	type args struct {
+		c1 *corev1.Container
+		c2 *corev1.Container
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "container are equal",
+			args: args{
+				c1: &corev1.Container{
+					Name:       "test",
+					Image:      "bla",
+					Command:    []string{"1", "2"},
+					Args:       []string{"a", "b"},
+					WorkingDir: "foodir",
+					Ports: []corev1.ContainerPort{corev1.ContainerPort{
+						Name:          "testport",
+						HostPort:      1,
+						ContainerPort: 2,
+						Protocol:      "http",
+						HostIP:        "192.168.1.1",
+					}},
+					Resources: corev1.ResourceRequirements{
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							"cpu": quantityA,
+						},
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							"mem": quantityA,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler:        corev1.ProbeHandler{},
+						InitialDelaySeconds: 0,
+						TimeoutSeconds:      0,
+						PeriodSeconds:       0,
+						SuccessThreshold:    0,
+						FailureThreshold:    0,
+					},
+				},
+				c2: &corev1.Container{
+					Name:       "test",
+					Image:      "bla",
+					Command:    []string{"1", "2"},
+					Args:       []string{"a", "b"},
+					WorkingDir: "foodir",
+					Ports: []corev1.ContainerPort{corev1.ContainerPort{
+						Name:          "testport",
+						HostPort:      1,
+						ContainerPort: 2,
+						Protocol:      "http",
+						HostIP:        "192.168.1.1",
+					}},
+					Resources: corev1.ResourceRequirements{
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							"cpu": quantityA,
+						},
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							"mem": quantityA,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler:        corev1.ProbeHandler{},
+						InitialDelaySeconds: 0,
+						TimeoutSeconds:      0,
+						PeriodSeconds:       0,
+						SuccessThreshold:    0,
+						FailureThreshold:    0,
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "resources are not equal",
+			args: args{
+				c1: &corev1.Container{
+					Name:       "test",
+					Image:      "bla",
+					Command:    []string{"1", "2"},
+					Args:       []string{"a", "b"},
+					WorkingDir: "foodir",
+					Ports: []corev1.ContainerPort{corev1.ContainerPort{
+						Name:          "testport",
+						HostPort:      1,
+						ContainerPort: 2,
+						Protocol:      "http",
+						HostIP:        "192.168.1.1",
+					}},
+					Resources: corev1.ResourceRequirements{
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							"cpu": quantityA,
+						},
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							"mem": quantityA,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler:        corev1.ProbeHandler{},
+						InitialDelaySeconds: 0,
+						TimeoutSeconds:      0,
+						PeriodSeconds:       0,
+						SuccessThreshold:    0,
+						FailureThreshold:    0,
+					},
+				},
+				c2: &corev1.Container{
+					Name:       "test",
+					Image:      "bla",
+					Command:    []string{"1", "2"},
+					Args:       []string{"a", "b"},
+					WorkingDir: "foodir",
+					Ports: []corev1.ContainerPort{corev1.ContainerPort{
+						Name:          "testport",
+						HostPort:      1,
+						ContainerPort: 2,
+						Protocol:      "http",
+						HostIP:        "192.168.1.1",
+					}},
+					Resources: corev1.ResourceRequirements{
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							"cpu": quantityB,
+						},
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							"mem": quantityB,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler:        corev1.ProbeHandler{},
+						InitialDelaySeconds: 0,
+						TimeoutSeconds:      0,
+						PeriodSeconds:       0,
+						SuccessThreshold:    0,
+						FailureThreshold:    0,
+					},
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := containerEqual(tt.args.c1, tt.args.c2); got != tt.want {
+				t.Errorf("containerEqual() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

@@ -109,6 +109,10 @@ generate-and-test: vendor manifests generate fmt imports vet lint test;
 test: envtest	## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
+.PHONY: test-debug
+test-debug: envtest	## Run tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test -v --count=1 ./internal/controller/eventing/integrationtests/controller/ -coverprofile cover.out -test.run 'Test_UpdateEventingCR.*'
+
 ##@ Build
 
 .PHONY: build

@@ -193,6 +193,10 @@ func containerEqual(c1, c2 *corev1.Container) bool {
 		return false
 	}
 
+	if !reflect.DeepEqual(c1.Resources, c2.Resources) {
+		return false
+	}
+
 	return probeEqual(c1.ReadinessProbe, c2.ReadinessProbe)
 }
 
@@ -201,6 +205,10 @@ func containerEqual(c1, c2 *corev1.Container) bool {
 func envEqual(e1, e2 []corev1.EnvVar) bool {
 	if len(e1) != len(e2) {
 		return false
+	}
+
+	if len(e1) == 0 {
+		return true
 	}
 	isFound := false
 	for _, ev1 := range e1 {
