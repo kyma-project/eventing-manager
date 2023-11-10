@@ -229,10 +229,17 @@ func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(e event.UpdateEvent
 		With("GVK", e.ObjectNew.GetObjectKind().GroupVersionKind()).
 		With("Name", e.ObjectNew.GetName()).
 		With("Namespace", e.ObjectNew.GetNamespace()).
-		Info("Change triggered")
+		Info("UpdateEvent received")
 	return res
 }
-func SkipEnqueueOnCreate(_ event.CreateEvent) bool { return false }
+func (r *Reconciler) SkipEnqueueOnCreate(e event.CreateEvent) bool {
+	r.namedLogger().
+		With("GVK", e.Object.GetObjectKind().GroupVersionKind()).
+		With("Name", e.Object.GetName()).
+		With("Namespace", e.Object.GetNamespace()).
+		Info("CreateEvent received. Skipping")
+	return false
+}
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
