@@ -70,6 +70,12 @@ func (js *JetStream) Initialize(connCloseHandler backendutils.ConnClosedHandler)
 	return js.ensureStreamExistsAndIsConfiguredCorrectly()
 }
 
+func (js *JetStream) Shutdown() {
+	if js.Conn != nil && !js.Conn.IsClosed() {
+		js.Conn.Close()
+	}
+}
+
 func (js *JetStream) SyncSubscription(subscription *eventingv1alpha2.Subscription) error {
 	subKeyPrefix := createKeyPrefix(subscription)
 	if err := js.checkJetStreamConnection(); err != nil {

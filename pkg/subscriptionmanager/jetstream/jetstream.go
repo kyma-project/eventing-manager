@@ -143,7 +143,11 @@ func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionCo
 }
 
 func (sm *SubscriptionManager) Stop(runCleanup bool) error {
+	if sm.backendv2 != nil {
+		sm.backendv2.Shutdown()
+	}
 	sm.cancel()
+
 	if !runCleanup {
 		return nil
 	}
