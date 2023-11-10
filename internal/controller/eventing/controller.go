@@ -223,6 +223,17 @@ func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing 
 	return false, r.syncEventingStatus(ctx, eventing, log)
 }
 
+func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(e event.UpdateEvent) bool {
+	res := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+	r.namedLogger().With("result", res).
+		With("GVK", e.ObjectNew.GetObjectKind().GroupVersionKind()).
+		With("Name", e.ObjectNew.GetName()).
+		With("Namespace", e.ObjectNew.GetNamespace()).
+		Info("Change triggered")
+	return res
+}
+func SkipEnqueueOnCreate(_ event.CreateEvent) bool { return false }
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.ctrlManager = mgr
@@ -232,40 +243,24 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&eventingv1alpha1.Eventing{}).
 		Owns(&v1.Deployment{}, builder.WithPredicates(
 			predicate.Funcs{
-				CreateFunc: func(_ event.CreateEvent) bool { return false },
-				UpdateFunc: func(e event.UpdateEvent) bool {
-					res := !object.Semantic.DeepEqual(e.ObjectOld.(*v1.Deployment), e.ObjectNew.(*v1.Deployment))
-					r.namedLogger().Info("change triggered for depl", "res", res)
-					return res
-				},
+				CreateFunc: SkipEnqueueOnCreate,
+				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
 			},
 		)).
 		Owns(&corev1.Service{}, builder.WithPredicates(
 			predicate.Funcs{
-				CreateFunc: func(_ event.CreateEvent) bool { return false },
-				UpdateFunc: func(e event.UpdateEvent) bool {
-					res := !object.Semantic.DeepEqual(e.ObjectOld.(*corev1.Service), e.ObjectNew.(*corev1.Service))
-					r.namedLogger().Info("change triggered for svc", "res", res)
-					return res
-				},
+				CreateFunc: SkipEnqueueOnCreate,
+				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
 			})).
 		Owns(&corev1.ServiceAccount{}, builder.WithPredicates(
 			predicate.Funcs{
-				CreateFunc: func(_ event.CreateEvent) bool { return false },
-				UpdateFunc: func(e event.UpdateEvent) bool {
-					res := !object.Semantic.DeepEqual(e.ObjectOld.(*corev1.ServiceAccount), e.ObjectNew.(*corev1.ServiceAccount))
-					r.namedLogger().Info("change triggered for sa", "res", res)
-					return res
-				},
+				CreateFunc: SkipEnqueueOnCreate,
+				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
 			})).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}, builder.WithPredicates(
 			predicate.Funcs{
-				CreateFunc: func(_ event.CreateEvent) bool { return false },
-				UpdateFunc: func(e event.UpdateEvent) bool {
-					res := !object.Semantic.DeepEqual(e.ObjectOld.(*autoscalingv2.HorizontalPodAutoscaler), e.ObjectNew.(*autoscalingv2.HorizontalPodAutoscaler))
-					r.namedLogger().Info("change triggered for hpa", "res", res)
-					return res
-				},
+				CreateFunc: SkipEnqueueOnCreate,
+				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
 			})).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 0,
@@ -290,14 +285,8 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 		predicate.ResourceVersionChangedPredicate{},
 		predicate.Funcs{
 			// don't reconcile for create events
-			CreateFunc: func(e event.CreateEvent) bool {
-				return false
-			},
-			UpdateFunc: func(e event.UpdateEvent) bool {
-				res := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
-				r.namedLogger().Info("change triggered for cr / crb ", "res", res)
-				return res
-			},
+			CreateFunc: SkipEnqueueOnCreate,
+			UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
 		},
 	)
 	return err
