@@ -250,23 +250,23 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&eventingv1alpha1.Eventing{}).
 		Owns(&v1.Deployment{}, builder.WithPredicates(
 			predicate.Funcs{
-				CreateFunc: SkipEnqueueOnCreate,
+				CreateFunc: r.SkipEnqueueOnCreate,
 				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
 			},
 		)).
 		Owns(&corev1.Service{}, builder.WithPredicates(
 			predicate.Funcs{
-				CreateFunc: SkipEnqueueOnCreate,
+				CreateFunc: r.SkipEnqueueOnCreate,
 				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
 			})).
 		Owns(&corev1.ServiceAccount{}, builder.WithPredicates(
 			predicate.Funcs{
-				CreateFunc: SkipEnqueueOnCreate,
+				CreateFunc: r.SkipEnqueueOnCreate,
 				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
 			})).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}, builder.WithPredicates(
 			predicate.Funcs{
-				CreateFunc: SkipEnqueueOnCreate,
+				CreateFunc: r.SkipEnqueueOnCreate,
 				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
 			})).
 		WithOptions(controller.Options{
@@ -292,7 +292,7 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 		predicate.ResourceVersionChangedPredicate{},
 		predicate.Funcs{
 			// don't reconcile for create events
-			CreateFunc: SkipEnqueueOnCreate,
+			CreateFunc: r.SkipEnqueueOnCreate,
 			UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
 		},
 	)
