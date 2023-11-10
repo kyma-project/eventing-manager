@@ -229,7 +229,7 @@ func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(e event.UpdateEvent
 		With("GVK", e.ObjectNew.GetObjectKind().GroupVersionKind()).
 		With("Name", e.ObjectNew.GetName()).
 		With("Namespace", e.ObjectNew.GetNamespace()).
-		Info("UpdateEvent received")
+		Debug("UpdateEvent received")
 	return res
 }
 func (r *Reconciler) SkipEnqueueOnCreate(e event.CreateEvent) bool {
@@ -237,7 +237,7 @@ func (r *Reconciler) SkipEnqueueOnCreate(e event.CreateEvent) bool {
 		With("GVK", e.Object.GetObjectKind().GroupVersionKind()).
 		With("Name", e.Object.GetName()).
 		With("Namespace", e.Object.GetNamespace()).
-		Info("CreateEvent received. Skipping")
+		Debug("CreateEvent received. Skipping")
 	return false
 }
 
