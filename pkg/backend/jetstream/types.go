@@ -25,6 +25,9 @@ type Backend interface {
 	// Initialize should initialize the communication layer with the messaging backend system
 	Initialize(connCloseHandler backendutilsv2.ConnClosedHandler) error
 
+	// Shutdown should stop all clients.
+	Shutdown()
+
 	// SyncSubscription should synchronize the Kyma eventing subscription with the subscriber infrastructure of JetStream.
 	SyncSubscription(subscription *eventingv1alpha2.Subscription) error
 

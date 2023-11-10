@@ -29,6 +29,7 @@ func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1al
 
 	// update the config if hashes differ
 	if eventing.Status.BackendConfigHash != specHash && r.isNATSSubManagerStarted {
+		log.Info("specHash does not match, restarting subscription manager")
 		// stop the subsManager without cleanup
 		if err := r.stopNATSSubManager(false, log); err != nil {
 			return err
