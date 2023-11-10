@@ -233,31 +233,34 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&v1.Deployment{}, builder.WithPredicates(
 			predicate.Funcs{
 				UpdateFunc: func(e event.UpdateEvent) bool {
-					// Ignore the replicas equality check because the HPA changes it in the EPP deployment.
-					o := e.ObjectOld.(*v1.Deployment).DeepCopy()
-					n := e.ObjectNew.(*v1.Deployment).DeepCopy()
-					o.Spec.Replicas = nil
-					n.Spec.Replicas = nil
-					return !object.Semantic.DeepEqual(o, n)
+					res := !object.Semantic.DeepEqual(e.ObjectOld.(*v1.Deployment), e.ObjectNew.(*v1.Deployment))
+					r.namedLogger().Info("change triggered for depl", "res", res)
+					return res
 				},
 			},
 		)).
 		Owns(&corev1.Service{}, builder.WithPredicates(
 			predicate.Funcs{
 				UpdateFunc: func(e event.UpdateEvent) bool {
-					return !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+					res := !object.Semantic.DeepEqual(e.ObjectOld.(*corev1.Service), e.ObjectNew.(*corev1.Service))
+					r.namedLogger().Info("change triggered for svc", "res", res)
+					return res
 				},
 			})).
 		Owns(&corev1.ServiceAccount{}, builder.WithPredicates(
 			predicate.Funcs{
 				UpdateFunc: func(e event.UpdateEvent) bool {
-					return !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+					res := !object.Semantic.DeepEqual(e.ObjectOld.(*corev1.ServiceAccount), e.ObjectNew.(*corev1.ServiceAccount))
+					r.namedLogger().Info("change triggered for sa", "res", res)
+					return res
 				},
 			})).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}, builder.WithPredicates(
 			predicate.Funcs{
 				UpdateFunc: func(e event.UpdateEvent) bool {
-					return !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+					res := !object.Semantic.DeepEqual(e.ObjectOld.(*autoscalingv2.HorizontalPodAutoscaler), e.ObjectNew.(*autoscalingv2.HorizontalPodAutoscaler))
+					r.namedLogger().Info("change triggered for hpa", "res", res)
+					return res
 				},
 			})).
 		WithOptions(controller.Options{
