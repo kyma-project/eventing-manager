@@ -226,10 +226,10 @@ func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing 
 func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(e event.UpdateEvent) bool {
 	res := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
 	r.namedLogger().With("result", res).
-		With("GVK", e.ObjectNew.GetObjectKind().GroupVersionKind()).
-		With("Name", e.ObjectNew.GetName()).
-		With("Namespace", e.ObjectNew.GetNamespace()).
-		Debug("UpdateEvent received")
+		With("GVK", e.ObjectOld.GetObjectKind().GroupVersionKind()).
+		With("Name", e.ObjectOld.GetName()).
+		With("Namespace", e.ObjectOld.GetNamespace()).
+		Info("UpdateEvent received")
 	return res
 }
 func (r *Reconciler) SkipEnqueueOnCreate(e event.CreateEvent) bool {
@@ -237,7 +237,7 @@ func (r *Reconciler) SkipEnqueueOnCreate(e event.CreateEvent) bool {
 		With("GVK", e.Object.GetObjectKind().GroupVersionKind()).
 		With("Name", e.Object.GetName()).
 		With("Namespace", e.Object.GetNamespace()).
-		Debug("CreateEvent received. Skipping")
+		Info("CreateEvent received. Skipping")
 	return false
 }
 
