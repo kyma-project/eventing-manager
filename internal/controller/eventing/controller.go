@@ -234,6 +234,9 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Service{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 0,
+		}).
 		Build(r)
 
 	return err
