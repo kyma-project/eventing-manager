@@ -248,27 +248,34 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	r.controller, err = ctrl.NewControllerManagedBy(mgr).
 		For(&eventingv1alpha1.Eventing{}).
-		Owns(&v1.Deployment{}, builder.WithPredicates(
-			predicate.Funcs{
-				CreateFunc: r.SkipEnqueueOnCreate,
-				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
-			},
-		)).
-		Owns(&corev1.Service{}, builder.WithPredicates(
-			predicate.Funcs{
-				CreateFunc: r.SkipEnqueueOnCreate,
-				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
-			})).
-		Owns(&corev1.ServiceAccount{}, builder.WithPredicates(
-			predicate.Funcs{
-				CreateFunc: r.SkipEnqueueOnCreate,
-				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
-			})).
-		Owns(&autoscalingv2.HorizontalPodAutoscaler{}, builder.WithPredicates(
-			predicate.Funcs{
-				CreateFunc: r.SkipEnqueueOnCreate,
-				UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
-			})).
+		Owns(&v1.Deployment{},
+			//builder.WithPredicates(
+			//	predicate.Funcs{
+			//		CreateFunc: r.SkipEnqueueOnCreate,
+			//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+			//	}),
+		).
+		Owns(&corev1.Service{},
+			//builder.WithPredicates(
+			//	predicate.Funcs{
+			//		CreateFunc: r.SkipEnqueueOnCreate,
+			//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+			//	}),
+		).
+		Owns(&corev1.ServiceAccount{},
+			//builder.WithPredicates(
+			//	predicate.Funcs{
+			//		CreateFunc: r.SkipEnqueueOnCreate,
+			//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+			//	}),
+		).
+		Owns(&autoscalingv2.HorizontalPodAutoscaler{},
+			//builder.WithPredicates(
+			//	predicate.Funcs{
+			//		CreateFunc: r.SkipEnqueueOnCreate,
+			//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+			//	}),
+		).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 0,
 		}).
