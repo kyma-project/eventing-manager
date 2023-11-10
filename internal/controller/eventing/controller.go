@@ -33,7 +33,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -226,7 +225,7 @@ func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing 
 func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(e event.UpdateEvent) bool {
 	res := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
 	r.namedLogger().With("result", res).
-		With("GVK", e.ObjectOld.GetObjectKind().GroupVersionKind()).
+		With("GVK", e.ObjectOld.GetObjectKind()).
 		With("Name", e.ObjectOld.GetName()).
 		With("Namespace", e.ObjectOld.GetNamespace()).
 		Info("UpdateEvent received")
@@ -234,7 +233,7 @@ func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(e event.UpdateEvent
 }
 func (r *Reconciler) SkipEnqueueOnCreate(e event.CreateEvent) bool {
 	r.namedLogger().
-		With("GVK", e.Object.).
+		With("GVK", e.Object.GetObjectKind()).
 		With("Name", e.Object.GetName()).
 		With("Namespace", e.Object.GetNamespace()).
 		Info("CreateEvent received. Skipping")
@@ -248,34 +247,30 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	r.controller, err = ctrl.NewControllerManagedBy(mgr).
 		For(&eventingv1alpha1.Eventing{}).
-		Owns(&v1.Deployment{},
-			//builder.WithPredicates(
-			//	predicate.Funcs{
-			//		CreateFunc: r.SkipEnqueueOnCreate,
-			//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
-			//	}),
-		).
-		Owns(&corev1.Service{},
-			//builder.WithPredicates(
-			//	predicate.Funcs{
-			//		CreateFunc: r.SkipEnqueueOnCreate,
-			//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
-			//	}),
-		).
-		Owns(&corev1.ServiceAccount{},
-			//builder.WithPredicates(
-			//	predicate.Funcs{
-			//		CreateFunc: r.SkipEnqueueOnCreate,
-			//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
-			//	}),
-		).
-		Owns(&autoscalingv2.HorizontalPodAutoscaler{},
-			//builder.WithPredicates(
-			//	predicate.Funcs{
-			//		CreateFunc: r.SkipEnqueueOnCreate,
-			//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
-			//	}),
-		).
+		Owns(&v1.Deployment{}).//builder.WithPredicates(
+		//	predicate.Funcs{
+		//		CreateFunc: r.SkipEnqueueOnCreate,
+		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+		//	}),
+
+		Owns(&corev1.Service{}).//builder.WithPredicates(
+		//	predicate.Funcs{
+		//		CreateFunc: r.SkipEnqueueOnCreate,
+		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+		//	}),
+
+		Owns(&corev1.ServiceAccount{}).//builder.WithPredicates(
+		//	predicate.Funcs{
+		//		CreateFunc: r.SkipEnqueueOnCreate,
+		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+		//	}),
+
+		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).//builder.WithPredicates(
+		//	predicate.Funcs{
+		//		CreateFunc: r.SkipEnqueueOnCreate,
+		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+		//	}),
+
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 0,
 		}).
