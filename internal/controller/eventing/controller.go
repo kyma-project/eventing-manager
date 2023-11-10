@@ -293,6 +293,11 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 			CreateFunc: func(e event.CreateEvent) bool {
 				return false
 			},
+			UpdateFunc: func(e event.UpdateEvent) bool {
+				res := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+				r.namedLogger().Info("change triggered for cr / crb ", "res", res)
+				return res
+			},
 		},
 	)
 	return err
