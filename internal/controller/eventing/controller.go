@@ -234,7 +234,7 @@ func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(e event.UpdateEvent
 }
 func (r *Reconciler) SkipEnqueueOnCreate(e event.CreateEvent) bool {
 	r.namedLogger().
-		With("GVK", e.Object.GetObjectKind().GroupVersionKind()).
+		With("GVK", e.Object.).
 		With("Name", e.Object.GetName()).
 		With("Namespace", e.Object.GetNamespace()).
 		Info("CreateEvent received. Skipping")
@@ -293,7 +293,10 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 		predicate.Funcs{
 			// don't reconcile for create events
 			CreateFunc: r.SkipEnqueueOnCreate,
-			UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare,
+			UpdateFunc: func(updateEvent event.UpdateEvent) bool {
+				r.namedLogger().With("CR / CRB").Info("Update Called")
+				return r.SkipEnqueueOnUpdateAfterSemanticCompare(updateEvent)
+			},
 		},
 	)
 	return err
