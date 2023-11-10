@@ -8,18 +8,15 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/kyma-project/eventing-manager/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	"github.com/kyma-project/eventing-manager/test"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	"github.com/kyma-project/eventing-manager/pkg/env"
-	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
-	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
@@ -27,6 +24,11 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
 )
 
 func Test_ApplyPublisherProxyDeployment(t *testing.T) {
@@ -107,7 +109,7 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 			kubeClient.On("GetDeployment", ctx, mock.Anything, mock.Anything).Return(tc.givenDeployment, nil)
 			kubeClient.On("UpdateDeployment", ctx, mock.Anything).Return(nil)
 			kubeClient.On("Create", ctx, mock.Anything).Return(nil)
-			kubeClient.On("PatchApply", ctx, mock.Anything).Return(tc.patchApplyErr)
+			kubeClient.On("PatchApply", ctx, mock.Anything, false).Return(tc.patchApplyErr)
 			kubeClient.On("GetHPA", ctx, mock.Anything, mock.Anything).Return(nil, nil)
 
 			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
@@ -401,11 +403,16 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			var createdObjects []client.Object
 			// define mocks behaviours.
 			if tc.wantError {
-				kubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed"))
+				kubeClient.On("PatchApply", ctx, mock.Anything, mock.Anything).Return(errors.New("failed"))
 			} else {
-				kubeClient.On("PatchApply", ctx, mock.Anything).Run(func(args mock.Arguments) {
+				// this assumes that the equality check is correct.
+				// per object we need to check if it has to be applied by running the PatchApply in dryRun mode
+				// TODO[k15r]: try to properly validate creation of objects. This requires modifying the input during dryRun
+				kubeClient.On("PatchApply", ctx, mock.Anything, true).Run(func(args mock.Arguments) {
 					obj := args.Get(1).(client.Object)
 					createdObjects = append(createdObjects, obj)
+				}).Return(nil)
+				kubeClient.On("PatchApply", ctx, mock.Anything, false).Run(func(args mock.Arguments) {
 				}).Return(nil)
 			}
 

@@ -827,13 +827,13 @@ func (_c *Client_GetValidatingWebHookConfiguration_Call) RunAndReturn(run func(c
 	return _c
 }
 
-// PatchApply provides a mock function with given fields: ctx, object
-func (_m *Client) PatchApply(ctx context.Context, object client.Object) error {
-	ret := _m.Called(ctx, object)
+// PatchApply provides a mock function with given fields: ctx, object, dryRun
+func (_m *Client) PatchApply(ctx context.Context, object client.Object, dryRun bool) error {
+	ret := _m.Called(ctx, object, dryRun)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, client.Object) error); ok {
-		r0 = rf(ctx, object)
+	if rf, ok := ret.Get(0).(func(context.Context, client.Object, bool) error); ok {
+		r0 = rf(ctx, object, dryRun)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -849,13 +849,14 @@ type Client_PatchApply_Call struct {
 // PatchApply is a helper method to define mock.On call
 //   - ctx context.Context
 //   - object client.Object
-func (_e *Client_Expecter) PatchApply(ctx interface{}, object interface{}) *Client_PatchApply_Call {
-	return &Client_PatchApply_Call{Call: _e.mock.On("PatchApply", ctx, object)}
+//   - dryRun bool
+func (_e *Client_Expecter) PatchApply(ctx interface{}, object interface{}, dryRun interface{}) *Client_PatchApply_Call {
+	return &Client_PatchApply_Call{Call: _e.mock.On("PatchApply", ctx, object, dryRun)}
 }
 
-func (_c *Client_PatchApply_Call) Run(run func(ctx context.Context, object client.Object)) *Client_PatchApply_Call {
+func (_c *Client_PatchApply_Call) Run(run func(ctx context.Context, object client.Object, dryRun bool)) *Client_PatchApply_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(client.Object))
+		run(args[0].(context.Context), args[1].(client.Object), args[2].(bool))
 	})
 	return _c
 }
@@ -865,7 +866,7 @@ func (_c *Client_PatchApply_Call) Return(_a0 error) *Client_PatchApply_Call {
 	return _c
 }
 
-func (_c *Client_PatchApply_Call) RunAndReturn(run func(context.Context, client.Object) error) *Client_PatchApply_Call {
+func (_c *Client_PatchApply_Call) RunAndReturn(run func(context.Context, client.Object, bool) error) *Client_PatchApply_Call {
 	_c.Call.Return(run)
 	return _c
 }

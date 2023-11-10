@@ -11,12 +11,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
-	managermocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
-	"github.com/kyma-project/eventing-manager/pkg/logger"
-	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
-	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
-	"github.com/kyma-project/eventing-manager/test/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -24,6 +18,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	managermocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
+	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
+	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
+	"github.com/kyma-project/eventing-manager/test/utils"
 )
 
 const (
@@ -135,7 +136,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
 					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
-				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed to apply patch")).Once()
+				mockKubeClient.On("PatchApply", ctx, mock.Anything, false).Return(errors.New("failed to apply patch")).Once()
 				return mockKubeClient
 			},
 			wantError: errors.New("failed to sync Publisher Proxy secret"),
@@ -160,7 +161,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenKubeClientMock: func() k8s.Client {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
-				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
+				mockKubeClient.On("PatchApply", ctx, mock.Anything, false).Return(nil).Once()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
 					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
 				return mockKubeClient
@@ -191,7 +192,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenKubeClientMock: func() k8s.Client {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
-				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
+				mockKubeClient.On("PatchApply", ctx, mock.Anything, false).Return(nil).Once()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
 					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
 				return mockKubeClient
@@ -222,7 +223,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			},
 			givenKubeClientMock: func() k8s.Client {
 				mockKubeClient := new(k8smocks.Client)
-				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Twice()
+				mockKubeClient.On("PatchApply", ctx, mock.Anything, false).Return(nil).Twice()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
 					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Twice()
 				return mockKubeClient
@@ -256,7 +257,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			},
 			givenKubeClientMock: func() k8s.Client {
 				mockKubeClient := new(k8smocks.Client)
-				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Twice()
+				mockKubeClient.On("PatchApply", ctx, mock.Anything, false).Return(nil).Twice()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
 					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Twice()
 				return mockKubeClient
@@ -385,7 +386,7 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 			},
 			givenKubeClientMock: func() (k8s.Client, *k8smocks.Client) {
 				mockKubeClient := new(k8smocks.Client)
-				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
+				mockKubeClient.On("PatchApply", ctx, mock.Anything, false).Return(nil).Once()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
 					utils.NewEventMeshSecret("test-secret", namespace), nil).Once()
 				return mockKubeClient, mockKubeClient
@@ -418,7 +419,7 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 			givenKubeClientMock: func() (k8s.Client, *k8smocks.Client) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
-				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
+				mockKubeClient.On("PatchApply", ctx, mock.Anything, false).Return(nil).Once()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
 					utils.NewEventMeshSecret("test-secret", namespace), nil).Once()
 				return mockKubeClient, mockKubeClient
@@ -892,7 +893,7 @@ func Test_SyncPublisherProxySecret(t *testing.T) {
 			givenSecret: utils.NewEventMeshSecret("valid", "test-namespace"),
 			mockKubeClient: func() *k8smocks.Client {
 				kubeClient := new(k8smocks.Client)
-				kubeClient.On("PatchApply", mock.Anything, mock.Anything).Return(nil).Once()
+				kubeClient.On("PatchApply", mock.Anything, mock.Anything, false).Return(nil).Once()
 				return kubeClient
 			},
 			wantErr: false,
@@ -911,18 +912,18 @@ func Test_SyncPublisherProxySecret(t *testing.T) {
 			},
 			mockKubeClient: func() *k8smocks.Client {
 				kubeClient := new(k8smocks.Client)
-				kubeClient.On("PatchApply", mock.Anything, mock.Anything).Return(nil).Once()
+				kubeClient.On("PatchApply", mock.Anything, mock.Anything, false).Return(nil).Once()
 				return kubeClient
 			},
 			wantErr: true,
 		},
 		// patchApply error
 		{
-			name:        "pathApply should fail",
+			name:        "patchApply should fail",
 			givenSecret: utils.NewEventMeshSecret("valid", "test-namespace"),
 			mockKubeClient: func() *k8smocks.Client {
 				kubeClient := new(k8smocks.Client)
-				kubeClient.On("PatchApply", mock.Anything, mock.Anything).Return(errors.New("fake error")).Once()
+				kubeClient.On("PatchApply", mock.Anything, mock.Anything, false).Return(errors.New("fake error")).Once()
 				return kubeClient
 			},
 			wantErr: true,

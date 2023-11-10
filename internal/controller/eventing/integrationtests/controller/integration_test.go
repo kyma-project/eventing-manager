@@ -15,6 +15,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -22,9 +26,6 @@ import (
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
-	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	natstestutils "github.com/kyma-project/nats-manager/testutils"
 )
 
 const (
@@ -221,7 +222,6 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 }
 
 func Test_UpdateEventingCR(t *testing.T) {
-	t.Parallel()
 	testCases := []struct {
 		name                      string
 		givenExistingEventing     *eventingv1alpha1.Eventing
@@ -245,7 +245,6 @@ func Test_UpdateEventingCR(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
 			// given
 			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true

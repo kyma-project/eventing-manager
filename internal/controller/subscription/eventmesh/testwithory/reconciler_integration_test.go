@@ -16,11 +16,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+
 	eventMeshtypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/object"
 	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
 	eventmeshsubmatchers "github.com/kyma-project/eventing-manager/testing/eventmeshsub"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )
 
 const (
@@ -132,7 +133,8 @@ func Test_ValidationWebhook(t *testing.T) {
 }
 
 func Test_CreateSubscription(t *testing.T) {
-	t.Parallel()
+
+	//t.Parallel()
 	var testCases = []struct {
 		name                     string
 		givenSubscriptionFunc    func(namespace string) *eventingv1alpha2.Subscription
@@ -304,7 +306,7 @@ func Test_CreateSubscription(t *testing.T) {
 	for _, testCase := range testCases {
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 			g := gomega.NewGomegaWithT(t)
 			ctx := context.Background()
 

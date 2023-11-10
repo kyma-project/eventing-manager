@@ -40,7 +40,7 @@ type Client interface {
 	DeleteClusterRole(ctx context.Context, name, namespace string) error
 	DeleteClusterRoleBinding(ctx context.Context, name, namespace string) error
 	GetNATSResources(ctx context.Context, namespace string) (*natsv1alpha1.NATSList, error)
-	PatchApply(ctx context.Context, object client.Object) error
+	PatchApply(ctx context.Context, object client.Object, dryRun bool) error
 	GetSecret(ctx context.Context, namespacedName string) (*corev1.Secret, error)
 	GetMutatingWebHookConfiguration(ctx context.Context, name string) (*admissionv1.MutatingWebhookConfiguration, error)
 	GetValidatingWebHookConfiguration(ctx context.Context,
@@ -79,7 +79,7 @@ func (c *KubeClient) PatchApplyPeerAuthentication(ctx context.Context, pa *istio
 	if err != nil {
 		return err
 	}
-	return c.PatchApply(ctx, &unstructured.Unstructured{Object: obj})
+	return c.PatchApply(ctx, &unstructured.Unstructured{Object: obj}, false)
 }
 
 func (c *KubeClient) GetDeployment(ctx context.Context, name, namespace string) (*v1.Deployment, error) {
@@ -174,10 +174,15 @@ func (c *KubeClient) GetNATSResources(ctx context.Context, namespace string) (*n
 
 // PatchApply uses the server-side apply to create/update the resource.
 // The object must define `GVK` (i.e. object.TypeMeta).
-func (c *KubeClient) PatchApply(ctx context.Context, object client.Object) error {
+func (c *KubeClient) PatchApply(ctx context.Context, object client.Object, dryRun bool) error {
+	var dryRunOpts []string
+	if dryRun {
+		dryRunOpts = []string{"All"}
+	}
 	return c.client.Patch(ctx, object, client.Apply, &client.PatchOptions{
 		Force:        ptr.To(true),
 		FieldManager: c.fieldManager,
+		DryRun:       dryRunOpts,
 	})
 }
 
