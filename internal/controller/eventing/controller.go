@@ -242,9 +242,24 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			},
 		)).
-		Owns(&corev1.Service{}).
-		Owns(&corev1.ServiceAccount{}).
-		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
+		Owns(&corev1.Service{}, builder.WithPredicates(
+			predicate.Funcs{
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					return !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+				},
+			})).
+		Owns(&corev1.ServiceAccount{}, builder.WithPredicates(
+			predicate.Funcs{
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					return !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+				},
+			})).
+		Owns(&autoscalingv2.HorizontalPodAutoscaler{}, builder.WithPredicates(
+			predicate.Funcs{
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					return !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+				},
+			})).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 0,
 		}).

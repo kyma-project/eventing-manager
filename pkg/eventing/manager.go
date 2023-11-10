@@ -197,67 +197,31 @@ func (em EventingManager) DeployPublisherProxyResources(
 	eventing *v1alpha1.Eventing,
 	publisherDeployment *appsv1.Deployment) error {
 	// define list of resources to create for EPP.
-	resources := []func() client.Object{
-		// ServiceAccount
-		func() client.Object {
-			return newPublisherProxyServiceAccount(GetPublisherServiceAccountName(*eventing), eventing.Namespace, publisherDeployment.Labels)
-		},
-		// ClusterRole
-		func() client.Object {
-			return newPublisherProxyClusterRole(GetPublisherClusterRoleName(*eventing), eventing.Namespace, publisherDeployment.Labels)
-		},
-		// ClusterRoleBinding
-		func() client.Object {
-			return newPublisherProxyClusterRoleBinding(GetPublisherClusterRoleBindingName(*eventing), eventing.Namespace, publisherDeployment.Labels)
-		},
-		// Service to expose event publishing endpoint of EPP.
-
-		func() client.Object {
-			return newPublisherProxyService(GetPublisherPublishServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
-				publisherDeployment.Spec.Template.Labels)
-		},
-		// Service to expose metrics endpoint of EPP.
-		func() client.Object {
-			return newPublisherProxyMetricsService(GetPublisherMetricsServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
-				publisherDeployment.Spec.Template.Labels)
-		},
-		// Service to expose health endpoint of EPP.
-		func() client.Object {
-			return newPublisherProxyHealthService(GetPublisherHealthServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
-				publisherDeployment.Spec.Template.Labels)
-		},
-		// HPA to auto-scale publisher proxy.
-		func() client.Object {
-			return newHorizontalPodAutoscaler(publisherDeployment, int32(eventing.Spec.Publisher.Min),
-				int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization)
-		},
+	resources := []client.Object{
+		newPublisherProxyServiceAccount(GetPublisherServiceAccountName(*eventing), eventing.Namespace, publisherDeployment.Labels),
+		newPublisherProxyClusterRole(GetPublisherClusterRoleName(*eventing), eventing.Namespace, publisherDeployment.Labels),
+		newPublisherProxyClusterRoleBinding(GetPublisherClusterRoleBindingName(*eventing), eventing.Namespace, publisherDeployment.Labels),
+		newPublisherProxyService(GetPublisherPublishServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
+			publisherDeployment.Spec.Template.Labels),
+		newPublisherProxyMetricsService(GetPublisherMetricsServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
+			publisherDeployment.Spec.Template.Labels),
+		newPublisherProxyHealthService(GetPublisherHealthServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
+			publisherDeployment.Spec.Template.Labels),
+		newHorizontalPodAutoscaler(publisherDeployment, int32(eventing.Spec.Publisher.Min),
+			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization),
 	}
 	// create the resources on k8s.
-	for _, objFn := range resources {
+	for _, obj := range resources {
 
 		// add owner reference.
-		test := objFn()
-		apply := objFn()
-
-		if err := controllerutil.SetControllerReference(eventing, apply, em.Scheme()); err != nil {
-			return err
-		}
-		if err := controllerutil.SetControllerReference(eventing, test, em.Scheme()); err != nil {
-			return err
-		}
-
-		em.kubeClient.get
-		// patch apply the object as dryRun, this will update obj with the potential new obj after an actual apply patch
-		if err := em.kubeClient.PatchApply(ctx, test, true); err != nil {
+		if err := controllerutil.SetControllerReference(eventing, obj, em.Scheme()); err != nil {
 			return err
 		}
 
 		// compare objects and decide on actual patch
-		if !object.Semantic.DeepEqual(test, apply) || test.GetResourceVersion() == "" {
-			// patch the object if necessary
-			if err := em.kubeClient.PatchApply(ctx, apply, false); err != nil {
-				return err
-			}
+		// patch the object if necessary
+		if err := em.kubeClient.PatchApply(ctx, obj, false); err != nil {
+			return err
 		}
 	}
 	return nil

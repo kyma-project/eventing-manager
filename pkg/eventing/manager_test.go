@@ -405,14 +405,11 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			if tc.wantError {
 				kubeClient.On("PatchApply", ctx, mock.Anything, mock.Anything).Return(errors.New("failed"))
 			} else {
-				// this assumes that the equality check is correct.
-				// per object we need to check if it has to be applied by running the PatchApply in dryRun mode
-				// TODO[k15r]: try to properly validate creation of objects. This requires modifying the input during dryRun
 				kubeClient.On("PatchApply", ctx, mock.Anything, true).Run(func(args mock.Arguments) {
-					obj := args.Get(1).(client.Object)
-					createdObjects = append(createdObjects, obj)
 				}).Return(nil)
 				kubeClient.On("PatchApply", ctx, mock.Anything, false).Run(func(args mock.Arguments) {
+					obj := args.Get(1).(client.Object)
+					createdObjects = append(createdObjects, obj)
 				}).Return(nil)
 			}
 
