@@ -8,7 +8,6 @@ import (
 	istiosec "istio.io/client-go/pkg/apis/security/v1beta1"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	v1 "k8s.io/api/apps/v1"
-	v2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -53,7 +52,6 @@ type Client interface {
 	GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error)
 	GetConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error)
 	PatchApplyPeerAuthentication(ctx context.Context, authentication *istiosec.PeerAuthentication) error
-	GetHPA(ctx context.Context, name, namespace string) (*v2.HorizontalPodAutoscaler, error)
 }
 
 type KubeClient struct {
@@ -279,12 +277,4 @@ func (c *KubeClient) GetConfigMap(ctx context.Context, name, namespace string) (
 		return nil, err
 	}
 	return cm, nil
-}
-
-func (c *KubeClient) GetHPA(ctx context.Context, name, namespace string) (*v2.HorizontalPodAutoscaler, error) {
-	hpa := &v2.HorizontalPodAutoscaler{}
-	if err := c.client.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, hpa); err != nil {
-		return nil, err
-	}
-	return hpa, nil
 }

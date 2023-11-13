@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"log"
 	"path/filepath"
 	"strings"
@@ -484,6 +485,29 @@ func (env TestEnvironment) EnsureK8sResourceUpdated(t *testing.T, obj client.Obj
 
 func (env TestEnvironment) EnsureK8sResourceDeleted(t *testing.T, obj client.Object) {
 	require.NoError(t, env.k8sClient.Delete(env.Context, obj))
+}
+
+func (env TestEnvironment) EnsureNATSCRDDeleted(t *testing.T) {
+	crdManifest := &apiextensionsv1.CustomResourceDefinition{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apiextensions.k8s.io/v1",
+			Kind:       "CustomResourceDefinition",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8s.NatsGVK.GroupResource().String(),
+		},
+	}
+	require.NoError(t, env.k8sClient.Delete(env.Context, crdManifest))
+
+	require.Eventually(t, func() bool {
+		_, err := env.KubeClient.GetCRD(env.Context, crdManifest.Name)
+		return err != nil && errors.IsNotFound(err)
+	}, BigTimeOut, BigPollingInterval, "failed to ensure deletion of NATS CRD")
+}
+
+func (env TestEnvironment) EnsureCRDCreated(t *testing.T, crd *apiextensionsv1.CustomResourceDefinition) {
+	crd.ResourceVersion = ""
+	require.NoError(t, env.k8sClient.Create(env.Context, crd))
 }
 
 func (env TestEnvironment) EnsureNamespaceDeleted(t *testing.T, namespace string) {
