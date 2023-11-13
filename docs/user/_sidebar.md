@@ -1,5 +1,7 @@
 * [Home](/README.md)
-* [Kyma module](README.md)
+* [Eventing module](README.md)
+* [Module lifecycle](01-manager.md)
+* [Configuration](02-configuration.md)
 * [Eventing architecture](evnt-architecture.md)
 * [Event names](evnt-event-names.md)
 * [Eventing metrics](evnt-eventing-metrics.md)
