@@ -62,7 +62,7 @@ func NewCollector() *Collector {
 				Name: deliveryMetricKey,
 				Help: deliveryMetricHelp,
 			},
-			[]string{subscriptionNameLabel, subscriptionNamespaceLabel, eventTypeLabel, sinkLabel, responseCodeLabel},
+			[]string{subscriptionNameLabel, subscriptionNamespaceLabel, eventTypeLabel, sinkLabel, responseCodeLabel, consumerNameLabel},
 		),
 		latencyPerSubscriber: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
@@ -70,7 +70,7 @@ func NewCollector() *Collector {
 				Help:    latencyMetricHelp,
 				Buckets: prometheus.ExponentialBuckets(0.002, 2, 10),
 			},
-			[]string{subscriptionNameLabel, subscriptionNamespaceLabel, eventTypeLabel, sinkLabel, responseCodeLabel},
+			[]string{subscriptionNameLabel, subscriptionNamespaceLabel, eventTypeLabel, sinkLabel, responseCodeLabel, consumerNameLabel},
 		),
 		eventTypes: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -127,26 +127,28 @@ func (c *Collector) RegisterMetrics() {
 }
 
 // RecordDeliveryPerSubscription records an eventing_ec_nats_delivery_per_subscription_total metric.
-func (c *Collector) RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, eventType, sink string, statusCode int) {
+func (c *Collector) RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, eventType, consumerName, sink string, statusCode int) {
 	c.deliveryPerSubscription.WithLabelValues(
 		subscriptionName,
 		subscriptionNamespace,
 		eventType,
 		fmt.Sprintf("%v", sink),
-		fmt.Sprintf("%v", statusCode)).Inc()
+		fmt.Sprintf("%v", statusCode),
+		consumerName).Inc()
 }
 
 // RecordLatencyPerSubscription records an eventing_ec_nats_subscriber_dispatch_duration_seconds.
 func (c *Collector) RecordLatencyPerSubscription(
 	duration time.Duration,
-	subscriptionName, subscriptionNamespace, eventType, sink string,
+	subscriptionName, subscriptionNamespace, eventType, consumerName, sink string,
 	statusCode int) {
 	c.latencyPerSubscriber.WithLabelValues(
 		subscriptionName,
 		subscriptionNamespace,
 		eventType,
 		fmt.Sprintf("%v", sink),
-		fmt.Sprintf("%v", statusCode)).Observe(duration.Seconds())
+		fmt.Sprintf("%v", statusCode),
+		consumerName).Observe(duration.Seconds())
 }
 
 // RecordEventTypes records a eventing_ec_event_type_subscribed_total metric.
