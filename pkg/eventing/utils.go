@@ -106,11 +106,6 @@ func newPublisherProxyClusterRole(name, namespace string, labels map[string]stri
 				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
-				APIGroups: []string{"operator.kyma-project.io"},
-				Resources: []string{"subscriptions"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
 				APIGroups: []string{"applicationconnector.kyma-project.io"},
 				Resources: []string{"applications"},
 				Verbs:     []string{"get", "list", "watch"},
