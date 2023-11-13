@@ -450,8 +450,10 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	_, err := r.kubeClient.GetCRD(ctx, k8s.NatsGVK.GroupResource().String())
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			err = fmt.Errorf("NATS module has to be installed: %v", err)
-			return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+			log.Infof("NATS module not enabled, deleting publisher proxy resources")
+			delErr := r.eventingManager.DeletePublisherProxyResources(ctx, eventing)
+			notFoundErr := fmt.Errorf("NATS module has to be installed: %v", err)
+			return ctrl.Result{}, errors.Join(r.syncStatusWithNATSErr(ctx, eventing, notFoundErr, log), delErr)
 		}
 		return ctrl.Result{}, err
 	}

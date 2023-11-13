@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/tools/record"
@@ -38,6 +40,7 @@ type Manager interface {
 		natsConfig *env.NATSConfig,
 		backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
 	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
+	DeletePublisherProxyResources(ctx context.Context, eventing *v1alpha1.Eventing) error
 	GetBackendConfig() *env.BackendConfig
 	SetBackendConfig(env.BackendConfig)
 	SubscriptionExists(ctx context.Context) (bool, error)
@@ -198,7 +201,7 @@ func (em EventingManager) DeployPublisherProxyResources(
 		newPublisherProxyHealthService(GetPublisherHealthServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
 			publisherDeployment.Spec.Template.Labels),
 		// HPA to auto-scale publisher proxy.
-		newHorizontalPodAutoscaler(publisherDeployment, int32(eventing.Spec.Publisher.Min),
+		newHorizontalPodAutoscaler(publisherDeployment.Name, publisherDeployment.Namespace, int32(eventing.Spec.Publisher.Min),
 			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization),
 	}
 
@@ -211,6 +214,44 @@ func (em EventingManager) DeployPublisherProxyResources(
 
 		// patch apply the object.
 		if err := em.kubeClient.PatchApply(ctx, object); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (em EventingManager) DeletePublisherProxyResources(ctx context.Context, eventing *v1alpha1.Eventing) error {
+	// define list of resources to delete for EPP.
+	publisherDeployment := &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      GetPublisherDeploymentName(*eventing),
+			Namespace: eventing.Namespace,
+		},
+	}
+
+	resources := []client.Object{
+		// Deployment
+		publisherDeployment,
+		// ServiceAccount
+		newPublisherProxyServiceAccount(GetPublisherServiceAccountName(*eventing), eventing.Namespace, map[string]string{}),
+		// Service to expose event publishing endpoint of EPP.
+		newPublisherProxyService(GetPublisherPublishServiceName(*eventing), eventing.Namespace, map[string]string{}, map[string]string{}),
+		// Service to expose metrics endpoint of EPP.
+		newPublisherProxyMetricsService(GetPublisherMetricsServiceName(*eventing), eventing.Namespace, map[string]string{}, map[string]string{}),
+		// Service to expose health endpoint of EPP.
+		newPublisherProxyHealthService(GetPublisherHealthServiceName(*eventing), eventing.Namespace, map[string]string{}, map[string]string{}),
+		// HPA to auto-scale publisher proxy.
+		newHorizontalPodAutoscaler(publisherDeployment.Name, eventing.Namespace, 0, 0, 0, 0),
+	}
+
+	// delete the resources on k8s.
+	for _, object := range resources {
+		// delete the object.
+		if err := em.kubeClient.DeleteResource(ctx, object); err != nil {
 			return err
 		}
 	}
