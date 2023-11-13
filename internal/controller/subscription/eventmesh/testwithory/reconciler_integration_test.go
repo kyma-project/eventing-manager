@@ -133,8 +133,6 @@ func Test_ValidationWebhook(t *testing.T) {
 }
 
 func Test_CreateSubscription(t *testing.T) {
-
-	//t.Parallel()
 	var testCases = []struct {
 		name                     string
 		givenSubscriptionFunc    func(namespace string) *eventingv1alpha2.Subscription
@@ -306,7 +304,6 @@ func Test_CreateSubscription(t *testing.T) {
 	for _, testCase := range testCases {
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
-			//t.Parallel()
 			g := gomega.NewGomegaWithT(t)
 			ctx := context.Background()
 

@@ -109,8 +109,7 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 			kubeClient.On("GetDeployment", ctx, mock.Anything, mock.Anything).Return(tc.givenDeployment, nil)
 			kubeClient.On("UpdateDeployment", ctx, mock.Anything).Return(nil)
 			kubeClient.On("Create", ctx, mock.Anything).Return(nil)
-			kubeClient.On("PatchApply", ctx, mock.Anything, false).Return(tc.patchApplyErr)
-			kubeClient.On("GetHPA", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+			kubeClient.On("PatchApply", ctx, mock.Anything).Return(tc.patchApplyErr)
 
 			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
 
@@ -403,11 +402,9 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			var createdObjects []client.Object
 			// define mocks behaviours.
 			if tc.wantError {
-				kubeClient.On("PatchApply", ctx, mock.Anything, mock.Anything).Return(errors.New("failed"))
+				kubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed"))
 			} else {
-				kubeClient.On("PatchApply", ctx, mock.Anything, true).Run(func(args mock.Arguments) {
-				}).Return(nil)
-				kubeClient.On("PatchApply", ctx, mock.Anything, false).Run(func(args mock.Arguments) {
+				kubeClient.On("PatchApply", ctx, mock.Anything).Run(func(args mock.Arguments) {
 					obj := args.Get(1).(client.Object)
 					createdObjects = append(createdObjects, obj)
 				}).Return(nil)

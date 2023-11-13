@@ -3,15 +3,16 @@ package object
 import (
 	"reflect"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
 	v2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
-	v12 "k8s.io/api/rbac/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
+
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )
 
 // Semantic can do semantic deep equality checks for API objects. Fields which
@@ -43,13 +44,14 @@ func serviceAccountEqual(a, b *corev1.ServiceAccount) bool {
 		return false
 	}
 
-	if !reflect.DeepEqual(a.OwnerReferences, b.OwnerReferences) {
+	if !ownerReferencesDeepEqual(a.OwnerReferences, b.OwnerReferences) {
 		return false
 	}
+
 	return true
 }
 
-func clusterRoleEqual(a, b *v12.ClusterRole) bool {
+func clusterRoleEqual(a, b *rbacv1.ClusterRole) bool {
 	if a == b {
 		return true
 	}
@@ -65,7 +67,7 @@ func clusterRoleEqual(a, b *v12.ClusterRole) bool {
 		return false
 	}
 
-	if !reflect.DeepEqual(a.OwnerReferences, b.OwnerReferences) {
+	if !ownerReferencesDeepEqual(a.OwnerReferences, b.OwnerReferences) {
 		return false
 	}
 
@@ -82,7 +84,7 @@ func serviceEqual(a, b *corev1.Service) bool {
 	if a == nil || b == nil {
 		return false
 	}
-	if !reflect.DeepEqual(a.OwnerReferences, b.OwnerReferences) {
+	if !ownerReferencesDeepEqual(a.OwnerReferences, b.OwnerReferences) {
 		return false
 	}
 	if a.Name != b.Name || a.Namespace != b.Namespace {
@@ -105,7 +107,7 @@ func hpaEqual(a, b *v2.HorizontalPodAutoscaler) bool {
 		return false
 	}
 
-	if !reflect.DeepEqual(a.OwnerReferences, b.OwnerReferences) {
+	if !ownerReferencesDeepEqual(a.OwnerReferences, b.OwnerReferences) {
 		return false
 	}
 
@@ -125,7 +127,7 @@ func hpaEqual(a, b *v2.HorizontalPodAutoscaler) bool {
 	return true
 }
 
-func clusterRoleBindingEqual(a, b *v12.ClusterRoleBinding) bool {
+func clusterRoleBindingEqual(a, b *rbacv1.ClusterRoleBinding) bool {
 	if a == b {
 		return true
 	}
@@ -136,7 +138,7 @@ func clusterRoleBindingEqual(a, b *v12.ClusterRoleBinding) bool {
 		return false
 	}
 
-	if !reflect.DeepEqual(a.OwnerReferences, b.OwnerReferences) {
+	if !ownerReferencesDeepEqual(a.OwnerReferences, b.OwnerReferences) {
 		return false
 	}
 
@@ -239,9 +241,6 @@ func publisherProxyDeploymentEqual(d1, d2 *appsv1.Deployment) bool {
 	if !reflect.DeepEqual(d1.Labels, d2.Labels) {
 		return false
 	}
-	//if !reflect.DeepEqual(d1.Spec.Replicas, d2.Spec.Replicas) {
-	//	return false
-	//}
 
 	cst1 := d1.Spec.Template
 	cst2 := d2.Spec.Template

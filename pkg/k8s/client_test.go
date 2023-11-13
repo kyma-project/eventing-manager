@@ -98,7 +98,7 @@ func Test_PatchApply(t *testing.T) {
 			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager, nil)
 
 			// when
-			err := kubeClient.PatchApply(context.Background(), tc.givenUpdateDeployment, false)
+			err := kubeClient.PatchApply(context.Background(), tc.givenUpdateDeployment)
 
 			// then
 			require.NoError(t, err)

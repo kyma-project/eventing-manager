@@ -51,7 +51,6 @@ func newNATSPublisherDeployment(
 	eventing *v1alpha1.Eventing,
 	natsConfig env.NATSConfig,
 	publisherConfig env.PublisherConfig,
-	replicas *int32,
 ) *appsv1.Deployment {
 	return newDeployment(
 		eventing,
@@ -62,14 +61,12 @@ func newNATSPublisherDeployment(
 		WithLogEnvVars(publisherConfig, eventing),
 		WithAffinity(GetPublisherDeploymentName(*eventing)),
 		WithPriorityClassName(PriorityClassName),
-		WithSpecReplicas(replicas),
 	)
 }
 
 func newEventMeshPublisherDeployment(
 	eventing *v1alpha1.Eventing,
 	publisherConfig env.PublisherConfig,
-	replicas *int32,
 ) *appsv1.Deployment {
 	return newDeployment(
 		eventing,
@@ -79,7 +76,6 @@ func newEventMeshPublisherDeployment(
 		WithBEBEnvVars(GetPublisherDeploymentName(*eventing), publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
 		WithPriorityClassName(PriorityClassName),
-		WithSpecReplicas(replicas),
 	)
 }
 
@@ -377,11 +373,5 @@ func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConf
 			Name:  "BEB_NAMESPACE",
 			Value: fmt.Sprintf("%s$(BEB_NAMESPACE_VALUE)", eventMeshNamespacePrefix),
 		},
-	}
-}
-
-func WithSpecReplicas(replicas *int32) DeployOpt {
-	return func(deployment *appsv1.Deployment) {
-		deployment.Spec.Replicas = replicas
 	}
 }

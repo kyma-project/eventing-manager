@@ -92,18 +92,11 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
 	var desiredPublisher *appsv1.Deployment
 
-	var replicas *int32 = nil
-	hpa, err := em.kubeClient.GetHPA(ctx, GetPublisherDeploymentName(*eventing), eventing.Namespace)
-	if err == nil && hpa != nil {
-		replicas = hpa.Spec.MinReplicas
-	}
-	replicas = nil
-
 	switch backendType {
 	case v1alpha1.NatsBackendType:
-		desiredPublisher = newNATSPublisherDeployment(eventing, *natsConfig, em.backendConfig.PublisherConfig, replicas)
+		desiredPublisher = newNATSPublisherDeployment(eventing, *natsConfig, em.backendConfig.PublisherConfig)
 	case v1alpha1.EventMeshBackendType:
-		desiredPublisher = newEventMeshPublisherDeployment(eventing, em.backendConfig.PublisherConfig, replicas)
+		desiredPublisher = newEventMeshPublisherDeployment(eventing, em.backendConfig.PublisherConfig)
 	default:
 		return nil, fmt.Errorf("unknown EventingBackend type %q", backendType)
 	}
@@ -140,7 +133,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	}
 
 	// Update publisher proxy deployment
-	if err := em.kubeClient.PatchApply(ctx, desiredPublisher, false); err != nil {
+	if err := em.kubeClient.PatchApply(ctx, desiredPublisher); err != nil {
 		return nil, fmt.Errorf("failed to apply Publisher Proxy deployment: %v", err)
 	}
 
@@ -220,7 +213,7 @@ func (em EventingManager) DeployPublisherProxyResources(
 
 		// compare objects and decide on actual patch
 		// patch the object if necessary
-		if err := em.kubeClient.PatchApply(ctx, obj, false); err != nil {
+		if err := em.kubeClient.PatchApply(ctx, obj); err != nil {
 			return err
 		}
 	}

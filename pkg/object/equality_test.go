@@ -1,24 +1,26 @@
 package object
 
 import (
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	v2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-
-	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 func TestApiRuleEqual(t *testing.T) {
@@ -535,13 +537,16 @@ func TestPublisherProxyDeploymentEqual(t *testing.T) {
 		},
 		"should be equal if replicas changes": {
 			getPublisher1: func() *appsv1.Deployment {
-				replicas := int32(2)
+				replicas := int32(1)
 				p := defaultNATSPublisher.DeepCopy()
 				p.Spec.Replicas = &replicas
 				return p
 			},
 			getPublisher2: func() *appsv1.Deployment {
-				return defaultNATSPublisher.DeepCopy()
+				replicas := int32(2)
+				p := defaultNATSPublisher.DeepCopy()
+				p.Spec.Replicas = &replicas
+				return p
 			},
 			expectedResult: true,
 		},
@@ -772,7 +777,7 @@ func Test_containerEqual(t *testing.T) {
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []corev1.ContainerPort{corev1.ContainerPort{
+					Ports: []corev1.ContainerPort{{
 						Name:          "testport",
 						HostPort:      1,
 						ContainerPort: 2,
@@ -802,7 +807,7 @@ func Test_containerEqual(t *testing.T) {
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []corev1.ContainerPort{corev1.ContainerPort{
+					Ports: []corev1.ContainerPort{{
 						Name:          "testport",
 						HostPort:      1,
 						ContainerPort: 2,
@@ -838,7 +843,7 @@ func Test_containerEqual(t *testing.T) {
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []corev1.ContainerPort{corev1.ContainerPort{
+					Ports: []corev1.ContainerPort{{
 						Name:          "testport",
 						HostPort:      1,
 						ContainerPort: 2,
@@ -868,7 +873,7 @@ func Test_containerEqual(t *testing.T) {
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []corev1.ContainerPort{corev1.ContainerPort{
+					Ports: []corev1.ContainerPort{{
 						Name:          "testport",
 						HostPort:      1,
 						ContainerPort: 2,
@@ -900,6 +905,1136 @@ func Test_containerEqual(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := containerEqual(tt.args.c1, tt.args.c2); got != tt.want {
 				t.Errorf("containerEqual() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_serviceAccountEqual(t *testing.T) {
+	const (
+		name0 = "name-0"
+		name1 = "name-1"
+
+		namespace0 = "ns-0"
+		namespace1 = "ns-1"
+	)
+
+	var (
+		labels0 = map[string]string{"key": "val-0"}
+		labels1 = map[string]string{"key": "val-1"}
+
+		ownerReferences0 = []metav1.OwnerReference{
+			{
+				Name:               "name-0",
+				APIVersion:         "version-0",
+				Kind:               "kind-0",
+				UID:                "000000",
+				Controller:         ptr.To(false),
+				BlockOwnerDeletion: ptr.To(false),
+			},
+		}
+		ownerReferences1 = []metav1.OwnerReference{
+			{
+				Name:               "name-1",
+				APIVersion:         "version-0",
+				Kind:               "kind-0",
+				UID:                "000000",
+				Controller:         ptr.To(false),
+				BlockOwnerDeletion: ptr.To(false),
+			},
+		}
+	)
+
+	type args struct {
+		a *corev1.ServiceAccount
+		b *corev1.ServiceAccount
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "ServiceAccounts are equal",
+			args: args{
+				a: &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+				},
+				b: &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "ServiceAccount names are not equal",
+			args: args{
+				a: &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+				},
+				b: &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name1,
+						Namespace:       namespace0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "ServiceAccount namespaces are not equal",
+			args: args{
+				a: &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+				},
+				b: &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace1,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "ServiceAccount labels are not equal",
+			args: args{
+				a: &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+				},
+				b: &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						Labels:          labels1,
+						OwnerReferences: ownerReferences0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "ServiceAccount OwnerReferences are not equal",
+			args: args{
+				a: &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+				},
+				b: &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences1,
+					},
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := serviceAccountEqual(tt.args.a, tt.args.b); got != tt.want {
+				t.Errorf("serviceAccountEqual() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_clusterRoleEqual(t *testing.T) {
+	const (
+		name0 = "name-0"
+		name1 = "name-1"
+	)
+
+	var (
+		labels0 = map[string]string{"key": "val-0"}
+		labels1 = map[string]string{"key": "val-1"}
+
+		ownerReferences0 = []metav1.OwnerReference{
+			{
+				Name:               "name-0",
+				APIVersion:         "version-0",
+				Kind:               "kind-0",
+				UID:                "000000",
+				Controller:         ptr.To(false),
+				BlockOwnerDeletion: ptr.To(false),
+			},
+		}
+		ownerReferences1 = []metav1.OwnerReference{
+			{
+				Name:               "name-1",
+				APIVersion:         "version-0",
+				Kind:               "kind-0",
+				UID:                "000000",
+				Controller:         ptr.To(false),
+				BlockOwnerDeletion: ptr.To(false),
+			},
+		}
+
+		rules0 = []rbacv1.PolicyRule{
+			{
+				Verbs:           []string{"val-0"},
+				APIGroups:       []string{"val-0"},
+				Resources:       []string{"val-0"},
+				ResourceNames:   []string{"val-0"},
+				NonResourceURLs: []string{"val-0"},
+			},
+		}
+		rules1 = []rbacv1.PolicyRule{
+			{
+				Verbs:           []string{"val-1"},
+				APIGroups:       []string{"val-0"},
+				Resources:       []string{"val-0"},
+				ResourceNames:   []string{"val-0"},
+				NonResourceURLs: []string{"val-0"},
+			},
+		}
+	)
+
+	type args struct {
+		a *rbacv1.ClusterRole
+		b *rbacv1.ClusterRole
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "ClusterRoles are equal",
+			args: args{
+				a: &rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+					Rules: rules0,
+				},
+				b: &rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+					Rules: rules0,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "ClusterRole names are not equal",
+			args: args{
+				a: &rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+					Rules: rules0,
+				},
+				b: &rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name1,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+					Rules: rules0,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "ClusterRole labels are not equal",
+			args: args{
+				a: &rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+					Rules: rules0,
+				},
+				b: &rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Labels:          labels1,
+						OwnerReferences: ownerReferences0,
+					},
+					Rules: rules0,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "ClusterRole OwnerReferences are not equal",
+			args: args{
+				a: &rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+					Rules: rules0,
+				},
+				b: &rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences1,
+					},
+					Rules: rules0,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "ClusterRole Rules are not equal",
+			args: args{
+				a: &rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+					Rules: rules0,
+				},
+				b: &rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Labels:          labels0,
+						OwnerReferences: ownerReferences0,
+					},
+					Rules: rules1,
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := clusterRoleEqual(tt.args.a, tt.args.b); got != tt.want {
+				t.Errorf("clusterRoleEqual() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_clusterRoleBindingEqual(t *testing.T) {
+	const (
+		name0 = "name-0"
+		name1 = "name-1"
+	)
+
+	var (
+		ownerReferences0 = []metav1.OwnerReference{
+			{
+				Name:               "name-0",
+				APIVersion:         "version-0",
+				Kind:               "kind-0",
+				UID:                "000000",
+				Controller:         ptr.To(false),
+				BlockOwnerDeletion: ptr.To(false),
+			},
+		}
+		ownerReferences1 = []metav1.OwnerReference{
+			{
+				Name:               "name-1",
+				APIVersion:         "version-0",
+				Kind:               "kind-0",
+				UID:                "000000",
+				Controller:         ptr.To(false),
+				BlockOwnerDeletion: ptr.To(false),
+			},
+		}
+
+		subjects0 = []rbacv1.Subject{
+			{
+				Kind:      "kind-0",
+				APIGroup:  "group-0",
+				Name:      "name-0",
+				Namespace: "namespace-0",
+			},
+		}
+		subjects1 = []rbacv1.Subject{
+			{
+				Kind:      "kind-1",
+				APIGroup:  "group-0",
+				Name:      "name-0",
+				Namespace: "namespace-0",
+			},
+		}
+
+		roleRef0 = rbacv1.RoleRef{
+			APIGroup: "group-0",
+			Kind:     "kind-0",
+			Name:     "name-0",
+		}
+		roleRef1 = rbacv1.RoleRef{
+			APIGroup: "group-1",
+			Kind:     "kind-0",
+			Name:     "name-0",
+		}
+	)
+
+	type args struct {
+		a *rbacv1.ClusterRoleBinding
+		b *rbacv1.ClusterRoleBinding
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "ClusterRoleBindings are equal",
+			args: args{
+				a: &rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						OwnerReferences: ownerReferences0,
+					},
+					Subjects: subjects0,
+					RoleRef:  roleRef0,
+				},
+				b: &rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						OwnerReferences: ownerReferences0,
+					},
+					Subjects: subjects0,
+					RoleRef:  roleRef0,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "ClusterRoleBinding names are not equal",
+			args: args{
+				a: &rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						OwnerReferences: ownerReferences0,
+					},
+					Subjects: subjects0,
+					RoleRef:  roleRef0,
+				},
+				b: &rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name1,
+						OwnerReferences: ownerReferences0,
+					},
+					Subjects: subjects0,
+					RoleRef:  roleRef0,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "ClusterRoleBinding OwnerReferences are not equal",
+			args: args{
+				a: &rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						OwnerReferences: ownerReferences0,
+					},
+					Subjects: subjects0,
+					RoleRef:  roleRef0,
+				},
+				b: &rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						OwnerReferences: ownerReferences1,
+					},
+					Subjects: subjects0,
+					RoleRef:  roleRef0,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "ClusterRoleBinding Subjects are not equal",
+			args: args{
+				a: &rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						OwnerReferences: ownerReferences0,
+					},
+					Subjects: subjects0,
+					RoleRef:  roleRef0,
+				},
+				b: &rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						OwnerReferences: ownerReferences0,
+					},
+					Subjects: subjects1,
+					RoleRef:  roleRef0,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "ClusterRoleBinding RoleRefs are not equal",
+			args: args{
+				a: &rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						OwnerReferences: ownerReferences0,
+					},
+					Subjects: subjects0,
+					RoleRef:  roleRef0,
+				},
+				b: &rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						OwnerReferences: ownerReferences0,
+					},
+					Subjects: subjects0,
+					RoleRef:  roleRef1,
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := clusterRoleBindingEqual(tt.args.a, tt.args.b); got != tt.want {
+				t.Errorf("clusterRoleBindingEqual() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_serviceEqual(t *testing.T) {
+	const (
+		name0 = "name-0"
+		name1 = "name-1"
+
+		namespace0 = "namespace0"
+		namespace1 = "namespace1"
+	)
+
+	var (
+		ownerReferences0 = []metav1.OwnerReference{
+			{
+				Name:               "name-0",
+				APIVersion:         "version-0",
+				Kind:               "kind-0",
+				UID:                "000000",
+				Controller:         ptr.To(false),
+				BlockOwnerDeletion: ptr.To(false),
+			},
+		}
+		ownerReferences1 = []metav1.OwnerReference{
+			{
+				Name:               "name-1",
+				APIVersion:         "version-0",
+				Kind:               "kind-0",
+				UID:                "000000",
+				Controller:         ptr.To(false),
+				BlockOwnerDeletion: ptr.To(false),
+			},
+		}
+
+		ports0 = []corev1.ServicePort{
+			{
+				Name:        "name-0",
+				Protocol:    "protocol-0",
+				AppProtocol: nil,
+				Port:        0,
+				TargetPort: intstr.IntOrString{
+					Type:   0,
+					IntVal: 0,
+					StrVal: "val-0",
+				},
+				NodePort: 0,
+			},
+		}
+		ports1 = []corev1.ServicePort{
+			{
+				Name:        "name-1",
+				Protocol:    "protocol-0",
+				AppProtocol: nil,
+				Port:        0,
+				TargetPort: intstr.IntOrString{
+					Type:   0,
+					IntVal: 0,
+					StrVal: "val-0",
+				},
+				NodePort: 0,
+			},
+		}
+
+		selector0 = map[string]string{
+			"key": "val-0",
+		}
+		selector1 = map[string]string{
+			"key": "val-1",
+		}
+	)
+
+	type args struct {
+		a *corev1.Service
+		b *corev1.Service
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Services are equal",
+			args: args{
+				a: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector0,
+					},
+				},
+				b: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector0,
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Service names are not equal",
+			args: args{
+				a: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector0,
+					},
+				},
+				b: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name1,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Service namespaces are not equal",
+			args: args{
+				a: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector0,
+					},
+				},
+				b: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace1,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Service OwnerReferences are not equal",
+			args: args{
+				a: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector0,
+					},
+				},
+				b: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences1,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Service ports are not equal",
+			args: args{
+				a: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector0,
+					},
+				},
+				b: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports1,
+						Selector: selector0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Service selectors are not equal",
+			args: args{
+				a: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector0,
+					},
+				},
+				b: &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:    ports0,
+						Selector: selector1,
+					},
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := serviceEqual(tt.args.a, tt.args.b); got != tt.want {
+				t.Errorf("serviceEqual() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_hpaEqual(t *testing.T) {
+	const (
+		name0 = "name-0"
+		name1 = "name-1"
+
+		namespace0 = "ns-0"
+		namespace1 = "ns-1"
+	)
+
+	var (
+		ownerReferences0 = []metav1.OwnerReference{
+			{
+				Name:               "name-0",
+				APIVersion:         "version-0",
+				Kind:               "kind-0",
+				UID:                "000000",
+				Controller:         ptr.To(false),
+				BlockOwnerDeletion: ptr.To(false),
+			},
+		}
+		ownerReferences1 = []metav1.OwnerReference{
+			{
+				Name:               "name-1",
+				APIVersion:         "version-0",
+				Kind:               "kind-0",
+				UID:                "000000",
+				Controller:         ptr.To(false),
+				BlockOwnerDeletion: ptr.To(false),
+			},
+		}
+
+		scaleTargetRef0 = v2.CrossVersionObjectReference{
+			Name:       "name-0",
+			Kind:       "kind-0",
+			APIVersion: "version-0",
+		}
+		scaleTargetRef1 = v2.CrossVersionObjectReference{
+			Name:       "name-1",
+			Kind:       "kind-0",
+			APIVersion: "version-0",
+		}
+
+		minReplicas0 = ptr.To(int32(1))
+		minReplicas1 = ptr.To(int32(2))
+
+		maxReplicas0 = int32(3)
+		maxReplicas1 = int32(4)
+
+		metrics0 = []v2.MetricSpec{
+			{
+				Type:              v2.MetricSourceType("type-0"),
+				Object:            nil,
+				Pods:              nil,
+				Resource:          nil,
+				ContainerResource: nil,
+				External:          nil,
+			},
+		}
+		metrics1 = []v2.MetricSpec{
+			{
+				Type:              v2.MetricSourceType("type-1"),
+				Object:            nil,
+				Pods:              nil,
+				Resource:          nil,
+				ContainerResource: nil,
+				External:          nil,
+			},
+		}
+	)
+
+	type args struct {
+		a *v2.HorizontalPodAutoscaler
+		b *v2.HorizontalPodAutoscaler
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "HPAs are equal",
+			args: args{
+				a: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+				b: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "HPA names are not equal",
+			args: args{
+				a: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+				b: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name1,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "HPA namespaces are not equal",
+			args: args{
+				a: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+				b: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace1,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "HPA OwnerReferences are not equal",
+			args: args{
+				a: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+				b: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences1,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "HPA ScaleTargetRefs are not equal",
+			args: args{
+				a: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+				b: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef1,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "HPA MinReplicas are not equal",
+			args: args{
+				a: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+				b: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas1,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "HPA MaxReplicas are not equal",
+			args: args{
+				a: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+				b: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas1,
+						Metrics:        metrics0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "HPA metrics are not equal",
+			args: args{
+				a: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics0,
+					},
+				},
+				b: &v2.HorizontalPodAutoscaler{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            name0,
+						Namespace:       namespace0,
+						OwnerReferences: ownerReferences0,
+					},
+					Spec: v2.HorizontalPodAutoscalerSpec{
+						ScaleTargetRef: scaleTargetRef0,
+						MinReplicas:    minReplicas0,
+						MaxReplicas:    maxReplicas0,
+						Metrics:        metrics1,
+					},
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := hpaEqual(tt.args.a, tt.args.b); got != tt.want {
+				t.Errorf("hpaEqual() = %v, want %v", got, tt.want)
 			}
 		})
 	}

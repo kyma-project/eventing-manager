@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
@@ -171,36 +172,36 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// copy the object, so we don't modify the source object
-	eventing := currentEventing.DeepCopy()
+	eventingCR := currentEventing.DeepCopy()
 
-	// watch cluster-scoped resources, such as clusterrole and clusterrolebinding.
+	// watch cluster-scoped resources, such as ClusterRole and ClusterRoleBinding.
 	if !r.clusterScopedResourcesWatched {
-		if err := r.watchResource(&rbacv1.ClusterRole{}, eventing); err != nil {
+		if err := r.watchResource(&rbacv1.ClusterRole{}, eventingCR); err != nil {
 			return ctrl.Result{}, err
 		}
-		if err := r.watchResource(&rbacv1.ClusterRoleBinding{}, eventing); err != nil {
+		if err := r.watchResource(&rbacv1.ClusterRoleBinding{}, eventingCR); err != nil {
 			return ctrl.Result{}, err
 		}
 		r.clusterScopedResourcesWatched = true
 	}
 
 	// logger with eventing details
-	log := r.loggerWithEventing(eventing)
+	log := r.loggerWithEventing(eventingCR)
 
 	// check if eventing is in deletion state
-	if !eventing.DeletionTimestamp.IsZero() {
-		return r.handleEventingDeletion(ctx, eventing, log)
+	if !eventingCR.DeletionTimestamp.IsZero() {
+		return r.handleEventingDeletion(ctx, eventingCR, log)
 	}
 
 	// check if the Eventing CR is allowed to be created.
 	if r.allowedEventingCR != nil {
-		if result, err := r.handleEventingCRAllowedCheck(ctx, eventing, log); !result || err != nil {
+		if result, err := r.handleEventingCRAllowedCheck(ctx, eventingCR, log); !result || err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	// handle reconciliation
-	return r.handleEventingReconcile(ctx, eventing, log)
+	return r.handleEventingReconcile(ctx, eventingCR, log)
 }
 
 // handleEventingCRAllowedCheck checks if Eventing CR is allowed to be created or not.
@@ -223,25 +224,35 @@ func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing 
 	return false, r.syncEventingStatus(ctx, eventing, log)
 }
 
-func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(t string) func(event.UpdateEvent) bool {
-	return func(e event.UpdateEvent) bool {
-		res := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
-		r.namedLogger().With("result", res).
-			With("Type", t).
-			With("GVK", e.ObjectOld.GetObjectKind()).
-			With("Name", e.ObjectOld.GetName()).
-			With("Namespace", e.ObjectOld.GetNamespace()).
-			Info("UpdateEvent received")
-		return res
+func (r *Reconciler) logEventForResource(name, namespace, resourceType, eventType string, enqueue bool) {
+	r.namedLogger().
+		With("Name", name).
+		With("Namespace", namespace).
+		With("ResourceType", resourceType).
+		With("EventType", eventType).
+		With("Enqueue", enqueue).
+		Debug("Event received")
+}
+
+func (r *Reconciler) SkipEnqueueOnCreate() func(event.CreateEvent) bool {
+	return func(e event.CreateEvent) bool {
+		// always skip enqueue
+		return false
 	}
 }
-func (r *Reconciler) SkipEnqueueOnCreate(e event.CreateEvent) bool {
-	r.namedLogger().
-		With("GVK", e.Object.GetObjectKind()).
-		With("Name", e.Object.GetName()).
-		With("Namespace", e.Object.GetNamespace()).
-		Info("CreateEvent received. Skipping")
-	return false
+
+func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(resourceType, nameFilter string) func(event.UpdateEvent) bool {
+	return func(e event.UpdateEvent) bool {
+		// skip enqueue if the resource is not related to Eventing
+		if !strings.Contains(e.ObjectOld.GetName(), nameFilter) {
+			return false
+		}
+
+		// enqueue only if the resource changed
+		enqueue := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+		r.logEventForResource(e.ObjectOld.GetName(), e.ObjectOld.GetNamespace(), resourceType, "Update", enqueue)
+		return enqueue
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -251,30 +262,37 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	r.controller, err = ctrl.NewControllerManagedBy(mgr).
 		For(&eventingv1alpha1.Eventing{}).
-		Owns(&v1.Deployment{}). //builder.WithPredicates(
-		//	predicate.Funcs{
-		//		CreateFunc: r.SkipEnqueueOnCreate,
-		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("deployment"),
-		//	}),
-
-		Owns(&corev1.Service{}). //builder.WithPredicates(
-		//	predicate.Funcs{
-		//		CreateFunc: r.SkipEnqueueOnCreate,
-		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("service"),
-		//	}),
-
-		Owns(&corev1.ServiceAccount{}). //builder.WithPredicates(
-		//	predicate.Funcs{
-		//		CreateFunc: r.SkipEnqueueOnCreate,
-		//		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("serviceAccount"),
-		//	}),
-
+		Owns(&v1.Deployment{},
+			builder.WithPredicates(
+				predicate.Funcs{
+					CreateFunc: r.SkipEnqueueOnCreate(),
+					UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("Deployment", "eventing"),
+				},
+			),
+		).
+		Owns(&corev1.Service{},
+			builder.WithPredicates(
+				predicate.Funcs{
+					CreateFunc: r.SkipEnqueueOnCreate(),
+					UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("Service", "eventing"),
+				},
+			),
+		).
+		Owns(&corev1.ServiceAccount{},
+			builder.WithPredicates(
+				predicate.Funcs{
+					CreateFunc: r.SkipEnqueueOnCreate(),
+					UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("SA", "eventing"),
+				},
+			),
+		).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{},
 			builder.WithPredicates(
 				predicate.Funcs{
-					CreateFunc: r.SkipEnqueueOnCreate,
-					UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("hpa"),
-				}),
+					CreateFunc: r.SkipEnqueueOnCreate(),
+					UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("HPA", "eventing"),
+				},
+			),
 		).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 0,
@@ -299,8 +317,8 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 		predicate.ResourceVersionChangedPredicate{},
 		predicate.Funcs{
 			// don't reconcile for create events
-			CreateFunc: r.SkipEnqueueOnCreate,
-			UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("CR / CRB"),
+			CreateFunc: r.SkipEnqueueOnCreate(),
+			UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("CR/CRB", "eventing"),
 		},
 	)
 	return err

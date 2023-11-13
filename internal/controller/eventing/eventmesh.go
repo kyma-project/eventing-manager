@@ -176,7 +176,7 @@ func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *corev
 		return nil, fmt.Errorf("invalid secret for Event Publisher: %v", err)
 	}
 
-	err = r.kubeClient.PatchApply(ctx, desiredSecret, false)
+	err = r.kubeClient.PatchApply(ctx, desiredSecret)
 	if err != nil {
 		return nil, err
 	}

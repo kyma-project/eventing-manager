@@ -72,7 +72,7 @@ const (
 	SmallPollingInterval     = 1 * time.Second
 )
 
-// TestEnvirSmallTimeOutonment provides mocked resources for integration tests.
+// TestEnvironment provides mocked resources for integration tests.
 type TestEnvironment struct {
 	Context             context.Context
 	EnvTestInstance     *envtest.Environment
