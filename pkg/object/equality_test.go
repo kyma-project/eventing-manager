@@ -1,9 +1,10 @@
 package object
 
 import (
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"net/http"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,11 +17,12 @@ import (
 	"k8s.io/utils/ptr"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
 	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
 	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 func TestApiRuleEqual(t *testing.T) {
@@ -2035,6 +2037,68 @@ func Test_hpaEqual(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := hpaEqual(tt.args.a, tt.args.b); got != tt.want {
 				t.Errorf("hpaEqual() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_envEqual(t *testing.T) {
+	type args struct {
+		e1 []corev1.EnvVar
+		e2 []corev1.EnvVar
+	}
+
+	var11 := corev1.EnvVar{
+		Name:  "var1",
+		Value: "var1",
+	}
+	var12 := corev1.EnvVar{
+		Name:  "var1",
+		Value: "var2",
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "envs equal, order equals",
+			args: args{
+				e1: []corev1.EnvVar{var11, var12},
+				e2: []corev1.EnvVar{var11, var12},
+			},
+			want: true,
+		},
+		{
+			name: "envs equal, different order",
+			args: args{
+				e1: []corev1.EnvVar{var11, var12},
+				e2: []corev1.EnvVar{var12, var11},
+			},
+			want: true,
+		},
+		{
+			name: "different length",
+			args: args{
+				e1: []corev1.EnvVar{var11, var11},
+				e2: []corev1.EnvVar{var11},
+			},
+			want: false,
+		},
+		{
+			name: "envs different",
+			args: args{
+				e1: []corev1.EnvVar{var11, var12},
+				e2: []corev1.EnvVar{var11, var11},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := envEqual(tt.args.e1, tt.args.e2); got != tt.want {
+				t.Errorf("envEqual() = %v, want %v", got, tt.want)
 			}
 		})
 	}

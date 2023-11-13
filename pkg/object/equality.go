@@ -340,6 +340,7 @@ func envEqual(e1, e2 []corev1.EnvVar) bool {
 	}
 	isFound := false
 	for _, ev1 := range e1 {
+		isFound = false
 		for _, ev2 := range e2 {
 			if reflect.DeepEqual(ev1, ev2) {
 				isFound = true
