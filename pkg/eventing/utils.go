@@ -5,7 +5,6 @@ import (
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -43,20 +42,20 @@ func GetPublisherClusterRoleBindingName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
 }
 
-func newHorizontalPodAutoscaler(deployment *v1.Deployment, min int32, max int32, cpuUtilization, memoryUtilization int32) *autoscalingv2.HorizontalPodAutoscaler {
+func newHorizontalPodAutoscaler(name, namespace string, min int32, max int32, cpuUtilization, memoryUtilization int32) *autoscalingv2.HorizontalPodAutoscaler {
 	return &autoscalingv2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "HorizontalPodAutoscaler",
 			APIVersion: "autoscaling/v2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      deployment.Name,
-			Namespace: deployment.Namespace,
+			Name:      name,
+			Namespace: namespace,
 		},
 		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
 				Kind:       "Deployment",
-				Name:       deployment.Name,
+				Name:       name,
 				APIVersion: "apps/v1",
 			},
 			MinReplicas: &min,
@@ -102,11 +101,6 @@ func newPublisherProxyClusterRole(name, namespace string, labels map[string]stri
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"eventing.kyma-project.io"},
-				Resources: []string{"subscriptions"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"operator.kyma-project.io"},
 				Resources: []string{"subscriptions"},
 				Verbs:     []string{"get", "list", "watch"},
 			},

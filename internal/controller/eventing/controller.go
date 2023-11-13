@@ -155,8 +155,6 @@ func NewReconciler(
 //+kubebuilder:rbac:groups=gateway.kyma-project.io,resources=apirules,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="eventing.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
 // +kubebuilder:rbac:groups=eventing.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups="operator.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
-// +kubebuilder:rbac:groups=operator.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=security.istio.io,resources=peerauthentications,verbs=get;list;watch;create;update;patch;delete
 // Generate required RBAC to emit kubernetes events in the controller.
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
@@ -509,8 +507,13 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 	_, err := r.kubeClient.GetCRD(ctx, k8s.NatsGVK.GroupResource().String())
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			err = fmt.Errorf("NATS module has to be installed: %v", err)
-			return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+			// delete the publisher proxy resources, because the publisher deployment will go
+			// into CrashLoopBackOff.
+			log.Infof("NATS module not enabled, deleting publisher proxy resources")
+			delErr := r.eventingManager.DeletePublisherProxyResources(ctx, eventing)
+			// update the Eventing CR status.
+			notFoundErr := fmt.Errorf("NATS module has to be installed: %v", err)
+			return ctrl.Result{}, errors.Join(r.syncStatusWithNATSErr(ctx, eventing, notFoundErr, log), delErr)
 		}
 		return ctrl.Result{}, err
 	}

@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 
 	"github.com/kyma-project/eventing-manager/api/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -40,6 +40,7 @@ type Manager interface {
 		natsConfig *env.NATSConfig,
 		backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
 	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
+	DeletePublisherProxyResources(ctx context.Context, eventing *v1alpha1.Eventing) error
 	GetBackendConfig() *env.BackendConfig
 	SetBackendConfig(env.BackendConfig)
 	SubscriptionExists(ctx context.Context) (bool, error)
@@ -191,18 +192,27 @@ func (em EventingManager) DeployPublisherProxyResources(
 	publisherDeployment *appsv1.Deployment) error {
 	// define list of resources to create for EPP.
 	resources := []client.Object{
+		// ServiceAccount
 		newPublisherProxyServiceAccount(GetPublisherServiceAccountName(*eventing), eventing.Namespace, publisherDeployment.Labels),
+		// ClusterRole
 		newPublisherProxyClusterRole(GetPublisherClusterRoleName(*eventing), eventing.Namespace, publisherDeployment.Labels),
-		newPublisherProxyClusterRoleBinding(GetPublisherClusterRoleBindingName(*eventing), eventing.Namespace, publisherDeployment.Labels),
+		// ClusterRoleBinding
+		newPublisherProxyClusterRoleBinding(GetPublisherClusterRoleBindingName(*eventing), eventing.Namespace,
+			publisherDeployment.Labels),
+		// Service to expose event publishing endpoint of EPP.
 		newPublisherProxyService(GetPublisherPublishServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
 			publisherDeployment.Spec.Template.Labels),
+		// Service to expose metrics endpoint of EPP.
 		newPublisherProxyMetricsService(GetPublisherMetricsServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
 			publisherDeployment.Spec.Template.Labels),
+		// Service to expose health endpoint of EPP.
 		newPublisherProxyHealthService(GetPublisherHealthServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
 			publisherDeployment.Spec.Template.Labels),
-		newHorizontalPodAutoscaler(publisherDeployment, int32(eventing.Spec.Publisher.Min),
+		// HPA to auto-scale publisher proxy.
+		newHorizontalPodAutoscaler(publisherDeployment.Name, publisherDeployment.Namespace, int32(eventing.Spec.Publisher.Min),
 			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization),
 	}
+
 	// create the resources on k8s.
 	for _, obj := range resources {
 
@@ -211,9 +221,46 @@ func (em EventingManager) DeployPublisherProxyResources(
 			return err
 		}
 
-		// compare objects and decide on actual patch
-		// patch the object if necessary
+		// patch apply the object.
 		if err := em.kubeClient.PatchApply(ctx, obj); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (em EventingManager) DeletePublisherProxyResources(ctx context.Context, eventing *v1alpha1.Eventing) error {
+	// define list of resources to delete for EPP.
+	publisherDeployment := &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      GetPublisherDeploymentName(*eventing),
+			Namespace: eventing.Namespace,
+		},
+	}
+
+	resources := []client.Object{
+		// Deployment
+		publisherDeployment,
+		// ServiceAccount
+		newPublisherProxyServiceAccount(GetPublisherServiceAccountName(*eventing), eventing.Namespace, map[string]string{}),
+		// Service to expose event publishing endpoint of EPP.
+		newPublisherProxyService(GetPublisherPublishServiceName(*eventing), eventing.Namespace, map[string]string{}, map[string]string{}),
+		// Service to expose metrics endpoint of EPP.
+		newPublisherProxyMetricsService(GetPublisherMetricsServiceName(*eventing), eventing.Namespace, map[string]string{}, map[string]string{}),
+		// Service to expose health endpoint of EPP.
+		newPublisherProxyHealthService(GetPublisherHealthServiceName(*eventing), eventing.Namespace, map[string]string{}, map[string]string{}),
+		// HPA to auto-scale publisher proxy.
+		newHorizontalPodAutoscaler(publisherDeployment.Name, eventing.Namespace, 0, 0, 0, 0),
+	}
+
+	// delete the resources on k8s.
+	for _, object := range resources {
+		// delete the object.
+		if err := em.kubeClient.DeleteResource(ctx, object); err != nil {
 			return err
 		}
 	}

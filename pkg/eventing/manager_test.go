@@ -465,6 +465,82 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 	}
 }
 
+func Test_DeletePublisherProxyResources(t *testing.T) {
+	t.Parallel()
+
+	// given
+	newScheme := runtime.NewScheme()
+	require.NoError(t, v1alpha1.AddToScheme(newScheme))
+
+	// test cases
+	testCases := []struct {
+		name                      string
+		givenEventing             *v1alpha1.Eventing
+		givenEPPDeployment        *appsv1.Deployment
+		wantError                 bool
+		wantDeletedResourcesCount int
+	}{
+		{
+			name: "should have delete EPP resources",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace("test"),
+				testutils.WithEventingCRMinimal(),
+				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
+			),
+			givenEPPDeployment:        testutils.NewDeployment("test", "test", map[string]string{}),
+			wantDeletedResourcesCount: 6,
+		},
+		{
+			name: "should return error when delete fails",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventingCRName("test-eventing"),
+				testutils.WithEventingCRNamespace("test"),
+				testutils.WithEventingCRMinimal(),
+				testutils.WithEventingPublisherData(2, 4, "100m", "256Mi", "200m", "512Mi"),
+			),
+			givenEPPDeployment: testutils.NewDeployment("test", "test", map[string]string{}),
+			wantError:          true,
+		},
+	}
+
+	// Iterate over the test cases.
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
+			kubeClient := new(k8smocks.Client)
+
+			// define mocks behaviours.
+			if tc.wantError {
+				kubeClient.On("DeleteResource", ctx, mock.Anything).Return(errors.New("failed"))
+			} else {
+				kubeClient.On("DeleteResource", ctx, mock.Anything).Return(nil).Times(tc.wantDeletedResourcesCount)
+			}
+
+			// initialize EventingManager object.
+			em := EventingManager{
+				Client:     mockClient,
+				kubeClient: kubeClient,
+			}
+
+			// when
+			err := em.DeletePublisherProxyResources(ctx, tc.givenEventing)
+
+			// then
+			if tc.wantError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				kubeClient.AssertExpectations(t)
+			}
+		})
+	}
+}
+
 func Test_SubscriptionExists(t *testing.T) {
 	// Define test cases
 	testCases := []struct {

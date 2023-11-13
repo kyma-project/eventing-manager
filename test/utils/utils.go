@@ -212,11 +212,6 @@ func IsEPPClusterRoleCorrect(clusterRole rbacv1.ClusterRole) bool {
 			Verbs:     []string{"get", "list", "watch"},
 		},
 		{
-			APIGroups: []string{"operator.kyma-project.io"},
-			Resources: []string{"subscriptions"},
-			Verbs:     []string{"get", "list", "watch"},
-		},
-		{
 			APIGroups: []string{"applicationconnector.kyma-project.io"},
 			Resources: []string{"applications"},
 			Verbs:     []string{"get", "list", "watch"},

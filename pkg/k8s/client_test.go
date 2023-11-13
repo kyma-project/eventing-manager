@@ -255,6 +255,67 @@ func Test_UpdateDeployment(t *testing.T) {
 	}
 }
 
+func Test_DeleteResource(t *testing.T) {
+	t.Parallel()
+	// Define test cases
+	testCases := []struct {
+		name                  string
+		givenDeployment       *appsv1.Deployment
+		givenDeploymentExists bool
+	}{
+		{
+			name: "should delete the deployment",
+			givenDeployment: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-deployment",
+					Namespace: "test-namespace",
+				},
+			},
+			givenDeploymentExists: true,
+		},
+		{
+			name: "should not return error when the deployment does not exist",
+			givenDeployment: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-deployment",
+					Namespace: "test-namespace2",
+				},
+			},
+			givenDeploymentExists: false,
+		},
+	}
+
+	// Run tests
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			ctx := context.Background()
+			var givenObjs []client.Object
+			if tc.givenDeploymentExists {
+				givenObjs = append(givenObjs, tc.givenDeployment)
+			}
+			fakeClient := fake.NewClientBuilder().WithObjects(givenObjs...).Build()
+			kubeClient := &KubeClient{
+				client: fakeClient,
+			}
+
+			// when
+			err := kubeClient.DeleteDeployment(ctx, tc.givenDeployment.Name, tc.givenDeployment.Namespace)
+
+			// then
+			require.Nil(t, err)
+			// Check that the deployment must not exist.
+			err = fakeClient.Get(ctx, types.NamespacedName{
+				Name:      tc.givenDeployment.Name,
+				Namespace: tc.givenDeployment.Namespace,
+			}, &appsv1.Deployment{})
+			require.True(t, apierrors.IsNotFound(err), "DeleteResource did not delete deployment")
+		})
+	}
+}
+
 func Test_DeleteDeployment(t *testing.T) {
 	t.Parallel()
 	// Define test cases

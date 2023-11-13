@@ -39,6 +39,7 @@ type Client interface {
 	DeleteDeployment(ctx context.Context, name, namespace string) error
 	DeleteClusterRole(ctx context.Context, name, namespace string) error
 	DeleteClusterRoleBinding(ctx context.Context, name, namespace string) error
+	DeleteResource(ctx context.Context, object client.Object) error
 	GetNATSResources(ctx context.Context, namespace string) (*natsv1alpha1.NATSList, error)
 	PatchApply(ctx context.Context, object client.Object) error
 	GetSecret(ctx context.Context, namespacedName string) (*corev1.Secret, error)
@@ -142,6 +143,13 @@ func (c *KubeClient) DeleteClusterRoleBinding(ctx context.Context, name, namespa
 		},
 	}
 	if err := c.client.Delete(ctx, binding); err != nil {
+		return client.IgnoreNotFound(err)
+	}
+	return nil
+}
+
+func (c *KubeClient) DeleteResource(ctx context.Context, object client.Object) error {
+	if err := c.client.Delete(ctx, object); err != nil {
 		return client.IgnoreNotFound(err)
 	}
 	return nil
