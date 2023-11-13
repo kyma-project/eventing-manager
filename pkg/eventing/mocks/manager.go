@@ -27,6 +27,49 @@ func (_m *Manager) EXPECT() *Manager_Expecter {
 	return &Manager_Expecter{mock: &_m.Mock}
 }
 
+// DeletePublisherProxyResources provides a mock function with given fields: ctx, _a1
+func (_m *Manager) DeletePublisherProxyResources(ctx context.Context, _a1 *v1alpha1.Eventing) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Eventing) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Manager_DeletePublisherProxyResources_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeletePublisherProxyResources'
+type Manager_DeletePublisherProxyResources_Call struct {
+	*mock.Call
+}
+
+// DeletePublisherProxyResources is a helper method to define mock.On call
+//   - ctx context.Context
+//   - _a1 *v1alpha1.Eventing
+func (_e *Manager_Expecter) DeletePublisherProxyResources(ctx interface{}, _a1 interface{}) *Manager_DeletePublisherProxyResources_Call {
+	return &Manager_DeletePublisherProxyResources_Call{Call: _e.mock.On("DeletePublisherProxyResources", ctx, _a1)}
+}
+
+func (_c *Manager_DeletePublisherProxyResources_Call) Run(run func(ctx context.Context, _a1 *v1alpha1.Eventing)) *Manager_DeletePublisherProxyResources_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*v1alpha1.Eventing))
+	})
+	return _c
+}
+
+func (_c *Manager_DeletePublisherProxyResources_Call) Return(_a0 error) *Manager_DeletePublisherProxyResources_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Manager_DeletePublisherProxyResources_Call) RunAndReturn(run func(context.Context, *v1alpha1.Eventing) error) *Manager_DeletePublisherProxyResources_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeployPublisherProxy provides a mock function with given fields: ctx, _a1, natsConfig, backendType
 func (_m *Manager) DeployPublisherProxy(ctx context.Context, _a1 *v1alpha1.Eventing, natsConfig *env.NATSConfig, backendType v1alpha1.BackendType) (*v1.Deployment, error) {
 	ret := _m.Called(ctx, _a1, natsConfig, backendType)

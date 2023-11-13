@@ -272,6 +272,49 @@ func (_c *Client_DeleteDeployment_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
+// DeleteResource provides a mock function with given fields: ctx, object
+func (_m *Client) DeleteResource(ctx context.Context, object client.Object) error {
+	ret := _m.Called(ctx, object)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, client.Object) error); ok {
+		r0 = rf(ctx, object)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Client_DeleteResource_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteResource'
+type Client_DeleteResource_Call struct {
+	*mock.Call
+}
+
+// DeleteResource is a helper method to define mock.On call
+//   - ctx context.Context
+//   - object client.Object
+func (_e *Client_Expecter) DeleteResource(ctx interface{}, object interface{}) *Client_DeleteResource_Call {
+	return &Client_DeleteResource_Call{Call: _e.mock.On("DeleteResource", ctx, object)}
+}
+
+func (_c *Client_DeleteResource_Call) Run(run func(ctx context.Context, object client.Object)) *Client_DeleteResource_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(client.Object))
+	})
+	return _c
+}
+
+func (_c *Client_DeleteResource_Call) Return(_a0 error) *Client_DeleteResource_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Client_DeleteResource_Call) RunAndReturn(run func(context.Context, client.Object) error) *Client_DeleteResource_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetCRD provides a mock function with given fields: ctx, name
 func (_m *Client) GetCRD(ctx context.Context, name string) (*v1.CustomResourceDefinition, error) {
 	ret := _m.Called(ctx, name)
