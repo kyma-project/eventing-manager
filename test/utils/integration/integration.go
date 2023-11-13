@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
