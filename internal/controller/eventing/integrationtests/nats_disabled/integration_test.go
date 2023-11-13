@@ -1,12 +1,10 @@
 package controller_test
 
 import (
-	"context"
 	"os"
 	"testing"
 
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
@@ -98,13 +96,9 @@ func Test_DeletionOfPublisherResourcesWhenNATSNotEnabled(t *testing.T) {
 	// check if EPP resources exists.
 	ensureK8sResources(t, givenEventing, testEnvironment)
 
-	natsCRD, err := testEnvironment.KubeClient.GetCRD(context.TODO(), k8s.NatsGVK.GroupResource().String())
-	require.NoError(t, err)
-
 	// define cleanup.
 	defer func() {
 		// Important: install NATS CRD again.
-		testEnvironment.EnsureCRDCreated(t, natsCRD)
 		testEnvironment.EnsureEventingResourceDeletion(t, givenEventing.Name, givenNamespace)
 		testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 	}()
@@ -112,7 +106,6 @@ func Test_DeletionOfPublisherResourcesWhenNATSNotEnabled(t *testing.T) {
 	// when
 	// delete NATS CR & CRD
 	testEnvironment.EnsureK8sResourceDeleted(t, givenNATS)
-	testEnvironment.EnsureNATSCRDDeleted(t)
 
 	// then
 	// wait until Eventing CR status is Error.
