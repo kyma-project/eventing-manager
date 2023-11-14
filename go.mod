@@ -11,8 +11,8 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-incubator/api-gateway v0.0.0-20220819093753-296e6704d413
-	github.com/kyma-project/kyma/common/logging v0.0.0-20231020092259-d58329d50da1
-	github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20231020092259-d58329d50da1
+	github.com/kyma-project/kyma/common/logging v0.0.0-20231113125307-562a57ab5198
+	github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20231113125307-562a57ab5198
 	github.com/kyma-project/nats-manager v1.0.2
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/nats-io/nats-server/v2 v2.10.5
@@ -104,7 +104,7 @@ require (
 	golang.org/x/time v0.4.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231002182017-d307bd883b97 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
