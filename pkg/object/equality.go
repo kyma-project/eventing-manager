@@ -4,7 +4,9 @@ import (
 	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
+	v2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 
@@ -19,16 +21,145 @@ var Semantic = conversion.EqualitiesOrDie(
 	apiRuleEqual,
 	eventingBackendEqual,
 	publisherProxyDeploymentEqual,
+	serviceAccountEqual,
+	clusterRoleEqual,
+	clusterRoleBindingEqual,
+	serviceEqual,
+	hpaEqual,
 )
 
-// apiRuleEqual asserts the equality of two APIRule objects.
-func apiRuleEqual(a1, a2 *apigatewayv1beta1.APIRule) bool {
-	if a1 == nil || a2 == nil {
+func serviceAccountEqual(a, b *corev1.ServiceAccount) bool {
+	if a == b {
+		return true
+	}
+	if a == nil || b == nil {
 		return false
 	}
 
+	if a.Name != b.Name || a.Namespace != b.Namespace {
+		return false
+	}
+
+	if !mapDeepEqual(a.ObjectMeta.Labels, b.ObjectMeta.Labels) {
+		return false
+	}
+
+	if !ownerReferencesDeepEqual(a.OwnerReferences, b.OwnerReferences) {
+		return false
+	}
+
+	return true
+}
+
+func clusterRoleEqual(a, b *rbacv1.ClusterRole) bool {
+	if a == b {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+
+	if a.Name != b.Name {
+		return false
+	}
+
+	if !mapDeepEqual(a.Labels, b.Labels) {
+		return false
+	}
+
+	if !ownerReferencesDeepEqual(a.OwnerReferences, b.OwnerReferences) {
+		return false
+	}
+
+	if !reflect.DeepEqual(a.Rules, b.Rules) {
+		return false
+	}
+	return true
+}
+
+func serviceEqual(a, b *corev1.Service) bool {
+	if a == b {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	if !ownerReferencesDeepEqual(a.OwnerReferences, b.OwnerReferences) {
+		return false
+	}
+	if a.Name != b.Name || a.Namespace != b.Namespace {
+		return false
+	}
+	if !reflect.DeepEqual(a.Spec.Selector, b.Spec.Selector) {
+		return false
+	}
+	return reflect.DeepEqual(a.Spec.Ports, b.Spec.Ports)
+}
+
+func hpaEqual(a, b *v2.HorizontalPodAutoscaler) bool {
+	if a == b {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	if a.Name != b.Name || a.Namespace != b.Namespace {
+		return false
+	}
+
+	if !ownerReferencesDeepEqual(a.OwnerReferences, b.OwnerReferences) {
+		return false
+	}
+
+	if !reflect.DeepEqual(a.Spec.ScaleTargetRef, b.Spec.ScaleTargetRef) {
+		return false
+	}
+	if *(a.Spec.MinReplicas) != *(b.Spec.MinReplicas) {
+		return false
+	}
+	if a.Spec.MaxReplicas != b.Spec.MaxReplicas {
+		return false
+	}
+	if !reflect.DeepEqual(a.Spec.Metrics, b.Spec.Metrics) {
+		return false
+	}
+
+	return true
+}
+
+func clusterRoleBindingEqual(a, b *rbacv1.ClusterRoleBinding) bool {
+	if a == b {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	if a.Name != b.Name {
+		return false
+	}
+
+	if !ownerReferencesDeepEqual(a.OwnerReferences, b.OwnerReferences) {
+		return false
+	}
+
+	if a.RoleRef != b.RoleRef {
+		return false
+	}
+
+	if !reflect.DeepEqual(a.Subjects, b.Subjects) {
+		return false
+	}
+	return true
+}
+
+// apiRuleEqual asserts the equality of two APIRule objects.
+func apiRuleEqual(a1, a2 *apigatewayv1beta1.APIRule) bool {
 	if a1 == a2 {
 		return true
+	}
+
+	if a1 == nil || a2 == nil {
+		return false
 	}
 
 	if !reflect.DeepEqual(a1.Labels, a2.Labels) {
@@ -108,9 +239,6 @@ func publisherProxyDeploymentEqual(d1, d2 *appsv1.Deployment) bool {
 		return true
 	}
 	if !reflect.DeepEqual(d1.Labels, d2.Labels) {
-		return false
-	}
-	if !reflect.DeepEqual(d1.Spec.Replicas, d2.Spec.Replicas) {
 		return false
 	}
 
@@ -193,6 +321,10 @@ func containerEqual(c1, c2 *corev1.Container) bool {
 		return false
 	}
 
+	if !reflect.DeepEqual(c1.Resources, c2.Resources) {
+		return false
+	}
+
 	return probeEqual(c1.ReadinessProbe, c2.ReadinessProbe)
 }
 
@@ -202,8 +334,13 @@ func envEqual(e1, e2 []corev1.EnvVar) bool {
 	if len(e1) != len(e2) {
 		return false
 	}
+
+	if len(e1) == 0 {
+		return true
+	}
 	isFound := false
 	for _, ev1 := range e1 {
+		isFound = false
 		for _, ev2 := range e2 {
 			if reflect.DeepEqual(ev1, ev2) {
 				isFound = true

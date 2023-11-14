@@ -11,8 +11,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	apiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"

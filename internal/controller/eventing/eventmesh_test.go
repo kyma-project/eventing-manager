@@ -11,12 +11,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
-	managermocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
-	"github.com/kyma-project/eventing-manager/pkg/logger"
-	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
-	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
-	"github.com/kyma-project/eventing-manager/test/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -24,6 +18,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	managermocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
+	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
+	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
+	"github.com/kyma-project/eventing-manager/test/utils"
 )
 
 const (
@@ -918,7 +919,7 @@ func Test_SyncPublisherProxySecret(t *testing.T) {
 		},
 		// patchApply error
 		{
-			name:        "pathApply should fail",
+			name:        "patchApply should fail",
 			givenSecret: utils.NewEventMeshSecret("valid", "test-namespace"),
 			mockKubeClient: func() *k8smocks.Client {
 				kubeClient := new(k8smocks.Client)

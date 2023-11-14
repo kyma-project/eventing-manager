@@ -7,17 +7,18 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	subscriptionmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	subscriptionmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 const (

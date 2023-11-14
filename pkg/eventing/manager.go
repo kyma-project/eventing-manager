@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -16,6 +15,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/object"
 )
 
 const (
@@ -125,6 +125,14 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 			return nil, fmt.Errorf("failed to migrate publisher: %v", err)
 		}
 	}
+
+	if object.Semantic.DeepEqual(currentPublisher, desiredPublisher) {
+		em.logger.WithContext().Debug(
+			"skip updating the EPP deployment because its desired and actual states are equal",
+		)
+		return currentPublisher, nil
+	}
+
 	// Update publisher proxy deployment
 	if err := em.kubeClient.PatchApply(ctx, desiredPublisher); err != nil {
 		return nil, fmt.Errorf("failed to apply Publisher Proxy deployment: %v", err)
@@ -206,14 +214,15 @@ func (em EventingManager) DeployPublisherProxyResources(
 	}
 
 	// create the resources on k8s.
-	for _, object := range resources {
+	for _, obj := range resources {
+
 		// add owner reference.
-		if err := controllerutil.SetControllerReference(eventing, object, em.Scheme()); err != nil {
+		if err := controllerutil.SetControllerReference(eventing, obj, em.Scheme()); err != nil {
 			return err
 		}
 
 		// patch apply the object.
-		if err := em.kubeClient.PatchApply(ctx, object); err != nil {
+		if err := em.kubeClient.PatchApply(ctx, obj); err != nil {
 			return err
 		}
 	}

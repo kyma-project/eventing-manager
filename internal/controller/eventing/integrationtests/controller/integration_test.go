@@ -7,25 +7,25 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
+	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/apps/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
+
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	natstestutils "github.com/kyma-project/nats-manager/testutils"
-	"github.com/onsi/gomega"
-	gomegatypes "github.com/onsi/gomega/types"
-	"github.com/stretchr/testify/require"
-
-	eventinv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	v1 "k8s.io/api/apps/v1"
 )
 
 const (
@@ -243,7 +243,6 @@ func Test_UpdateEventingCR(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
 			// given
 			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
@@ -290,6 +289,88 @@ func Test_UpdateEventingCR(t *testing.T) {
 			testEnvironment.EnsureEventingReplicasReflected(t, newEventing)
 			testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenExistingEventing)
 		})
+	}
+}
+
+func Test_ReconcileSameEventingCR(t *testing.T) {
+	t.Parallel()
+
+	////
+	// given
+	////
+	eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool { return true }
+
+	eventingCR := utils.NewEventingCR(
+		utils.WithEventingCRMinimal(),
+		utils.WithEventingStreamData("Memory", "1M", 1, 1),
+		utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+	)
+
+	namespace := eventingCR.GetNamespace()
+
+	natsCR := natstestutils.NewNATSCR(
+		natstestutils.WithNATSCRNamespace(namespace),
+		natstestutils.WithNATSCRDefaults(),
+		natstestutils.WithNATSStateReady(),
+	)
+
+	testEnvironment.EnsureNamespaceCreation(t, namespace)
+	testEnvironment.EnsureK8sResourceCreated(t, natsCR)
+	testEnvironment.EnsureNATSResourceStateReady(t, natsCR)
+	testEnvironment.EnsureK8sResourceCreated(t, eventingCR)
+
+	eppDeploymentName := eventing.GetPublisherDeploymentName(*eventingCR)
+	testEnvironment.EnsureDeploymentExists(t, eppDeploymentName, namespace)
+	testEnvironment.EnsureHPAExists(t, eppDeploymentName, namespace)
+
+	eppDeployment, err := testEnvironment.GetDeploymentFromK8s(eppDeploymentName, namespace)
+	require.NoError(t, err)
+	require.NotNil(t, eppDeployment)
+
+	defer func() {
+		testEnvironment.EnsureEventingResourceDeletion(t, eventingCR.Name, namespace)
+		if !*testEnvironment.EnvTestInstance.UseExistingCluster {
+			testEnvironment.EnsureDeploymentDeletion(t, eppDeploymentName, namespace)
+		}
+		testEnvironment.EnsureK8sResourceDeleted(t, natsCR)
+		testEnvironment.EnsureNamespaceDeleted(t, namespace)
+	}()
+
+	// Ensure reconciling the same Eventing CR multiple times does not update the EPP deployment.
+	const runs = 3
+	var resourceVersionBefore = eppDeployment.ObjectMeta.ResourceVersion
+	for r := 0; r < runs; r++ {
+		////
+		// when
+		////
+		runId := fmt.Sprintf("run-%d", r)
+
+		eventingCR, err = testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
+		require.NoError(t, err)
+		require.NotNil(t, eventingCR)
+
+		eventingCR = eventingCR.DeepCopy()
+		eventingCR.ObjectMeta.Labels = map[string]string{"reconcile": runId} // force new reconciliation
+		testEnvironment.EnsureK8sResourceUpdated(t, eventingCR)
+
+		eventingCR, err = testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
+		require.NoError(t, err)
+		require.NotNil(t, eventingCR)
+		require.Equal(t, eventingCR.ObjectMeta.Labels["reconcile"], runId)
+
+		////
+		// then
+		////
+		testEnvironment.EnsureEventingSpecPublisherReflected(t, eventingCR)
+		testEnvironment.EnsureEventingReplicasReflected(t, eventingCR)
+		testEnvironment.EnsureDeploymentOwnerReferenceSet(t, eventingCR)
+
+		eppDeployment, err = testEnvironment.GetDeploymentFromK8s(eppDeploymentName, namespace)
+		require.NoError(t, err)
+		require.NotNil(t, eppDeployment)
+
+		resourceVersionAfter := eppDeployment.ObjectMeta.ResourceVersion
+		require.Equal(t, resourceVersionBefore, resourceVersionAfter)
 	}
 }
 

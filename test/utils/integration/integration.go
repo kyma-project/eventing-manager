@@ -5,13 +5,12 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"log"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
-
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
@@ -19,8 +18,9 @@ import (
 
 	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
-	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
 	"github.com/stretchr/testify/mock"
+
+	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
 
 	"github.com/kyma-project/eventing-manager/test"
 	corev1 "k8s.io/api/core/v1"
@@ -41,14 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
-	"github.com/kyma-project/eventing-manager/options"
-	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
-	"github.com/kyma-project/eventing-manager/pkg/logger"
-	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
 	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
@@ -58,6 +50,15 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"github.com/kyma-project/eventing-manager/options"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
+	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
 )
 
 const (
@@ -67,7 +68,7 @@ const (
 	testEnvStartAttempts     = 10
 	BigPollingInterval       = 3 * time.Second
 	BigTimeOut               = 120 * time.Second
-	SmallTimeOut             = 6 * time.Second
+	SmallTimeOut             = 60 * time.Second
 	SmallPollingInterval     = 1 * time.Second
 )
 

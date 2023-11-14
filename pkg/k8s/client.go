@@ -5,11 +5,6 @@ import (
 	"errors"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	istiosec "istio.io/client-go/pkg/apis/security/v1beta1"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	v1 "k8s.io/api/apps/v1"
@@ -18,11 +13,15 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8sclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 )
 
 var NatsGVK = schema.GroupVersionResource{

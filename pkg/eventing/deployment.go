@@ -50,7 +50,8 @@ var (
 func newNATSPublisherDeployment(
 	eventing *v1alpha1.Eventing,
 	natsConfig env.NATSConfig,
-	publisherConfig env.PublisherConfig) *appsv1.Deployment {
+	publisherConfig env.PublisherConfig,
+) *appsv1.Deployment {
 	return newDeployment(
 		eventing,
 		publisherConfig,
@@ -65,7 +66,8 @@ func newNATSPublisherDeployment(
 
 func newEventMeshPublisherDeployment(
 	eventing *v1alpha1.Eventing,
-	publisherConfig env.PublisherConfig) *appsv1.Deployment {
+	publisherConfig env.PublisherConfig,
+) *appsv1.Deployment {
 	return newDeployment(
 		eventing,
 		publisherConfig,

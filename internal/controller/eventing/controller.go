@@ -20,10 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
-	"github.com/kyma-project/eventing-manager/pkg/watcher"
-
-	"k8s.io/client-go/dynamic"
+	"strings"
 
 	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
@@ -34,8 +31,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -50,8 +49,10 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/object"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	"github.com/kyma-project/eventing-manager/pkg/watcher"
 )
 
 const (
@@ -169,36 +170,36 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// copy the object, so we don't modify the source object
-	eventing := currentEventing.DeepCopy()
+	eventingCR := currentEventing.DeepCopy()
 
-	// watch cluster-scoped resources, such as clusterrole and clusterrolebinding.
+	// watch cluster-scoped resources, such as ClusterRole and ClusterRoleBinding.
 	if !r.clusterScopedResourcesWatched {
-		if err := r.watchResource(&rbacv1.ClusterRole{}, eventing); err != nil {
+		if err := r.watchResource(&rbacv1.ClusterRole{}, eventingCR); err != nil {
 			return ctrl.Result{}, err
 		}
-		if err := r.watchResource(&rbacv1.ClusterRoleBinding{}, eventing); err != nil {
+		if err := r.watchResource(&rbacv1.ClusterRoleBinding{}, eventingCR); err != nil {
 			return ctrl.Result{}, err
 		}
 		r.clusterScopedResourcesWatched = true
 	}
 
 	// logger with eventing details
-	log := r.loggerWithEventing(eventing)
+	log := r.loggerWithEventing(eventingCR)
 
 	// check if eventing is in deletion state
-	if !eventing.DeletionTimestamp.IsZero() {
-		return r.handleEventingDeletion(ctx, eventing, log)
+	if !eventingCR.DeletionTimestamp.IsZero() {
+		return r.handleEventingDeletion(ctx, eventingCR, log)
 	}
 
 	// check if the Eventing CR is allowed to be created.
 	if r.allowedEventingCR != nil {
-		if result, err := r.handleEventingCRAllowedCheck(ctx, eventing, log); !result || err != nil {
+		if result, err := r.handleEventingCRAllowedCheck(ctx, eventingCR, log); !result || err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	// handle reconciliation
-	return r.handleEventingReconcile(ctx, eventing, log)
+	return r.handleEventingReconcile(ctx, eventingCR, log)
 }
 
 // handleEventingCRAllowedCheck checks if Eventing CR is allowed to be created or not.
@@ -221,6 +222,37 @@ func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing 
 	return false, r.syncEventingStatus(ctx, eventing, log)
 }
 
+func (r *Reconciler) logEventForResource(name, namespace, resourceType, eventType string, enqueue bool) {
+	r.namedLogger().
+		With("Name", name).
+		With("Namespace", namespace).
+		With("ResourceType", resourceType).
+		With("EventType", eventType).
+		With("Enqueue", enqueue).
+		Debug("Event received")
+}
+
+func (r *Reconciler) SkipEnqueueOnCreate() func(event.CreateEvent) bool {
+	return func(e event.CreateEvent) bool {
+		// always skip enqueue
+		return false
+	}
+}
+
+func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(resourceType, nameFilter string) func(event.UpdateEvent) bool {
+	return func(e event.UpdateEvent) bool {
+		// skip enqueue if the resource is not related to Eventing
+		if !strings.Contains(e.ObjectOld.GetName(), nameFilter) {
+			return false
+		}
+
+		// enqueue only if the resource changed
+		enqueue := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
+		r.logEventForResource(e.ObjectOld.GetName(), e.ObjectOld.GetNamespace(), resourceType, "Update", enqueue)
+		return enqueue
+	}
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.ctrlManager = mgr
@@ -228,10 +260,38 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	r.controller, err = ctrl.NewControllerManagedBy(mgr).
 		For(&eventingv1alpha1.Eventing{}).
-		Owns(&v1.Deployment{}).
-		Owns(&corev1.Service{}).
-		Owns(&corev1.ServiceAccount{}).
-		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
+		Owns(&v1.Deployment{},
+			builder.WithPredicates(
+				predicate.Funcs{
+					CreateFunc: r.SkipEnqueueOnCreate(),
+					UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("Deployment", "eventing"),
+				},
+			),
+		).
+		Owns(&corev1.Service{},
+			builder.WithPredicates(
+				predicate.Funcs{
+					CreateFunc: r.SkipEnqueueOnCreate(),
+					UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("Service", "eventing"),
+				},
+			),
+		).
+		Owns(&corev1.ServiceAccount{},
+			builder.WithPredicates(
+				predicate.Funcs{
+					CreateFunc: r.SkipEnqueueOnCreate(),
+					UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("SA", "eventing"),
+				},
+			),
+		).
+		Owns(&autoscalingv2.HorizontalPodAutoscaler{},
+			builder.WithPredicates(
+				predicate.Funcs{
+					CreateFunc: r.SkipEnqueueOnCreate(),
+					UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("HPA", "eventing"),
+				},
+			),
+		).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 0,
 		}).
@@ -255,9 +315,8 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 		predicate.ResourceVersionChangedPredicate{},
 		predicate.Funcs{
 			// don't reconcile for create events
-			CreateFunc: func(e event.CreateEvent) bool {
-				return false
-			},
+			CreateFunc: r.SkipEnqueueOnCreate(),
+			UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("CR/CRB", "eventing"),
 		},
 	)
 	return err
