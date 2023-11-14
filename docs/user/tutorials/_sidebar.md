@@ -1,5 +1,7 @@
-* [Prerequisites](evnt-01-prerequisites.md)
-* [Create Subscription subscribing to multiple event types](evnt-02-subs-with-multiple-filters.md)
-* [Event name cleanup in Subscriptions](evnt-03-type-cleanup.md)
-* [Changing events max-in-flight in Subscriptions](evnt-04-change-max-in-flight-in-sub.md)
-* [Publish legacy events using Kyma Eventing](evnt-05-send-legacy-events.md)
+- [Eventing module](../README.md)
+- Tutorials
+   - [Prerequisites](evnt-01-prerequisites.md)
+   - [Create Subscription subscribing to multiple event types](evnt-02-subs-with-multiple-filters.md)
+   - [Event name cleanup in Subscriptions](evnt-03-type-cleanup.md)
+   - [Changing events max-in-flight in Subscriptions](evnt-04-change-max-in-flight-in-sub.md)
+   - [Publish legacy events using Kyma Eventing](evnt-05-send-legacy-events.md)
