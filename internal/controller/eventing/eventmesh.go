@@ -124,7 +124,7 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 
 	// update the hash of the current config only once subManager is started
 	eventing.Status.BackendConfigHash = specHash
-	r.namedLogger().Info(fmt.Sprintf("NATS subscription-manager has been updated, new hash: %d", specHash))
+	r.namedLogger().Info(fmt.Sprintf("EventMesh subscription-manager has been updated, new hash: %d", specHash))
 
 	return nil
 }
