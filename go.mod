@@ -28,7 +28,7 @@ require (
 	golang.org/x/oauth2 v0.14.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028
 	istio.io/api v1.20.0-rc.0
-	istio.io/client-go v1.20.0-rc.0
+	istio.io/client-go v1.20.0
 	k8s.io/api v0.28.3
 	k8s.io/apiextensions-apiserver v0.28.3
 	k8s.io/apimachinery v0.28.3
