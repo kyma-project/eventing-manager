@@ -34,6 +34,10 @@ func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1al
 		if err := r.stopNATSSubManager(false, log); err != nil {
 			return err
 		}
+	} else if eventing.Status.BackendConfigHash != specHash {
+		// in case spec is change and subManager is not started yet (e.g. due to error)
+		// make natsSubManager nil to create a subManager with new values
+		r.natsSubManager = nil
 	}
 
 	if r.natsSubManager == nil {

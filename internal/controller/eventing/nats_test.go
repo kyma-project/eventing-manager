@@ -131,7 +131,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			name: "it should retry to start subscription manager when subscription manager was " +
 				"successfully initialized but failed to start",
 			givenIsNATSSubManagerStarted: false,
-			givenHashBefore:              int64(0),
+			givenHashBefore:              int64(-7550677537009891034),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				jetStreamSubManagerMock := new(submanagermocks.Manager)
 				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
@@ -156,7 +156,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			wantAssertCheck:  true,
 			givenShouldRetry: true,
 			wantError:        errors.New("failed to start"),
-			wantHashAfter:    int64(0),
+			wantHashAfter:    int64(-7550677537009891034),
 		},
 		{
 			name:                         "it should update the subscription manager when the backend config changes",
