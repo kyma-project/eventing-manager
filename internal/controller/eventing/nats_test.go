@@ -131,7 +131,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			name: "it should retry to start subscription manager when subscription manager was " +
 				"successfully initialized but failed to start",
 			givenIsNATSSubManagerStarted: false,
-			givenHashBefore:              int64(0),
+			givenHashBefore:              int64(-7550677537009891034),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				jetStreamSubManagerMock := new(submanagermocks.Manager)
 				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
@@ -156,7 +156,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			wantAssertCheck:  true,
 			givenShouldRetry: true,
 			wantError:        errors.New("failed to start"),
-			wantHashAfter:    int64(0),
+			wantHashAfter:    int64(-7550677537009891034),
 		},
 		{
 			name:                         "it should update the subscription manager when the backend config changes",
@@ -168,6 +168,36 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
 				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
 				jetStreamSubManagerMock.On("Stop", mock.Anything, mock.Anything).Return(nil).Once()
+				return jetStreamSubManagerMock
+			},
+			givenEventingManagerMock: func() *managermocks.Manager {
+				emMock := new(managermocks.Manager)
+				emMock.On("GetBackendConfig").Return(givenBackendConfig).Twice()
+				return emMock
+			},
+			givenNatsConfigHandlerMock: func() *mocks.NatsConfigHandler {
+				nchMock := new(mocks.NatsConfigHandler)
+				nchMock.On("GetNatsConfig", mock.Anything, mock.Anything).Return(givenNATSConfig, nil)
+				return nchMock
+			},
+			givenManagerFactoryMock: func(subManager *submanagermocks.Manager) *subscriptionmanagermocks.ManagerFactory {
+				subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
+				subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(subManager).Once()
+				return subManagerFactoryMock
+			},
+			wantAssertCheck: true,
+			wantHashAfter:   int64(-7550677537009891034),
+		},
+		{
+			name: "it should update the subscription manager when the backend config changes" +
+				"but subscription manager failed to start",
+			givenIsNATSSubManagerStarted: false,
+			givenHashBefore:              int64(-8550677537009891034),
+			givenUpdateTest:              true,
+			givenNATSSubManagerMock: func() *submanagermocks.Manager {
+				jetStreamSubManagerMock := new(submanagermocks.Manager)
+				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
+				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil).Once()
 				return jetStreamSubManagerMock
 			},
 			givenEventingManagerMock: func() *managermocks.Manager {
