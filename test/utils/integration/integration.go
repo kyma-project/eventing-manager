@@ -5,12 +5,14 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"log"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	eventing2 "github.com/kyma-project/eventing-manager/internal/controller/batch/eventing"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
@@ -51,8 +53,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/eventing-manager/api/v1alpha1"
-	eventingctrl "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	"github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -79,7 +80,7 @@ type TestEnvironment struct {
 	k8sClient           client.Client
 	KubeClient          k8s.Client
 	K8sDynamicClient    *dynamic.DynamicClient
-	Reconciler          *eventingctrl.Reconciler
+	Reconciler          *eventing2.Reconciler
 	Logger              *logger.Logger
 	Recorder            *record.EventRecorder
 	TestCancelFn        context.CancelFunc
@@ -197,7 +198,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	subManagerFactoryMock.On("NewEventMeshManager", mock.Anything).Return(eventMeshSubManagerMock, nil)
 
 	// create a new watcher
-	eventingReconciler := eventingctrl.NewReconciler(
+	eventingReconciler := eventing2.NewReconciler(
 		k8sClient,
 		kubeClient,
 		dynamicClient,
@@ -854,12 +855,12 @@ func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
 			return false
 		}
 
-		if !bytes.Equal(mwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventingctrl.TLSCertField]) {
+		if !bytes.Equal(mwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventing2.TLSCertField]) {
 			env.Logger.WithContext().Error("CABundle of mutating configuration is not correct")
 			return false
 		}
 
-		if !bytes.Equal(vwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventingctrl.TLSCertField]) {
+		if !bytes.Equal(vwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventing2.TLSCertField]) {
 			env.Logger.WithContext().Error("CABundle of validating configuration is not correct")
 			return false
 		}
@@ -992,7 +993,7 @@ func newSecretWithTLSSecret(dummyCABundle []byte) *corev1.Secret {
 			Namespace: getTestBackendConfig().Namespace,
 		},
 		Data: map[string][]byte{
-			eventingctrl.TLSCertField: dummyCABundle,
+			eventing2.TLSCertField: dummyCABundle,
 		},
 	}
 }

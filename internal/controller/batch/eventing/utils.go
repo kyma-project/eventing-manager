@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/mitchellh/hashstructure/v2"
 	ctrl "sigs.k8s.io/controller-runtime"

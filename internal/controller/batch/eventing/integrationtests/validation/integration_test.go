@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test"
 	eventingMatchers "github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils/integration"
@@ -18,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-const projectRootDir = "../../../../../"
+const projectRootDir = "../../../../../../"
 
 const noError = ""
 

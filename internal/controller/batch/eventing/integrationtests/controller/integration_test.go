@@ -7,6 +7,8 @@ import (
 	"os"
 	"testing"
 
+	eventing2 "github.com/kyma-project/eventing-manager/internal/controller/batch/eventing"
+
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
@@ -19,8 +21,7 @@ import (
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/test/matchers"
@@ -29,7 +30,7 @@ import (
 )
 
 const (
-	projectRootDir  = "../../../../../"
+	projectRootDir  = "../../../../../../"
 	eventTypePrefix = "test-prefix"
 )
 
@@ -161,7 +162,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return tc.givenDeploymentReady
 			}
 			// create unique namespace for this test run.
@@ -244,7 +245,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
 			}
 			// create unique namespace for this test run.
@@ -298,7 +299,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 	////
 	// given
 	////
-	eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool { return true }
+	eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool { return true }
 
 	eventingCR := utils.NewEventingCR(
 		utils.WithEventingCRMinimal(),
@@ -527,7 +528,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 
 			// given
 			g := gomega.NewWithT(t)
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
 			}
 
@@ -637,7 +638,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return tc.givenDeploymentReady
 			}
 
@@ -719,7 +720,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			givenSubscription: utils.NewSubscription("test-nats-subscription", "test-nats-namespace"),
 			wantMatches: gomega.And(
 				matchers.HaveStatusWarning(),
-				matchers.HaveDeletionErrorCondition(eventingcontroller.SubscriptionExistsErrMessage),
+				matchers.HaveDeletionErrorCondition(eventing2.SubscriptionExistsErrMessage),
 				matchers.HaveFinalizer(),
 			),
 		},
@@ -734,7 +735,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			givenSubscription: utils.NewSubscription("test-eventmesh-subscription", "test-eventmesh-namespace"),
 			wantMatches: gomega.And(
 				matchers.HaveStatusWarning(),
-				matchers.HaveDeletionErrorCondition(eventingcontroller.SubscriptionExistsErrMessage),
+				matchers.HaveDeletionErrorCondition(eventing2.SubscriptionExistsErrMessage),
 				matchers.HaveFinalizer(),
 			),
 		},
@@ -747,7 +748,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
 			}
 
@@ -924,7 +925,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
 			}
 

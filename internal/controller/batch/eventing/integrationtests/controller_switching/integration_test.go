@@ -5,8 +5,9 @@ import (
 	"os"
 	"testing"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/batch/eventing"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
@@ -20,7 +21,7 @@ import (
 )
 
 const (
-	projectRootDir = "../../../../../"
+	projectRootDir = "../../../../../../"
 )
 
 var testEnvironment *testutils.TestEnvironment //nolint:gochecknoglobals // used in tests

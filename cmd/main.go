@@ -22,6 +22,8 @@ import (
 	"log"
 	"os"
 
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/batch/eventing"
+
 	istiopeerauthentication "github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
 
 	"github.com/go-logr/zapr"
@@ -36,7 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
 	"github.com/kyma-project/eventing-manager/options"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -57,7 +58,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

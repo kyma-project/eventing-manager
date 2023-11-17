@@ -15,7 +15,7 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
 
 	ecv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 	"go.uber.org/zap"
