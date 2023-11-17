@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	eventing2 "github.com/kyma-project/eventing-manager/internal/controller/batch/eventing"
+	eventing2 "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
@@ -53,7 +53,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
+	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"

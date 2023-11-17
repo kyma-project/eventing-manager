@@ -22,7 +22,7 @@ import (
 	"log"
 	"os"
 
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/batch/eventing"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing"
 
 	istiopeerauthentication "github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
 
@@ -58,7 +58,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

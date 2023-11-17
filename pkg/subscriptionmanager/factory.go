@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
-	"github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
+	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	eclogger "github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/eventmesh"

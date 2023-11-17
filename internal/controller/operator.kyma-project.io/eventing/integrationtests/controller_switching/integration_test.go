@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/batch/eventing"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"

@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 
-	"github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
+	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 

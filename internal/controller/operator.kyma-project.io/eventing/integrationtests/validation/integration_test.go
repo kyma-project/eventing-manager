@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
+	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test"
 	eventingMatchers "github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils/integration"

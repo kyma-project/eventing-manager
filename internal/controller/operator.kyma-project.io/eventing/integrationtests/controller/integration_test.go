@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	eventing2 "github.com/kyma-project/eventing-manager/internal/controller/batch/eventing"
+	eventing2 "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing"
 
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
@@ -21,7 +21,7 @@ import (
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/batch/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/test/matchers"
