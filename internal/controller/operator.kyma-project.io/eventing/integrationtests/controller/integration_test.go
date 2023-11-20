@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	eventing2 "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing"
 
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
@@ -162,7 +162,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return tc.givenDeploymentReady
 			}
 			// create unique namespace for this test run.
@@ -245,7 +245,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
 			}
 			// create unique namespace for this test run.
@@ -299,7 +299,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 	////
 	// given
 	////
-	eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool { return true }
+	eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool { return true }
 
 	eventingCR := utils.NewEventingCR(
 		utils.WithEventingCRMinimal(),
@@ -528,7 +528,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 
 			// given
 			g := gomega.NewWithT(t)
-			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
 			}
 
@@ -638,7 +638,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return tc.givenDeploymentReady
 			}
 
@@ -720,7 +720,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			givenSubscription: utils.NewSubscription("test-nats-subscription", "test-nats-namespace"),
 			wantMatches: gomega.And(
 				matchers.HaveStatusWarning(),
-				matchers.HaveDeletionErrorCondition(eventing2.SubscriptionExistsErrMessage),
+				matchers.HaveDeletionErrorCondition(eventingcontroller.SubscriptionExistsErrMessage),
 				matchers.HaveFinalizer(),
 			),
 		},
@@ -735,7 +735,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			givenSubscription: utils.NewSubscription("test-eventmesh-subscription", "test-eventmesh-namespace"),
 			wantMatches: gomega.And(
 				matchers.HaveStatusWarning(),
-				matchers.HaveDeletionErrorCondition(eventing2.SubscriptionExistsErrMessage),
+				matchers.HaveDeletionErrorCondition(eventingcontroller.SubscriptionExistsErrMessage),
 				matchers.HaveFinalizer(),
 			),
 		},
@@ -748,7 +748,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
 			}
 
@@ -925,7 +925,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventing2.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
 				return true
 			}
 
