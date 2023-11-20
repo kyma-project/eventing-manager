@@ -357,12 +357,12 @@ func envEqual(e1, e2 []corev1.EnvVar) bool {
 // probeEqual asserts the equality of two Probe objects. It's used by
 // containerEqual.
 func probeEqual(p1, p2 *corev1.Probe) bool {
-	if p1 == nil || p2 == nil {
-		return false
-	}
-
 	if p1 == p2 {
 		return true
+	}
+
+	if p1 == nil || p2 == nil {
+		return false
 	}
 
 	isInitialDelaySecondsEqual := p1.InitialDelaySeconds != p2.InitialDelaySeconds

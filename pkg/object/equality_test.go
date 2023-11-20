@@ -1,10 +1,9 @@
 package object
 
 import (
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"net/http"
 	"testing"
-
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -837,6 +836,72 @@ func Test_containerEqual(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "ContainerPort are not equal",
+			args: args{
+				c1: &corev1.Container{
+					Name:       "test",
+					Image:      "bla",
+					Command:    []string{"1", "2"},
+					Args:       []string{"a", "b"},
+					WorkingDir: "foodir",
+					Ports: []corev1.ContainerPort{{
+						Name:          "testport",
+						HostPort:      1,
+						ContainerPort: 2,
+						Protocol:      "http",
+						HostIP:        "192.168.1.1",
+					}},
+					Resources: corev1.ResourceRequirements{
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							"cpu": quantityA,
+						},
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							"mem": quantityA,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler:        corev1.ProbeHandler{},
+						InitialDelaySeconds: 0,
+						TimeoutSeconds:      0,
+						PeriodSeconds:       0,
+						SuccessThreshold:    0,
+						FailureThreshold:    0,
+					},
+				},
+				c2: &corev1.Container{
+					Name:       "test",
+					Image:      "bla",
+					Command:    []string{"1", "2"},
+					Args:       []string{"a", "b"},
+					WorkingDir: "foodir",
+					Ports: []corev1.ContainerPort{{
+						Name:          "testport",
+						HostPort:      1,
+						ContainerPort: 3,
+						Protocol:      "http",
+						HostIP:        "192.168.1.1",
+					}},
+					Resources: corev1.ResourceRequirements{
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							"cpu": quantityA,
+						},
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							"mem": quantityA,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler:        corev1.ProbeHandler{},
+						InitialDelaySeconds: 0,
+						TimeoutSeconds:      0,
+						PeriodSeconds:       0,
+						SuccessThreshold:    0,
+						FailureThreshold:    0,
+					},
+				},
+			},
+			want: false,
+		},
+		{
 			name: "resources are not equal",
 			args: args{
 				c1: &corev1.Container{
@@ -902,6 +967,83 @@ func Test_containerEqual(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "ports are not equal",
+			args: args{
+				c1: &corev1.Container{
+					Name:       "test",
+					Image:      "bla",
+					Command:    []string{"1", "2"},
+					Args:       []string{"a", "b"},
+					WorkingDir: "foodir",
+					Ports: []corev1.ContainerPort{
+						{
+							Name:          "testport-0",
+							HostPort:      1,
+							ContainerPort: 2,
+							Protocol:      "http",
+							HostIP:        "192.168.1.1",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							"cpu": quantityA,
+						},
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							"mem": quantityA,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler:        corev1.ProbeHandler{},
+						InitialDelaySeconds: 0,
+						TimeoutSeconds:      0,
+						PeriodSeconds:       0,
+						SuccessThreshold:    0,
+						FailureThreshold:    0,
+					},
+				},
+				c2: &corev1.Container{
+					Name:       "test",
+					Image:      "bla",
+					Command:    []string{"1", "2"},
+					Args:       []string{"a", "b"},
+					WorkingDir: "foodir",
+					Ports: []corev1.ContainerPort{
+						{
+							Name:          "testport-0",
+							HostPort:      1,
+							ContainerPort: 2,
+							Protocol:      "http",
+							HostIP:        "192.168.1.1",
+						},
+						{
+							Name:          "testport-1",
+							HostPort:      1,
+							ContainerPort: 2,
+							Protocol:      "http",
+							HostIP:        "192.168.1.1",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							"cpu": quantityA,
+						},
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							"mem": quantityA,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler:        corev1.ProbeHandler{},
+						InitialDelaySeconds: 0,
+						TimeoutSeconds:      0,
+						PeriodSeconds:       0,
+						SuccessThreshold:    0,
+						FailureThreshold:    0,
+					},
+				},
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -945,6 +1087,15 @@ func Test_serviceAccountEqual(t *testing.T) {
 				BlockOwnerDeletion: ptr.To(false),
 			},
 		}
+
+		serviceAccount = &corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            name0,
+				Namespace:       namespace0,
+				Labels:          labels0,
+				OwnerReferences: ownerReferences0,
+			},
+		}
 	)
 
 	type args struct {
@@ -956,6 +1107,30 @@ func Test_serviceAccountEqual(t *testing.T) {
 		args args
 		want bool
 	}{
+		{
+			name: "ServiceAccount refs are equal",
+			args: args{
+				a: serviceAccount,
+				b: serviceAccount,
+			},
+			want: true,
+		},
+		{
+			name: "one ServiceAccount is Nil",
+			args: args{
+				a: nil,
+				b: serviceAccount,
+			},
+			want: false,
+		},
+		{
+			name: "both ServiceAccounts are Nil",
+			args: args{
+				a: nil,
+				b: nil,
+			},
+			want: true,
+		},
 		{
 			name: "ServiceAccounts are equal",
 			args: args{
@@ -1125,6 +1300,15 @@ func Test_clusterRoleEqual(t *testing.T) {
 				NonResourceURLs: []string{"val-0"},
 			},
 		}
+
+		clusterRole = &rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            name0,
+				Labels:          labels0,
+				OwnerReferences: ownerReferences0,
+			},
+			Rules: rules0,
+		}
 	)
 
 	type args struct {
@@ -1136,6 +1320,30 @@ func Test_clusterRoleEqual(t *testing.T) {
 		args args
 		want bool
 	}{
+		{
+			name: "ClusterRole refs are equal",
+			args: args{
+				a: clusterRole,
+				b: clusterRole,
+			},
+			want: true,
+		},
+		{
+			name: "one ClusterRole is nil",
+			args: args{
+				a: nil,
+				b: clusterRole,
+			},
+			want: false,
+		},
+		{
+			name: "both ClusterRoles are nil",
+			args: args{
+				a: nil,
+				b: nil,
+			},
+			want: true,
+		},
 		{
 			name: "ClusterRoles are equal",
 			args: args{
@@ -2099,6 +2307,66 @@ func Test_envEqual(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := envEqual(tt.args.e1, tt.args.e2); got != tt.want {
 				t.Errorf("envEqual() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_probeEqual(t *testing.T) {
+	var (
+		probe = &corev1.Probe{}
+	)
+
+	type args struct {
+		p1 *corev1.Probe
+		p2 *corev1.Probe
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Probe refs are equal",
+			args: args{
+				p1: probe,
+				p2: probe,
+			},
+			want: true,
+		},
+		{
+			name: "one Probe is Nil",
+			args: args{
+				p1: nil,
+				p2: probe,
+			},
+			want: false,
+		},
+		{
+			name: "both Probes are Nil",
+			args: args{
+				p1: nil,
+				p2: nil,
+			},
+			want: true,
+		},
+		{
+			name: "Probes are not equal",
+			args: args{
+				p1: &corev1.Probe{
+					InitialDelaySeconds: 1,
+				},
+				p2: &corev1.Probe{
+					InitialDelaySeconds: 2,
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := probeEqual(tt.args.p1, tt.args.p2); got != tt.want {
+				t.Errorf("probeEqual() = %v, want %v", got, tt.want)
 			}
 		})
 	}

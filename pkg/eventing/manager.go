@@ -258,9 +258,9 @@ func (em EventingManager) DeletePublisherProxyResources(ctx context.Context, eve
 	}
 
 	// delete the resources on k8s.
-	for _, object := range resources {
+	for _, obj := range resources {
 		// delete the object.
-		if err := em.kubeClient.DeleteResource(ctx, object); err != nil {
+		if err := em.kubeClient.DeleteResource(ctx, obj); err != nil {
 			return err
 		}
 	}
