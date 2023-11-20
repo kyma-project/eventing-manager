@@ -64,17 +64,17 @@ func GetService(svcName string, port uint32) apigatewayv1beta1.Service {
 
 // WithService sets the Service of an APIRule.
 func WithService(host, svcName string, port uint32) Option {
-	return func(o *apigatewayv1beta1.APIRule) {
+	return func(r *apigatewayv1beta1.APIRule) {
 		apiService := GetService(svcName, port)
-		o.Spec.Service = &apiService
-		o.Spec.Host = &host
+		r.Spec.Service = &apiService
+		r.Spec.Host = &host
 	}
 }
 
 // WithGateway sets the gateway of an APIRule.
 func WithGateway(gw string) Option {
-	return func(o *apigatewayv1beta1.APIRule) {
-		o.Spec.Gateway = &gw
+	return func(r *apigatewayv1beta1.APIRule) {
+		r.Spec.Gateway = &gw
 	}
 }
 
@@ -95,14 +95,14 @@ func RemoveDuplicateValues(values []string) []string {
 
 // WithLabels sets the labels for an APIRule.
 func WithLabels(labels map[string]string) Option {
-	return func(o *apigatewayv1beta1.APIRule) {
-		o.SetLabels(labels)
+	return func(r *apigatewayv1beta1.APIRule) {
+		r.SetLabels(labels)
 	}
 }
 
 // WithOwnerReference sets the OwnerReferences of an APIRule.
 func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
-	return func(o *apigatewayv1beta1.APIRule) {
+	return func(r *apigatewayv1beta1.APIRule) {
 		ownerRefs := make([]metav1.OwnerReference, 0)
 		for _, sub := range subs {
 			blockOwnerDeletion := true
@@ -115,14 +115,14 @@ func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
 			}
 			ownerRefs = append(ownerRefs, ownerRef)
 		}
-		o.SetOwnerReferences(ownerRefs)
+		r.SetOwnerReferences(ownerRefs)
 	}
 }
 
 // WithRules sets the rules of an APIRule for all Subscriptions for a subscriber.
 func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigatewayv1beta1.Service,
 	methods ...string) Option {
-	return func(o *apigatewayv1beta1.APIRule) {
+	return func(r *apigatewayv1beta1.APIRule) {
 		var handler apigatewayv1beta1.Handler
 		if featureflags.IsEventingWebhookAuthEnabled() {
 			handler.Name = OAuthHandlerNameJWT
@@ -162,6 +162,6 @@ func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigat
 			}
 			rules = append(rules, rule)
 		}
-		o.Spec.Rules = rules
+		r.Spec.Rules = rules
 	}
 }
