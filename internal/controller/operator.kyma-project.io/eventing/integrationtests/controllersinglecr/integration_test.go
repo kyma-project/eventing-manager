@@ -7,7 +7,7 @@ import (
 
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 
@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	projectRootDir = "../../../../../"
+	projectRootDir = "../../../../../../"
 )
 
 var testEnvironment *integrationutils.TestEnvironment //nolint:gochecknoglobals // used in tests

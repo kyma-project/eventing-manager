@@ -19,7 +19,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 
 	"github.com/stretchr/testify/require"

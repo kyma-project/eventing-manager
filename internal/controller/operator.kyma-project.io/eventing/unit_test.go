@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	ctrlmocks "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing/mocks"
+
 	apiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
@@ -16,11 +18,9 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 
-	ctrlmocks "github.com/kyma-project/eventing-manager/internal/controller/eventing/mocks"
-
 	"k8s.io/apimachinery/pkg/runtime"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	managermocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/stretchr/testify/require"
