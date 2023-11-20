@@ -11,15 +11,13 @@ import (
 	"k8s.io/apimachinery/pkg/conversion"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
 // Semantic can do semantic deep equality checks for API objects. Fields which
 // are not relevant for the reconciliation logic are intentionally omitted.
 var Semantic = conversion.EqualitiesOrDie(
 	apiRuleEqual,
-	eventingBackendEqual,
 	publisherProxyDeploymentEqual,
 	serviceAccountEqual,
 	clusterRoleEqual,
@@ -209,26 +207,6 @@ func ownerReferencesDeepEqual(ors1, ors2 []v1.OwnerReference) bool {
 	return true
 }
 
-// eventingBackendEqual asserts the equality of two EventingBackend objects.
-func eventingBackendEqual(b1, b2 *eventingv1alpha1.EventingBackend) bool {
-	if b1 == nil || b2 == nil {
-		return false
-	}
-	if b1 == b2 {
-		return true
-	}
-
-	if !reflect.DeepEqual(b1.Labels, b2.Labels) {
-		return false
-	}
-
-	if !reflect.DeepEqual(b1.Spec, b2.Spec) {
-		return false
-	}
-
-	return true
-}
-
 // publisherProxyDeploymentEqual asserts the equality of two Deployment objects
 // for event publisher proxy deployments.
 func publisherProxyDeploymentEqual(d1, d2 *appsv1.Deployment) bool {
@@ -412,17 +390,6 @@ func realProto(pr corev1.Protocol) corev1.Protocol {
 		return corev1.ProtocolTCP
 	}
 	return pr
-}
-
-func IsBackendStatusEqual(oldStatus, newStatus eventingv1alpha1.EventingBackendStatus) bool {
-	oldStatusWithoutCond := oldStatus.DeepCopy()
-	newStatusWithoutCond := newStatus.DeepCopy()
-
-	// remove conditions, so that we don't compare them
-	oldStatusWithoutCond.Conditions = []eventingv1alpha1.Condition{}
-	newStatusWithoutCond.Conditions = []eventingv1alpha1.Condition{}
-
-	return reflect.DeepEqual(oldStatusWithoutCond, newStatusWithoutCond) && eventingv1alpha1.ConditionsEquals(oldStatus.Conditions, newStatus.Conditions)
 }
 
 func IsSubscriptionStatusEqual(oldStatus, newStatus eventingv1alpha2.SubscriptionStatus) bool {

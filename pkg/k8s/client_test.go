@@ -11,7 +11,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 

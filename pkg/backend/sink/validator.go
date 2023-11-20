@@ -12,8 +12,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
-	"github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )
 
 type Validator interface {

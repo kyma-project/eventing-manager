@@ -3,4 +3,6 @@ namespace: eventing-manager
 
 resources:
 - default.yaml
+- eventing.kyma-project.io_v1alpha1_subscription.yaml
+- eventing.kyma-project.io_v1alpha2_subscription.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

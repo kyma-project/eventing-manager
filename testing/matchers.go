@@ -13,33 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/constants"
 	"github.com/kyma-project/eventing-manager/pkg/object"
-	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )
-
-//
-// string matchers
-//
-
-func HaveEventingBackendReady() gomegatypes.GomegaMatcher {
-	return WithTransform(func(s *eventingv1alpha1.EventingBackendStatus) bool {
-		return *s.EventingReady
-	}, BeTrue())
-}
-
-func HaveEventingBackendNotReady() gomegatypes.GomegaMatcher {
-	return WithTransform(func(s *eventingv1alpha1.EventingBackendStatus) bool {
-		return *s.EventingReady
-	}, BeFalse())
-}
-
-func HaveBackendType(backendType eventingv1alpha1.BackendType) gomegatypes.GomegaMatcher {
-	return WithTransform(func(s *eventingv1alpha1.EventingBackendStatus) eventingv1alpha1.BackendType {
-		return s.Backend
-	}, Equal(backendType))
-}
 
 //
 // APIRule matchers
@@ -115,20 +92,6 @@ func HaveAPIRuleOwnersRefs(uids ...types.UID) gomegatypes.GomegaMatcher {
 }
 
 //
-// Subscription matchers
-//
-
-func HaveBackendCondition(condition eventingv1alpha1.Condition) gomegatypes.GomegaMatcher {
-	return WithTransform(func(s *eventingv1alpha1.EventingBackendStatus) []eventingv1alpha1.Condition {
-		return s.Conditions
-	}, ContainElement(MatchFields(IgnoreExtras|IgnoreMissing, Fields{
-		"Type":   Equal(condition.Type),
-		"Reason": Equal(condition.Reason),
-		"Status": Equal(condition.Status),
-	})))
-}
-
-//
 // int matchers
 //
 
@@ -174,18 +137,6 @@ func HaveValidBEBNamespace(bebNamespaceKey, namespace string) gomegatypes.Gomega
 			return string(secret.Data[bebNamespaceKey]) == namespace
 		}
 		return false
-	}, BeTrue())
-}
-
-func HaveNoBEBSecretNameAndNamespace() gomegatypes.GomegaMatcher {
-	return WithTransform(func(s *eventingv1alpha1.EventingBackendStatus) bool {
-		return s.BEBSecretName == "" && s.BEBSecretNamespace == ""
-	}, BeTrue())
-}
-
-func HaveBEBSecretNameAndNamespace(bebSecretName, namespace string) gomegatypes.GomegaMatcher {
-	return WithTransform(func(s *eventingv1alpha1.EventingBackendStatus) bool {
-		return s.BEBSecretName == bebSecretName && s.BEBSecretNamespace == namespace
 	}, BeTrue())
 }
 

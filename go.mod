@@ -12,7 +12,6 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-incubator/api-gateway v0.0.0-20220819093753-296e6704d413
 	github.com/kyma-project/kyma/common/logging v0.0.0-20231113125307-562a57ab5198
-	github.com/kyma-project/kyma/components/eventing-controller v0.0.0-20231113125307-562a57ab5198
 	github.com/kyma-project/nats-manager v1.0.2
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/nats-io/nats-server/v2 v2.10.5

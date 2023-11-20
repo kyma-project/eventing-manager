@@ -3,7 +3,7 @@ package eventing
 import (
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
+	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
