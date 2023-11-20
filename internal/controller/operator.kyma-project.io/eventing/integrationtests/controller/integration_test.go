@@ -7,6 +7,8 @@ import (
 	"os"
 	"testing"
 
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing"
+
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
@@ -19,8 +21,7 @@ import (
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/test/matchers"
@@ -29,7 +30,7 @@ import (
 )
 
 const (
-	projectRootDir  = "../../../../../"
+	projectRootDir  = "../../../../../../"
 	eventTypePrefix = "test-prefix"
 )
 

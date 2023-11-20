@@ -5,14 +5,15 @@ import (
 	"os"
 	"testing"
 
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/eventing"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing"
+
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ import (
 )
 
 const (
-	projectRootDir = "../../../../../"
+	projectRootDir = "../../../../../../"
 )
 
 var testEnvironment *testutils.TestEnvironment //nolint:gochecknoglobals // used in tests
