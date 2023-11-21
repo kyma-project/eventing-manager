@@ -299,7 +299,6 @@ func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Con
 	// define CRDs to include.
 	includedCRDs := []string{
 		filepath.Join(config.ProjectRootDir, "config", "crd", "bases"),
-		filepath.Join(config.ProjectRootDir, "config", "crd", "external"),
 	}
 	if config.ApplicationRuleCRDEnabled {
 		includedCRDs = append(includedCRDs,
