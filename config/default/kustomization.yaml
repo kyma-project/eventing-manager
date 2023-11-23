@@ -9,10 +9,16 @@ namespace: kyma-system
 #namePrefix: eventing-
 
 # Labels to add to all resources and selectors.
-#labels:
-#- includeSelectors: true
-#  pairs:
-#    someName: someValue
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/component: eventing-manager
+      app.kubernetes.io/created-by: eventing-manager
+      app.kubernetes.io/instance: eventing-manager
+      app.kubernetes.io/managed-by: kustomize
+      app.kubernetes.io/name: eventing-manager
+      app.kubernetes.io/part-of: Kyma
+      control-plane: eventing-manager
 
 resources:
 - ../crd

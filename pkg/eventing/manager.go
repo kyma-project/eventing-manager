@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -16,6 +15,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/object"
+	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 )
 
 const (
@@ -210,7 +210,7 @@ func (em EventingManager) DeployPublisherProxyResources(
 			publisherDeployment.Spec.Template.Labels),
 		// HPA to auto-scale publisher proxy.
 		newHorizontalPodAutoscaler(publisherDeployment.Name, publisherDeployment.Namespace, int32(eventing.Spec.Publisher.Min),
-			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization),
+			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization, publisherDeployment.Labels),
 	}
 
 	// create the resources on k8s.
@@ -254,7 +254,7 @@ func (em EventingManager) DeletePublisherProxyResources(ctx context.Context, eve
 		// Service to expose health endpoint of EPP.
 		newPublisherProxyHealthService(GetPublisherHealthServiceName(*eventing), eventing.Namespace, map[string]string{}, map[string]string{}),
 		// HPA to auto-scale publisher proxy.
-		newHorizontalPodAutoscaler(publisherDeployment.Name, eventing.Namespace, 0, 0, 0, 0),
+		newHorizontalPodAutoscaler(publisherDeployment.Name, eventing.Namespace, 0, 0, 0, 0, map[string]string{}),
 	}
 
 	// delete the resources on k8s.

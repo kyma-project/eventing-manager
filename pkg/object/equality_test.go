@@ -605,6 +605,80 @@ func TestPublisherProxyDeploymentEqual(t *testing.T) {
 			},
 			expectedResult: true,
 		},
+		"should be equal if spec Labels are equal with same order": {
+			getPublisher1: func() *appsv1.Deployment {
+				p := defaultNATSPublisher.DeepCopy()
+				p.Spec.Template.Labels = map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+				}
+				return p
+			},
+			getPublisher2: func() *appsv1.Deployment {
+				p := defaultNATSPublisher.DeepCopy()
+				p.Spec.Template.Labels = map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+				}
+				return p
+			},
+			expectedResult: true,
+		},
+		"should be equal if spec Labels are equal with different order": {
+			getPublisher1: func() *appsv1.Deployment {
+				p := defaultNATSPublisher.DeepCopy()
+				p.Spec.Template.Labels = map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+				}
+				return p
+			},
+			getPublisher2: func() *appsv1.Deployment {
+				p := defaultNATSPublisher.DeepCopy()
+				p.Spec.Template.Labels = map[string]string{
+					"key2": "value2",
+					"key1": "value1",
+				}
+				return p
+			},
+			expectedResult: true,
+		},
+		"should not be equal if spec Labels were added": {
+			getPublisher1: func() *appsv1.Deployment {
+				p := defaultNATSPublisher.DeepCopy()
+				p.Spec.Template.Labels = map[string]string{
+					"key1": "value1",
+				}
+				return p
+			},
+			getPublisher2: func() *appsv1.Deployment {
+				p := defaultNATSPublisher.DeepCopy()
+				p.Spec.Template.Labels = map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+				}
+				return p
+			},
+			expectedResult: false,
+		},
+		"should not be equal if spec Labels were removed": {
+			getPublisher1: func() *appsv1.Deployment {
+				p := defaultNATSPublisher.DeepCopy()
+				p.Spec.Template.Labels = map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+				}
+				return p
+			},
+			getPublisher2: func() *appsv1.Deployment {
+				p := defaultNATSPublisher.DeepCopy()
+				p.Spec.Template.Labels = map[string]string{
+					"key1": "value1",
+				}
+				return p
+			},
+			expectedResult: false,
+		},
 		"should be unequal if spec Labels changes": {
 			getPublisher1: func() *appsv1.Deployment {
 				p := defaultNATSPublisher.DeepCopy()
