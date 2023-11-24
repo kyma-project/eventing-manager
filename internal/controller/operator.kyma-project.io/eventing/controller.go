@@ -61,7 +61,6 @@ const (
 	NatsServerNotAvailableMsg = "NATS server is not available"
 	natsClientPort            = 4222
 
-	AppLabelValue             = eventing.PublisherName
 	PublisherSecretEMSHostKey = "ems-publish-host"
 
 	TokenEndpointFormat                   = "%s?grant_type=%s&response_type=token"

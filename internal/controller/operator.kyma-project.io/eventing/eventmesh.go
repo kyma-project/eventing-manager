@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
+	"github.com/kyma-project/eventing-manager/internal/label"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	subscriptionmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
@@ -297,7 +298,7 @@ func getSecretForPublisher(eventMeshSecret *corev1.Secret) (*corev1.Secret, erro
 	secret := newSecret(eventing.PublisherName, eventMeshSecret.Namespace)
 
 	secret.Labels = map[string]string{
-		eventing.AppLabelKey: AppLabelValue,
+		label.KeyName: label.ValueEventingPublisherProxy,
 	}
 
 	if _, ok := eventMeshSecret.Data["messaging"]; !ok {
