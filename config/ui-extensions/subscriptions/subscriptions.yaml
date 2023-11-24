@@ -4,6 +4,7 @@ metadata:
   name: subscriptions
   namespace: kube-public
   labels:
+    app.kubernetes.io/created-by: eventing-manager
     app.kubernetes.io/name: subscriptions
     busola.io/extension: resource
     busola.io/extension-version: '0.5'

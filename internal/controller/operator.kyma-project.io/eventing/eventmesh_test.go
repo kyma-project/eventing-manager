@@ -5,12 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-
-	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
-	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -19,8 +13,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
+	"github.com/kyma-project/eventing-manager/internal/label"
 	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	managermocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
 	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
@@ -628,7 +627,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 					Name:      eventing.PublisherName,
 					Namespace: "test-namespace",
 					Labels: map[string]string{
-						eventing.AppLabelKey: eventing.PublisherName,
+						label.KeyName: label.ValueEventingPublisherProxy,
 					},
 				},
 				StringData: map[string]string{

@@ -9,6 +9,7 @@ configMapGenerator:
     options:
       disableNameSuffixHash: true
       labels:
+        app.kubernetes.io/created-by: eventing-manager
         app.kubernetes.io/name: eventings.operator.kyma-project.io
         busola.io/extension: resource
         busola.io/extension-version: "0.5"

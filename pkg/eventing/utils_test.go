@@ -3,9 +3,11 @@ package eventing
 import (
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
+	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 )
 
 func Test_EPPResourcesNames(t *testing.T) {
@@ -22,4 +24,47 @@ func Test_EPPResourcesNames(t *testing.T) {
 	require.Equal(t, "test1-publisher-proxy", GetPublisherServiceAccountName(eventingCR))
 	require.Equal(t, "test1-publisher-proxy", GetPublisherClusterRoleName(eventingCR))
 	require.Equal(t, "test1-publisher-proxy", GetPublisherClusterRoleBindingName(eventingCR))
+}
+
+func Test_getECBackendType(t *testing.T) {
+	// given
+	type args struct {
+		backendType v1alpha1.BackendType
+	}
+	tests := []struct {
+		name string
+		args args
+		want ecv1alpha1.BackendType
+	}{
+		{
+			name: "should return the correct backend type for NATS",
+			args: args{
+				backendType: "NATS",
+			},
+			want: "NATS",
+		},
+		{
+			name: "should return the correct backend type for EventMesh",
+			args: args{
+				backendType: "EventMesh",
+			},
+			want: "BEB",
+		},
+		{
+			name: "should return the default backend type for unsupported input",
+			args: args{
+				backendType: "Unsupported",
+			},
+			want: "NATS",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// when
+			got := getECBackendType(tt.args.backendType)
+
+			// then
+			require.Equal(t, tt.want, got)
+		})
+	}
 }
