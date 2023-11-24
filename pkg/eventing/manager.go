@@ -171,7 +171,7 @@ func (em EventingManager) IsNATSAvailable(ctx context.Context, namespace string)
 		return false, err
 	}
 	for _, nats := range natsList.Items {
-		if nats.Status.State == v1alpha1.StateReady {
+		if nats.Status.State == v1alpha1.StateReady || nats.Status.State == v1alpha1.StateWarning {
 			return true, nil
 		}
 	}
