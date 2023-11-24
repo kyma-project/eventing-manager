@@ -2,8 +2,6 @@ package eventing
 
 import (
 	"fmt"
-
-	ecv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -42,7 +40,8 @@ func GetPublisherClusterRoleBindingName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
 }
 
-func newHorizontalPodAutoscaler(name, namespace string, min int32, max int32, cpuUtilization, memoryUtilization int32) *autoscalingv2.HorizontalPodAutoscaler {
+func newHorizontalPodAutoscaler(name, namespace string, min, max, cpuUtilization, memoryUtilization int32,
+	labels map[string]string) *autoscalingv2.HorizontalPodAutoscaler {
 	return &autoscalingv2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "HorizontalPodAutoscaler",
@@ -51,6 +50,7 @@ func newHorizontalPodAutoscaler(name, namespace string, min int32, max int32, cp
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
+			Labels:    labels,
 		},
 		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
@@ -241,9 +241,9 @@ func newPublisherProxyHealthService(name, namespace string, labels map[string]st
 	}
 }
 
-func getECBackendType(backendType v1alpha1.BackendType) ecv1alpha1.BackendType {
+func getECBackendType(backendType v1alpha1.BackendType) v1alpha1.BackendType {
 	if backendType == v1alpha1.EventMeshBackendType {
-		return ecv1alpha1.BEBBackendType
+		return v1alpha1.EventMeshBackendType
 	}
-	return ecv1alpha1.NatsBackendType
+	return v1alpha1.NatsBackendType
 }

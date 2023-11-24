@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	"github.com/kyma-project/eventing-manager/internal/label"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
@@ -21,18 +22,12 @@ const (
 	livenessTimeoutSecs      = int32(1)
 	livenessPeriodSecs       = int32(2)
 	eventMeshNamespacePrefix = "/"
-	InstanceLabelKey         = "app.kubernetes.io/instance"
-	InstanceLabelValue       = "eventing"
-	DashboardLabelKey        = "kyma-project.io/dashboard"
-	DashboardLabelValue      = "eventing"
-	BackendLabelKey          = "eventing.kyma-project.io/backend"
 	publisherPortName        = "http"
 	publisherPortNum         = int32(8080)
 	publisherMetricsPortName = "http-metrics"
 	publisherMetricsPortNum  = int32(9090)
 	PublisherName            = "eventing-publisher-proxy"
 
-	AppLabelKey                     = "app.kubernetes.io/name"
 	PublisherSecretClientIDKey      = "client-id"
 	PublisherSecretClientSecretKey  = "client-secret"
 	PublisherSecretTokenEndpointKey = "token-endpoint"
@@ -56,6 +51,7 @@ func newNATSPublisherDeployment(
 		eventing,
 		publisherConfig,
 		WithLabels(GetPublisherDeploymentName(*eventing), v1alpha1.NatsBackendType),
+		WithSelector(GetPublisherDeploymentName(*eventing)),
 		WithContainers(publisherConfig, eventing),
 		WithNATSEnvVars(natsConfig, publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
@@ -72,6 +68,7 @@ func newEventMeshPublisherDeployment(
 		eventing,
 		publisherConfig,
 		WithLabels(GetPublisherDeploymentName(*eventing), v1alpha1.EventMeshBackendType),
+		WithSelector(GetPublisherDeploymentName(*eventing)),
 		WithContainers(publisherConfig, eventing),
 		WithBEBEnvVars(GetPublisherDeploymentName(*eventing), publisherConfig, eventing),
 		WithLogEnvVars(publisherConfig, eventing),
@@ -126,19 +123,39 @@ func getPodSecurityContext() *v1.PodSecurityContext {
 	}
 }
 
-func WithLabels(publisherName string, backendType v1alpha1.BackendType) DeployOpt {
-	labels := map[string]string{
-		AppLabelKey:       publisherName,
-		InstanceLabelKey:  InstanceLabelValue,
-		DashboardLabelKey: DashboardLabelValue,
+func getLabels(publisherName string, backendType v1alpha1.BackendType) map[string]string {
+	return map[string]string{
+		label.KeyComponent: label.ValueEventingManager,
+		label.KeyCreatedBy: label.ValueEventingManager,
+		label.KeyInstance:  label.ValueEventing,
+		label.KeyManagedBy: label.ValueEventingManager,
+		label.KeyName:      publisherName,
+		label.KeyPartOf:    label.ValueEventingManager,
+		label.KeyBackend:   fmt.Sprint(getECBackendType(backendType)),
+		label.KeyDashboard: label.ValueEventing,
 	}
-	return func(d *appsv1.Deployment) {
-		d.Spec.Selector = metav1.SetAsLabelSelector(labels)
-		d.Spec.Template.ObjectMeta.Labels = labels
+}
 
-		// label the event-publisher proxy with the backendType label
-		labels[BackendLabelKey] = fmt.Sprint(getECBackendType(backendType))
+func WithLabels(publisherName string, backendType v1alpha1.BackendType) DeployOpt {
+	return func(d *appsv1.Deployment) {
+		labels := getLabels(publisherName, backendType)
 		d.ObjectMeta.Labels = labels
+		d.Spec.Template.ObjectMeta.Labels = labels
+	}
+}
+
+func getSelector(publisherName string) *metav1.LabelSelector {
+	labels := map[string]string{
+		label.KeyInstance:  label.ValueEventing,
+		label.KeyName:      publisherName,
+		label.KeyDashboard: label.ValueEventing,
+	}
+	return metav1.SetAsLabelSelector(labels)
+}
+
+func WithSelector(publisherName string) DeployOpt {
+	return func(d *appsv1.Deployment) {
+		d.Spec.Selector = getSelector(publisherName)
 	}
 }
 
@@ -157,7 +174,7 @@ func WithAffinity(publisherName string) DeployOpt {
 						Weight: 100,
 						PodAffinityTerm: v1.PodAffinityTerm{
 							LabelSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{AppLabelKey: publisherName},
+								MatchLabels: map[string]string{label.KeyName: publisherName},
 							},
 							TopologyKey: "kubernetes.io/hostname",
 						},

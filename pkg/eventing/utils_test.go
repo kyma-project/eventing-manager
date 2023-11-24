@@ -23,3 +23,46 @@ func Test_EPPResourcesNames(t *testing.T) {
 	require.Equal(t, "test1-publisher-proxy", GetPublisherClusterRoleName(eventingCR))
 	require.Equal(t, "test1-publisher-proxy", GetPublisherClusterRoleBindingName(eventingCR))
 }
+
+func Test_getECBackendType(t *testing.T) {
+	// given
+	type args struct {
+		backendType v1alpha1.BackendType
+	}
+	tests := []struct {
+		name string
+		args args
+		want v1alpha1.BackendType
+	}{
+		{
+			name: "should return the correct backend type for NATS",
+			args: args{
+				backendType: "NATS",
+			},
+			want: "NATS",
+		},
+		{
+			name: "should return the correct backend type for EventMesh",
+			args: args{
+				backendType: "EventMesh",
+			},
+			want: "EventMesh",
+		},
+		{
+			name: "should return the default backend type for unsupported input",
+			args: args{
+				backendType: "Unsupported",
+			},
+			want: "NATS",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// when
+			got := getECBackendType(tt.args.backendType)
+
+			// then
+			require.Equal(t, tt.want, got)
+		})
+	}
+}

@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	"github.com/kyma-project/eventing-manager/internal/label"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	managermocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
@@ -628,7 +629,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 					Name:      eventing.PublisherName,
 					Namespace: "test-namespace",
 					Labels: map[string]string{
-						eventing.AppLabelKey: eventing.PublisherName,
+						label.KeyName: label.ValueEventingPublisherProxy,
 					},
 				},
 				StringData: map[string]string{

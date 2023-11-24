@@ -261,6 +261,17 @@ func Test_IsNATSAvailable(t *testing.T) {
 			wantErr:        nil,
 		},
 		{
+			name: "NATS is available if in Warning state",
+			givenNATSResources: []natsv1alpha1.NATS{
+				*natstestutils.NewNATSCR(
+					natstestutils.WithNATSStateWarning(),
+				),
+			},
+			givenNamespace: "test-namespace",
+			wantAvailable:  true,
+			wantErr:        nil,
+		},
+		{
 			name: "NATS is not available",
 			givenNATSResources: []natsv1alpha1.NATS{
 				*natstestutils.NewNATSCR(

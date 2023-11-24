@@ -171,7 +171,7 @@ func (em EventingManager) IsNATSAvailable(ctx context.Context, namespace string)
 		return false, err
 	}
 	for _, nats := range natsList.Items {
-		if nats.Status.State == v1alpha1.StateReady {
+		if nats.Status.State == v1alpha1.StateReady || nats.Status.State == v1alpha1.StateWarning {
 			return true, nil
 		}
 	}
@@ -210,7 +210,7 @@ func (em EventingManager) DeployPublisherProxyResources(
 			publisherDeployment.Spec.Template.Labels),
 		// HPA to auto-scale publisher proxy.
 		newHorizontalPodAutoscaler(publisherDeployment.Name, publisherDeployment.Namespace, int32(eventing.Spec.Publisher.Min),
-			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization),
+			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization, publisherDeployment.Labels),
 	}
 
 	// create the resources on k8s.
@@ -254,7 +254,7 @@ func (em EventingManager) DeletePublisherProxyResources(ctx context.Context, eve
 		// Service to expose health endpoint of EPP.
 		newPublisherProxyHealthService(GetPublisherHealthServiceName(*eventing), eventing.Namespace, map[string]string{}, map[string]string{}),
 		// HPA to auto-scale publisher proxy.
-		newHorizontalPodAutoscaler(publisherDeployment.Name, eventing.Namespace, 0, 0, 0, 0),
+		newHorizontalPodAutoscaler(publisherDeployment.Name, eventing.Namespace, 0, 0, 0, 0, map[string]string{}),
 	}
 
 	// delete the resources on k8s.

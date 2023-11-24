@@ -2,16 +2,17 @@ package eventing
 
 import (
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"testing"
 
-	appsv1 "k8s.io/api/apps/v1"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	"github.com/kyma-project/eventing-manager/internal/label"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/test"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
@@ -77,9 +78,9 @@ func TestNewDeployment(t *testing.T) {
 				t.Errorf("Invalid backend!")
 			}
 
-			// the tight backenType should be set
-			assert.Equal(t, deployment.ObjectMeta.Labels[BackendLabelKey], string(getECBackendType(tc.givenBackendType)))
-			assert.Equal(t, deployment.ObjectMeta.Labels[AppLabelKey], publisherName)
+			// the right backendType should be set
+			assert.Equal(t, deployment.ObjectMeta.Labels[label.KeyBackend], string(getECBackendType(tc.givenBackendType)))
+			assert.Equal(t, deployment.ObjectMeta.Labels[label.KeyName], publisherName)
 
 			// check the container properties were set properly
 			container := findPublisherContainer(publisherName, *deployment)
@@ -326,4 +327,122 @@ func findPublisherContainer(publisherName string, deployment appsv1.Deployment) 
 		}
 	}
 	return container
+}
+
+func Test_getLabels(t *testing.T) {
+	// given
+	const (
+		publisherName          = "test-publisher"
+		backendTypeUnsupported = "Unsupported"
+		backendTypeEventMesh   = "EventMesh"
+		backendTypeNATS        = "NATS"
+	)
+	type args struct {
+		publisherName string
+		backendType   v1alpha1.BackendType
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]string
+	}{
+		{
+			name: "should return the correct labels for backend NATS",
+			args: args{
+				publisherName: publisherName,
+				backendType:   backendTypeNATS,
+			},
+			want: map[string]string{
+				label.KeyComponent: label.ValueEventingManager,
+				label.KeyCreatedBy: label.ValueEventingManager,
+				label.KeyInstance:  label.ValueEventing,
+				label.KeyManagedBy: label.ValueEventingManager,
+				label.KeyName:      publisherName,
+				label.KeyPartOf:    label.ValueEventingManager,
+				label.KeyBackend:   "NATS",
+				label.KeyDashboard: label.ValueEventing,
+			},
+		},
+		{
+			name: "should return the correct labels for backend EventMesh",
+			args: args{
+				publisherName: publisherName,
+				backendType:   backendTypeEventMesh,
+			},
+			want: map[string]string{
+				label.KeyComponent: label.ValueEventingManager,
+				label.KeyCreatedBy: label.ValueEventingManager,
+				label.KeyInstance:  label.ValueEventing,
+				label.KeyManagedBy: label.ValueEventingManager,
+				label.KeyName:      publisherName,
+				label.KeyPartOf:    label.ValueEventingManager,
+				label.KeyBackend:   "EventMesh",
+				label.KeyDashboard: label.ValueEventing,
+			},
+		},
+		{
+			name: "should return the correct labels for unsupported backend",
+			args: args{
+				publisherName: publisherName,
+				backendType:   backendTypeUnsupported,
+			},
+			want: map[string]string{
+				label.KeyComponent: label.ValueEventingManager,
+				label.KeyCreatedBy: label.ValueEventingManager,
+				label.KeyInstance:  label.ValueEventing,
+				label.KeyManagedBy: label.ValueEventingManager,
+				label.KeyName:      publisherName,
+				label.KeyPartOf:    label.ValueEventingManager,
+				label.KeyBackend:   "NATS",
+				label.KeyDashboard: label.ValueEventing,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// when
+			got := getLabels(tt.args.publisherName, tt.args.backendType)
+
+			// then
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_getSelector(t *testing.T) {
+	// given
+	const (
+		publisherName = "test-publisher"
+	)
+	type args struct {
+		publisherName string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *metav1.LabelSelector
+	}{
+		{
+			name: "should return the correct selector",
+			args: args{
+				publisherName: publisherName,
+			},
+			want: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					label.KeyInstance:  label.ValueEventing,
+					label.KeyName:      publisherName,
+					label.KeyDashboard: label.ValueEventing,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// when
+			got := getSelector(tt.args.publisherName)
+
+			// then
+			require.Equal(t, tt.want, got)
+		})
+	}
 }
