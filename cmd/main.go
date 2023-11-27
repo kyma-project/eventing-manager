@@ -22,13 +22,13 @@ import (
 	"log"
 	"os"
 
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 
 	istiopeerauthentication "github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
 
 	"github.com/go-logr/zapr"
-	subscriptionv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	subscriptionv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	subscriptionv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	subscriptionv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -58,7 +58,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -78,6 +78,8 @@ func init() {
 
 	utilruntime.Must(jetstream.AddToScheme(scheme))
 	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
+	utilruntime.Must(subscriptionv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(subscriptionv1alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

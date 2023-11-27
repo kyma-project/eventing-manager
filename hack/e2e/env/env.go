@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kelseyhightower/envconfig"
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 )
 
 // E2EConfig represents the environment config for the end-to-end tests for eventing-manager.

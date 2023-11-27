@@ -3,11 +3,9 @@ package eventing
 import (
 	"testing"
 
+	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
-	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 )
 
 func Test_EPPResourcesNames(t *testing.T) {
@@ -34,7 +32,7 @@ func Test_getECBackendType(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want ecv1alpha1.BackendType
+		want v1alpha1.BackendType
 	}{
 		{
 			name: "should return the correct backend type for NATS",
@@ -48,7 +46,7 @@ func Test_getECBackendType(t *testing.T) {
 			args: args{
 				backendType: "EventMesh",
 			},
-			want: "BEB",
+			want: "EventMesh",
 		},
 		{
 			name: "should return the default backend type for unsupported input",

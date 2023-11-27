@@ -1,8 +1,8 @@
 package eventing
 
 import (
-	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	ecv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	ecv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	ecv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

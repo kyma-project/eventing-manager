@@ -8,7 +8,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	v1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	v1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
 	v1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 )

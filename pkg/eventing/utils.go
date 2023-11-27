@@ -2,9 +2,7 @@ package eventing
 
 import (
 	"fmt"
-
-	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
-	ecv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
+	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -243,9 +241,9 @@ func newPublisherProxyHealthService(name, namespace string, labels map[string]st
 	}
 }
 
-func getECBackendType(backendType v1alpha1.BackendType) ecv1alpha1.BackendType {
+func getECBackendType(backendType v1alpha1.BackendType) v1alpha1.BackendType {
 	if backendType == v1alpha1.EventMeshBackendType {
-		return ecv1alpha1.BEBBackendType
+		return v1alpha1.EventMeshBackendType
 	}
-	return ecv1alpha1.NatsBackendType
+	return v1alpha1.NatsBackendType
 }

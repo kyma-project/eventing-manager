@@ -11,7 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 
-	"github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
+	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/internal/label"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/test"
@@ -376,7 +376,7 @@ func Test_getLabels(t *testing.T) {
 				label.KeyManagedBy: label.ValueEventingManager,
 				label.KeyName:      publisherName,
 				label.KeyPartOf:    label.ValueEventingManager,
-				label.KeyBackend:   "BEB",
+				label.KeyBackend:   "EventMesh",
 				label.KeyDashboard: label.ValueEventing,
 			},
 		},

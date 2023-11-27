@@ -18,9 +18,9 @@ import (
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
 	cev2http "github.com/cloudevents/sdk-go/v2/protocol/http"
+	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	evtesting "github.com/kyma-project/eventing-manager/testing"
-	"github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )
 
 const (

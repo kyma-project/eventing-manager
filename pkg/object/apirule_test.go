@@ -2,14 +2,15 @@ package object
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/kyma-incubator/api-gateway/api/v1beta1"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	"reflect"
-	"testing"
 )
 
 func TestApplyExistingAPIRuleAttributes(t *testing.T) {
