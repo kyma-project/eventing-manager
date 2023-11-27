@@ -18,7 +18,7 @@ import (
 
 	v1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 
-	v1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	v1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
 	v1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 )

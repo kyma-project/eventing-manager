@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )
 
 func Test_IsEventTypeSegmentsOverLimit(t *testing.T) {

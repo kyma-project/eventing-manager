@@ -7,7 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/test/utils"
+	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,10 +32,29 @@ func Test_GetNewNATSConfig(t *testing.T) {
 		JSConsumerDeliverPolicy: "DeliverNew",
 	}
 
-	givenEventing := utils.NewEventingCR(
-		utils.WithEventingStreamData("Memory", "650M", 5, 5000),
-		utils.WithEventingEventTypePrefix("sap.kyma.custom"),
-	)
+	givenEventing := &v1alpha1.Eventing{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Eventing",
+			APIVersion: "operator.kyma-project.io/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test-ns",
+			UID:       "1234-5678-1234-5678",
+		},
+		Spec: v1alpha1.EventingSpec{
+			Backend: v1alpha1.Backend{
+				Type: v1alpha1.NatsBackendType,
+				Config: v1alpha1.BackendConfig{
+					EventTypePrefix:       "sap.kyma.custom",
+					NATSStreamStorageType: "Memory",
+					NATSStreamMaxSize:     resource.MustParse("650M"),
+					NATSStreamReplicas:    5,
+					NATSMaxMsgsPerTopic:   5000,
+				},
+			},
+		},
+	}
 
 	// when
 	result := givenConfig.GetNewNATSConfig(*givenEventing)
