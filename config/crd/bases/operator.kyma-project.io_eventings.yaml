@@ -75,13 +75,6 @@ spec:
                 description: Annotations allows to add annotations to resources.
                 type: object
               backend:
-                default:
-                  config:
-                    natsMaxMsgsPerTopic: 1000000
-                    natsStreamMaxSize: 700Mi
-                    natsStreamReplicas: 3
-                    natsStreamStorageType: File
-                  type: NATS
                 description: Backend defines the active backend used by Eventing.
                 properties:
                   config:
@@ -261,8 +254,6 @@ spec:
                         type: object
                     type: object
                 type: object
-            required:
-            - backend
             type: object
           status:
             description: EventingStatus defines the observed state of Eventing
