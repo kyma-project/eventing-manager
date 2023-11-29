@@ -33,7 +33,7 @@ func Test_applySelectors(t *testing.T) {
 		want cache.Options
 	}{
 		{
-			name: "apply the correct selectors",
+			name: "should apply the correct selectors",
 			args: args{
 				options: cache.Options{},
 			},
