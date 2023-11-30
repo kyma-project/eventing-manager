@@ -20,7 +20,7 @@ func Test_applySelectors(t *testing.T) {
 	selector := cache.ByObject{
 		Label: labels.SelectorFromSet(
 			map[string]string{
-				"app.kubernetes.io/instance": "eventing",
+				"app.kubernetes.io/created-by": "eventing-manager",
 			},
 		),
 	}

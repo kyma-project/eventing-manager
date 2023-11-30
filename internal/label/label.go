@@ -19,6 +19,6 @@ const (
 	ValueEventing               = "eventing"
 )
 
-func SelectorInstanceEventing() labels.Selector {
-	return labels.SelectorFromSet(map[string]string{KeyInstance: ValueEventing})
+func SelectorCreatedByEventingManager() labels.Selector {
+	return labels.SelectorFromSet(map[string]string{KeyCreatedBy: ValueEventingManager})
 }
