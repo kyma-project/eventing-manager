@@ -90,16 +90,25 @@ func HavePublisherProxyConditionForbiddenWithMsg(msg string) gomegatypes.GomegaM
 
 func HaveNATSAvailableCondition() gomegatypes.GomegaMatcher {
 	return HaveCondition(kmetav1.Condition{
-		Type:    string(v1alpha1.ConditionNATSAvailable),
+		Type:    string(v1alpha1.ConditionBackendAvailable),
 		Status:  kmetav1.ConditionTrue,
 		Reason:  string(v1alpha1.ConditionReasonNATSAvailable),
 		Message: v1alpha1.ConditionNATSAvailableMessage,
 	})
 }
 
+func HaveBackendNotAvailableConditionWith(message string, reason v1alpha1.ConditionReason) gomegatypes.GomegaMatcher {
+	return HaveCondition(kmetav1.Condition{
+		Type:    string(v1alpha1.ConditionBackendAvailable),
+		Status:  kmetav1.ConditionFalse,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
 func HaveNATSNotAvailableConditionWith(message string) gomegatypes.GomegaMatcher {
 	return HaveCondition(kmetav1.Condition{
-		Type:    string(v1alpha1.ConditionNATSAvailable),
+		Type:    string(v1alpha1.ConditionBackendAvailable),
 		Status:  kmetav1.ConditionFalse,
 		Reason:  string(v1alpha1.ConditionReasonNATSNotAvailable),
 		Message: message,

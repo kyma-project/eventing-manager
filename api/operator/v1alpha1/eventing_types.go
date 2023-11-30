@@ -33,7 +33,7 @@ const (
 	StateProcessing string = "Processing"
 	StateWarning    string = "Warning"
 
-	ConditionNATSAvailable            ConditionType = "NATSAvailable"
+	ConditionBackendAvailable         ConditionType = "BackendAvailable"
 	ConditionPublisherProxyReady      ConditionType = "PublisherProxyReady"
 	ConditionWebhookReady             ConditionType = "WebhookReady"
 	ConditionSubscriptionManagerReady ConditionType = "SubscriptionManagerReady"
@@ -48,8 +48,9 @@ const (
 	ConditionReasonDeployed                   ConditionReason = "Deployed"
 	ConditionReasonDeployedFailed             ConditionReason = "DeployFailed"
 	ConditionReasonDeploymentStatusSyncFailed ConditionReason = "DeploymentStatusSyncFailed"
-	ConditionReasonNATSAvailable              ConditionReason = "Available"
-	ConditionReasonNATSNotAvailable           ConditionReason = "NotAvailable"
+	ConditionReasonNATSAvailable              ConditionReason = "NATSAvailable"
+	ConditionReasonNATSNotAvailable           ConditionReason = "NATSUnavailable"
+	ConditionReasonBackendNotSpecified        ConditionReason = "BackendNotSpecified"
 	ConditionReasonForbidden                  ConditionReason = "Forbidden"
 	ConditionReasonWebhookFailed              ConditionReason = "WebhookFailed"
 	ConditionReasonWebhookReady               ConditionReason = "Ready"
@@ -63,6 +64,7 @@ const (
 	ConditionPublisherProxyProcessingMessage   = "Eventing publisher proxy deployment is in progress"
 	ConditionSubscriptionManagerReadyMessage   = "Subscription manager is ready"
 	ConditionSubscriptionManagerStoppedMessage = "Subscription manager is stopped"
+	ConditionBackendNotSpecifiedMessage        = "Backend config is not provided. Please specify a backend."
 
 	// subscription manager reasons.
 	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"
@@ -99,7 +101,7 @@ type EventingStatus struct {
 type EventingSpec struct {
 	// Backend defines the active backend used by Eventing.
 	// +kubebuilder:validation:XValidation:rule=" (self.type != 'EventMesh') || ((self.type == 'EventMesh') && (self.config.eventMeshSecret != ''))", message="secret cannot be empty if EventMesh backend is used"
-	Backend Backend `json:"backend,omitempty"`
+	Backend *Backend `json:"backend,omitempty"`
 
 	// Publisher defines the configurations for eventing-publisher-proxy.
 	// +kubebuilder:default:={replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"40m",memory:"256Mi"}}}

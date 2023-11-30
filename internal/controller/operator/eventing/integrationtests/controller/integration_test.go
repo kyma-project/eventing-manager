@@ -152,6 +152,22 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				matchers.HaveFinalizer(),
 			),
 		},
+		{
+			name: "Eventing CR should have warning state when backend config is empty",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventingEmptyBackend(),
+				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+			),
+			givenNATS: natstestutils.NewNATSCR(
+				natstestutils.WithNATSCRDefaults(),
+			),
+			wantMatches: gomega.And(
+				matchers.HaveStatusWarning(),
+				matchers.HaveBackendNotAvailableConditionWith(eventingv1alpha1.ConditionBackendNotSpecifiedMessage,
+					eventingv1alpha1.ConditionReasonBackendNotSpecified),
+				matchers.HaveFinalizer(),
+			),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -202,13 +218,13 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			// then
 			// check Eventing CR status.
 			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
-			if tc.givenDeploymentReady {
+			if tc.givenDeploymentReady && tc.givenEventing.Spec.Backend != nil {
 				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
 				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
 				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
-			if tc.wantEnsureK8sObjects {
+			if tc.wantEnsureK8sObjects && tc.givenEventing.Spec.Backend != nil {
 				// check if EPP resources exists.
 				ensureK8sResources(t, tc.givenEventing, testEnvironment)
 				// check if webhook configurations are updated with correct CABundle.

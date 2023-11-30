@@ -12,10 +12,17 @@ import (
 func WithEventingCRMinimal() EventingOption {
 	return func(e *v1alpha1.Eventing) error {
 		e.Spec = v1alpha1.EventingSpec{
-			Backend: v1alpha1.Backend{
+			Backend: &v1alpha1.Backend{
 				Type: v1alpha1.NatsBackendType,
 			},
 		}
+		return nil
+	}
+}
+
+func WithEventingEmptyBackend() EventingOption {
+	return func(e *v1alpha1.Eventing) error {
+		e.Spec = v1alpha1.EventingSpec{}
 		return nil
 	}
 }
@@ -78,7 +85,7 @@ func WithEventingPublisherData(minReplicas, maxReplicas int, requestCPU, request
 func WithEventingInvalidBackend() EventingOption {
 	return func(e *v1alpha1.Eventing) error {
 		e.Spec = v1alpha1.EventingSpec{
-			Backend: v1alpha1.Backend{
+			Backend: &v1alpha1.Backend{
 				Type: "invalid",
 			},
 		}
@@ -109,7 +116,7 @@ func WithEventingLogLevel(logLevel string) EventingOption {
 
 func WithEventMeshBackend(eventMeshSecretName string) EventingOption {
 	return func(e *v1alpha1.Eventing) error {
-		e.Spec.Backend = v1alpha1.Backend{
+		e.Spec.Backend = &v1alpha1.Backend{
 			Type: v1alpha1.EventMeshBackendType,
 			Config: v1alpha1.BackendConfig{
 				EventMeshSecret: e.Namespace + "/" + eventMeshSecretName,

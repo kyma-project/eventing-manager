@@ -379,6 +379,12 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *opera
 		return kctrl.Result{}, nil
 	}
 
+	if eventing.Spec.Backend == nil {
+		// backend config can only be empty during creation and nothing is created if it is missing.
+		// Hence, eventing can be safely removed.
+		return r.removeFinalizer(ctx, eventing)
+	}
+
 	// check if subscription resources exist
 	exists, err := r.eventingManager.SubscriptionExists(ctx)
 	if err != nil {
@@ -441,6 +447,9 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 
 	// set state processing if not set yet
 	r.InitStateProcessing(eventing)
+	if eventing.Spec.Backend == nil {
+		return ctrl.Result{Requeue: true}, r.syncStatusForEmptyBackend(ctx, eventing, log)
+	}
 
 	// sync webhooks CABundle.
 	if err := r.reconcileWebhooksWithCABundle(ctx); err != nil {

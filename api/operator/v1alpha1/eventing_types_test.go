@@ -19,7 +19,7 @@ func TestSyncStatusActiveBackend(t *testing.T) {
 			name: "it should set ActiveBackend to NATS",
 			givenEventing: &Eventing{
 				Spec: EventingSpec{
-					Backend: Backend{Type: NatsBackendType},
+					Backend: &Backend{Type: NatsBackendType},
 				},
 				Status: EventingStatus{},
 			},
@@ -29,7 +29,7 @@ func TestSyncStatusActiveBackend(t *testing.T) {
 			name: "it should set ActiveBackend to EventMesh",
 			givenEventing: &Eventing{
 				Spec: EventingSpec{
-					Backend: Backend{Type: EventMeshBackendType},
+					Backend: &Backend{Type: EventMeshBackendType},
 				},
 				Status: EventingStatus{},
 			},
@@ -65,7 +65,7 @@ func TestIsSpecBackendTypeChanged(t *testing.T) {
 			name: "it should return false if backend is not changed",
 			givenEventing: &Eventing{
 				Spec: EventingSpec{
-					Backend: Backend{Type: NatsBackendType},
+					Backend: &Backend{Type: NatsBackendType},
 				},
 				Status: EventingStatus{
 					ActiveBackend: NatsBackendType,
@@ -77,7 +77,7 @@ func TestIsSpecBackendTypeChanged(t *testing.T) {
 			name: "it should return true if backend is changed",
 			givenEventing: &Eventing{
 				Spec: EventingSpec{
-					Backend: Backend{Type: NatsBackendType},
+					Backend: &Backend{Type: NatsBackendType},
 				},
 				Status: EventingStatus{
 					ActiveBackend: EventMeshBackendType,

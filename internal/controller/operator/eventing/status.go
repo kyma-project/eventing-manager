@@ -30,10 +30,21 @@ func (r *Reconciler) syncStatusWithNATSErr(ctx context.Context,
 ) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
-	eventing.Status.UpdateConditionNATSAvailable(kmetav1.ConditionFalse, operatorv1alpha1.ConditionReasonNATSNotAvailable,
+	eventing.Status.UpdateConditionBackendAvailable(kmetav1.ConditionFalse, operatorv1alpha1.ConditionReasonNATSNotAvailable,
 		err.Error())
 
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
+}
+
+func (r *Reconciler) syncStatusForEmptyBackend(ctx context.Context,
+	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) error {
+	// Set error state in status
+	eventing.Status.SetStateWarning()
+	eventing.Status.UpdateConditionBackendAvailable(
+		kmetav1.ConditionFalse,
+		operatorv1alpha1.ConditionReasonBackendNotSpecified,
+		operatorv1alpha1.ConditionBackendNotSpecifiedMessage)
+	return r.syncEventingStatus(ctx, eventing, log)
 }
 
 // syncStatusWithPublisherProxyErr updates Publisher Proxy condition and sets an error state.
