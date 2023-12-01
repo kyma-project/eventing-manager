@@ -3,6 +3,7 @@ package httpclient
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -15,13 +16,18 @@ var _ BaseURLAwareClient = Client{}
 // BaseURLAwareClient is a http client that can build requests not from a full URL, but from a path relative to a configured base url
 // this is useful for REST-APIs that always connect to the same host, but on different paths.
 type BaseURLAwareClient interface {
-	NewRequest(method, path string, body interface{}) (*http.Request, *Error)
-	Do(req *http.Request, result interface{}) (*http.Response, *[]byte, *Error)
+	NewRequest(method, path string, body interface{}) (*http.Request, error)
+	Do(req *http.Request, result interface{}) (Status, []byte, error)
 }
 
 type Client struct {
 	baseURL    *url.URL
 	httpClient *http.Client
+}
+
+type Status struct {
+	Status     string // e.g. "200 OK"
+	StatusCode int    // e.g. 200
 }
 
 // NewHTTPClient creates a new client and ensures that the given baseURL ends with a trailing '/'.
@@ -46,7 +52,7 @@ func (c *Client) GetHTTPClient() *http.Client {
 	return c.httpClient
 }
 
-func (c Client) NewRequest(method, path string, body interface{}) (*http.Request, *Error) {
+func (c Client) NewRequest(method, path string, body interface{}) (*http.Request, error) {
 	var jsonBody io.ReadWriter
 	if body != nil {
 		jsonBody = new(bytes.Buffer)
@@ -77,28 +83,43 @@ func resolveReferenceAsRelative(base, ref *url.URL) *url.URL {
 	return base.ResolveReference(&url.URL{Path: strings.TrimPrefix(ref.Path, "/")})
 }
 
-func (c Client) Do(req *http.Request, result interface{}) (*http.Response, *[]byte, *Error) {
+func (c Client) Do(req *http.Request, result interface{}) (Status, []byte, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		if resp == nil {
-			return resp, nil, NewError(err)
+			return Status{}, nil, NewError(err)
 		}
-		return resp, nil, NewError(err, WithStatusCode(resp.StatusCode))
+		return Status{
+			resp.Status,
+			resp.StatusCode,
+		}, nil, NewError(err, WithStatusCode(resp.StatusCode))
 	}
 	defer func() { _ = resp.Body.Close() }()
 	defer c.httpClient.CloseIdleConnections()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return resp, nil, NewError(err, WithStatusCode(resp.StatusCode))
+		return Status{
+			Status:     resp.Status,
+			StatusCode: resp.StatusCode,
+		}, nil, NewError(err, WithStatusCode(resp.StatusCode))
 	}
 	if len(body) == 0 {
-		return resp, nil, nil
+		return Status{
+			Status:     resp.Status,
+			StatusCode: resp.StatusCode,
+		}, nil, nil
 	}
 
 	if err := json.Unmarshal(body, result); err != nil {
-		return resp, nil, NewError(err, WithStatusCode(resp.StatusCode), WithMessage(string(body)))
+		return Status{
+			Status:     resp.Status,
+			StatusCode: resp.StatusCode,
+		}, nil, fmt.Errorf("unmarshal response failed: %w", NewError(err, WithStatusCode(resp.StatusCode), WithMessage(string(body))))
 	}
 
-	return resp, &body, nil
+	return Status{
+		Status:     resp.Status,
+		StatusCode: resp.StatusCode,
+	}, body, nil
 }

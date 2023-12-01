@@ -118,6 +118,7 @@ func Test_cleanupEventMesh(t *testing.T) {
 	getSubscriptionURL = bebMock.MessagingURL + getSubscriptionURL
 	resp, err := http.Get(getSubscriptionURL)
 	require.NoError(t, err)
+	defer resp.Body.Close()
 	require.Equal(t, resp.StatusCode, http.StatusOK)
 
 	// check that the Kyma subscription exists
@@ -141,6 +142,7 @@ func Test_cleanupEventMesh(t *testing.T) {
 	// the BEB subscription should be deleted from BEB Mock
 	resp, err = http.Get(getSubscriptionURL)
 	require.NoError(t, err)
+	defer resp.Body.Close()
 	require.Equal(t, resp.StatusCode, http.StatusNotFound)
 
 	// the Kyma subscription status should be empty

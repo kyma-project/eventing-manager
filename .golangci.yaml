@@ -19,7 +19,6 @@ linters:
     - varcheck # deprecated (since v1.49.0) and replaced by 'unused'
     - wsl # too strict and mostly code is not more readable
     ### disabled for now... will be enabled 1 by 1
-    - bodyclose
     - containedctx
     - dupl
     - dupword

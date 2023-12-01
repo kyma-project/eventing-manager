@@ -10,12 +10,12 @@ import (
 func TestErrorDescription(t *testing.T) {
 	tableTests := []struct {
 		name            string
-		giveErr         *Error
+		giveErr         error
 		wantDescription string
 	}{
 		{
 			name: "all arguments given",
-			giveErr: func() *Error {
+			giveErr: func() error {
 				wrapped := NewError(fmt.Errorf("my error"), WithStatusCode(500), WithMessage("this is the http response"))
 				return wrapped
 			}(),
@@ -23,7 +23,7 @@ func TestErrorDescription(t *testing.T) {
 		},
 		{
 			name: "cause only",
-			giveErr: func() *Error {
+			giveErr: func() error {
 				existing := url.Error{
 					Op:  "Delete",
 					URL: "/foo/bar",
@@ -36,7 +36,7 @@ func TestErrorDescription(t *testing.T) {
 		},
 		{
 			name: "message only",
-			giveErr: func() *Error {
+			giveErr: func() error {
 				wrapped := NewError(nil, WithMessage("message"))
 				return wrapped
 			}(),
@@ -44,7 +44,7 @@ func TestErrorDescription(t *testing.T) {
 		},
 		{
 			name: "status code only",
-			giveErr: func() *Error {
+			giveErr: func() error {
 				wrapped := NewError(nil, WithStatusCode(200))
 				return wrapped
 			}(),
