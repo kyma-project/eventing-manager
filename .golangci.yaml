@@ -1,0 +1,139 @@
+linters:
+  enable-all: true
+  disable:
+    - contextcheck # too many false positives
+    - deadcode # deprecated (since v1.49.0) and replaced by 'unused'
+    - depguard # checks if package imports are whitelisted
+    - exhaustivestruct # deprecated (since v1.46.0) and replaced by 'exhaustruct'
+    - exhaustruct # TODO enable and fix, use regex to exclude certain cases
+    - golint # deprecated (since v1.41.0) and replaced by 'revive'
+    - ifshort # deprecated (since v1.48.0)
+    - interfacer # deprecated (since v1.38.0)
+    - lll
+    - maligned # deprecated (since v1.38.0)
+    - nlreturn # too strict and mostly code is not more readable
+    - nosnakecase  # deprecated (since v1.48.1) and replaced by 'revive'
+    - scopelint # deprecated (since v1.39.0) and replaced by 'exportloopref'
+    - structcheck # deprecated (since v1.49.0) and replaced by 'unused'
+    - sqlclosecheck # not needed for this project
+    - varcheck # deprecated (since v1.49.0) and replaced by 'unused'
+    - wsl # too strict and mostly code is not more readable
+    ### disabled for now... will be enabled 1 by 1
+    - containedctx
+    - dupl
+    - dupword
+    - errorlint
+    - exhaustive
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - gci
+    - ginkgolinter
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocritic
+    - godox
+    - goerr113
+    - gofumpt
+    - gofmt
+    - gomnd
+    - gomoddirectives
+    - gosec
+    - importas
+    - inamedparam
+    - interfacebloat
+    - ireturn
+    - loggercheck
+    - maintidx
+    - nestif
+    - nilerr
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - stylecheck
+    - testifylint
+    - testpackage
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - varnamelen
+    - wastedassign
+    - wrapcheck
+    - godot
+    - goimports
+    - mirror
+    - tagalign
+    - whitespace
+
+linters-settings:
+  stylecheck:
+    dot-import-whitelist:
+      - github.com/onsi/ginkgo/v2
+      - github.com/onsi/gomega
+  revive:
+    enable-all-rules: false
+    severity: error
+    rules:
+      - name: comment-spacings
+        disabled: true
+      - name: dot-imports
+        severity: warning
+        disabled: true
+      - name: line-length-limit
+        severity: warning
+        disabled: true
+        arguments: [ 120 ]
+  funlen:
+    lines: 80
+  cyclop:
+    max-complexity: 20
+  nestif:
+    min-complexity: 6
+  gci:
+    sections:
+      - standard                                             # Standard packages.
+      - default                                              # Imports that could not be matched to another section type.
+      - prefix(github.com/kyma-project/eventing-manager)    # Imports with the specified prefix.
+      - blank                                                # Blank imports.
+      - dot                                                  # Dot imports.
+    custom-order: true
+    skip-generated: true
+  importas:
+    no-unaliased: true
+    no-extra-aliases: true
+    alias:
+      - pkg: k8s.io/api/core/v1
+        alias: kcorev1
+  ireturn:
+    allow:
+      - anon
+      - error
+      - empty
+      - stdlib
+      - Client
+      - client.Object
+      - (or|er)$
+  wrapcheck:
+    ignorePackageGlobs:
+issues:
+  exclude-rules:
+    - path: "_test\\.go"
+      linters:
+        - wrapcheck
+    - linters:
+      - importas
+      text: has alias "" which is not part of config # Ignore false positives that emerged due to https://github.com/julz/importas/issues/15.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+output:
+  sort-results: true
+run:
+  timeout: 15m
+  skip-files:
+    - zz_generated.deepcopy.go

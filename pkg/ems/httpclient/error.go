@@ -13,12 +13,12 @@ type Error struct {
 
 type ErrorOpt func(*Error)
 
-func NewError(err error, opts ...ErrorOpt) *Error {
+func NewError(err error, opts ...ErrorOpt) error {
 	e := &Error{Cause: err}
 	for _, opt := range opts {
 		opt(e)
 	}
-	return e
+	return *e
 }
 
 // Error provides a description of the error including all fields which are initialized to a non-default value.
