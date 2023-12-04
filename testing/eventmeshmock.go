@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/ginkgo" //nolint:revive,stylecheck // using . import for convenience
 	. "github.com/onsi/gomega" //nolint:revive,stylecheck // using . import for convenience
 	"golang.org/x/oauth2"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	// gcp auth etc.
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -52,7 +52,7 @@ type EventMeshMockResponseOverride struct {
 }
 
 func NewEventMeshMock() *EventMeshMock {
-	logger := logf.Log.WithName("beb mock")
+	logger := ctrllog.Log.WithName("beb mock")
 	return &EventMeshMock{
 		Requests:          NewSafeRequests(),
 		Subscriptions:     NewSafeSubscriptions(),

@@ -8,11 +8,12 @@ import (
 
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
-	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 func Test_UpdateWebhookAuthConfig(t *testing.T) {
@@ -34,38 +35,38 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	ensureNamespaceCreated(ctx, t, namespace)
 
 	// ensure subscriber service is created
-	subscriberService := reconcilertesting.NewSubscriberSvc(name, namespace)
+	subscriberService := eventingtesting.NewSubscriberSvc(name, namespace)
 	ensureK8sResourceCreated(ctx, t, subscriberService)
 
 	// ensure Kyma subscription is created
-	kymaSubscription := reconcilertesting.NewSubscription(
+	kymaSubscription := eventingtesting.NewSubscription(
 		name,
 		namespace,
-		reconcilertesting.WithDefaultSource(),
-		reconcilertesting.WithOrderCreatedV1Event(),
-		reconcilertesting.WithSinkURL(reconcilertesting.ValidSinkURL(namespace, name)),
+		eventingtesting.WithDefaultSource(),
+		eventingtesting.WithOrderCreatedV1Event(),
+		eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, name)),
 	)
 	ensureK8sResourceCreated(ctx, t, kymaSubscription)
-	getSubscriptionAssert(ctx, g, kymaSubscription).Should(reconcilertesting.HaveNoneEmptyAPIRuleName())
+	getSubscriptionAssert(ctx, g, kymaSubscription).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
 
 	// ensure APIRule is created
-	apiRule := &apigatewayv1beta1.APIRule{
-		ObjectMeta: metav1.ObjectMeta{
+	apiRule := &apigateway.APIRule{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      kymaSubscription.Status.Backend.APIRuleName,
 			Namespace: kymaSubscription.Namespace,
 		},
 	}
-	getAPIRuleAssert(ctx, g, apiRule).Should(reconcilertesting.HaveNotEmptyAPIRule())
+	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
 
 	// ensure hashes are computed
 	getSubscriptionAssert(ctx, g, kymaSubscription).Should(
 		gomega.And(
-			reconcilertesting.HaveSubscriptionReady(),
-			reconcilertesting.HaveNonZeroEv2Hash(),
-			reconcilertesting.HaveNonZeroEventMeshHash(),
-			reconcilertesting.HaveNonZeroEventMeshLocalHash(),
-			reconcilertesting.HaveNonZeroWebhookAuthHash(),
+			eventingtesting.HaveSubscriptionReady(),
+			eventingtesting.HaveNonZeroEv2Hash(),
+			eventingtesting.HaveNonZeroEventMeshHash(),
+			eventingtesting.HaveNonZeroEventMeshLocalHash(),
+			eventingtesting.HaveNonZeroWebhookAuthHash(),
 		),
 	)
 	webhookAuthHashBefore := kymaSubscription.Status.Backend.WebhookAuthHash
@@ -100,11 +101,11 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	// ensure hashes are computed
 	getSubscriptionAssert(ctx, g, kymaSubscription).Should(
 		gomega.And(
-			reconcilertesting.HaveSubscriptionReady(),
-			reconcilertesting.HaveNonZeroEv2Hash(),
-			reconcilertesting.HaveNonZeroEventMeshHash(),
-			reconcilertesting.HaveNonZeroEventMeshLocalHash(),
-			reconcilertesting.HaveNonZeroWebhookAuthHash(),
+			eventingtesting.HaveSubscriptionReady(),
+			eventingtesting.HaveNonZeroEv2Hash(),
+			eventingtesting.HaveNonZeroEventMeshHash(),
+			eventingtesting.HaveNonZeroEventMeshLocalHash(),
+			eventingtesting.HaveNonZeroWebhookAuthHash(),
 		),
 	)
 	webhookAuthHashAfter := kymaSubscription.Status.Backend.WebhookAuthHash

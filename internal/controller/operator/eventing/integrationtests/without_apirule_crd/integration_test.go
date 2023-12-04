@@ -4,12 +4,13 @@ import (
 	"os"
 	"testing"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	"github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
+
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
-	"github.com/onsi/gomega"
-	gomegatypes "github.com/onsi/gomega/types"
 )
 
 const (
@@ -56,7 +57,7 @@ func Test_EventMesh_APIRule_Dependency_Check(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		givenEventing *eventingv1alpha1.Eventing
+		givenEventing *operatorv1alpha1.Eventing
 		wantMatches   gomegatypes.GomegaMatcher
 	}{
 		{

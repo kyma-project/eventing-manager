@@ -5,17 +5,18 @@ import (
 	"os"
 	"testing"
 
+	"github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
+	"github.com/stretchr/testify/require"
+	kcore "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test"
 	eventingMatchers "github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils/integration"
-	"github.com/onsi/gomega"
-	gomegatypes "github.com/onsi/gomega/types"
-	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 const projectRootDir = "../../../../../../"
@@ -901,7 +902,7 @@ func Test_Validate_Defaulting(t *testing.T) {
 
 			// then
 			testEnvironment.GetEventingAssert(g, &v1alpha1.Eventing{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      tc.givenUnstructuredEventing.GetName(),
 					Namespace: tc.givenUnstructuredEventing.GetNamespace(),
 				},
@@ -929,13 +930,13 @@ func defaultPublisher() v1alpha1.Publisher {
 	}
 }
 
-func defaultPublisherResources() corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
+func defaultPublisherResources() kcore.ResourceRequirements {
+	return kcore.ResourceRequirements{
+		Limits: kcore.ResourceList{
 			"cpu":    resource.MustParse("500m"),
 			"memory": resource.MustParse("512Mi"),
 		},
-		Requests: corev1.ResourceList{
+		Requests: kcore.ResourceList{
 			"cpu":    resource.MustParse("40m"),
 			"memory": resource.MustParse("256Mi"),
 		},

@@ -7,13 +7,14 @@ import (
 	"strings"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	kcore "k8s.io/api/core/v1"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/event"
 
-	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/pkg/errors"
+
+	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 )
 
 const randStringlength = 10
@@ -77,7 +78,7 @@ func Int64Ptr(i int64) *int64 {
 func StringPtr(s string) *string {
 	return &s
 }
-func ProcMountTypePtr(p v1.ProcMountType) *v1.ProcMountType {
+func ProcMountTypePtr(p kcore.ProcMountType) *kcore.ProcMountType {
 	return &p
 }
 

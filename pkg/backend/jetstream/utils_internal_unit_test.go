@@ -5,8 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/nats-io/nats.go"
+
+	"github.com/kyma-project/eventing-manager/pkg/env"
 
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,7 @@ import (
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
-	evtesting "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 // maxJetStreamConsumerNameLength is the maximum preferred length for the JetStream consumer names
@@ -215,7 +216,7 @@ func TestGetStreamConfig(t *testing.T) {
 
 func TestCreateKeyPrefix(t *testing.T) {
 	// given
-	sub := evtesting.NewSubscription(subName, subNamespace)
+	sub := eventingtesting.NewSubscription(subName, subNamespace)
 	// when
 	keyPrefix := createKeyPrefix(sub)
 	// then
@@ -224,21 +225,21 @@ func TestCreateKeyPrefix(t *testing.T) {
 
 func TestGetCleanEventTypesFromStatus(t *testing.T) {
 	// given
-	sub := evtesting.NewSubscription(subName, subNamespace)
+	sub := eventingtesting.NewSubscription(subName, subNamespace)
 	sub.Status.Types = []eventingv1alpha2.EventType{
 		{
-			OriginalType: evtesting.OrderCreatedUncleanEvent,
-			CleanType:    evtesting.OrderCreatedCleanEvent,
+			OriginalType: eventingtesting.OrderCreatedUncleanEvent,
+			CleanType:    eventingtesting.OrderCreatedCleanEvent,
 		},
 		{
-			OriginalType: evtesting.OrderCreatedEventTypeNotClean,
-			CleanType:    evtesting.OrderCreatedEventType,
+			OriginalType: eventingtesting.OrderCreatedEventTypeNotClean,
+			CleanType:    eventingtesting.OrderCreatedEventType,
 		},
 	}
 	// when
 	cleanTypes := GetCleanEventTypesFromEventTypes(sub.Status.Types)
 	// then
-	require.Equal(t, cleanTypes, []string{evtesting.OrderCreatedCleanEvent, evtesting.OrderCreatedEventType})
+	require.Equal(t, cleanTypes, []string{eventingtesting.OrderCreatedCleanEvent, eventingtesting.OrderCreatedEventType})
 }
 
 func TestGetCleanEventTypes(t *testing.T) {
@@ -253,45 +254,45 @@ func TestGetCleanEventTypes(t *testing.T) {
 	}{
 		{
 			name: "Should not clean eventTypes if the typeMatching is set to Exact",
-			givenSubscription: evtesting.NewSubscription("sub", "test",
-				evtesting.WithNotCleanEventSourceAndType(),
-				evtesting.WithTypeMatchingExact(),
+			givenSubscription: eventingtesting.NewSubscription("sub", "test",
+				eventingtesting.WithNotCleanEventSourceAndType(),
+				eventingtesting.WithTypeMatchingExact(),
 			),
 			wantEventTypes: []eventingv1alpha2.EventType{
 				{
-					OriginalType: evtesting.OrderCreatedUncleanEvent,
-					CleanType:    evtesting.OrderCreatedUncleanEvent,
+					OriginalType: eventingtesting.OrderCreatedUncleanEvent,
+					CleanType:    eventingtesting.OrderCreatedUncleanEvent,
 				},
 			},
 		},
 		{
 			name: "Should clean eventTypes if the typeMatching is set to Standard",
-			givenSubscription: evtesting.NewSubscription("sub", "test",
-				evtesting.WithNotCleanEventSourceAndType(),
-				evtesting.WithTypeMatchingStandard(),
+			givenSubscription: eventingtesting.NewSubscription("sub", "test",
+				eventingtesting.WithNotCleanEventSourceAndType(),
+				eventingtesting.WithTypeMatchingStandard(),
 			),
 			wantEventTypes: []eventingv1alpha2.EventType{
 				{
-					OriginalType: evtesting.OrderCreatedUncleanEvent,
-					CleanType:    evtesting.OrderCreatedCleanEvent,
+					OriginalType: eventingtesting.OrderCreatedUncleanEvent,
+					CleanType:    eventingtesting.OrderCreatedCleanEvent,
 				},
 			},
 		},
 		{
 			name: "Should clean multiple eventTypes",
-			givenSubscription: evtesting.NewSubscription("sub", "test",
-				evtesting.WithNotCleanEventSourceAndType(),
-				evtesting.WithEventType(evtesting.OrderCreatedV1Event),
-				evtesting.WithTypeMatchingStandard(),
+			givenSubscription: eventingtesting.NewSubscription("sub", "test",
+				eventingtesting.WithNotCleanEventSourceAndType(),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
+				eventingtesting.WithTypeMatchingStandard(),
 			),
 			wantEventTypes: []eventingv1alpha2.EventType{
 				{
-					OriginalType: evtesting.OrderCreatedUncleanEvent,
-					CleanType:    evtesting.OrderCreatedCleanEvent,
+					OriginalType: eventingtesting.OrderCreatedUncleanEvent,
+					CleanType:    eventingtesting.OrderCreatedCleanEvent,
 				},
 				{
-					OriginalType: evtesting.OrderCreatedV1Event,
-					CleanType:    evtesting.OrderCreatedV1Event,
+					OriginalType: eventingtesting.OrderCreatedV1Event,
+					CleanType:    eventingtesting.OrderCreatedV1Event,
 				},
 			},
 		},
@@ -309,7 +310,7 @@ func TestGetCleanEventTypes(t *testing.T) {
 func TestGetBackendJetStreamTypes(t *testing.T) {
 	t.Parallel()
 	jsCleaner := cleaner.NewJetStreamCleaner(nil)
-	defaultSub := evtesting.NewSubscription(subName, subNamespace)
+	defaultSub := eventingtesting.NewSubscription(subName, subNamespace)
 	js := NewJetStream(env.NATSConfig{
 		JSSubjectPrefix: DefaultJetStreamSubjectPrefix,
 	}, nil, jsCleaner, env.DefaultSubscriptionConfig{}, nil)
@@ -328,67 +329,67 @@ func TestGetBackendJetStreamTypes(t *testing.T) {
 		},
 		{
 			name: "one type and one jsSubject",
-			givenSubscription: evtesting.NewSubscription(subName, subNamespace,
-				evtesting.WithSource(evtesting.EventSourceUnclean),
-				evtesting.WithEventType(evtesting.OrderCreatedUncleanEvent)),
-			givenJSSubjects: js.GetJetStreamSubjects(evtesting.EventSourceUnclean,
-				[]string{evtesting.OrderCreatedCleanEvent},
+			givenSubscription: eventingtesting.NewSubscription(subName, subNamespace,
+				eventingtesting.WithSource(eventingtesting.EventSourceUnclean),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedUncleanEvent)),
+			givenJSSubjects: js.GetJetStreamSubjects(eventingtesting.EventSourceUnclean,
+				[]string{eventingtesting.OrderCreatedCleanEvent},
 				eventingv1alpha2.TypeMatchingStandard),
 			wantJSTypes: []eventingv1alpha2.JetStreamTypes{
 				{
-					OriginalType: evtesting.OrderCreatedUncleanEvent,
+					OriginalType: eventingtesting.OrderCreatedUncleanEvent,
 					ConsumerName: "828ed501e743dfc43e2f23cfc14b0232",
 				},
 			},
 		},
 		{
 			name: "two types and two jsSubjects",
-			givenSubscription: evtesting.NewSubscription(subName, subNamespace,
-				evtesting.WithSource(evtesting.EventSourceUnclean),
-				evtesting.WithEventType(evtesting.OrderCreatedCleanEvent),
-				evtesting.WithEventType(evtesting.OrderCreatedV1Event)),
-			givenJSSubjects: js.GetJetStreamSubjects(evtesting.EventSourceUnclean,
-				[]string{evtesting.OrderCreatedCleanEvent, evtesting.OrderCreatedV1Event},
+			givenSubscription: eventingtesting.NewSubscription(subName, subNamespace,
+				eventingtesting.WithSource(eventingtesting.EventSourceUnclean),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedCleanEvent),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event)),
+			givenJSSubjects: js.GetJetStreamSubjects(eventingtesting.EventSourceUnclean,
+				[]string{eventingtesting.OrderCreatedCleanEvent, eventingtesting.OrderCreatedV1Event},
 				eventingv1alpha2.TypeMatchingStandard),
 			wantJSTypes: []eventingv1alpha2.JetStreamTypes{
 				{
-					OriginalType: evtesting.OrderCreatedCleanEvent,
+					OriginalType: eventingtesting.OrderCreatedCleanEvent,
 					ConsumerName: "828ed501e743dfc43e2f23cfc14b0232",
 				},
 				{
-					OriginalType: evtesting.OrderCreatedV1Event,
+					OriginalType: eventingtesting.OrderCreatedV1Event,
 					ConsumerName: "ec2f903b07de7a974cf97c3d61fb043f",
 				},
 			},
 		},
 		{
 			name: "two types and two jsSubjects with type matching exact",
-			givenSubscription: evtesting.NewSubscription(subName, subNamespace,
-				evtesting.WithSource(evtesting.EventSourceUnclean),
-				evtesting.WithEventType(evtesting.OrderCreatedCleanEvent),
-				evtesting.WithEventType(evtesting.OrderCreatedV1Event)),
-			givenJSSubjects: js.GetJetStreamSubjects(evtesting.EventSourceUnclean,
-				[]string{evtesting.OrderCreatedCleanEvent, evtesting.OrderCreatedV1Event},
+			givenSubscription: eventingtesting.NewSubscription(subName, subNamespace,
+				eventingtesting.WithSource(eventingtesting.EventSourceUnclean),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedCleanEvent),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event)),
+			givenJSSubjects: js.GetJetStreamSubjects(eventingtesting.EventSourceUnclean,
+				[]string{eventingtesting.OrderCreatedCleanEvent, eventingtesting.OrderCreatedV1Event},
 				eventingv1alpha2.TypeMatchingExact),
 			wantJSTypes: []eventingv1alpha2.JetStreamTypes{
 				{
-					OriginalType: evtesting.OrderCreatedCleanEvent,
+					OriginalType: eventingtesting.OrderCreatedCleanEvent,
 					ConsumerName: "015e691825a7813383a419a53d8c5ea0",
 				},
 				{
-					OriginalType: evtesting.OrderCreatedV1Event,
+					OriginalType: eventingtesting.OrderCreatedV1Event,
 					ConsumerName: "15b59df6dc97f232718e05d7087c7a50",
 				},
 			},
 		},
 		{
 			name: "should return error if length mismatch",
-			givenSubscription: evtesting.NewSubscription(subName, subNamespace,
-				evtesting.WithSource(evtesting.EventSourceUnclean),
-				evtesting.WithEventType(evtesting.OrderCreatedCleanEvent),
-				evtesting.WithEventType(evtesting.OrderCreatedV1Event)),
-			givenJSSubjects: js.GetJetStreamSubjects(evtesting.EventSourceUnclean,
-				[]string{evtesting.OrderCreatedCleanEvent},
+			givenSubscription: eventingtesting.NewSubscription(subName, subNamespace,
+				eventingtesting.WithSource(eventingtesting.EventSourceUnclean),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedCleanEvent),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event)),
+			givenJSSubjects: js.GetJetStreamSubjects(eventingtesting.EventSourceUnclean,
+				[]string{eventingtesting.OrderCreatedCleanEvent},
 				eventingv1alpha2.TypeMatchingStandard),
 			wantError: true,
 		},
@@ -422,11 +423,11 @@ func TestSubscriptionSubjectIdentifierEqual(t *testing.T) {
 		{
 			name: "should be equal if the two instances are identical",
 			givenIdentifier1: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-1", "ns-1"),
+				eventingtesting.NewSubscription("sub-1", "ns-1"),
 				"prefix.app.event.operation.v1",
 			),
 			givenIdentifier2: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-1", "ns-1"),
+				eventingtesting.NewSubscription("sub-1", "ns-1"),
 				"prefix.app.event.operation.v1",
 			),
 			wantEqual: true,
@@ -435,11 +436,11 @@ func TestSubscriptionSubjectIdentifierEqual(t *testing.T) {
 		{
 			name: "should not be equal if only name is different",
 			givenIdentifier1: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-1", "ns-1"),
+				eventingtesting.NewSubscription("sub-1", "ns-1"),
 				"prefix.app.event.operation.v1",
 			),
 			givenIdentifier2: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-2", "ns-1"),
+				eventingtesting.NewSubscription("sub-2", "ns-1"),
 				"prefix.app.event.operation.v1",
 			),
 			wantEqual: false,
@@ -447,11 +448,11 @@ func TestSubscriptionSubjectIdentifierEqual(t *testing.T) {
 		{
 			name: "should not be equal if only namespace is different",
 			givenIdentifier1: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-1", "ns-1"),
+				eventingtesting.NewSubscription("sub-1", "ns-1"),
 				"prefix.app.event.operation.v1",
 			),
 			givenIdentifier2: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-1", "ns-2"),
+				eventingtesting.NewSubscription("sub-1", "ns-2"),
 				"prefix.app.event.operation.v1",
 			),
 			wantEqual: false,
@@ -459,11 +460,11 @@ func TestSubscriptionSubjectIdentifierEqual(t *testing.T) {
 		{
 			name: "should not be equal if only subject is different",
 			givenIdentifier1: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-1", "ns-1"),
+				eventingtesting.NewSubscription("sub-1", "ns-1"),
 				"prefix.app.event.operation.v1",
 			),
 			givenIdentifier2: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-1", "ns-1"),
+				eventingtesting.NewSubscription("sub-1", "ns-1"),
 				"prefix.app.event.operation.v2",
 			),
 			wantEqual: false,
@@ -472,11 +473,11 @@ func TestSubscriptionSubjectIdentifierEqual(t *testing.T) {
 		{
 			name: "should not be equal if subject is the same but name and namespace are swapped",
 			givenIdentifier1: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-1", "ns-1"),
+				eventingtesting.NewSubscription("sub-1", "ns-1"),
 				"prefix.app.event.operation.v1",
 			),
 			givenIdentifier2: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("ns-1", "sub-1"),
+				eventingtesting.NewSubscription("ns-1", "sub-1"),
 				"prefix.app.event.operation.v1",
 			),
 			wantEqual: false,
@@ -484,11 +485,11 @@ func TestSubscriptionSubjectIdentifierEqual(t *testing.T) {
 		{
 			name: "should not be equal if subject is the same but name and namespace are only equal if joined together",
 			givenIdentifier1: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-1", "ns-1"), // evaluates to "sub-1ns-1" when joined
+				eventingtesting.NewSubscription("sub-1", "ns-1"), // evaluates to "sub-1ns-1" when joined
 				"prefix.app.event.operation.v1",
 			),
 			givenIdentifier2: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub-1n", "s-1"), // evaluates to "sub-1ns-1" when joined
+				eventingtesting.NewSubscription("sub-1n", "s-1"), // evaluates to "sub-1ns-1" when joined
 				"prefix.app.event.operation.v1",
 			),
 			wantEqual: false,
@@ -519,7 +520,7 @@ func TestSubscriptionSubjectIdentifierConsumerNameLength(t *testing.T) {
 		{
 			name: "short string values",
 			givenIdentifier: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub", "ns"),
+				eventingtesting.NewSubscription("sub", "ns"),
 				"app.event.operation.v1",
 			),
 			wantConsumerNameLength: maxJetStreamConsumerNameLength,
@@ -527,7 +528,7 @@ func TestSubscriptionSubjectIdentifierConsumerNameLength(t *testing.T) {
 		{
 			name: "long string values",
 			givenIdentifier: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("some-test-subscription", "some-test-namespace"),
+				eventingtesting.NewSubscription("some-test-subscription", "some-test-namespace"),
 				"some.test.prefix.some-test-application.some-test-event-name.some-test-operation.some-test-version",
 			),
 			wantConsumerNameLength: maxJetStreamConsumerNameLength,
@@ -554,7 +555,7 @@ func TestSubscriptionSubjectIdentifierNamespacedName(t *testing.T) {
 		{
 			name: "short name and namespace values",
 			givenIdentifier: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("sub", "ns"),
+				eventingtesting.NewSubscription("sub", "ns"),
 				"app.event.operation.v1",
 			),
 			wantNamespacedName: "ns/sub",
@@ -562,7 +563,7 @@ func TestSubscriptionSubjectIdentifierNamespacedName(t *testing.T) {
 		{
 			name: "long name and namespace values",
 			givenIdentifier: NewSubscriptionSubjectIdentifier(
-				evtesting.NewSubscription("some-test-subscription", "some-test-namespace"),
+				eventingtesting.NewSubscription("some-test-subscription", "some-test-namespace"),
 				"app.event.operation.v1",
 			),
 			wantNamespacedName: "some-test-namespace/some-test-subscription",

@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
@@ -48,11 +48,11 @@ func newDefaultSubscription(opts ...eventingtesting.SubscriptionV1alpha1Opt) *v1
 		defaultConditions = append(defaultConditions, v1alpha1.ConditionV2ToV1(condition))
 	}
 	newSub := &v1alpha1.Subscription{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Subscription",
 			APIVersion: "eventing.kyma-project.io/v1alpha1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      defaultName,
 			Namespace: defaultNamespace,
 		},
@@ -125,11 +125,11 @@ func v1WithBEBStatusFields() eventingtesting.SubscriptionV1alpha1Opt {
 
 func newV2DefaultSubscription(opts ...eventingtesting.SubscriptionOpt) *v1alpha2.Subscription {
 	newSub := &v1alpha2.Subscription{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Subscription",
 			APIVersion: "eventing.kyma-project.io/v1alpha2",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      defaultName,
 			Namespace: defaultNamespace,
 		},

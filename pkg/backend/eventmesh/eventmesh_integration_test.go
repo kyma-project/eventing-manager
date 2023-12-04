@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
+
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
@@ -14,8 +16,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
-	controllertesting "github.com/kyma-project/eventing-manager/testing"
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 func Test_getProcessedEventTypes(t *testing.T) {
@@ -44,12 +45,12 @@ func Test_getProcessedEventTypes(t *testing.T) {
 					Source: "test",
 				},
 			},
-			givenEventTypePrefix: controllertesting.EventMeshPrefix,
+			givenEventTypePrefix: eventingtesting.EventMeshPrefix,
 			wantProcessedEventTypes: []backendutils.EventTypeInfo{
 				{
 					OriginalType:  "order.created.v1",
 					CleanType:     "order.created.v1",
-					ProcessedType: fmt.Sprintf("%s.test.order.created.v1", controllertesting.EventMeshPrefix),
+					ProcessedType: fmt.Sprintf("%s.test.order.created.v1", eventingtesting.EventMeshPrefix),
 				},
 			},
 			wantError: false,
@@ -64,13 +65,13 @@ func Test_getProcessedEventTypes(t *testing.T) {
 					Source: "test-Ä.Segment2",
 				},
 			},
-			givenEventTypePrefix: controllertesting.EventMeshPrefix,
+			givenEventTypePrefix: eventingtesting.EventMeshPrefix,
 			wantProcessedEventTypes: []backendutils.EventTypeInfo{
 				{
 					OriginalType: "Segment1.Segment2.Segment3.Segment4-Part1-Part2-Ä.Segment5-Part1-Part2-Ä.v1",
 					CleanType:    "Segment1Segment2Segment3Segment4Part1Part2.Segment5Part1Part2.v1",
 					ProcessedType: fmt.Sprintf("%s.testSegment2.Segment1Segment2Segment3Segment4Part1Part2"+
-						".Segment5Part1Part2.v1", controllertesting.EventMeshPrefix),
+						".Segment5Part1Part2.v1", eventingtesting.EventMeshPrefix),
 				},
 			},
 			wantError: false,
@@ -86,12 +87,12 @@ func Test_getProcessedEventTypes(t *testing.T) {
 					Source: "test",
 				},
 			},
-			givenEventTypePrefix: controllertesting.EventMeshPrefix,
+			givenEventTypePrefix: eventingtesting.EventMeshPrefix,
 			wantProcessedEventTypes: []backendutils.EventTypeInfo{
 				{
 					OriginalType:  "order.created.v1",
 					CleanType:     "order.created.v1",
-					ProcessedType: fmt.Sprintf("%s.test.order.created.v1", controllertesting.EventMeshPrefix),
+					ProcessedType: fmt.Sprintf("%s.test.order.created.v1", eventingtesting.EventMeshPrefix),
 				},
 			},
 			wantError: false,
@@ -107,7 +108,7 @@ func Test_getProcessedEventTypes(t *testing.T) {
 					TypeMatching: eventingv1alpha2.TypeMatchingExact,
 				},
 			},
-			givenEventTypePrefix: controllertesting.EventMeshPrefix,
+			givenEventTypePrefix: eventingtesting.EventMeshPrefix,
 			wantProcessedEventTypes: []backendutils.EventTypeInfo{
 				{
 					OriginalType:  "test1.test2.test3.order.created.v1",
@@ -128,7 +129,7 @@ func Test_getProcessedEventTypes(t *testing.T) {
 					Source: "test",
 				},
 			},
-			givenEventTypePrefix:    controllertesting.InvalidEventMeshPrefix,
+			givenEventTypePrefix:    eventingtesting.InvalidEventMeshPrefix,
 			wantProcessedEventTypes: nil,
 			wantError:               true,
 		},
@@ -595,7 +596,7 @@ func Test_SyncSubscription(t *testing.T) {
 		ClientSecret:             "client-secret",
 		TokenEndpoint:            eventMeshMock.TokenURL,
 		WebhookActivationTimeout: 0,
-		EventTypePrefix:          controllertesting.EventTypePrefix,
+		EventTypePrefix:          eventingtesting.EventTypePrefix,
 		BEBNamespace:             "/default/ns",
 		Qos:                      string(types.QosAtLeastOnce),
 	}
@@ -607,9 +608,9 @@ func Test_SyncSubscription(t *testing.T) {
 	subscription.Status.Backend.EventMeshHash = 0
 	subscription.Status.Backend.Ev2hash = 0
 
-	apiRule := controllertesting.NewAPIRule(subscription,
-		controllertesting.WithPath(),
-		controllertesting.WithService("foo-svc", "foo-host"),
+	apiRule := eventingtesting.NewAPIRule(subscription,
+		eventingtesting.WithPath(),
+		eventingtesting.WithService("foo-svc", "foo-host"),
 	)
 
 	// cases - reconcile same subscription multiple times
@@ -620,17 +621,17 @@ func Test_SyncSubscription(t *testing.T) {
 	}{
 		{
 			name:           "should be able to sync first time",
-			givenEventType: controllertesting.OrderCreatedEventTypeNotClean,
+			givenEventType: eventingtesting.OrderCreatedEventTypeNotClean,
 			wantIsChanged:  true,
 		},
 		{
 			name:           "should be able to sync second time with same subscription",
-			givenEventType: controllertesting.OrderCreatedEventTypeNotClean,
+			givenEventType: eventingtesting.OrderCreatedEventTypeNotClean,
 			wantIsChanged:  false,
 		},
 		{
 			name:           "should be able to sync third time with modified subscription",
-			givenEventType: controllertesting.OrderCreatedV2Event,
+			givenEventType: eventingtesting.OrderCreatedV2Event,
 			wantIsChanged:  true,
 		},
 	}
@@ -698,10 +699,10 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			typesInfo, err := eventMesh.getProcessedEventTypes(kymaSub, cleaner.NewEventMeshCleaner(defaultLogger))
 			require.NoError(t, err)
 			require.NotNil(t, typesInfo)
-			apiRule := controllertesting.NewAPIRule(
+			apiRule := eventingtesting.NewAPIRule(
 				kymaSub,
-				controllertesting.WithPath(),
-				controllertesting.WithService("test-service", "http://localhost"),
+				eventingtesting.WithPath(),
+				eventingtesting.WithService("test-service", "http://localhost"),
 			)
 
 			// convert Kyma Subscription to EventMesh Subscription
@@ -748,17 +749,17 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 
 // fixtureValidSubscription returns a valid subscription.
 func fixtureValidSubscription(name, namespace string) *eventingv1alpha2.Subscription {
-	return controllertesting.NewSubscription(
+	return eventingtesting.NewSubscription(
 		name, namespace,
-		controllertesting.WithSinkURL("https://webhook.xxx.com"),
-		controllertesting.WithDefaultSource(),
-		controllertesting.WithEventType(controllertesting.OrderCreatedEventTypeNotClean),
-		controllertesting.WithWebhookAuthForEventMesh(),
+		eventingtesting.WithSinkURL("https://webhook.xxx.com"),
+		eventingtesting.WithDefaultSource(),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventTypeNotClean),
+		eventingtesting.WithWebhookAuthForEventMesh(),
 	)
 }
 
-func startEventMeshMock() *controllertesting.EventMeshMock {
-	eventMesh := controllertesting.NewEventMeshMock()
+func startEventMeshMock() *eventingtesting.EventMeshMock {
+	eventMesh := eventingtesting.NewEventMeshMock()
 	eventMesh.Start()
 	return eventMesh
 }

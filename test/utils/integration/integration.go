@@ -11,22 +11,24 @@ import (
 	"testing"
 	"time"
 
-	eventing2 "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
+	eventing2 "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
 
-	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	kapiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	"github.com/stretchr/testify/mock"
 
 	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
 
+	kcore "k8s.io/api/core/v1"
+	krbac "k8s.io/api/rbac/v1"
+
 	"github.com/kyma-project/eventing-manager/test"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
@@ -43,15 +45,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/kyma-project/nats-manager/testutils"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
-	v1 "k8s.io/api/apps/v1"
+	kapps "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/options"
@@ -168,7 +171,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	recorder := ctrlMgr.GetEventRecorderFor("eventing-manager-test")
 
 	// create k8s clients.
-	apiClientSet, err := apiclientset.NewForConfig(ctrlMgr.GetConfig())
+	apiClientSet, err := kapiclientset.NewForConfig(ctrlMgr.GetConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -489,11 +492,11 @@ func (env TestEnvironment) EnsureK8sResourceDeleted(t *testing.T, obj client.Obj
 
 func (env TestEnvironment) EnsureNATSCRDDeleted(t *testing.T) {
 	crdManifest := &apiextensionsv1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: kmeta.TypeMeta{
 			APIVersion: "apiextensions.k8s.io/v1",
 			Kind:       "CustomResourceDefinition",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: k8s.NatsGVK.GroupResource().String(),
 		},
 	}
@@ -511,16 +514,16 @@ func (env TestEnvironment) EnsureCRDCreated(t *testing.T, crd *apiextensionsv1.C
 }
 
 func (env TestEnvironment) EnsureNamespaceDeleted(t *testing.T, namespace string) {
-	require.NoError(t, env.k8sClient.Delete(env.Context, &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
+	require.NoError(t, env.k8sClient.Delete(env.Context, &kcore.Namespace{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: namespace,
 		},
 	}))
 }
 
 func (env TestEnvironment) EnsureDeploymentDeletion(t *testing.T, name, namespace string) {
-	deployment := &v1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
+	deployment := &kapps.Deployment{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -569,7 +572,7 @@ func (env TestEnvironment) EnsureK8sClusterRoleBindingNotFound(t *testing.T, nam
 
 func (env TestEnvironment) EnsureHPADeletion(t *testing.T, name, namespace string) {
 	hpa := &autoscalingv1.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -590,7 +593,7 @@ func (env TestEnvironment) EnsureHPANotFound(t *testing.T, name, namespace strin
 
 func (env TestEnvironment) EnsureEventingResourceDeletion(t *testing.T, name, namespace string) {
 	eventing := &v1alpha1.Eventing{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -604,7 +607,7 @@ func (env TestEnvironment) EnsureEventingResourceDeletion(t *testing.T, name, na
 
 func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T, name, namespace string) {
 	eventing := &v1alpha1.Eventing{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -618,7 +621,7 @@ func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T
 
 func (env TestEnvironment) EnsureSubscriptionResourceDeletion(t *testing.T, name, namespace string) {
 	subscription := &eventingv1alpha2.Subscription{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -765,7 +768,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingOwnerReferenceSet(t *testi
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRoleBinding owner reference is set")
 }
 
-func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeployment *v1.Deployment,
+func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeployment *kapps.Deployment,
 	eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetServiceFromK8s(eventing.GetPublisherPublishServiceName(eventingCR), eventingCR.Namespace)
@@ -777,7 +780,7 @@ func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeplo
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure PublishService correctness.")
 }
 
-func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeployment *v1.Deployment,
+func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeployment *kapps.Deployment,
 	eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetServiceFromK8s(eventing.GetPublisherMetricsServiceName(eventingCR), eventingCR.Namespace)
@@ -789,7 +792,7 @@ func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeplo
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure MetricsService correctness.")
 }
 
-func (env TestEnvironment) EnsureEPPHealthServiceCorrect(t *testing.T, eppDeployment *v1.Deployment,
+func (env TestEnvironment) EnsureEPPHealthServiceCorrect(t *testing.T, eppDeployment *kapps.Deployment,
 	eventingCR v1alpha1.Eventing) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetServiceFromK8s(eventing.GetPublisherHealthServiceName(eventingCR), eventingCR.Namespace)
@@ -885,8 +888,8 @@ func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, eventing *v1al
 }
 
 func (env TestEnvironment) DeleteServiceFromK8s(name, namespace string) error {
-	return env.k8sClient.Delete(env.Context, &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	return env.k8sClient.Delete(env.Context, &kcore.Service{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -894,8 +897,8 @@ func (env TestEnvironment) DeleteServiceFromK8s(name, namespace string) error {
 }
 
 func (env TestEnvironment) DeleteServiceAccountFromK8s(name, namespace string) error {
-	return env.k8sClient.Delete(env.Context, &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
+	return env.k8sClient.Delete(env.Context, &kcore.ServiceAccount{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -903,8 +906,8 @@ func (env TestEnvironment) DeleteServiceAccountFromK8s(name, namespace string) e
 }
 
 func (env TestEnvironment) DeleteClusterRoleFromK8s(name, namespace string) error {
-	return env.k8sClient.Delete(env.Context, &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
+	return env.k8sClient.Delete(env.Context, &krbac.ClusterRole{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -912,8 +915,8 @@ func (env TestEnvironment) DeleteClusterRoleFromK8s(name, namespace string) erro
 }
 
 func (env TestEnvironment) DeleteClusterRoleBindingFromK8s(name, namespace string) error {
-	return env.k8sClient.Delete(env.Context, &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
+	return env.k8sClient.Delete(env.Context, &krbac.ClusterRoleBinding{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -922,7 +925,7 @@ func (env TestEnvironment) DeleteClusterRoleBindingFromK8s(name, namespace strin
 
 func (env TestEnvironment) DeleteHPAFromK8s(name, namespace string) error {
 	return env.k8sClient.Delete(env.Context, &autoscalingv1.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -981,13 +984,13 @@ func (env TestEnvironment) GetNATSFromK8s(name, namespace string) (*natsv1alpha1
 	return nats, err
 }
 
-func newSecretWithTLSSecret(dummyCABundle []byte) *corev1.Secret {
-	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
+func newSecretWithTLSSecret(dummyCABundle []byte) *kcore.Secret {
+	return &kcore.Secret{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      getTestBackendConfig().WebhookSecretName,
 			Namespace: getTestBackendConfig().Namespace,
 		},
@@ -999,7 +1002,7 @@ func newSecretWithTLSSecret(dummyCABundle []byte) *corev1.Secret {
 
 func getMutatingWebhookConfig(webhook []admissionv1.MutatingWebhook) *admissionv1.MutatingWebhookConfiguration {
 	return &admissionv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: getTestBackendConfig().MutatingWebhookName,
 		},
 		Webhooks: webhook,
@@ -1008,7 +1011,7 @@ func getMutatingWebhookConfig(webhook []admissionv1.MutatingWebhook) *admissionv
 
 func getValidatingWebhookConfig(webhook []admissionv1.ValidatingWebhook) *admissionv1.ValidatingWebhookConfiguration {
 	return &admissionv1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: getTestBackendConfig().ValidatingWebhookName,
 		},
 		Webhooks: webhook,
@@ -1035,7 +1038,7 @@ func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*v1alpha1
 
 func (env TestEnvironment) DeleteEventingFromK8s(name, namespace string) error {
 	cr := &v1alpha1.Eventing{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -1044,39 +1047,39 @@ func (env TestEnvironment) DeleteEventingFromK8s(name, namespace string) error {
 }
 
 func (env TestEnvironment) DeleteSecretFromK8s(name, namespace string) error {
-	return env.k8sClient.Delete(env.Context, &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	return env.k8sClient.Delete(env.Context, &kcore.Secret{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 	})
 }
 
-func (env TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*v1.Deployment, error) {
+func (env TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*kapps.Deployment, error) {
 	nn := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
-	result := &v1.Deployment{}
+	result := &kapps.Deployment{}
 	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (env TestEnvironment) GetServiceFromK8s(name, namespace string) (*corev1.Service, error) {
+func (env TestEnvironment) GetServiceFromK8s(name, namespace string) (*kcore.Service, error) {
 	nn := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
-	result := &corev1.Service{}
+	result := &kcore.Service{}
 	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (env TestEnvironment) GetSecretFromK8s(name, namespace string) (*corev1.Secret, error) {
+func (env TestEnvironment) GetSecretFromK8s(name, namespace string) (*kcore.Secret, error) {
 	nn := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -1084,36 +1087,36 @@ func (env TestEnvironment) GetSecretFromK8s(name, namespace string) (*corev1.Sec
 	return env.KubeClient.GetSecret(env.Context, nn.String())
 }
 
-func (env TestEnvironment) GetServiceAccountFromK8s(name, namespace string) (*corev1.ServiceAccount, error) {
+func (env TestEnvironment) GetServiceAccountFromK8s(name, namespace string) (*kcore.ServiceAccount, error) {
 	nn := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
-	result := &corev1.ServiceAccount{}
+	result := &kcore.ServiceAccount{}
 	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (env TestEnvironment) GetClusterRoleFromK8s(name, namespace string) (*rbacv1.ClusterRole, error) {
+func (env TestEnvironment) GetClusterRoleFromK8s(name, namespace string) (*krbac.ClusterRole, error) {
 	nn := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
-	result := &rbacv1.ClusterRole{}
+	result := &krbac.ClusterRole{}
 	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (env TestEnvironment) GetClusterRoleBindingFromK8s(name, namespace string) (*rbacv1.ClusterRoleBinding, error) {
+func (env TestEnvironment) GetClusterRoleBindingFromK8s(name, namespace string) (*krbac.ClusterRoleBinding, error) {
 	nn := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
-	result := &rbacv1.ClusterRoleBinding{}
+	result := &krbac.ClusterRoleBinding{}
 	if err := env.k8sClient.Get(env.Context, nn, result); err != nil {
 		return nil, err
 	}

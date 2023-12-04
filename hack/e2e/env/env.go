@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/kelseyhightower/envconfig"
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 )
 
 // E2EConfig represents the environment config for the end-to-end tests for eventing-manager.
@@ -22,11 +23,11 @@ type E2EConfig struct {
 }
 
 func (cfg E2EConfig) IsNATSBackend() bool {
-	return eventingv1alpha1.BackendType(cfg.BackendType) == eventingv1alpha1.NatsBackendType
+	return operatorv1alpha1.BackendType(cfg.BackendType) == operatorv1alpha1.NatsBackendType
 }
 
 func (cfg E2EConfig) IsEventMeshBackend() bool {
-	return eventingv1alpha1.BackendType(cfg.BackendType) == eventingv1alpha1.EventMeshBackendType
+	return operatorv1alpha1.BackendType(cfg.BackendType) == operatorv1alpha1.EventMeshBackendType
 }
 
 func GetE2EConfig() (*E2EConfig, error) {

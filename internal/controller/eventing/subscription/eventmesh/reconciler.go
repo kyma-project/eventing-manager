@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8slabels "k8s.io/apimachinery/pkg/labels"
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	kcore "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	klabels "k8s.io/apimachinery/pkg/labels"
+	ktypes "k8s.io/apimachinery/pkg/types"
 
 	recerrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
@@ -24,7 +24,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/object"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	"golang.org/x/xerrors"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -182,7 +182,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 // updateSubscription updates the subscription changes to k8s.
 func (r *Reconciler) updateSubscription(ctx context.Context, sub *eventingv1alpha2.Subscription, logger *zap.SugaredLogger) error {
-	namespacedName := &k8stypes.NamespacedName{
+	namespacedName := &ktypes.NamespacedName{
 		Name:      sub.Name,
 		Namespace: sub.Namespace,
 	}
@@ -266,7 +266,7 @@ func (r *Reconciler) handleDeleteSubscription(ctx context.Context, subscription 
 
 	// update condition in subscription status
 	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed,
-		eventingv1alpha2.ConditionReasonSubscriptionDeleted, corev1.ConditionFalse, "")
+		eventingv1alpha2.ConditionReasonSubscriptionDeleted, kcore.ConditionFalse, "")
 	replaceStatusCondition(subscription, condition)
 
 	// remove finalizers from subscription
@@ -282,7 +282,7 @@ func (r *Reconciler) handleDeleteSubscription(ctx context.Context, subscription 
 }
 
 // syncEventMeshSubscription delegates the subscription synchronization to the backend client. It returns true if the subscription is ready.
-func (r *Reconciler) syncEventMeshSubscription(subscription *eventingv1alpha2.Subscription, apiRule *apigatewayv1beta1.APIRule, logger *zap.SugaredLogger) (bool, error) {
+func (r *Reconciler) syncEventMeshSubscription(subscription *eventingv1alpha2.Subscription, apiRule *apigateway.APIRule, logger *zap.SugaredLogger) (bool, error) {
 	logger.Debug("Syncing subscription with EventMesh")
 
 	if apiRule == nil {
@@ -316,10 +316,10 @@ func (r *Reconciler) syncEventMeshSubscription(subscription *eventingv1alpha2.Su
 func (r *Reconciler) syncConditionSubscribed(subscription *eventingv1alpha2.Subscription, err error) {
 	// Include the EventMesh subscription ID in the Condition message
 	message := eventingv1alpha2.CreateMessageForConditionReasonSubscriptionCreated(r.nameMapper.MapSubscriptionName(subscription.Name, subscription.Namespace))
-	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, corev1.ConditionTrue, message)
+	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, kcore.ConditionTrue, message)
 	if err != nil {
 		message = err.Error()
-		condition = eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreationFailed, corev1.ConditionFalse, message)
+		condition = eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreationFailed, kcore.ConditionFalse, message)
 	}
 
 	replaceStatusCondition(subscription, condition)
@@ -329,7 +329,7 @@ func (r *Reconciler) syncConditionSubscribed(subscription *eventingv1alpha2.Subs
 func (r *Reconciler) syncConditionSubscriptionActive(subscription *eventingv1alpha2.Subscription, isActive bool, logger *zap.SugaredLogger) {
 	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonSubscriptionActive,
-		corev1.ConditionTrue,
+		kcore.ConditionTrue,
 		"")
 	if !isActive {
 		logger.Infow("Waiting for subscription to be active", "name", subscription.Name,
@@ -337,7 +337,7 @@ func (r *Reconciler) syncConditionSubscriptionActive(subscription *eventingv1alp
 		message := "Waiting for subscription to be active"
 		condition = eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 			eventingv1alpha2.ConditionReasonSubscriptionNotActive,
-			corev1.ConditionFalse,
+			kcore.ConditionFalse,
 			message)
 	}
 	replaceStatusCondition(subscription, condition)
@@ -347,20 +347,20 @@ func (r *Reconciler) syncConditionSubscriptionActive(subscription *eventingv1alp
 // checks if the last webhook call returned an error.
 func syncConditionWebhookCallStatus(subscription *eventingv1alpha2.Subscription) {
 	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionWebhookCallStatus,
-		eventingv1alpha2.ConditionReasonWebhookCallStatus, corev1.ConditionFalse, "")
+		eventingv1alpha2.ConditionReasonWebhookCallStatus, kcore.ConditionFalse, "")
 	if isWebhookCallError, err := checkLastFailedDelivery(subscription); err != nil {
 		condition.Message = err.Error()
 	} else if isWebhookCallError {
 		condition.Message = subscription.Status.Backend.EventMeshSubscriptionStatus.LastFailedDeliveryReason
 	} else {
-		condition.Status = corev1.ConditionTrue
+		condition.Status = kcore.ConditionTrue
 	}
 	replaceStatusCondition(subscription, condition)
 }
 
 // syncAPIRule validate the given subscription sink URL and sync its APIRule.
 func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	logger *zap.SugaredLogger) (*apigatewayv1beta1.APIRule, error) {
+	logger *zap.SugaredLogger) (*apigateway.APIRule, error) {
 	if err := r.sinkValidator.Validate(subscription); err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1al
 
 // createOrUpdateAPIRule create new or update existing APIRule for the given subscription.
 func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	sink url.URL, logger *zap.SugaredLogger) (*apigatewayv1beta1.APIRule, error) {
+	sink url.URL, logger *zap.SugaredLogger) (*apigateway.APIRule, error) {
 	svcNs, svcName, err := getSvcNsAndName(sink.Host)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to parse svc name and ns in create or update APIRule: %v", err)
@@ -412,7 +412,7 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 	if err != nil {
 		return nil, xerrors.Errorf("failed to convert URL port to APIRule port: %v", err)
 	}
-	var reusableAPIRule *apigatewayv1beta1.APIRule
+	var reusableAPIRule *apigateway.APIRule
 	existingAPIRules, err := r.getAPIRulesForASvc(ctx, labels, svcNs)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to fetch APIRule for labels=%v : %v", labels, err)
@@ -468,7 +468,7 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 // if the OwnerReferences list is empty, then the APIRule will be deleted
 // else if the OwnerReferences list length was decreased, then the APIRule will be updated.
 func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	reusableAPIRule *apigatewayv1beta1.APIRule) error {
+	reusableAPIRule *apigateway.APIRule) error {
 	// subscription does not have a previous APIRule
 	if len(subscription.Status.Backend.APIRuleName) == 0 {
 		return nil
@@ -480,17 +480,17 @@ func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *ev
 	}
 
 	// get the previous APIRule
-	previousAPIRule := &apigatewayv1beta1.APIRule{}
-	key := k8stypes.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Status.Backend.APIRuleName}
+	previousAPIRule := &apigateway.APIRule{}
+	key := ktypes.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Status.Backend.APIRuleName}
 	if err := r.Client.Get(ctx, key, previousAPIRule); err != nil {
-		if !k8serrors.IsNotFound(err) {
+		if !kerrors.IsNotFound(err) {
 			return err
 		}
 		return nil
 	}
 
 	// build a new OwnerReference list and exclude the current subscription from the list (if exists)
-	ownerReferences := make([]v1.OwnerReference, 0, len(previousAPIRule.OwnerReferences))
+	ownerReferences := make([]kmeta.OwnerReference, 0, len(previousAPIRule.OwnerReferences))
 	for _, ownerReference := range previousAPIRule.OwnerReferences {
 		if ownerReference.UID != subscription.UID {
 			ownerReferences = append(ownerReferences, ownerReference)
@@ -606,7 +606,7 @@ func (r *Reconciler) filterSubscriptionsOnPort(subList []eventingv1alpha2.Subscr
 	return filteredSubs
 }
 
-func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string, subs []eventingv1alpha2.Subscription, port uint32) *apigatewayv1beta1.APIRule {
+func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string, subs []eventingv1alpha2.Subscription, port uint32) *apigateway.APIRule {
 	randomSuffix := utils.GetRandString(suffixLength)
 	hostName := fmt.Sprintf("%s-%s.%s", externalHostPrefix, randomSuffix, r.Domain)
 	svc := object.GetService(svcName, port)
@@ -619,10 +619,10 @@ func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string
 	return apiRule
 }
 
-func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]string, svcNs string) ([]apigatewayv1beta1.APIRule, error) {
-	existingAPIRules := &apigatewayv1beta1.APIRuleList{}
+func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]string, svcNs string) ([]apigateway.APIRule, error) {
+	existingAPIRules := &apigateway.APIRuleList{}
 	err := r.Client.List(ctx, existingAPIRules, &client.ListOptions{
-		LabelSelector: k8slabels.SelectorFromSet(labels),
+		LabelSelector: klabels.SelectorFromSet(labels),
 		Namespace:     svcNs,
 	})
 	if err != nil {
@@ -631,7 +631,7 @@ func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]s
 	return existingAPIRules.Items, nil
 }
 
-func (r *Reconciler) filterAPIRulesOnPort(existingAPIRules []apigatewayv1beta1.APIRule, port uint32) *apigatewayv1beta1.APIRule {
+func (r *Reconciler) filterAPIRulesOnPort(existingAPIRules []apigateway.APIRule, port uint32) *apigateway.APIRule {
 	// Assumption: there will be one APIRule for an svc with the labels injected by the controller hence trusting the first match
 	for _, apiRule := range existingAPIRules {
 		if *apiRule.Spec.Service.Port == port {
@@ -712,7 +712,7 @@ func replaceStatusCondition(subscription *eventingv1alpha2.Subscription,
 			chosenCondition = c
 		}
 		desiredConditions = append(desiredConditions, chosenCondition)
-		if string(chosenCondition.Status) != string(v1.ConditionTrue) {
+		if string(chosenCondition.Status) != string(kmeta.ConditionTrue) {
 			isReady = false
 		}
 	}
@@ -730,9 +730,9 @@ func replaceStatusCondition(subscription *eventingv1alpha2.Subscription,
 
 // emitConditionEvent emits a kubernetes event and sets the event type based on the Condition status.
 func (r *Reconciler) emitConditionEvent(subscription *eventingv1alpha2.Subscription, condition eventingv1alpha2.Condition) {
-	eventType := corev1.EventTypeNormal
-	if condition.Status == corev1.ConditionFalse {
-		eventType = corev1.EventTypeWarning
+	eventType := kcore.EventTypeNormal
+	if condition.Status == kcore.ConditionFalse {
+		eventType = kcore.EventTypeWarning
 	}
 	r.recorder.Event(subscription, eventType, string(condition.Reason), condition.Message)
 }
@@ -751,7 +751,7 @@ func (r *Reconciler) SetupUnmanaged(mgr ctrl.Manager) error {
 
 	apiRuleEventHandler := handler.EnqueueRequestForOwner(r.Scheme(), mgr.GetRESTMapper(),
 		&eventingv1alpha2.Subscription{})
-	if err := ctru.Watch(source.Kind(mgr.GetCache(), &apigatewayv1beta1.APIRule{}), apiRuleEventHandler); err != nil {
+	if err := ctru.Watch(source.Kind(mgr.GetCache(), &apigateway.APIRule{}), apiRuleEventHandler); err != nil {
 		return fmt.Errorf("failed to watch APIRule: %w", err)
 	}
 

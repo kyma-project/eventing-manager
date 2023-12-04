@@ -5,63 +5,63 @@ import (
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (es *EventingStatus) UpdateConditionNATSAvailable(status metav1.ConditionStatus, reason ConditionReason,
+func (es *EventingStatus) UpdateConditionNATSAvailable(status kmetav1.ConditionStatus, reason ConditionReason,
 	message string) {
-	condition := metav1.Condition{
+	condition := kmetav1.Condition{
 		Type:               string(ConditionNATSAvailable),
 		Status:             status,
-		LastTransitionTime: metav1.Now(),
+		LastTransitionTime: kmetav1.Now(),
 		Reason:             string(reason),
 		Message:            message,
 	}
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
-func (es *EventingStatus) UpdateConditionPublisherProxyReady(status metav1.ConditionStatus, reason ConditionReason,
+func (es *EventingStatus) UpdateConditionPublisherProxyReady(status kmetav1.ConditionStatus, reason ConditionReason,
 	message string) {
-	condition := metav1.Condition{
+	condition := kmetav1.Condition{
 		Type:               string(ConditionPublisherProxyReady),
 		Status:             status,
-		LastTransitionTime: metav1.Now(),
+		LastTransitionTime: kmetav1.Now(),
 		Reason:             string(reason),
 		Message:            message,
 	}
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
-func (es *EventingStatus) UpdateConditionWebhookReady(status metav1.ConditionStatus, reason ConditionReason,
+func (es *EventingStatus) UpdateConditionWebhookReady(status kmetav1.ConditionStatus, reason ConditionReason,
 	message string) {
-	condition := metav1.Condition{
+	condition := kmetav1.Condition{
 		Type:               string(ConditionWebhookReady),
 		Status:             status,
-		LastTransitionTime: metav1.Now(),
+		LastTransitionTime: kmetav1.Now(),
 		Reason:             string(reason),
 		Message:            message,
 	}
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
-func (sm *EventingStatus) UpdateConditionSubscriptionManagerReady(status metav1.ConditionStatus, reason ConditionReason,
+func (sm *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1.ConditionStatus, reason ConditionReason,
 	message string) {
-	condition := metav1.Condition{
+	condition := kmetav1.Condition{
 		Type:               string(ConditionSubscriptionManagerReady),
 		Status:             status,
-		LastTransitionTime: metav1.Now(),
+		LastTransitionTime: kmetav1.Now(),
 		Reason:             string(reason),
 		Message:            message,
 	}
 	meta.SetStatusCondition(&sm.Conditions, condition)
 }
 
-func (es *EventingStatus) UpdateConditionDeletion(status metav1.ConditionStatus, reason ConditionReason,
+func (es *EventingStatus) UpdateConditionDeletion(status kmetav1.ConditionStatus, reason ConditionReason,
 	message string) {
-	condition := metav1.Condition{
+	condition := kmetav1.Condition{
 		Type:               string(ConditionDeleted),
 		Status:             status,
-		LastTransitionTime: metav1.Now(),
+		LastTransitionTime: kmetav1.Now(),
 		Reason:             string(reason),
 		Message:            message,
 	}
@@ -69,14 +69,14 @@ func (es *EventingStatus) UpdateConditionDeletion(status metav1.ConditionStatus,
 }
 
 func (es *EventingStatus) SetSubscriptionManagerReadyConditionToTrue() {
-	es.UpdateConditionSubscriptionManagerReady(metav1.ConditionTrue, ConditionReasonEventMeshSubManagerReady,
+	es.UpdateConditionSubscriptionManagerReady(kmetav1.ConditionTrue, ConditionReasonEventMeshSubManagerReady,
 		ConditionSubscriptionManagerReadyMessage)
 }
 
 func (es *EventingStatus) SetStateReady() {
 	es.State = StateReady
-	es.UpdateConditionNATSAvailable(metav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
-	es.UpdateConditionPublisherProxyReady(metav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)
+	es.UpdateConditionNATSAvailable(kmetav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
+	es.UpdateConditionPublisherProxyReady(kmetav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)
 }
 
 func (ns *EventingStatus) SetStateWarning() {
@@ -84,26 +84,26 @@ func (ns *EventingStatus) SetStateWarning() {
 }
 
 func (es *EventingStatus) SetNATSAvailableConditionToTrue() {
-	es.UpdateConditionNATSAvailable(metav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
+	es.UpdateConditionNATSAvailable(kmetav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
 }
 
 func (es *EventingStatus) SetSubscriptionManagerReadyConditionToFalse(reason ConditionReason, message string) {
-	es.UpdateConditionSubscriptionManagerReady(metav1.ConditionFalse, reason,
+	es.UpdateConditionSubscriptionManagerReady(kmetav1.ConditionFalse, reason,
 		message)
 }
 
 func (es *EventingStatus) SetPublisherProxyConditionToFalse(reason ConditionReason, message string) {
-	es.UpdateConditionPublisherProxyReady(metav1.ConditionFalse, reason,
+	es.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse, reason,
 		message)
 }
 
 func (es *EventingStatus) SetPublisherProxyReadyToTrue() {
 	es.State = StateReady
-	es.UpdateConditionPublisherProxyReady(metav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)
+	es.UpdateConditionPublisherProxyReady(kmetav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)
 }
 
 func (es *EventingStatus) SetWebhookReadyConditionToTrue() {
-	es.UpdateConditionWebhookReady(metav1.ConditionTrue, ConditionReasonWebhookReady, ConditionWebhookReadyMessage)
+	es.UpdateConditionWebhookReady(kmetav1.ConditionTrue, ConditionReasonWebhookReady, ConditionWebhookReadyMessage)
 }
 
 func (es *EventingStatus) SetStateProcessing() {
@@ -115,7 +115,7 @@ func (es *EventingStatus) SetStateError() {
 }
 
 func (es *EventingStatus) ClearConditions() {
-	es.Conditions = []metav1.Condition{}
+	es.Conditions = []kmetav1.Condition{}
 }
 
 func (es *EventingStatus) IsEqual(status EventingStatus) bool {
@@ -123,8 +123,8 @@ func (es *EventingStatus) IsEqual(status EventingStatus) bool {
 	statusWithoutCond := status.DeepCopy()
 
 	// remove conditions, so that we don't compare them
-	thisWithoutCond.Conditions = []metav1.Condition{}
-	statusWithoutCond.Conditions = []metav1.Condition{}
+	thisWithoutCond.Conditions = []kmetav1.Condition{}
+	statusWithoutCond.Conditions = []kmetav1.Condition{}
 
 	return reflect.DeepEqual(thisWithoutCond, statusWithoutCond) &&
 		natsv1alpha1.ConditionsEquals(es.Conditions, status.Conditions)

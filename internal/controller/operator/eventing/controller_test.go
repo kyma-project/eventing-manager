@@ -9,14 +9,15 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/watcher"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	"github.com/stretchr/testify/require"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
 	watchmock "github.com/kyma-project/eventing-manager/pkg/watcher/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 func Test_handleEventingCRAllowedCheck(t *testing.T) {
@@ -30,7 +31,7 @@ func Test_handleEventingCRAllowedCheck(t *testing.T) {
 	// define test cases
 	testCases := []struct {
 		name            string
-		givenEventing   *eventingv1alpha1.Eventing
+		givenEventing   *operatorv1alpha1.Eventing
 		wantCheckResult bool
 	}{
 		{
@@ -90,15 +91,15 @@ func Test_handleEventingCRAllowedCheck(t *testing.T) {
 			require.NoError(t, err)
 			if !tc.wantCheckResult {
 				// check eventing.status.state
-				require.Equal(t, eventingv1alpha1.StateError, gotEventing.Status.State)
+				require.Equal(t, operatorv1alpha1.StateError, gotEventing.Status.State)
 
 				// check eventing.status.conditions
-				wantConditions := []metav1.Condition{
+				wantConditions := []kmeta.Condition{
 					{
-						Type:               string(eventingv1alpha1.ConditionPublisherProxyReady),
-						Status:             metav1.ConditionFalse,
-						LastTransitionTime: metav1.Now(),
-						Reason:             string(eventingv1alpha1.ConditionReasonForbidden),
+						Type:               string(operatorv1alpha1.ConditionPublisherProxyReady),
+						Status:             kmeta.ConditionFalse,
+						LastTransitionTime: kmeta.Now(),
+						Reason:             string(operatorv1alpha1.ConditionReasonForbidden),
 						Message: fmt.Sprintf("Only a single Eventing CR with name: %s and namespace: %s "+
 							"is allowed to be created in a Kyma cluster.", givenAllowedEventingCR.Name,
 							givenAllowedEventingCR.Namespace),
@@ -116,7 +117,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 	// define test cases
 	testCases := []struct {
 		name                         string
-		givenEventing                *eventingv1alpha1.Eventing
+		givenEventing                *operatorv1alpha1.Eventing
 		givenNATSSubManagerMock      func() *submanagermocks.Manager
 		givenEventMeshSubManagerMock func() *submanagermocks.Manager
 		wantNATSStopped              bool
@@ -129,9 +130,9 @@ func Test_handleBackendSwitching(t *testing.T) {
 			name: "it should do nothing because backend is not changed",
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithNATSBackend(),
-				testutils.WithStatusActiveBackend(eventingv1alpha1.NatsBackendType),
-				testutils.WithStatusState(eventingv1alpha1.StateReady),
-				testutils.WithStatusConditions([]metav1.Condition{{Type: "Available"}}),
+				testutils.WithStatusActiveBackend(operatorv1alpha1.NatsBackendType),
+				testutils.WithStatusState(operatorv1alpha1.StateReady),
+				testutils.WithStatusConditions([]kmeta.Condition{{Type: "Available"}}),
 			),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				return new(submanagermocks.Manager)
@@ -140,7 +141,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 				return new(submanagermocks.Manager)
 			},
 			wantError:                 nil,
-			wantEventingState:         eventingv1alpha1.StateReady,
+			wantEventingState:         operatorv1alpha1.StateReady,
 			wantEventingConditionsLen: 1,
 			wantNATSStopped:           false,
 			wantEventMeshStopped:      false,
@@ -149,9 +150,9 @@ func Test_handleBackendSwitching(t *testing.T) {
 			name: "it should stop NATS because backend is changed to EventMesh",
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventMeshBackend("test"),
-				testutils.WithStatusActiveBackend(eventingv1alpha1.NatsBackendType),
-				testutils.WithStatusState(eventingv1alpha1.StateReady),
-				testutils.WithStatusConditions([]metav1.Condition{{Type: "Available"}}),
+				testutils.WithStatusActiveBackend(operatorv1alpha1.NatsBackendType),
+				testutils.WithStatusState(operatorv1alpha1.StateReady),
+				testutils.WithStatusConditions([]kmeta.Condition{{Type: "Available"}}),
 			),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				managerMock := new(submanagermocks.Manager)
@@ -162,7 +163,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 				return new(submanagermocks.Manager)
 			},
 			wantError:                 nil,
-			wantEventingState:         eventingv1alpha1.StateProcessing,
+			wantEventingState:         operatorv1alpha1.StateProcessing,
 			wantEventingConditionsLen: 0,
 			wantNATSStopped:           true,
 			wantEventMeshStopped:      false,
@@ -171,9 +172,9 @@ func Test_handleBackendSwitching(t *testing.T) {
 			name: "it should return error because it failed to stop NATS backend",
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventMeshBackend("test"),
-				testutils.WithStatusActiveBackend(eventingv1alpha1.NatsBackendType),
-				testutils.WithStatusState(eventingv1alpha1.StateReady),
-				testutils.WithStatusConditions([]metav1.Condition{{Type: "Available"}}),
+				testutils.WithStatusActiveBackend(operatorv1alpha1.NatsBackendType),
+				testutils.WithStatusState(operatorv1alpha1.StateReady),
+				testutils.WithStatusConditions([]kmeta.Condition{{Type: "Available"}}),
 			),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				managerMock := new(submanagermocks.Manager)
@@ -184,7 +185,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 				return new(submanagermocks.Manager)
 			},
 			wantError:                 errors.New("failed to stop"),
-			wantEventingState:         eventingv1alpha1.StateReady,
+			wantEventingState:         operatorv1alpha1.StateReady,
 			wantEventingConditionsLen: 1,
 			wantNATSStopped:           false,
 			wantEventMeshStopped:      false,
@@ -193,9 +194,9 @@ func Test_handleBackendSwitching(t *testing.T) {
 			name: "it should stop EventMesh because backend is changed to NATS",
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithNATSBackend(),
-				testutils.WithStatusActiveBackend(eventingv1alpha1.EventMeshBackendType),
-				testutils.WithStatusState(eventingv1alpha1.StateReady),
-				testutils.WithStatusConditions([]metav1.Condition{{Type: "Available"}}),
+				testutils.WithStatusActiveBackend(operatorv1alpha1.EventMeshBackendType),
+				testutils.WithStatusState(operatorv1alpha1.StateReady),
+				testutils.WithStatusConditions([]kmeta.Condition{{Type: "Available"}}),
 			),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				return new(submanagermocks.Manager)
@@ -206,7 +207,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 				return managerMock
 			},
 			wantError:                 nil,
-			wantEventingState:         eventingv1alpha1.StateProcessing,
+			wantEventingState:         operatorv1alpha1.StateProcessing,
 			wantEventingConditionsLen: 0,
 			wantNATSStopped:           false,
 			wantEventMeshStopped:      true,
@@ -215,9 +216,9 @@ func Test_handleBackendSwitching(t *testing.T) {
 			name: "it should return error because it failed to stop EventMesh backend",
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithNATSBackend(),
-				testutils.WithStatusActiveBackend(eventingv1alpha1.EventMeshBackendType),
-				testutils.WithStatusState(eventingv1alpha1.StateReady),
-				testutils.WithStatusConditions([]metav1.Condition{{Type: "Available"}}),
+				testutils.WithStatusActiveBackend(operatorv1alpha1.EventMeshBackendType),
+				testutils.WithStatusState(operatorv1alpha1.StateReady),
+				testutils.WithStatusConditions([]kmeta.Condition{{Type: "Available"}}),
 			),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				return new(submanagermocks.Manager)
@@ -228,7 +229,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 				return managerMock
 			},
 			wantError:                 errors.New("failed to stop"),
-			wantEventingState:         eventingv1alpha1.StateReady,
+			wantEventingState:         operatorv1alpha1.StateReady,
 			wantEventingConditionsLen: 1,
 			wantNATSStopped:           false,
 			wantEventMeshStopped:      false,

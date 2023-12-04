@@ -5,12 +5,13 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcore "k8s.io/api/core/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/eventing-manager/pkg/env"
 )
 
 func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
@@ -206,13 +207,13 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 	}
 }
 
-func getSecretWithTLSSecret(dummyCABundle []byte) *corev1.Secret {
-	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
+func getSecretWithTLSSecret(dummyCABundle []byte) *kcore.Secret {
+	return &kcore.Secret{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      getTestBackendConfig().WebhookSecretName,
 			Namespace: getTestBackendConfig().Namespace,
 		},
@@ -224,7 +225,7 @@ func getSecretWithTLSSecret(dummyCABundle []byte) *corev1.Secret {
 
 func getMutatingWebhookConfig(webhook []admissionv1.MutatingWebhook) *admissionv1.MutatingWebhookConfiguration {
 	return &admissionv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: getTestBackendConfig().MutatingWebhookName,
 		},
 		Webhooks: webhook,
@@ -233,7 +234,7 @@ func getMutatingWebhookConfig(webhook []admissionv1.MutatingWebhook) *admissionv
 
 func getValidatingWebhookConfig(webhook []admissionv1.ValidatingWebhook) *admissionv1.ValidatingWebhookConfiguration {
 	return &admissionv1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: getTestBackendConfig().ValidatingWebhookName,
 		},
 		Webhooks: webhook,

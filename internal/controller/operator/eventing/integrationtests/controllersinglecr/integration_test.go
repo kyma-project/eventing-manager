@@ -7,13 +7,14 @@ import (
 
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 
-	integrationutils "github.com/kyma-project/eventing-manager/test/utils/integration"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
+
+	integrationutils "github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 
 const (
@@ -70,7 +71,7 @@ func Test_PreventMultipleEventingCRs(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		givenEventing *eventingv1alpha1.Eventing
+		givenEventing *operatorv1alpha1.Eventing
 		wantMatches   gomegatypes.GomegaMatcher
 	}{
 		{

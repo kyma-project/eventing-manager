@@ -7,15 +7,16 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	appsv1 "k8s.io/api/apps/v1"
+	kapps "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
+	kcore "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 )
 
 const (
@@ -39,8 +40,8 @@ const (
 	V1Alpha2SubscriptionCRVersion SubscriptionCRVersion = "v1alpha2"
 )
 
-func EventingCR(backendType eventingv1alpha1.BackendType) *eventingv1alpha1.Eventing {
-	if backendType == eventingv1alpha1.EventMeshBackendType {
+func EventingCR(backendType operatorv1alpha1.BackendType) *operatorv1alpha1.Eventing {
+	if backendType == operatorv1alpha1.EventMeshBackendType {
 		return EventingEventMeshCR()
 	}
 	return EventingNATSCR()
@@ -54,20 +55,20 @@ func PeerAuthenticationGVR() schema.GroupVersionResource {
 	}
 }
 
-func EventingNATSCR() *eventingv1alpha1.Eventing {
-	return &eventingv1alpha1.Eventing{
-		TypeMeta: metav1.TypeMeta{
+func EventingNATSCR() *operatorv1alpha1.Eventing {
+	return &operatorv1alpha1.Eventing{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Eventing",
 			APIVersion: "operator.kyma-project.io/v1alpha1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      CRName,
 			Namespace: NamespaceName,
 		},
-		Spec: eventingv1alpha1.EventingSpec{
-			Backend: eventingv1alpha1.Backend{
+		Spec: operatorv1alpha1.EventingSpec{
+			Backend: operatorv1alpha1.Backend{
 				Type: "NATS",
-				Config: eventingv1alpha1.BackendConfig{
+				Config: operatorv1alpha1.BackendConfig{
 					NATSStreamStorageType: "File",
 					NATSStreamReplicas:    3,
 					NATSStreamMaxSize:     resource.MustParse("700Mi"),
@@ -79,20 +80,20 @@ func EventingNATSCR() *eventingv1alpha1.Eventing {
 	}
 }
 
-func EventingEventMeshCR() *eventingv1alpha1.Eventing {
-	return &eventingv1alpha1.Eventing{
-		TypeMeta: metav1.TypeMeta{
+func EventingEventMeshCR() *operatorv1alpha1.Eventing {
+	return &operatorv1alpha1.Eventing{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Eventing",
 			APIVersion: "operator.kyma-project.io/v1alpha1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      CRName,
 			Namespace: NamespaceName,
 		},
-		Spec: eventingv1alpha1.EventingSpec{
-			Backend: eventingv1alpha1.Backend{
+		Spec: operatorv1alpha1.EventingSpec{
+			Backend: operatorv1alpha1.Backend{
 				Type: "EventMesh",
-				Config: eventingv1alpha1.BackendConfig{
+				Config: operatorv1alpha1.BackendConfig{
 					EventMeshSecret: fmt.Sprintf("%s/%s", EventMeshSecretNamespace, EventMeshSecretName),
 				},
 			},
@@ -101,18 +102,18 @@ func EventingEventMeshCR() *eventingv1alpha1.Eventing {
 	}
 }
 
-func PublisherSpec() eventingv1alpha1.Publisher {
-	return eventingv1alpha1.Publisher{
-		Replicas: eventingv1alpha1.Replicas{
+func PublisherSpec() operatorv1alpha1.Publisher {
+	return operatorv1alpha1.Publisher{
+		Replicas: operatorv1alpha1.Replicas{
 			Min: 2,
 			Max: 2,
 		},
-		Resources: corev1.ResourceRequirements{
-			Limits: corev1.ResourceList{
+		Resources: kcore.ResourceRequirements{
+			Limits: kcore.ResourceList{
 				"cpu":    resource.MustParse("300m"),
 				"memory": resource.MustParse("312Mi"),
 			},
-			Requests: corev1.ResourceList{
+			Requests: kcore.ResourceList{
 				"cpu":    resource.MustParse("100m"),
 				"memory": resource.MustParse("156Mi"),
 			},
@@ -169,39 +170,39 @@ func V1Alpha2SubscriptionsToTest() []eventing.TestSubscriptionInfo {
 	}
 }
 
-func Namespace(name string) *corev1.Namespace {
-	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
+func Namespace(name string) *kcore.Namespace {
+	return &kcore.Namespace{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: name,
 		},
 	}
 }
 
-func NewSinkDeployment(name, namespace, image string) *appsv1.Deployment {
+func NewSinkDeployment(name, namespace, image string) *kapps.Deployment {
 	labels := map[string]string{
 		"source": "eventing-tests",
 		"name":   name,
 	}
-	return &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
+	return &kapps.Deployment{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
 		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: metav1.SetAsLabelSelector(labels),
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
+		Spec: kapps.DeploymentSpec{
+			Selector: kmeta.SetAsLabelSelector(labels),
+			Template: kcore.PodTemplateSpec{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:   name,
 					Labels: labels,
 				},
-				Spec: corev1.PodSpec{
-					RestartPolicy: corev1.RestartPolicyAlways,
-					Containers: []corev1.Container{
+				Spec: kcore.PodSpec{
+					RestartPolicy: kcore.RestartPolicyAlways,
+					Containers: []kcore.Container{
 						{
 							Name:  name,
 							Image: image,
@@ -209,19 +210,19 @@ func NewSinkDeployment(name, namespace, image string) *appsv1.Deployment {
 								"subscriber",
 								"--listen-port=8080",
 							},
-							Ports: []corev1.ContainerPort{
+							Ports: []kcore.ContainerPort{
 								{
 									Name:          "http",
 									ContainerPort: 8080,
 								},
 							},
-							ImagePullPolicy: corev1.PullAlways,
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
+							ImagePullPolicy: kcore.PullAlways,
+							Resources: kcore.ResourceRequirements{
+								Limits: kcore.ResourceList{
 									"cpu":    resource.MustParse("300m"),
 									"memory": resource.MustParse("312Mi"),
 								},
-								Requests: corev1.ResourceList{
+								Requests: kcore.ResourceList{
 									"cpu":    resource.MustParse("100m"),
 									"memory": resource.MustParse("156Mi"),
 								},
@@ -234,24 +235,24 @@ func NewSinkDeployment(name, namespace, image string) *appsv1.Deployment {
 	}
 }
 
-func NewSinkService(name, namespace string) *corev1.Service {
+func NewSinkService(name, namespace string) *kcore.Service {
 	labels := map[string]string{
 		"source": "eventing-tests",
 		"name":   name,
 	}
-	return &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	return &kcore.Service{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
 		},
-		Spec: corev1.ServiceSpec{
+		Spec: kcore.ServiceSpec{
 			Selector: labels,
-			Ports: []corev1.ServicePort{
+			Ports: []kcore.ServicePort{
 				{
 					Name:       "http",
 					Protocol:   "TCP",
@@ -263,7 +264,7 @@ func NewSinkService(name, namespace string) *corev1.Service {
 	}
 }
 
-func FindContainerInPod(pod corev1.Pod, name string) *corev1.Container {
+func FindContainerInPod(pod kcore.Pod, name string) *kcore.Container {
 	for _, container := range pod.Spec.Containers {
 		if container.Name == name {
 			return &container

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -107,7 +107,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SourcePath,
 					subName, v1alpha2.EmptyErrDetail)}),
@@ -142,7 +142,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SourcePath,
 					subName, v1alpha2.InvalidURIErrDetail)}),
@@ -155,7 +155,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
 					subName, v1alpha2.EmptyErrDetail)}),
@@ -169,7 +169,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
 					subName, v1alpha2.EmptyErrDetail)}),
@@ -184,7 +184,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
 					subName, v1alpha2.DuplicateTypesErrDetail)}),
@@ -198,7 +198,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
 					subName, v1alpha2.LengthErrDetail)}),
@@ -212,7 +212,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
 					subName, v1alpha2.MinSegmentErrDetail)}),
@@ -226,7 +226,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
 					subName, v1alpha2.InvalidPrefixErrDetail)}),
@@ -251,7 +251,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages("invalid"),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.ConfigPath,
 					subName, v1alpha2.StringIntErrDetail)}),
@@ -266,7 +266,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithInvalidProtocolSettingsQos(),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.ConfigPath,
 					subName, v1alpha2.InvalidQosErrDetail)}),
@@ -281,7 +281,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithInvalidWebhookAuthType(),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.ConfigPath,
 					subName, v1alpha2.InvalidAuthTypeErrDetail)}),
@@ -296,7 +296,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithInvalidWebhookAuthGrantType(),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.ConfigPath,
 					subName, v1alpha2.InvalidGrantTypeErrDetail)}),
@@ -309,7 +309,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
 					subName, v1alpha2.EmptyErrDetail)}),
@@ -323,7 +323,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink(subNamespace),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
 					subName, v1alpha2.MissingSchemeErrDetail)}),
@@ -337,7 +337,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink("http://invalid Sink"),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
 					subName, "failed to parse subscription sink URL: "+
@@ -352,7 +352,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink("https://svc2.test.local"),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
 					subName, v1alpha2.SuffixMissingErrDetail)}),
@@ -366,7 +366,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink("https://svc2.test.local:8080"),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
 					subName, v1alpha2.SuffixMissingErrDetail)}),
@@ -380,7 +380,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink("https://svc.cluster.local:8080"),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
 					subName, v1alpha2.SubDomainsErrDetail+"svc.cluster.local")}),
@@ -394,7 +394,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink("https://eventing-nats.kyma-system.svc.cluster.local"),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.NSPath,
 					subName, v1alpha2.NSMismatchErrDetail+"kyma-system")}),
@@ -407,7 +407,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages("invalid"),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: apierrors.NewInvalid(
+			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
 				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SourcePath,
 					subName, v1alpha2.EmptyErrDetail),

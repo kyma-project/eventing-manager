@@ -12,14 +12,14 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/ems/auth"
 	"github.com/kyma-project/eventing-manager/pkg/ems/httpclient"
 	"github.com/kyma-project/eventing-manager/pkg/env"
-	controllertesting "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 // Test_Client_Update tests the update method for patching webhook auth.
 func Test_Client_Update(t *testing.T) {
 	// given
 	// start mock EventMesh server.
-	emMock := controllertesting.NewEventMeshMock()
+	emMock := eventingtesting.NewEventMeshMock()
 	emMock.Start()
 	defer emMock.Stop()
 

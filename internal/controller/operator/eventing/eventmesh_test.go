@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcore "k8s.io/api/core/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -52,7 +52,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 		EventingWebhookAuthSecretName: "eventing-webhook-auth",
 	}
 
-	givenConfigMap := &corev1.ConfigMap{
+	givenConfigMap := &kcore.ConfigMap{
 		Data: map[string]string{
 			shootInfoConfigMapKeyDomain: utils.Domain,
 		},
@@ -347,7 +347,7 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 		EventingWebhookAuthSecretName: "eventing-webhook-auth",
 	}
 
-	givenConfigMap := &corev1.ConfigMap{
+	givenConfigMap := &kcore.ConfigMap{
 		Data: map[string]string{
 			shootInfoConfigMapKeyDomain: utils.Domain,
 		},
@@ -543,9 +543,9 @@ func Test_stopEventMeshSubManager(t *testing.T) {
 // TestGetSecretForPublisher verifies the successful and failing retrieval
 // of secrets.
 func Test_GetSecretForPublisher(t *testing.T) {
-	secretFor := func(message, namespace []byte) *corev1.Secret {
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+	secretFor := func(message, namespace []byte) *kcore.Secret {
+		secret := &kcore.Secret{
+			ObjectMeta: kmeta.ObjectMeta{
 				Name:      eventing.PublisherName,
 				Namespace: "test-namespace",
 			},
@@ -567,7 +567,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 		name           string
 		messagingData  []byte
 		namespaceData  []byte
-		expectedSecret corev1.Secret
+		expectedSecret kcore.Secret
 		expectedError  error
 	}{
 		{
@@ -620,12 +620,12 @@ func Test_GetSecretForPublisher(t *testing.T) {
 									  }
 									] `),
 			namespaceData: []byte("valid/namespace"),
-			expectedSecret: corev1.Secret{
-				TypeMeta: metav1.TypeMeta{
+			expectedSecret: kcore.Secret{
+				TypeMeta: kmeta.TypeMeta{
 					Kind:       "Secret",
-					APIVersion: corev1.SchemeGroupVersion.String(),
+					APIVersion: kcore.SchemeGroupVersion.String(),
 				},
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      eventing.PublisherName,
 					Namespace: "test-namespace",
 					Labels: map[string]string{
@@ -719,7 +719,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 func Test_getOAuth2ClientCredentials(t *testing.T) {
 	testCases := []struct {
 		name             string
-		givenSecrets     []*corev1.Secret
+		givenSecrets     []*kcore.Secret
 		wantError        bool
 		wantClientID     []byte
 		wantClientSecret []byte
@@ -733,10 +733,10 @@ func Test_getOAuth2ClientCredentials(t *testing.T) {
 		},
 		{
 			name: "secret exists with missing data",
-			givenSecrets: []*corev1.Secret{
+			givenSecrets: []*kcore.Secret{
 				// required secret
 				{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: kmeta.ObjectMeta{
 						Name:      defaultEventingWebhookAuthSecretName,
 						Namespace: defaultEventingWebhookAuthSecretNamespace,
 					},
@@ -750,10 +750,10 @@ func Test_getOAuth2ClientCredentials(t *testing.T) {
 		},
 		{
 			name: "secret exists with all data",
-			givenSecrets: []*corev1.Secret{
+			givenSecrets: []*kcore.Secret{
 				// required secret
 				{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: kmeta.ObjectMeta{
 						Name:      defaultEventingWebhookAuthSecretName,
 						Namespace: defaultEventingWebhookAuthSecretNamespace,
 					},
@@ -884,10 +884,10 @@ func Test_isOauth2CredentialsInitialized(t *testing.T) {
 func Test_SyncPublisherProxySecret(t *testing.T) {
 	testCases := []struct {
 		name              string
-		givenSecret       *corev1.Secret
+		givenSecret       *kcore.Secret
 		mockKubeClient    func() *k8smocks.Client
 		wantErr           bool
-		wantDesiredSecret *corev1.Secret
+		wantDesiredSecret *kcore.Secret
 	}{
 		{
 			name:        "valid secret",
@@ -901,8 +901,8 @@ func Test_SyncPublisherProxySecret(t *testing.T) {
 		},
 		{
 			name: "invalid secret",
-			givenSecret: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			givenSecret: &kcore.Secret{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "test-secret",
 					Namespace: "test-namespace",
 				},
@@ -956,7 +956,7 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 	testCases := []struct {
 		name                           string
 		givenEventing                  *v1alpha1.Eventing
-		givenSecret                    *corev1.Secret
+		givenSecret                    *kcore.Secret
 		givenCredentials               *oauth2Credentials
 		givenSubManagerStarted         bool
 		shouldEventMeshSubManagerExist bool
@@ -972,8 +972,8 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
 			),
-			givenSecret: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			givenSecret: &kcore.Secret{
+				ObjectMeta: kmeta.ObjectMeta{
 					Namespace: "test-namespace",
 					Name:      defaultEventingWebhookAuthSecretName,
 				},
@@ -1001,8 +1001,8 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
 			),
-			givenSecret: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			givenSecret: &kcore.Secret{
+				ObjectMeta: kmeta.ObjectMeta{
 					Namespace: "test-namespace",
 					Name:      defaultEventingWebhookAuthSecretName,
 				},
@@ -1038,8 +1038,8 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
 			),
-			givenSecret: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			givenSecret: &kcore.Secret{
+				ObjectMeta: kmeta.ObjectMeta{
 					Namespace: "test-namespace",
 					Name:      defaultEventingWebhookAuthSecretName,
 				},

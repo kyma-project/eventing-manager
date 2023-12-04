@@ -15,13 +15,12 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 
 	"github.com/avast/retry-go/v3"
-	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	natsserver "github.com/nats-io/nats-server/v2/server"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcore "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/rest"
@@ -31,6 +30,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/kyma-project/eventing-manager/internal/controller/events"
+
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
+	"github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
+	"k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	cleanerv1alpha2 "github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
@@ -38,12 +46,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
-	"github.com/onsi/gomega"
-	gomegatypes "github.com/onsi/gomega/types"
-	"k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
 const (
@@ -72,7 +74,7 @@ type Ensemble struct {
 	NatsServer                *natsserver.Server
 	NatsPort                  int
 	DefaultSubscriptionConfig env.DefaultSubscriptionConfig
-	SubscriberSvc             *corev1.Service
+	SubscriberSvc             *kcore.Service
 	Cancel                    context.CancelFunc
 	Ctx                       context.Context
 	G                         *gomega.GomegaWithT
@@ -88,7 +90,7 @@ type jetStreamTestEnsemble struct {
 
 type Want struct {
 	K8sSubscription []gomegatypes.GomegaMatcher
-	K8sEvents       []corev1.Event
+	K8sEvents       []kcore.Event
 	// NatsSubscriptions holds gomega matchers for a NATS subscription per event-type.
 	NatsSubscriptions map[string][]gomegatypes.GomegaMatcher
 }
@@ -346,7 +348,7 @@ func CheckSubscriptionOnK8s(g *gomega.WithT, ens *Ensemble, subscription *eventi
 	getSubscriptionOnK8S(g, ens, subscription).Should(gomega.And(expectations...), description)
 }
 
-func CheckEventsOnK8s(g *gomega.WithT, ens *Ensemble, expectations ...corev1.Event) {
+func CheckEventsOnK8s(g *gomega.WithT, ens *Ensemble, expectations ...kcore.Event) {
 	for _, event := range expectations {
 		getK8sEvents(g, ens).Should(eventingtesting.HaveEvent(event), "Failed to match k8s events")
 	}
@@ -369,7 +371,7 @@ func IsSubscriptionDeletedOnK8s(g *gomega.WithT, ens *Ensemble,
 			Name:      subscription.Name,
 		}
 		if err := ens.K8sClient.Get(ens.Ctx, lookupKey, subscription); err != nil {
-			return k8serrors.IsNotFound(err)
+			return kerrors.IsNotFound(err)
 		}
 		return false
 	}, SmallTimeout, SmallPollingInterval)
@@ -379,14 +381,14 @@ func ConditionInvalidSink(msg string) eventingv1alpha2.Condition {
 	return eventingv1alpha2.MakeCondition(
 		eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonNATSSubscriptionNotActive,
-		corev1.ConditionFalse, msg)
+		kcore.ConditionFalse, msg)
 }
 
-func EventInvalidSink(msg string) corev1.Event {
-	return corev1.Event{
+func EventInvalidSink(msg string) kcore.Event {
+	return kcore.Event{
 		Reason:  string(events.ReasonValidationFailed),
 		Message: msg,
-		Type:    corev1.EventTypeWarning,
+		Type:    kcore.EventTypeWarning,
 	}
 }
 
@@ -451,7 +453,7 @@ func createSubscriberSvcInK8s(ens *Ensemble) error {
 	if ens.SubscriberSvc.Namespace != "default " {
 		namespace := fixtureNamespace(ens.SubscriberSvc.Namespace)
 		err := doRetry(func() error {
-			if err := ens.K8sClient.Create(ens.Ctx, namespace); !k8serrors.IsAlreadyExists(err) {
+			if err := ens.K8sClient.Create(ens.Ctx, namespace); !kerrors.IsAlreadyExists(err) {
 				return err
 			}
 			return nil
@@ -473,7 +475,7 @@ func EnsureNamespaceCreatedForSub(t *testing.T, ens *Ensemble, subscription *eve
 		// create testing namespace
 		namespace := fixtureNamespace(subscription.Namespace)
 		err := ens.K8sClient.Create(ens.Ctx, namespace)
-		if !k8serrors.IsAlreadyExists(err) {
+		if !kerrors.IsAlreadyExists(err) {
 			require.NoError(t, err)
 		}
 	}
@@ -493,13 +495,13 @@ func EnsureK8sResourceNotCreated(t *testing.T, ens *Ensemble, obj client.Object,
 	require.Equal(t, ens.K8sClient.Create(ens.Ctx, obj), err)
 }
 
-func fixtureNamespace(name string) *corev1.Namespace {
-	namespace := corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
+func fixtureNamespace(name string) *kcore.Namespace {
+	namespace := kcore.Namespace{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "natsNamespace",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: name,
 		},
 	}
@@ -524,11 +526,11 @@ func getSubscriptionOnK8S(g *gomega.WithT, ens *Ensemble,
 // getK8sEvents returns all kubernetes events for the given namespace.
 // The result can be used in a gomega assertion.
 func getK8sEvents(g *gomega.WithT, ens *Ensemble) gomega.AsyncAssertion {
-	eventList := corev1.EventList{}
-	return g.Eventually(func() corev1.EventList {
+	eventList := kcore.EventList{}
+	return g.Eventually(func() kcore.EventList {
 		err := ens.K8sClient.List(ens.Ctx, &eventList, client.InNamespace(ens.SubscriberSvc.Namespace))
 		if err != nil {
-			return corev1.EventList{}
+			return kcore.EventList{}
 		}
 		return eventList
 	}, SmallTimeout, SmallPollingInterval)
@@ -544,7 +546,7 @@ func NewCleanEventType(ending string) string {
 
 func GenerateInvalidSubscriptionError(subName, errType string, path *field.Path) error {
 	webhookErr := "admission webhook \"vsubscription.kb.io\" denied the request: "
-	givenError := k8serrors.NewInvalid(
+	givenError := kerrors.NewInvalid(
 		eventingv1alpha2.GroupKind, subName,
 		field.ErrorList{eventingv1alpha2.MakeInvalidFieldError(path, subName, errType)})
 	givenError.ErrStatus.Message = webhookErr + givenError.ErrStatus.Message

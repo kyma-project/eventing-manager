@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
+	subscriptionjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
 
 	manager2 "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
@@ -17,8 +17,8 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcore "k8s.io/api/core/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
@@ -109,7 +109,7 @@ func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionCo
 	jsCleaner := cleaner.NewJetStreamCleaner(sm.logger)
 	jetStreamHandler := backendjetstream.NewJetStream(sm.envCfg,
 		sm.metricsCollector, jsCleaner, defaultSubsConfig, sm.logger)
-	jetStreamReconciler := jetstream.NewReconciler(
+	jetStreamReconciler := subscriptionjetstream.NewReconciler(
 		ctx,
 		client,
 		jetStreamHandler,
@@ -171,7 +171,7 @@ func cleanupv2(backend backendjetstream.Backend, dynamicClient dynamic.Interface
 
 	// fetch all subscriptions.
 	subscriptionsUnstructured, err := dynamicClient.Resource(
-		eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
+		eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(kcore.NamespaceAll).List(ctx, kmeta.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "list subscriptions failed")
 	}

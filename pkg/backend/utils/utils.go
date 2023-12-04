@@ -6,16 +6,17 @@ import (
 	"fmt"
 	"net/url"
 
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
+
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
 	cev2event "github.com/cloudevents/sdk-go/v2/event"
 	"github.com/nats-io/nats.go"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -34,8 +35,8 @@ type NameMapper interface {
 
 func APIRuleGroupVersionResource() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
-		Version:  apigatewayv1beta1.GroupVersion.Version,
-		Group:    apigatewayv1beta1.GroupVersion.Group,
+		Version:  apigateway.GroupVersion.Version,
+		Group:    apigateway.GroupVersion.Group,
 		Resource: "apirules",
 	}
 }
@@ -52,7 +53,7 @@ func ConvertMsgToCE(msg *nats.Msg) (*cev2event.Event, error) {
 	return &event, nil
 }
 
-func GetExposedURLFromAPIRule(apiRule *apigatewayv1beta1.APIRule, targetURL string) (string, error) {
+func GetExposedURLFromAPIRule(apiRule *apigateway.APIRule, targetURL string) (string, error) {
 	// @TODO: Move this method to backend/eventmesh/utils.go once old BEB backend is depreciated
 	scheme := "https://"
 	path := ""
@@ -84,7 +85,7 @@ func UpdateSubscriptionStatus(ctx context.Context, dClient dynamic.Interface,
 	_, err = dClient.
 		Resource(eventingv1alpha2.SubscriptionGroupVersionResource()).
 		Namespace(sub.Namespace).
-		UpdateStatus(ctx, unstructuredObj, metav1.UpdateOptions{})
+		UpdateStatus(ctx, unstructuredObj, kmeta.UpdateOptions{})
 
 	return err
 }

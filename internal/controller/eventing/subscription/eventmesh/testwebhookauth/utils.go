@@ -16,9 +16,9 @@ import (
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcore "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -26,12 +26,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -46,13 +46,13 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
-	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 type eventMeshTestEnsemble struct {
 	k8sClient     client.Client
 	testEnv       *envtest.Environment
-	eventMeshMock *reconcilertesting.EventMeshMock
+	eventMeshMock *eventingtesting.EventMeshMock
 	nameMapper    backendutils.NameMapper
 	envConfig     env.Config
 }
@@ -97,7 +97,7 @@ func setupSuite() error {
 	if err != nil {
 		return err
 	}
-	logf.SetLogger(zapr.NewLogger(defaultLogger.WithContext().Desugar()))
+	ctrllog.SetLogger(zapr.NewLogger(defaultLogger.WithContext().Desugar()))
 
 	// setup test Env
 	cfg, err := startTestEnv()
@@ -113,7 +113,7 @@ func setupSuite() error {
 		return err
 	}
 
-	if err = apigatewayv1beta1.AddToScheme(scheme.Scheme); err != nil {
+	if err = apigateway.AddToScheme(scheme.Scheme); err != nil {
 		return err
 	}
 	// +kubebuilder:scaffold:scheme
@@ -242,8 +242,8 @@ func getEnvConfig() env.Config {
 		ClientSecret:             "foo-secret",
 		TokenEndpoint:            emTestEnsemble.eventMeshMock.TokenURL,
 		WebhookActivationTimeout: 0,
-		EventTypePrefix:          reconcilertesting.EventMeshPrefix,
-		BEBNamespace:             reconcilertesting.EventMeshNamespaceNS,
+		EventTypePrefix:          eventingtesting.EventMeshPrefix,
+		BEBNamespace:             eventingtesting.EventMeshNamespaceNS,
 		Qos:                      string(eventmeshtypes.QosAtLeastOnce),
 	}
 }
@@ -257,8 +257,8 @@ func tearDownSuite() error {
 	return err
 }
 
-func startNewEventMeshMock() *reconcilertesting.EventMeshMock {
-	emMock := reconcilertesting.NewEventMeshMock()
+func startNewEventMeshMock() *eventingtesting.EventMeshMock {
+	emMock := eventingtesting.NewEventMeshMock()
 	emMock.Start()
 	return emMock
 }
@@ -274,18 +274,18 @@ func ensureNamespaceCreated(ctx context.Context, t *testing.T, namespace string)
 	// create namespace
 	ns := fixtureNamespace(namespace)
 	err := emTestEnsemble.k8sClient.Create(ctx, ns)
-	if !k8serrors.IsAlreadyExists(err) {
+	if !kerrors.IsAlreadyExists(err) {
 		require.NoError(t, err)
 	}
 }
 
-func fixtureNamespace(name string) *corev1.Namespace {
-	namespace := corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
+func fixtureNamespace(name string) *kcore.Namespace {
+	namespace := kcore.Namespace{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Namespace",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: name,
 		},
 	}
@@ -313,7 +313,7 @@ func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscriptio
 }
 
 // ensureAPIRuleStatusUpdatedWithStatusReady updates the status fof the APIRule (mocking APIGateway controller).
-func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
+func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigateway.APIRule) {
 	require.Eventually(t, func() bool {
 		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
 		if err != nil {
@@ -322,7 +322,7 @@ func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T
 
 		newAPIRule := fetchedAPIRule.DeepCopy()
 		// mark the ApiRule status as ready
-		reconcilertesting.MarkReady(newAPIRule)
+		eventingtesting.MarkReady(newAPIRule)
 
 		// update ApiRule status on k8s
 		err = emTestEnsemble.k8sClient.Status().Update(ctx, newAPIRule)
@@ -330,7 +330,7 @@ func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T
 	}, bigTimeOut, bigPollingInterval)
 }
 
-func getAPIRule(ctx context.Context, apiRule *apigatewayv1beta1.APIRule) (*apigatewayv1beta1.APIRule, error) {
+func getAPIRule(ctx context.Context, apiRule *apigateway.APIRule) (*apigateway.APIRule, error) {
 	lookUpKey := types.NamespacedName{
 		Namespace: apiRule.Namespace,
 		Name:      apiRule.Name,

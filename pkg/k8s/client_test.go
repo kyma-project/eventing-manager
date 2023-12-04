@@ -16,14 +16,14 @@ import (
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
-	apiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
+	kapiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	rbac "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kapps "k8s.io/api/apps/v1"
+	kcore "k8s.io/api/core/v1"
+	krbac "k8s.io/api/rbac/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -48,34 +48,34 @@ func Test_PatchApply(t *testing.T) {
 	// define test cases
 	testCases := []struct {
 		name                  string
-		givenDeployment       *appsv1.Deployment
-		givenUpdateDeployment *appsv1.Deployment
+		givenDeployment       *kapps.Deployment
+		givenUpdateDeployment *kapps.Deployment
 	}{
 		{
 			name: "should update resource when exists in k8s",
-			givenDeployment: &appsv1.Deployment{
-				TypeMeta: metav1.TypeMeta{
+			givenDeployment: &kapps.Deployment{
+				TypeMeta: kmeta.TypeMeta{
 					Kind:       "Deployment",
 					APIVersion: "apps/v1",
 				},
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "test",
 					Namespace: "test",
 				},
-				Spec: appsv1.DeploymentSpec{
+				Spec: kapps.DeploymentSpec{
 					Replicas: &twoReplicas,
 				},
 			},
-			givenUpdateDeployment: &appsv1.Deployment{
-				TypeMeta: metav1.TypeMeta{
+			givenUpdateDeployment: &kapps.Deployment{
+				TypeMeta: kmeta.TypeMeta{
 					Kind:       "Deployment",
 					APIVersion: "apps/v1",
 				},
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "test",
 					Namespace: "test",
 				},
-				Spec: appsv1.DeploymentSpec{
+				Spec: kapps.DeploymentSpec{
 					Replicas: &threeReplicas,
 				},
 			},
@@ -133,7 +133,7 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 		{
 			name: "should update resource when exists in k8s",
 			givenPeerAuthentication: &istio.PeerAuthentication{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "eventing-publisher-proxy-metrics",
 					Namespace: "test",
 					Labels: map[string]string{
@@ -141,13 +141,13 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 						"app.kubernetes.io/version": "0.1.0",
 					},
 				},
-				TypeMeta: metav1.TypeMeta{
+				TypeMeta: kmeta.TypeMeta{
 					Kind:       "PeerAuthentication",
 					APIVersion: "security.istio.io/v1beta1",
 				},
 			},
 			givenUpdatePeerAuthentication: &istio.PeerAuthentication{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "eventing-publisher-proxy-metrics",
 					Namespace: "test",
 					Labels: map[string]string{
@@ -155,7 +155,7 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 						"app.kubernetes.io/version": "0.1.0",
 					},
 				},
-				TypeMeta: metav1.TypeMeta{
+				TypeMeta: kmeta.TypeMeta{
 					Kind:       "PeerAuthentication",
 					APIVersion: "security.istio.io/v1beta1",
 				},
@@ -204,7 +204,7 @@ func Test_UpdateDeployment(t *testing.T) {
 	testCases := []struct {
 		name                   string
 		namespace              string
-		givenNewDeploymentSpec appsv1.DeploymentSpec
+		givenNewDeploymentSpec kapps.DeploymentSpec
 		givenDeploymentExists  bool
 	}{
 		{
@@ -245,7 +245,7 @@ func Test_UpdateDeployment(t *testing.T) {
 			// then
 			if !tc.givenDeploymentExists {
 				require.Error(t, err)
-				require.True(t, apierrors.IsNotFound(err))
+				require.True(t, kerrors.IsNotFound(err))
 			} else {
 				gotDeploy, err := kubeClient.GetDeployment(ctx, givenDeployment.Name, givenDeployment.Namespace)
 				require.NoError(t, err)
@@ -260,13 +260,13 @@ func Test_DeleteResource(t *testing.T) {
 	// Define test cases
 	testCases := []struct {
 		name                  string
-		givenDeployment       *appsv1.Deployment
+		givenDeployment       *kapps.Deployment
 		givenDeploymentExists bool
 	}{
 		{
 			name: "should delete the deployment",
-			givenDeployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
+			givenDeployment: &kapps.Deployment{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "test-deployment",
 					Namespace: "test-namespace",
 				},
@@ -275,8 +275,8 @@ func Test_DeleteResource(t *testing.T) {
 		},
 		{
 			name: "should not return error when the deployment does not exist",
-			givenDeployment: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
+			givenDeployment: &kapps.Deployment{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "test-deployment",
 					Namespace: "test-namespace2",
 				},
@@ -310,8 +310,8 @@ func Test_DeleteResource(t *testing.T) {
 			err = fakeClient.Get(ctx, types.NamespacedName{
 				Name:      tc.givenDeployment.Name,
 				Namespace: tc.givenDeployment.Namespace,
-			}, &appsv1.Deployment{})
-			require.True(t, apierrors.IsNotFound(err), "DeleteResource did not delete deployment")
+			}, &kapps.Deployment{})
+			require.True(t, kerrors.IsNotFound(err), "DeleteResource did not delete deployment")
 		})
 	}
 }
@@ -346,8 +346,8 @@ func Test_DeleteDeployment(t *testing.T) {
 			kubeClient := &KubeClient{
 				client: fakeClient,
 			}
-			deployment := &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
+			deployment := &kapps.Deployment{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "test-deployment",
 					Namespace: "test-namespace",
 				},
@@ -366,8 +366,8 @@ func Test_DeleteDeployment(t *testing.T) {
 			require.Nil(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
-				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &appsv1.Deployment{})
-			require.True(t, apierrors.IsNotFound(err), "DeleteDeployment did not delete deployment")
+				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &kapps.Deployment{})
+			require.True(t, kerrors.IsNotFound(err), "DeleteDeployment did not delete deployment")
 		})
 	}
 }
@@ -399,8 +399,8 @@ func Test_DeleteClusterRole(t *testing.T) {
 			kubeClient := &KubeClient{
 				client: fakeClient,
 			}
-			clusterRole := &rbac.ClusterRole{
-				ObjectMeta: metav1.ObjectMeta{
+			clusterRole := &krbac.ClusterRole{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "test-clusterrole",
 					Namespace: "test-namespace",
 				},
@@ -419,8 +419,8 @@ func Test_DeleteClusterRole(t *testing.T) {
 			require.Nil(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
-				types.NamespacedName{Name: clusterRole.Name, Namespace: clusterRole.Namespace}, &rbac.ClusterRole{})
-			require.True(t, apierrors.IsNotFound(err), "DeleteClusterRole did not delete ClusterRole")
+				types.NamespacedName{Name: clusterRole.Name, Namespace: clusterRole.Namespace}, &krbac.ClusterRole{})
+			require.True(t, kerrors.IsNotFound(err), "DeleteClusterRole did not delete ClusterRole")
 		})
 	}
 }
@@ -452,8 +452,8 @@ func Test_DeleteClusterRoleBinding(t *testing.T) {
 			kubeClient := &KubeClient{
 				client: fakeClient,
 			}
-			clusterRoleBinding := &rbac.ClusterRoleBinding{
-				ObjectMeta: metav1.ObjectMeta{
+			clusterRoleBinding := &krbac.ClusterRoleBinding{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "test-clusterrolebinding",
 					Namespace: "test-namespace",
 				},
@@ -472,8 +472,8 @@ func Test_DeleteClusterRoleBinding(t *testing.T) {
 			require.Nil(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
-				types.NamespacedName{Name: clusterRoleBinding.Name, Namespace: clusterRoleBinding.Namespace}, &rbac.ClusterRoleBinding{})
-			require.True(t, apierrors.IsNotFound(err), "DeleteClusterRoleBinding did not delete ClusterRoleBinding")
+				types.NamespacedName{Name: clusterRoleBinding.Name, Namespace: clusterRoleBinding.Namespace}, &krbac.ClusterRoleBinding{})
+			require.True(t, kerrors.IsNotFound(err), "DeleteClusterRoleBinding did not delete ClusterRoleBinding")
 		})
 	}
 }
@@ -484,19 +484,19 @@ func Test_GetSecret(t *testing.T) {
 	testCases := []struct {
 		name                string
 		givenNamespacedName string
-		wantSecret          *corev1.Secret
+		wantSecret          *kcore.Secret
 		wantError           error
 		wantNotFoundError   bool
 	}{
 		{
 			name:                "success",
 			givenNamespacedName: "test-namespace/test-secret",
-			wantSecret: &corev1.Secret{
-				TypeMeta: metav1.TypeMeta{
+			wantSecret: &kcore.Secret{
+				TypeMeta: kmeta.TypeMeta{
 					Kind:       "Secret",
 					APIVersion: "v1",
 				},
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:      "test-secret",
 					Namespace: "test-namespace",
 				},
@@ -540,7 +540,7 @@ func Test_GetSecret(t *testing.T) {
 
 			// Assert that the function returned the expected secret and error.
 			if tc.wantNotFoundError {
-				require.True(t, apierrors.IsNotFound(err))
+				require.True(t, kerrors.IsNotFound(err))
 			} else {
 				require.Equal(t, tc.wantError, err)
 			}
@@ -568,7 +568,7 @@ func Test_GetMutatingWebHookConfiguration(t *testing.T) {
 			name:      "success",
 			givenName: "test-wh",
 			wantMutatingWebhook: &admissionv1.MutatingWebhookConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name: "test-wh",
 				},
 				Webhooks: []admissionv1.MutatingWebhook{
@@ -613,7 +613,7 @@ func Test_GetMutatingWebHookConfiguration(t *testing.T) {
 				require.Equal(t, tc.wantMutatingWebhook.Webhooks, gotWebhook.Webhooks)
 			} else {
 				require.Error(t, err)
-				require.True(t, apierrors.IsNotFound(err))
+				require.True(t, kerrors.IsNotFound(err))
 			}
 		})
 	}
@@ -638,7 +638,7 @@ func Test_GetValidatingWebHookConfiguration(t *testing.T) {
 			name:      "success",
 			givenName: "test-wh",
 			wantValidatingWebhook: &admissionv1.ValidatingWebhookConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name: "test-wh",
 				},
 				Webhooks: []admissionv1.ValidatingWebhook{
@@ -683,7 +683,7 @@ func Test_GetValidatingWebHookConfiguration(t *testing.T) {
 				require.Equal(t, tc.wantValidatingWebhook.Webhooks, gotWebhook.Webhooks)
 			} else {
 				require.Error(t, err)
-				require.True(t, apierrors.IsNotFound(err))
+				require.True(t, kerrors.IsNotFound(err))
 			}
 		})
 	}
@@ -723,7 +723,7 @@ func Test_GetCRD(t *testing.T) {
 				objs = append(objs, sampleCRD)
 			}
 
-			fakeClientSet := apiclientsetfake.NewSimpleClientset(objs...)
+			fakeClientSet := kapiclientsetfake.NewSimpleClientset(objs...)
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
@@ -732,7 +732,7 @@ func Test_GetCRD(t *testing.T) {
 			// then
 			if tc.wantNotFoundError {
 				require.Error(t, err)
-				require.True(t, apierrors.IsNotFound(err))
+				require.True(t, kerrors.IsNotFound(err))
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, sampleCRD.GetName(), gotCRD.Name)
@@ -772,7 +772,7 @@ func Test_ApplicationCRDExists(t *testing.T) {
 				objs = append(objs, sampleCRD)
 			}
 
-			fakeClientSet := apiclientsetfake.NewSimpleClientset(objs...)
+			fakeClientSet := kapiclientsetfake.NewSimpleClientset(objs...)
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
@@ -817,7 +817,7 @@ func Test_PeerAuthenticationCRDExists(t *testing.T) {
 				objs = append(objs, sampleCRD)
 			}
 
-			fakeClientSet := apiclientsetfake.NewSimpleClientset(objs...)
+			fakeClientSet := kapiclientsetfake.NewSimpleClientset(objs...)
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
@@ -839,17 +839,17 @@ func TestGetSubscriptions(t *testing.T) {
 		{
 			name: "exists subscription",
 			wantSubscriptionList: &eventingv1alpha2.SubscriptionList{
-				TypeMeta: metav1.TypeMeta{
+				TypeMeta: kmeta.TypeMeta{
 					Kind:       "SubscriptionList",
 					APIVersion: "eventing.kyma-project.io/v1alpha2",
 				},
 				Items: []eventingv1alpha2.Subscription{
 					{
-						TypeMeta: metav1.TypeMeta{
+						TypeMeta: kmeta.TypeMeta{
 							Kind:       "Subscription",
 							APIVersion: "eventing.kyma-project.io/v1alpha2",
 						},
-						ObjectMeta: metav1.ObjectMeta{
+						ObjectMeta: kmeta.ObjectMeta{
 							Name:      "test-subscription",
 							Namespace: "test-namespace",
 						},
@@ -940,7 +940,7 @@ func Test_GetConfigMap(t *testing.T) {
 			// then
 			if tc.wantNotFoundError {
 				require.Error(t, err)
-				require.True(t, apierrors.IsNotFound(err))
+				require.True(t, kerrors.IsNotFound(err))
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, givenCM.GetName(), gotCM.Name)
@@ -980,7 +980,7 @@ func Test_APIRuleCRDExists(t *testing.T) {
 				objs = append(objs, sampleCRD)
 			}
 
-			fakeClientSet := apiclientsetfake.NewSimpleClientset(objs...)
+			fakeClientSet := kapiclientsetfake.NewSimpleClientset(objs...)
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when

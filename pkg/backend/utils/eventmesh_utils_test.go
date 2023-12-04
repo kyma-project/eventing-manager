@@ -6,14 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 
 	. "github.com/onsi/gomega"
-	v1meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
@@ -67,7 +67,7 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 	testCases := []struct {
 		name                          string
 		givenSubscription             *eventingv1alpha2.Subscription
-		givenAPIRuleFunc              func(subscription *eventingv1alpha2.Subscription) *apigatewayv1beta1.APIRule
+		givenAPIRuleFunc              func(subscription *eventingv1alpha2.Subscription) *apigateway.APIRule
 		wantError                     bool
 		wantEventMeshSubscriptionFunc func(subscription *eventingv1alpha2.Subscription) *types.Subscription
 	}{
@@ -79,7 +79,7 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 				eventingtesting.WithValidSink("ns", svcName),
 				eventingtesting.WithWebhookAuthForEventMesh(),
 			),
-			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigatewayv1beta1.APIRule {
+			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigateway.APIRule {
 				return eventingtesting.NewAPIRule(subscription,
 					eventingtesting.WithPath(),
 					eventingtesting.WithService(svcName, host),
@@ -109,7 +109,7 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 				eventingtesting.WithOrderCreatedFilter(),
 				eventingtesting.WithValidSink("ns", svcName),
 			),
-			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigatewayv1beta1.APIRule {
+			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigateway.APIRule {
 				return eventingtesting.NewAPIRule(subscription,
 					eventingtesting.WithPath(),
 					eventingtesting.WithService(svcName, host),
@@ -336,20 +336,20 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	s1 := &eventingv1alpha2.Subscription{
-		ObjectMeta: v1meta.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      "subscription1",
 			Namespace: "my-namespace",
 		},
 	}
 	s2 := &eventingv1alpha2.Subscription{
-		ObjectMeta: v1meta.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      "mysub",
 			Namespace: "another-namespace",
 		},
 	}
 
 	s3 := &eventingv1alpha2.Subscription{
-		ObjectMeta: v1meta.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      "name1",
 			Namespace: "name2",
 		},
@@ -358,7 +358,7 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 		},
 	}
 	s4 := &eventingv1alpha2.Subscription{
-		ObjectMeta: v1meta.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      "name1",
 			Namespace: "name2",
 		},
@@ -367,7 +367,7 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 		},
 	}
 	s5 := &eventingv1alpha2.Subscription{
-		ObjectMeta: v1meta.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      "name2",
 			Namespace: "name1",
 		},

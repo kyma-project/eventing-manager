@@ -23,15 +23,16 @@ import (
 	"os"
 
 	"github.com/go-logr/zapr"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kapiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kapiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	subscriptionv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
-	subscriptionv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	controllercache "github.com/kyma-project/eventing-manager/internal/controller/cache"
 	controllerclient "github.com/kyma-project/eventing-manager/internal/controller/client"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
@@ -56,7 +57,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -68,16 +69,16 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 
-	utilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
+	utilruntime.Must(apigateway.AddToScheme(scheme))
 
-	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
+	utilruntime.Must(kapiextensions.AddToScheme(scheme))
 
 	utilruntime.Must(jetstream.AddToScheme(scheme))
 	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
-	utilruntime.Must(subscriptionv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(subscriptionv1alpha2.AddToScheme(scheme))
+	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(eventingv1alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -139,7 +140,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 
 	// init custom kube client wrapper
-	apiClientSet, err := apiclientset.NewForConfig(mgr.GetConfig())
+	apiClientSet, err := kapiclientset.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		setupLog.Error(err, "failed to create new k8s clientset")
 		os.Exit(1)
@@ -180,8 +181,8 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		backendConfig,
 		subManagerFactory,
 		opts,
-		&eventingv1alpha1.Eventing{
-			ObjectMeta: metav1.ObjectMeta{
+		&operatorv1alpha1.Eventing{
+			ObjectMeta: kmeta.ObjectMeta{
 				Name:      backendConfig.EventingCRName,
 				Namespace: backendConfig.EventingCRNamespace,
 			},
@@ -195,12 +196,12 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	//+kubebuilder:scaffold:builder
 
 	// Setup webhooks.
-	if err = (&subscriptionv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&eventingv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
 		os.Exit(1)
 	}
 
-	if err = (&subscriptionv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
 		os.Exit(1)
 	}

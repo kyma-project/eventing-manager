@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 
 	"github.com/stretchr/testify/require"
 )
@@ -33,11 +34,11 @@ func Test_GetNewNATSConfig(t *testing.T) {
 	}
 
 	givenEventing := &v1alpha1.Eventing{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Eventing",
 			APIVersion: "operator.kyma-project.io/v1alpha1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      "test",
 			Namespace: "test-ns",
 			UID:       "1234-5678-1234-5678",

@@ -6,13 +6,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
+
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	eventinglogger "github.com/kyma-project/eventing-manager/pkg/logger"
-	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 func Test_isInDeletion(t *testing.T) {
@@ -24,9 +25,9 @@ func Test_isInDeletion(t *testing.T) {
 		{
 			name: "Deletion timestamp uninitialized",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace",
-					reconcilertesting.WithNotCleanSource(),
-					reconcilertesting.WithNotCleanType())
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace",
+					eventingtesting.WithNotCleanSource(),
+					eventingtesting.WithNotCleanType())
 				sub.DeletionTimestamp = nil
 				return sub
 			},
@@ -35,10 +36,10 @@ func Test_isInDeletion(t *testing.T) {
 		{
 			name: "Deletion timestamp is zero",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				zero := metav1.Time{}
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace",
-					reconcilertesting.WithNotCleanSource(),
-					reconcilertesting.WithNotCleanType())
+				zero := kmeta.Time{}
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace",
+					eventingtesting.WithNotCleanSource(),
+					eventingtesting.WithNotCleanType())
 				sub.DeletionTimestamp = &zero
 				return sub
 			},
@@ -47,10 +48,10 @@ func Test_isInDeletion(t *testing.T) {
 		{
 			name: "Deletion timestamp is set to a useful time",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				newTime := metav1.NewTime(time.Now())
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace",
-					reconcilertesting.WithNotCleanSource(),
-					reconcilertesting.WithNotCleanType())
+				newTime := kmeta.NewTime(time.Now())
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace",
+					eventingtesting.WithNotCleanSource(),
+					eventingtesting.WithNotCleanType())
 				sub.DeletionTimestamp = &newTime
 				return sub
 			},
@@ -79,7 +80,7 @@ func Test_isFinalizerSet(t *testing.T) {
 		{
 			name: "Finalizer is set",
 			givenSubscription: &eventingv1alpha2.Subscription{
-				ObjectMeta: metav1.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
+				ObjectMeta: kmeta.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
 			},
 			wantResult: true,
 		},
@@ -115,7 +116,7 @@ func Test_addFinalizer(t *testing.T) {
 		{
 			name: "with one finalizers",
 			givenSubscription: &eventingv1alpha2.Subscription{
-				ObjectMeta: metav1.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
+				ObjectMeta: kmeta.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
 			},
 			wantFinalizersLen: 2,
 			wantFinalizers:    []string{eventingv1alpha2.Finalizer, eventingv1alpha2.Finalizer},
@@ -171,12 +172,12 @@ func Test_getSvcNsAndName(t *testing.T) {
 func Test_computeAPIRuleReadyStatus(t *testing.T) {
 	var testCases = []struct {
 		name         string
-		givenAPIRule *apigatewayv1beta1.APIRule
+		givenAPIRule *apigateway.APIRule
 		wantResult   bool
 	}{
 		{
 			name:         "with uninitialised ApiRule",
-			givenAPIRule: &apigatewayv1beta1.APIRule{},
+			givenAPIRule: &apigateway.APIRule{},
 			wantResult:   false,
 		},
 		{
@@ -186,8 +187,8 @@ func Test_computeAPIRuleReadyStatus(t *testing.T) {
 		},
 		{
 			name: "with nil apiRule.Status.APIRuleStatus",
-			givenAPIRule: &apigatewayv1beta1.APIRule{
-				Status: apigatewayv1beta1.APIRuleStatus{
+			givenAPIRule: &apigateway.APIRule{
+				Status: apigateway.APIRuleStatus{
 					APIRuleStatus: nil,
 				},
 			},
@@ -195,8 +196,8 @@ func Test_computeAPIRuleReadyStatus(t *testing.T) {
 		},
 		{
 			name: "with nil apiRule.Status.AccessRuleStatus",
-			givenAPIRule: &apigatewayv1beta1.APIRule{
-				Status: apigatewayv1beta1.APIRuleStatus{
+			givenAPIRule: &apigateway.APIRule{
+				Status: apigateway.APIRuleStatus{
 					AccessRuleStatus: nil,
 				},
 			},
@@ -204,8 +205,8 @@ func Test_computeAPIRuleReadyStatus(t *testing.T) {
 		},
 		{
 			name: "with nil apiRule.Status.VirtualServiceStatus",
-			givenAPIRule: &apigatewayv1beta1.APIRule{
-				Status: apigatewayv1beta1.APIRuleStatus{
+			givenAPIRule: &apigateway.APIRule{
+				Status: apigateway.APIRuleStatus{
 					VirtualServiceStatus: nil,
 				},
 			},
@@ -213,16 +214,16 @@ func Test_computeAPIRuleReadyStatus(t *testing.T) {
 		},
 		{
 			name: "with StatusOK apiRule",
-			givenAPIRule: &apigatewayv1beta1.APIRule{
-				Status: apigatewayv1beta1.APIRuleStatus{
-					APIRuleStatus: &apigatewayv1beta1.APIRuleResourceStatus{
-						Code: apigatewayv1beta1.StatusOK,
+			givenAPIRule: &apigateway.APIRule{
+				Status: apigateway.APIRuleStatus{
+					APIRuleStatus: &apigateway.APIRuleResourceStatus{
+						Code: apigateway.StatusOK,
 					},
-					AccessRuleStatus: &apigatewayv1beta1.APIRuleResourceStatus{
-						Code: apigatewayv1beta1.StatusOK,
+					AccessRuleStatus: &apigateway.APIRuleResourceStatus{
+						Code: apigateway.StatusOK,
 					},
-					VirtualServiceStatus: &apigatewayv1beta1.APIRuleResourceStatus{
-						Code: apigatewayv1beta1.StatusOK,
+					VirtualServiceStatus: &apigateway.APIRuleResourceStatus{
+						Code: apigateway.StatusOK,
 					},
 				},
 			},
@@ -243,7 +244,7 @@ func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 	var testCases = []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
-		givenAPIRule      *apigatewayv1beta1.APIRule
+		givenAPIRule      *apigateway.APIRule
 		wantExternalSink  string
 		wantError         bool
 	}{
@@ -254,10 +255,10 @@ func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 					Sink: "http://name1.namespace1.svc.cluster.local/test1",
 				},
 			},
-			givenAPIRule: &apigatewayv1beta1.APIRule{
-				Spec: apigatewayv1beta1.APIRuleSpec{
+			givenAPIRule: &apigateway.APIRule{
+				Spec: apigateway.APIRuleSpec{
 					Host:    &host1,
-					Service: &apigatewayv1beta1.Service{},
+					Service: &apigateway.Service{},
 				},
 			},
 			wantExternalSink: "https://kyma-project.io/test1",
@@ -270,10 +271,10 @@ func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 					Sink: "name1",
 				},
 			},
-			givenAPIRule: &apigatewayv1beta1.APIRule{
-				Spec: apigatewayv1beta1.APIRuleSpec{
+			givenAPIRule: &apigateway.APIRule{
+				Spec: apigateway.APIRuleSpec{
 					Host:    &host1,
-					Service: &apigatewayv1beta1.Service{},
+					Service: &apigateway.Service{},
 				},
 			},
 			wantError: true,
@@ -285,10 +286,10 @@ func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 					Sink: "http://name1.namespace1.svc.cluster.local/test1",
 				},
 			},
-			givenAPIRule: &apigatewayv1beta1.APIRule{
-				Spec: apigatewayv1beta1.APIRuleSpec{
+			givenAPIRule: &apigateway.APIRule{
+				Spec: apigateway.APIRuleSpec{
 					Host:    nil,
-					Service: &apigatewayv1beta1.Service{},
+					Service: &apigateway.Service{},
 				},
 			},
 			wantError: true,

@@ -6,13 +6,14 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/utils/ptr"
 
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/pkg/errors"
 	istiosecv1beta1 "istio.io/api/security/v1beta1"
 	istiotypes "istio.io/api/type/v1beta1"
 	istio "istio.io/client-go/pkg/apis/security/v1beta1"
-	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kapps "k8s.io/api/apps/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
 )
 
 func SyncPeerAuthentications(ctx context.Context, kubeClient k8s.Client, log *zap.SugaredLogger) error {
@@ -50,9 +51,9 @@ func SyncPeerAuthentications(ctx context.Context, kubeClient k8s.Client, log *za
 }
 
 // EventPublisherProxyMetrics returns the PeerAuthentication for the Event-Publisher-Proxy metrics endpoint.
-func EventPublisherProxyMetrics(namespace string, ref []metav1.OwnerReference) *istio.PeerAuthentication {
+func EventPublisherProxyMetrics(namespace string, ref []kmeta.OwnerReference) *istio.PeerAuthentication {
 	return &istio.PeerAuthentication{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      "eventing-publisher-proxy-metrics",
 			Namespace: namespace,
 			Labels: map[string]string{
@@ -74,9 +75,9 @@ func EventPublisherProxyMetrics(namespace string, ref []metav1.OwnerReference) *
 }
 
 // EventingManagerMetrics returns the PeerAuthentication for the Eventing-Manager metrics endpoint.
-func EventingManagerMetrics(namespace string, ref []metav1.OwnerReference) *istio.PeerAuthentication {
+func EventingManagerMetrics(namespace string, ref []kmeta.OwnerReference) *istio.PeerAuthentication {
 	return &istio.PeerAuthentication{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      "eventing-manager-metrics",
 			Namespace: namespace,
 			Labels: map[string]string{
@@ -98,15 +99,15 @@ func EventingManagerMetrics(namespace string, ref []metav1.OwnerReference) *isti
 	}
 }
 
-func typeMeta() metav1.TypeMeta {
-	return metav1.TypeMeta{
+func typeMeta() kmeta.TypeMeta {
+	return kmeta.TypeMeta{
 		Kind:       "PeerAuthentication",
 		APIVersion: "security.istio.io/v1beta1",
 	}
 }
 
-func ownerReferences(deploy appsv1.Deployment) []metav1.OwnerReference {
-	return []metav1.OwnerReference{
+func ownerReferences(deploy kapps.Deployment) []kmeta.OwnerReference {
+	return []kmeta.OwnerReference{
 		{
 			APIVersion:         "apps/v1",
 			Kind:               "Deployment",

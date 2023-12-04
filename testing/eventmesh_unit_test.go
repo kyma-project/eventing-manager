@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	testingutils "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 func Test_GetRestAPIObject(t *testing.T) {
@@ -15,6 +15,6 @@ func Test_GetRestAPIObject(t *testing.T) {
 	urlString := "/messaging/events/subscriptions/my-subscription"
 	urlObject, err := url.Parse(urlString)
 	g.Expect(err).ShouldNot(HaveOccurred())
-	restObject := testingutils.GetRestAPIObject(urlObject)
+	restObject := eventingtesting.GetRestAPIObject(urlObject)
 	g.Expect(restObject).To(Equal("my-subscription"))
 }

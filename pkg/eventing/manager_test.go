@@ -8,7 +8,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/eventing-manager/test"
@@ -17,13 +17,14 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	ecv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
+	kapps "k8s.io/api/apps/v1"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -41,9 +42,9 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 		name             string
 		givenEventing    *v1alpha1.Eventing
 		givenBackendType v1alpha1.BackendType
-		givenDeployment  *appsv1.Deployment
+		givenDeployment  *kapps.Deployment
 		patchApplyErr    error
-		wantedDeployment *appsv1.Deployment
+		wantedDeployment *kapps.Deployment
 		wantErr          error
 	}{
 		{
@@ -146,8 +147,8 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 	testCases := []struct {
 		name                       string
 		givenEventing              *v1alpha1.Eventing
-		givenCurrentDeploymentFunc func() *appsv1.Deployment
-		givenDesiredDeploymentFunc func() *appsv1.Deployment
+		givenCurrentDeploymentFunc func() *kapps.Deployment
+		givenDesiredDeploymentFunc func() *kapps.Deployment
 		givenKubeClientFunc        func() *k8smocks.Client
 	}{
 		{
@@ -155,12 +156,12 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRMinimal(),
 			),
-			givenCurrentDeploymentFunc: func() *appsv1.Deployment {
+			givenCurrentDeploymentFunc: func() *kapps.Deployment {
 				oldPublisher := testutils.NewDeployment(
 					"test-eventing-nats-publisher",
 					"test-namespace",
 					map[string]string{})
-				oldPublisher.OwnerReferences = []metav1.OwnerReference{{
+				oldPublisher.OwnerReferences = []kmeta.OwnerReference{{
 					APIVersion:         "apps/v1",
 					Kind:               "Deployment",
 					Name:               "eventing-controller",
@@ -183,12 +184,12 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRMinimal(),
 			),
-			givenCurrentDeploymentFunc: func() *appsv1.Deployment {
+			givenCurrentDeploymentFunc: func() *kapps.Deployment {
 				oldPublisher := testutils.NewDeployment(
 					"test-eventing-nats-publisher",
 					"test-namespace",
 					map[string]string{})
-				oldPublisher.OwnerReferences = []metav1.OwnerReference{{
+				oldPublisher.OwnerReferences = []kmeta.OwnerReference{{
 					APIVersion:         "apps/v1",
 					Kind:               "Deployment",
 					Name:               "eventing-manager",
@@ -326,19 +327,19 @@ func Test_ConvertECBackendType(t *testing.T) {
 	testCases := []struct {
 		name           string
 		backendType    v1alpha1.BackendType
-		expectedResult ecv1alpha1.BackendType
+		expectedResult eventingv1alpha1.BackendType
 		expectedError  error
 	}{
 		{
 			name:           "Convert EventMeshBackendType",
 			backendType:    v1alpha1.EventMeshBackendType,
-			expectedResult: ecv1alpha1.BEBBackendType,
+			expectedResult: eventingv1alpha1.BEBBackendType,
 			expectedError:  nil,
 		},
 		{
 			name:           "Convert NatsBackendType",
 			backendType:    v1alpha1.NatsBackendType,
-			expectedResult: ecv1alpha1.NatsBackendType,
+			expectedResult: eventingv1alpha1.NatsBackendType,
 			expectedError:  nil,
 		},
 		{
@@ -372,7 +373,7 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 	testCases := []struct {
 		name                      string
 		givenEventing             *v1alpha1.Eventing
-		givenEPPDeployment        *appsv1.Deployment
+		givenEPPDeployment        *kapps.Deployment
 		wantError                 bool
 		wantCreatedResourcesCount int
 	}{
@@ -487,7 +488,7 @@ func Test_DeletePublisherProxyResources(t *testing.T) {
 	testCases := []struct {
 		name                      string
 		givenEventing             *v1alpha1.Eventing
-		givenEPPDeployment        *appsv1.Deployment
+		givenEPPDeployment        *kapps.Deployment
 		wantError                 bool
 		wantDeletedResourcesCount int
 	}{
@@ -569,17 +570,17 @@ func Test_SubscriptionExists(t *testing.T) {
 		{
 			name: "subscriptions should exist",
 			givenSubscriptions: &eventingv1alpha2.SubscriptionList{
-				TypeMeta: metav1.TypeMeta{
+				TypeMeta: kmeta.TypeMeta{
 					Kind:       "SubscriptionList",
 					APIVersion: "eventing.kyma-project.io/v1alpha2",
 				},
 				Items: []eventingv1alpha2.Subscription{
 					{
-						TypeMeta: metav1.TypeMeta{
+						TypeMeta: kmeta.TypeMeta{
 							Kind:       "Subscription",
 							APIVersion: "eventing.kyma-project.io/v1alpha2",
 						},
-						ObjectMeta: metav1.ObjectMeta{
+						ObjectMeta: kmeta.ObjectMeta{
 							Name:      "test-subscription",
 							Namespace: "test-namespace",
 						},

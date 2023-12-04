@@ -5,11 +5,12 @@ import (
 	"net/url"
 	"strings"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
+
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
 // isInDeletion checks if the Subscription shall be deleted.
@@ -60,18 +61,18 @@ func getSvcNsAndName(url string) (string, string, error) {
 }
 
 // computeAPIRuleReadyStatus returns true if all APIRule statuses is ok, otherwise returns false.
-func computeAPIRuleReadyStatus(apiRule *apigatewayv1beta1.APIRule) bool {
+func computeAPIRuleReadyStatus(apiRule *apigateway.APIRule) bool {
 	if apiRule == nil || apiRule.Status.APIRuleStatus == nil || apiRule.Status.AccessRuleStatus == nil || apiRule.Status.VirtualServiceStatus == nil {
 		return false
 	}
-	apiRuleStatus := apiRule.Status.APIRuleStatus.Code == apigatewayv1beta1.StatusOK
-	accessRuleStatus := apiRule.Status.AccessRuleStatus.Code == apigatewayv1beta1.StatusOK
-	virtualServiceStatus := apiRule.Status.VirtualServiceStatus.Code == apigatewayv1beta1.StatusOK
+	apiRuleStatus := apiRule.Status.APIRuleStatus.Code == apigateway.StatusOK
+	accessRuleStatus := apiRule.Status.AccessRuleStatus.Code == apigateway.StatusOK
+	virtualServiceStatus := apiRule.Status.VirtualServiceStatus.Code == apigateway.StatusOK
 	return apiRuleStatus && accessRuleStatus && virtualServiceStatus
 }
 
 // setSubscriptionStatusExternalSink sets the subscription external sink based on the given APIRule service host.
-func setSubscriptionStatusExternalSink(subscription *eventingv1alpha2.Subscription, apiRule *apigatewayv1beta1.APIRule) error {
+func setSubscriptionStatusExternalSink(subscription *eventingv1alpha2.Subscription, apiRule *apigateway.APIRule) error {
 	if apiRule.Spec.Service == nil {
 		return errors.Errorf("APIRule has nil service")
 	}

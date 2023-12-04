@@ -8,7 +8,7 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -88,7 +88,7 @@ func (s *Subscription) ValidateSubscription() (admission.Warnings, error) {
 		return nil, nil
 	}
 
-	return nil, apierrors.NewInvalid(GroupKind, s.Name, allErrs)
+	return nil, kerrors.NewInvalid(GroupKind, s.Name, allErrs)
 }
 
 func (s *Subscription) validateSubscriptionSource() *field.Error {

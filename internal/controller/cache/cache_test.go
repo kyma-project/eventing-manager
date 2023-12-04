@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
+	kapps "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	kcore "k8s.io/api/core/v1"
+	krbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,10 +39,10 @@ func Test_applySelectors(t *testing.T) {
 			},
 			want: cache.Options{
 				ByObject: map[client.Object]cache.ByObject{
-					&appsv1.Deployment{}:                     selector,
-					&corev1.ServiceAccount{}:                 selector,
-					&rbacv1.ClusterRole{}:                    selector,
-					&rbacv1.ClusterRoleBinding{}:             selector,
+					&kapps.Deployment{}:                      selector,
+					&kcore.ServiceAccount{}:                  selector,
+					&krbac.ClusterRole{}:                     selector,
+					&krbac.ClusterRoleBinding{}:              selector,
 					&autoscalingv1.HorizontalPodAutoscaler{}: selector,
 				},
 			},
@@ -79,19 +79,19 @@ func deepEqualByObject(a, b map[client.Object]cache.ByObject) bool {
 func computeTypeMap(byObjectMap map[client.Object]cache.ByObject, typeMap map[string]cache.ByObject) {
 	keyOf := func(i interface{}) string { return fmt.Sprintf(">>> %T", i) }
 	for k, v := range byObjectMap {
-		if obj, ok := k.(*appsv1.Deployment); ok {
+		if obj, ok := k.(*kapps.Deployment); ok {
 			key := keyOf(obj)
 			typeMap[key] = v
 		}
-		if obj, ok := k.(*corev1.ServiceAccount); ok {
+		if obj, ok := k.(*kcore.ServiceAccount); ok {
 			key := keyOf(obj)
 			typeMap[key] = v
 		}
-		if obj, ok := k.(*rbacv1.ClusterRole); ok {
+		if obj, ok := k.(*krbac.ClusterRole); ok {
 			key := keyOf(obj)
 			typeMap[key] = v
 		}
-		if obj, ok := k.(*rbacv1.ClusterRoleBinding); ok {
+		if obj, ok := k.(*krbac.ClusterRoleBinding); ok {
 			key := keyOf(obj)
 			typeMap[key] = v
 		}

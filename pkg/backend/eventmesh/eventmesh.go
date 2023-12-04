@@ -7,7 +7,8 @@ import (
 
 	"go.uber.org/zap"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
@@ -37,7 +38,7 @@ type Backend interface {
 
 	// SyncSubscription should synchronize the Kyma eventing subscription with the subscriber infrastructure of messaging backend system.
 	// It should return true if Kyma eventing subscription status was changed during this synchronization process.
-	SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner, apiRule *apigatewayv1beta1.APIRule) (bool, error)
+	SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner, apiRule *apigateway.APIRule) (bool, error)
 
 	// DeleteSubscription should delete the corresponding subscriber data of messaging backend
 	DeleteSubscription(subscription *eventingv1alpha2.Subscription) error
@@ -98,7 +99,7 @@ func getWebHookAuth(credentials *OAuth2ClientCredentials) *types.WebhookAuth {
 // SyncSubscription synchronize the EV2 subscription with the EMS subscription.
 // It returns true, if the EV2 subscription status was changed.
 func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner,
-	apiRule *apigatewayv1beta1.APIRule) (bool, error) { //nolint:funlen,gocognit
+	apiRule *apigateway.APIRule) (bool, error) { //nolint:funlen,gocognit
 	// Format logger
 	log := backendutils.LoggerWithSubscription(em.namedLogger(), subscription)
 

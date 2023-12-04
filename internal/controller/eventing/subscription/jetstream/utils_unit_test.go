@@ -3,9 +3,10 @@ package jetstream
 import (
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	subtesting "github.com/kyma-project/eventing-manager/testing"
 	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 func Test_isInDeletion(t *testing.T) {
@@ -16,13 +17,13 @@ func Test_isInDeletion(t *testing.T) {
 	}{
 		{
 			name:       "subscription with no deletion timestamp",
-			givenSub:   subtesting.NewSubscription("test", "test"),
+			givenSub:   eventingtesting.NewSubscription("test", "test"),
 			wantResult: false,
 		},
 		{
 			name: "subscription with deletion timestamp",
-			givenSub: subtesting.NewSubscription("test", "test",
-				subtesting.WithNonZeroDeletionTimestamp()),
+			givenSub: eventingtesting.NewSubscription("test", "test",
+				eventingtesting.WithNonZeroDeletionTimestamp()),
 			wantResult: true,
 		},
 	}
@@ -46,19 +47,19 @@ func Test_containsFinalizer(t *testing.T) {
 	}{
 		{
 			name: "subscription containing finalizer",
-			givenSub: subtesting.NewSubscription("test", "test",
-				subtesting.WithFinalizers([]string{v1alpha2.Finalizer})),
+			givenSub: eventingtesting.NewSubscription("test", "test",
+				eventingtesting.WithFinalizers([]string{v1alpha2.Finalizer})),
 			wantResult: true,
 		},
 		{
 			name: "subscription containing finalizer",
-			givenSub: subtesting.NewSubscription("test", "test",
-				subtesting.WithFinalizers([]string{"invalid"})),
+			givenSub: eventingtesting.NewSubscription("test", "test",
+				eventingtesting.WithFinalizers([]string{"invalid"})),
 			wantResult: false,
 		},
 		{
 			name:       "subscription not containing finalizer",
-			givenSub:   subtesting.NewSubscription("test", "test"),
+			givenSub:   eventingtesting.NewSubscription("test", "test"),
 			wantResult: false,
 		},
 	}

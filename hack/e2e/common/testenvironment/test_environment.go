@@ -15,18 +15,19 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 
-	ecv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"go.uber.org/zap"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	kapps "k8s.io/api/apps/v1"
+	kcore "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
@@ -205,8 +206,8 @@ func (te *TestEnvironment) WaitForSubscriptions(ctx context.Context, subsToTest 
 func (te *TestEnvironment) WaitForSubscription(ctx context.Context, subsToTest eventing.TestSubscriptionInfo) error {
 	return common.Retry(Attempts, Interval, func() error {
 		// get subscription from cluster.
-		gotSub := ecv1alpha2.Subscription{}
-		err := te.K8sClient.Get(ctx, k8stypes.NamespacedName{
+		gotSub := eventingv1alpha2.Subscription{}
+		err := te.K8sClient.Get(ctx, ktypes.NamespacedName{
 			Name:      subsToTest.Name,
 			Namespace: te.TestConfigs.TestNamespace,
 		}, &gotSub)
@@ -236,8 +237,8 @@ func (te *TestEnvironment) WaitForSubscription(ctx context.Context, subsToTest e
 	})
 }
 
-func (te *TestEnvironment) IsSubscriptionReconcileByBackend(sub ecv1alpha2.Subscription, activeBackend string) bool {
-	condition := sub.Status.FindCondition(ecv1alpha2.ConditionSubscriptionActive)
+func (te *TestEnvironment) IsSubscriptionReconcileByBackend(sub eventingv1alpha2.Subscription, activeBackend string) bool {
+	condition := sub.Status.FindCondition(eventingv1alpha2.ConditionSubscriptionActive)
 	if condition == nil {
 		return false
 	}
@@ -289,8 +290,8 @@ func (te *TestEnvironment) CreateSinkService(name, namespace string) error {
 
 func (te *TestEnvironment) DeleteDeployment(name, namespace string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Delete(te.Context, &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
+		return te.K8sClient.Delete(te.Context, &kapps.Deployment{
+			ObjectMeta: kmeta.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -300,8 +301,8 @@ func (te *TestEnvironment) DeleteDeployment(name, namespace string) error {
 
 func (te *TestEnvironment) DeleteService(name, namespace string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Delete(te.Context, &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
+		return te.K8sClient.Delete(te.Context, &kcore.Service{
+			ObjectMeta: kmeta.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -309,8 +310,8 @@ func (te *TestEnvironment) DeleteService(name, namespace string) error {
 	})
 }
 
-func (te *TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*appsv1.Deployment, error) {
-	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, metav1.GetOptions{})
+func (te *TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*kapps.Deployment, error) {
+	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, kmeta.GetOptions{})
 }
 
 func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string) error {
@@ -318,7 +319,7 @@ func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string)
 	return common.Retry(Attempts, Interval, func() error {
 		te.Logger.Debug(fmt.Sprintf("waiting for deployment: %s to get ready with image: %s", name, image))
 		// Get the deployment from the cluster.
-		gotDeployment, err := common.RetryGet(FewAttempts, SmallInterval, func() (*appsv1.Deployment, error) {
+		gotDeployment, err := common.RetryGet(FewAttempts, SmallInterval, func() (*kapps.Deployment, error) {
 			return te.GetDeploymentFromK8s(name, namespace)
 		})
 		if err != nil {
@@ -351,8 +352,8 @@ func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string)
 
 func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) error {
 	// define subscription to delete.
-	sub := &ecv1alpha2.Subscription{
-		ObjectMeta: metav1.ObjectMeta{
+	sub := &eventingv1alpha2.Subscription{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -362,7 +363,7 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 	return common.Retry(FewAttempts, Interval, func() error {
 		// delete subscription from cluster.
 		err := te.K8sClient.Delete(te.Context, sub)
-		if err != nil && !k8serrors.IsNotFound(err) {
+		if err != nil && !kerrors.IsNotFound(err) {
 			te.Logger.Debug(fmt.Sprintf("failed to delete subscription: %s "+
 				"in namespace: %s", name, te.TestConfigs.TestNamespace))
 			return err
@@ -495,9 +496,9 @@ func (te *TestEnvironment) CompareCloudEvents(expectedEvent cloudevents.Event, g
 func (te *TestEnvironment) SetupEventingCR() error {
 	return common.Retry(Attempts, Interval, func() error {
 		ctx := context.TODO()
-		eventingCR := fixtures.EventingCR(eventingv1alpha1.BackendType(te.TestConfigs.BackendType))
+		eventingCR := fixtures.EventingCR(operatorv1alpha1.BackendType(te.TestConfigs.BackendType))
 		errEvnt := te.K8sClient.Create(ctx, eventingCR)
-		if k8serrors.IsAlreadyExists(errEvnt) {
+		if kerrors.IsAlreadyExists(errEvnt) {
 			gotEventingCR, getErr := te.GetEventingCRFromK8s(eventingCR.Name, eventingCR.Namespace)
 			if getErr != nil {
 				return getErr
@@ -523,21 +524,21 @@ func (te *TestEnvironment) SetupEventingCR() error {
 func (te *TestEnvironment) DeleteEventingCR() error {
 	return common.Retry(Attempts, Interval, func() error {
 		return client.IgnoreNotFound(te.K8sClient.Delete(te.Context,
-			fixtures.EventingCR(eventingv1alpha1.BackendType(te.TestConfigs.BackendType))))
+			fixtures.EventingCR(operatorv1alpha1.BackendType(te.TestConfigs.BackendType))))
 	})
 }
 
-func (te *TestEnvironment) GetEventingCRFromK8s(name, namespace string) (*eventingv1alpha1.Eventing, error) {
-	var eventingCR eventingv1alpha1.Eventing
-	err := te.K8sClient.Get(te.Context, k8stypes.NamespacedName{
+func (te *TestEnvironment) GetEventingCRFromK8s(name, namespace string) (*operatorv1alpha1.Eventing, error) {
+	var eventingCR operatorv1alpha1.Eventing
+	err := te.K8sClient.Get(te.Context, ktypes.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}, &eventingCR)
 	return &eventingCR, err
 }
 
-func (te *TestEnvironment) GetDeployment(name, namespace string) (*appsv1.Deployment, error) {
-	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, metav1.GetOptions{})
+func (te *TestEnvironment) GetDeployment(name, namespace string) (*kapps.Deployment, error) {
+	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, kmeta.GetOptions{})
 }
 
 func (te *TestEnvironment) WaitForEventingCRReady() error {
@@ -547,7 +548,7 @@ func (te *TestEnvironment) WaitForEventingCRReady() error {
 			"CR name: %s, namespace: %s", fixtures.CRName, fixtures.NamespaceName))
 
 		// Get the Eventing CR from the cluster.
-		gotEventingCR, err := common.RetryGet(Attempts, Interval, func() (*eventingv1alpha1.Eventing, error) {
+		gotEventingCR, err := common.RetryGet(Attempts, Interval, func() (*operatorv1alpha1.Eventing, error) {
 			return te.GetEventingCRFromK8s(fixtures.CRName, fixtures.NamespaceName)
 		})
 		if err != nil {
@@ -560,7 +561,7 @@ func (te *TestEnvironment) WaitForEventingCRReady() error {
 			return err
 		}
 
-		if gotEventingCR.Status.State != eventingv1alpha1.StateReady {
+		if gotEventingCR.Status.State != operatorv1alpha1.StateReady {
 			err := fmt.Errorf("waiting for Eventing CR to get ready state")
 			te.Logger.Debug(err.Error())
 			return err
@@ -575,7 +576,7 @@ func (te *TestEnvironment) WaitForEventingCRReady() error {
 
 func (env *TestEnvironment) GetPeerAuthenticationFromK8s(name, namespace string) (*istio.PeerAuthentication, error) {
 	result, err := env.K8sDynamicClient.Resource(fixtures.PeerAuthenticationGVR()).Namespace(
-		namespace).Get(env.Context, name, metav1.GetOptions{})
+		namespace).Get(env.Context, name, kmeta.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -11,18 +11,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
-	eventinv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kapiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
-	appsv1 "k8s.io/api/apps/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	kapps "k8s.io/api/apps/v1"
+	krbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	kcore "k8s.io/api/core/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -47,26 +48,26 @@ func GetRandString(length int) string {
 
 type EventingOption func(*v1alpha1.Eventing) error
 
-func NewNamespace(name string) *v1.Namespace {
-	namespace := v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
+func NewNamespace(name string) *kcore.Namespace {
+	namespace := kcore.Namespace{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: name,
 		},
 	}
 	return &namespace
 }
 
-func NewApplicationCRD() *apiextensionsv1.CustomResourceDefinition {
-	result := &apiextensionsv1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
+func NewApplicationCRD() *kapiextensions.CustomResourceDefinition {
+	result := &kapiextensions.CustomResourceDefinition{
+		TypeMeta: kmeta.TypeMeta{
 			APIVersion: "apiextensions.k8s.io/v1",
 			Kind:       "CustomResourceDefinition",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: "applications.applicationconnector.kyma-project.io",
 		},
-		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-			Names:                 apiextensionsv1.CustomResourceDefinitionNames{},
+		Spec: kapiextensions.CustomResourceDefinitionSpec{
+			Names:                 kapiextensions.CustomResourceDefinitionNames{},
 			Scope:                 "Namespaced",
 			PreserveUnknownFields: false,
 		},
@@ -75,13 +76,13 @@ func NewApplicationCRD() *apiextensionsv1.CustomResourceDefinition {
 	return result
 }
 
-func NewPeerAuthenticationCRD() (*apiextensionsv1.CustomResourceDefinition, error) {
+func NewPeerAuthenticationCRD() (*kapiextensions.CustomResourceDefinition, error) {
 	crdYAML, err := os.ReadFile("../../config/crd/for-tests/security.istio.io_peerauthentication.yaml")
 	if err != nil {
 		return nil, err
 	}
 
-	crd := &apiextensionsv1.CustomResourceDefinition{}
+	crd := &kapiextensions.CustomResourceDefinition{}
 	decoder := serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
 	if _, _, err = decoder.Decode(crdYAML, nil, crd); err != nil {
 		return nil, err
@@ -89,17 +90,17 @@ func NewPeerAuthenticationCRD() (*apiextensionsv1.CustomResourceDefinition, erro
 	return crd, nil
 }
 
-func NewAPIRuleCRD() *apiextensionsv1.CustomResourceDefinition {
-	result := &apiextensionsv1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
+func NewAPIRuleCRD() *kapiextensions.CustomResourceDefinition {
+	result := &kapiextensions.CustomResourceDefinition{
+		TypeMeta: kmeta.TypeMeta{
 			APIVersion: "apiextensions.k8s.io/v1",
 			Kind:       "CustomResourceDefinition",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name: "apirules.gateway.kyma-project.io",
 		},
-		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-			Names:                 apiextensionsv1.CustomResourceDefinitionNames{},
+		Spec: kapiextensions.CustomResourceDefinitionSpec{
+			Names:                 kapiextensions.CustomResourceDefinitionNames{},
 			Scope:                 "Namespaced",
 			PreserveUnknownFields: false,
 		},
@@ -113,11 +114,11 @@ func NewEventingCR(opts ...EventingOption) *v1alpha1.Eventing {
 	namespace := fmt.Sprintf(NamespaceFormat, GetRandString(randomNameLen))
 
 	eventing := &v1alpha1.Eventing{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: kmeta.TypeMeta{
 			Kind:       "Eventing",
 			APIVersion: "operator.kyma-project.io/v1alpha1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			UID:       "1234-5678-1234-5678",
@@ -146,10 +147,10 @@ func HasOwnerReference(object client.Object, eventingCR v1alpha1.Eventing) bool 
 		ownerReferences[0].UID == eventingCR.UID
 }
 
-func IsEPPPublishServiceCorrect(svc v1.Service, eppDeployment appsv1.Deployment) bool {
-	wantSpec := v1.ServiceSpec{
+func IsEPPPublishServiceCorrect(svc kcore.Service, eppDeployment kapps.Deployment) bool {
+	wantSpec := kcore.ServiceSpec{
 		Selector: eppDeployment.Spec.Template.Labels,
-		Ports: []v1.ServicePort{
+		Ports: []kcore.ServicePort{
 			{
 				Name:       "http-client",
 				Protocol:   "TCP",
@@ -163,16 +164,16 @@ func IsEPPPublishServiceCorrect(svc v1.Service, eppDeployment appsv1.Deployment)
 		reflect.DeepEqual(wantSpec.Ports, svc.Spec.Ports)
 }
 
-func IsEPPMetricsServiceCorrect(svc v1.Service, eppDeployment appsv1.Deployment) bool {
+func IsEPPMetricsServiceCorrect(svc kcore.Service, eppDeployment kapps.Deployment) bool {
 	wantAnnotations := map[string]string{
 		"prometheus.io/scrape": "true",
 		"prometheus.io/port":   "9090",
 		"prometheus.io/scheme": "http",
 	}
 
-	wantSpec := v1.ServiceSpec{
+	wantSpec := kcore.ServiceSpec{
 		Selector: eppDeployment.Spec.Template.Labels,
-		Ports: []v1.ServicePort{
+		Ports: []kcore.ServicePort{
 			{
 				Name:       "http-metrics",
 				Protocol:   "TCP",
@@ -187,10 +188,10 @@ func IsEPPMetricsServiceCorrect(svc v1.Service, eppDeployment appsv1.Deployment)
 		reflect.DeepEqual(wantAnnotations, svc.Annotations)
 }
 
-func IsEPPHealthServiceCorrect(svc v1.Service, eppDeployment appsv1.Deployment) bool {
-	wantSpec := v1.ServiceSpec{
+func IsEPPHealthServiceCorrect(svc kcore.Service, eppDeployment kapps.Deployment) bool {
+	wantSpec := kcore.ServiceSpec{
 		Selector: eppDeployment.Spec.Template.Labels,
-		Ports: []v1.ServicePort{
+		Ports: []kcore.ServicePort{
 			{
 				Name:       "http-status",
 				Protocol:   "TCP",
@@ -204,8 +205,8 @@ func IsEPPHealthServiceCorrect(svc v1.Service, eppDeployment appsv1.Deployment) 
 		reflect.DeepEqual(wantSpec.Ports, svc.Spec.Ports)
 }
 
-func IsEPPClusterRoleCorrect(clusterRole rbacv1.ClusterRole) bool {
-	wantRules := []rbacv1.PolicyRule{
+func IsEPPClusterRoleCorrect(clusterRole krbac.ClusterRole) bool {
+	wantRules := []krbac.PolicyRule{
 		{
 			APIGroups: []string{"eventing.kyma-project.io"},
 			Resources: []string{"subscriptions"},
@@ -220,13 +221,13 @@ func IsEPPClusterRoleCorrect(clusterRole rbacv1.ClusterRole) bool {
 	return reflect.DeepEqual(wantRules, clusterRole.Rules)
 }
 
-func IsEPPClusterRoleBindingCorrect(clusterRoleBinding rbacv1.ClusterRoleBinding, eventingCR v1alpha1.Eventing) bool {
-	wantRoleRef := rbacv1.RoleRef{
+func IsEPPClusterRoleBindingCorrect(clusterRoleBinding krbac.ClusterRoleBinding, eventingCR v1alpha1.Eventing) bool {
+	wantRoleRef := krbac.RoleRef{
 		Kind:     "ClusterRole",
 		Name:     fmt.Sprintf("%s-%s", eventingCR.GetName(), PublisherProxySuffix),
 		APIGroup: "rbac.authorization.k8s.io",
 	}
-	wantSubjects := []rbacv1.Subject{
+	wantSubjects := []krbac.Subject{
 		{
 			Kind:      "ServiceAccount",
 			Name:      fmt.Sprintf("%s-%s", eventingCR.GetName(), PublisherProxySuffix),
@@ -238,22 +239,22 @@ func IsEPPClusterRoleBindingCorrect(clusterRoleBinding rbacv1.ClusterRoleBinding
 		reflect.DeepEqual(wantSubjects, clusterRoleBinding.Subjects)
 }
 
-func NewDeployment(name, namespace string, annotations map[string]string) *appsv1.Deployment {
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
+func NewDeployment(name, namespace string, annotations map[string]string) *kapps.Deployment {
+	return &kapps.Deployment{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:        name,
 			Namespace:   namespace,
 			Annotations: annotations,
 		},
-		Spec: appsv1.DeploymentSpec{
-			Template: v1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
+		Spec: kapps.DeploymentSpec{
+			Template: kcore.PodTemplateSpec{
+				ObjectMeta: kmeta.ObjectMeta{
 					Name:        name,
 					Namespace:   namespace,
 					Annotations: annotations,
 				},
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
+				Spec: kcore.PodSpec{
+					Containers: []kcore.Container{
 						{
 							Name:  "publisher",
 							Image: "test-image",
@@ -265,9 +266,9 @@ func NewDeployment(name, namespace string, annotations map[string]string) *appsv
 	}
 }
 
-func NewEventMeshSecret(name, namespace string) *v1.Secret {
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+func NewEventMeshSecret(name, namespace string) *kcore.Secret {
+	return &kcore.Secret{
+		ObjectMeta: kmeta.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
 		},
@@ -328,9 +329,9 @@ func NewEventMeshSecret(name, namespace string) *v1.Secret {
 	}
 }
 
-func NewOAuthSecret(name, namespace string) *v1.Secret {
-	secret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+func NewOAuthSecret(name, namespace string) *kcore.Secret {
+	secret := &kcore.Secret{
+		ObjectMeta: kmeta.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
 		},
@@ -345,13 +346,13 @@ func NewOAuthSecret(name, namespace string) *v1.Secret {
 	return secret
 }
 
-func NewSubscription(name, namespace string) *eventinv1alpha2.Subscription {
-	return &eventinv1alpha2.Subscription{
-		ObjectMeta: metav1.ObjectMeta{
+func NewSubscription(name, namespace string) *eventingv1alpha2.Subscription {
+	return &eventingv1alpha2.Subscription{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: eventinv1alpha2.SubscriptionSpec{
+		Spec: eventingv1alpha2.SubscriptionSpec{
 			Sink:   "test-sink",
 			Source: "test-source",
 			Types:  []string{"test1.nats.type", "test2.nats.type"},
@@ -359,9 +360,9 @@ func NewSubscription(name, namespace string) *eventinv1alpha2.Subscription {
 	}
 }
 
-func NewConfigMap(name, namespace string) *v1.ConfigMap {
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+func NewConfigMap(name, namespace string) *kcore.ConfigMap {
+	cm := &kcore.ConfigMap{
+		ObjectMeta: kmeta.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},

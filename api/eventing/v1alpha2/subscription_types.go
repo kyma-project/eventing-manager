@@ -6,12 +6,12 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	kunstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	kruntime "k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type TypeMatching string
@@ -69,8 +69,8 @@ type SubscriptionStatus struct {
 
 // Subscription is the Schema for the subscriptions API.
 type Subscription struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	kmeta.TypeMeta   `json:",inline"`
+	kmeta.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   SubscriptionSpec   `json:"spec,omitempty"`
 	Status SubscriptionStatus `json:"status,omitempty"`
@@ -121,21 +121,21 @@ func (s *Subscription) DuplicateWithStatusDefaults() *Subscription {
 	return desiredSub
 }
 
-func (s *Subscription) ToUnstructuredSub() (*unstructured.Unstructured, error) {
-	object, err := k8sruntime.DefaultUnstructuredConverter.ToUnstructured(&s)
+func (s *Subscription) ToUnstructuredSub() (*kunstructured.Unstructured, error) {
+	object, err := kruntime.DefaultUnstructuredConverter.ToUnstructured(&s)
 	if err != nil {
 		return nil, err
 	}
-	return &unstructured.Unstructured{Object: object}, nil
+	return &kunstructured.Unstructured{Object: object}, nil
 }
 
 // +kubebuilder:object:root=true
 
 // SubscriptionList contains a list of Subscription.
 type SubscriptionList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Subscription `json:"items"`
+	kmeta.TypeMeta `json:",inline"`
+	kmeta.ListMeta `json:"metadata,omitempty"`
+	Items          []Subscription `json:"items"`
 }
 
 func init() { //nolint:gochecknoinits

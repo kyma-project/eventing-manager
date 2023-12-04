@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ConditionType string
@@ -27,7 +27,7 @@ type Condition struct {
 	// Status of the condition. The value is either `True`, `False`, or `Unknown`.
 	Status corev1.ConditionStatus `json:"status"`
 	// Defines the date of the last condition status change.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime kmetav1.Time `json:"lastTransitionTime,omitempty"`
 	// Defines the reason for the condition status change.
 	Reason ConditionReason `json:"reason,omitempty"`
 	// Provides more details about the condition status change.
@@ -114,22 +114,22 @@ func MakeSubscriptionConditions() []Condition {
 	conditions := []Condition{
 		{
 			Type:               ConditionAPIRuleStatus,
-			LastTransitionTime: metav1.Now(),
+			LastTransitionTime: kmetav1.Now(),
 			Status:             corev1.ConditionUnknown,
 		},
 		{
 			Type:               ConditionSubscribed,
-			LastTransitionTime: metav1.Now(),
+			LastTransitionTime: kmetav1.Now(),
 			Status:             corev1.ConditionUnknown,
 		},
 		{
 			Type:               ConditionSubscriptionActive,
-			LastTransitionTime: metav1.Now(),
+			LastTransitionTime: kmetav1.Now(),
 			Status:             corev1.ConditionUnknown,
 		},
 		{
 			Type:               ConditionWebhookCallStatus,
-			LastTransitionTime: metav1.Now(),
+			LastTransitionTime: kmetav1.Now(),
 			Status:             corev1.ConditionUnknown,
 		},
 	}
@@ -164,7 +164,7 @@ func MakeCondition(conditionType ConditionType, reason ConditionReason, status c
 	return Condition{
 		Type:               conditionType,
 		Status:             status,
-		LastTransitionTime: metav1.Now(),
+		LastTransitionTime: kmetav1.Now(),
 		Reason:             reason,
 		// TODO: https://github.com/kyma-project/kyma/issues/9770
 		Message: message,

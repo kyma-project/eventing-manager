@@ -6,16 +6,16 @@ import (
 	"testing"
 	"time"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcore "k8s.io/api/core/v1"
+	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,7 +35,7 @@ import (
 	eventinglogger "github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/object"
 	"github.com/kyma-project/eventing-manager/test/utils"
-	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 // TestReconciler_Reconcile tests the return values of the Reconcile() method of the reconciler.
@@ -48,30 +48,30 @@ func TestReconciler_Reconcile(t *testing.T) {
 	col := metrics.NewCollector()
 
 	// A subscription with the correct Finalizer, conditions and status ready for reconciliation with the backend.
-	testSub := reconcilertesting.NewSubscription("sub1", "test",
-		reconcilertesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
-		reconcilertesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
-		reconcilertesting.WithDefaultSource(),
-		reconcilertesting.WithEventType(reconcilertesting.OrderCreatedEventType),
-		reconcilertesting.WithValidSink("test", "test-svc"),
-		reconcilertesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
+	testSub := eventingtesting.NewSubscription("sub1", "test",
+		eventingtesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
+		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
+		eventingtesting.WithDefaultSource(),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventType),
+		eventingtesting.WithValidSink("test", "test-svc"),
+		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
 	)
 	// A subscription marked for deletion.
-	testSubUnderDeletion := reconcilertesting.NewSubscription("sub2", "test",
-		reconcilertesting.WithNonZeroDeletionTimestamp(),
-		reconcilertesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
-		reconcilertesting.WithDefaultSource(),
-		reconcilertesting.WithEventType(reconcilertesting.OrderCreatedEventType),
+	testSubUnderDeletion := eventingtesting.NewSubscription("sub2", "test",
+		eventingtesting.WithNonZeroDeletionTimestamp(),
+		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
+		eventingtesting.WithDefaultSource(),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventType),
 	)
 
 	// A subscription with the correct Finalizer, conditions and status Paused for reconciliation with the backend.
-	testSubPaused := reconcilertesting.NewSubscription("sub3", "test",
-		reconcilertesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
-		reconcilertesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
-		reconcilertesting.WithDefaultSource(),
-		reconcilertesting.WithEventType(reconcilertesting.OrderCreatedEventType),
-		reconcilertesting.WithValidSink("test", "test-svc"),
-		reconcilertesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusPaused)),
+	testSubPaused := eventingtesting.NewSubscription("sub3", "test",
+		eventingtesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
+		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
+		eventingtesting.WithDefaultSource(),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventType),
+		eventingtesting.WithValidSink("test", "test-svc"),
+		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusPaused)),
 	)
 
 	backendSyncErr := errors.New("backend sync error")
@@ -230,7 +230,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
 			reconciler := tc.givenReconcilerSetup()
-			r := ctrl.Request{NamespacedName: k8stypes.NamespacedName{
+			r := ctrl.Request{NamespacedName: ktypes.NamespacedName{
 				Namespace: tc.givenSubscription.Namespace,
 				Name:      tc.givenSubscription.Name,
 			}}
@@ -250,13 +250,13 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 		CertsURL: "https://domain.com/oauth2/certs",
 	}
 
-	subscription := reconcilertesting.NewSubscription("some-test-sub", "test",
-		reconcilertesting.WithDefaultSource(),
-		reconcilertesting.WithValidSink("test", "some-test-svc"),
-		reconcilertesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
-		reconcilertesting.WithEventType(reconcilertesting.OrderCreatedEventType),
-		reconcilertesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
-		reconcilertesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
+	subscription := eventingtesting.NewSubscription("some-test-sub", "test",
+		eventingtesting.WithDefaultSource(),
+		eventingtesting.WithValidSink("test", "some-test-svc"),
+		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventType),
+		eventingtesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
+		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
 	)
 
 	validator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return nil })
@@ -270,7 +270,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 		givenEventingWebhookAuthEnabled bool
 		wantReconcileResult             ctrl.Result
 		wantReconcileError              error
-		wantHandler                     apigatewayv1beta1.Handler
+		wantHandler                     apigateway.Handler
 	}{
 		{
 			name:              "Eventing webhook auth is not enabled",
@@ -297,7 +297,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			givenEventingWebhookAuthEnabled: false,
 			wantReconcileResult:             ctrl.Result{},
 			wantReconcileError:              nil,
-			wantHandler: apigatewayv1beta1.Handler{
+			wantHandler: apigateway.Handler{
 				Name:   object.OAuthHandlerNameOAuth2Introspection,
 				Config: nil,
 			},
@@ -327,7 +327,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			givenEventingWebhookAuthEnabled: true,
 			wantReconcileResult:             ctrl.Result{},
 			wantReconcileError:              nil,
-			wantHandler: apigatewayv1beta1.Handler{
+			wantHandler: apigateway.Handler{
 				Name: object.OAuthHandlerNameJWT,
 				Config: &runtime.RawExtension{
 					Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, credentials.CertsURL)),
@@ -341,7 +341,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			// given
 			featureflags.SetEventingWebhookAuthEnabled(tc.givenEventingWebhookAuthEnabled)
 			reconciler, cli := tc.givenReconcilerSetup()
-			namespacedName := k8stypes.NamespacedName{
+			namespacedName := ktypes.NamespacedName{
 				Namespace: tc.givenSubscription.Namespace,
 				Name:      tc.givenSubscription.Name,
 			}
@@ -355,12 +355,12 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			err = cli.Get(ctx, namespacedName, sub)
 			require.NoError(t, err)
 
-			namespacedName = k8stypes.NamespacedName{
+			namespacedName = ktypes.NamespacedName{
 				Namespace: sub.Namespace,
 				Name:      sub.Status.Backend.APIRuleName,
 			}
 
-			apiRule := &apigatewayv1beta1.APIRule{}
+			apiRule := &apigateway.APIRule{}
 			err = cli.Get(ctx, namespacedName, apiRule)
 			require.NoError(t, err)
 
@@ -380,13 +380,13 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 		CertsURL: "https://domain.com/oauth2/certs",
 	}
 
-	subscription := reconcilertesting.NewSubscription("some-test-sub", "test",
-		reconcilertesting.WithDefaultSource(),
-		reconcilertesting.WithValidSink("test", "some-test-svc"),
-		reconcilertesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
-		reconcilertesting.WithEventType(reconcilertesting.OrderCreatedEventType),
-		reconcilertesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
-		reconcilertesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
+	subscription := eventingtesting.NewSubscription("some-test-sub", "test",
+		eventingtesting.WithDefaultSource(),
+		eventingtesting.WithValidSink("test", "some-test-svc"),
+		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventType),
+		eventingtesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
+		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
 	)
 
 	validator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return nil })
@@ -399,8 +399,8 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 		givenEventingWebhookAuthEnabled bool
 		wantReconcileResult             ctrl.Result
 		wantReconcileError              error
-		wantHandlerBeforeUpgrade        apigatewayv1beta1.Handler
-		wantHandlerAfterUpgrade         apigatewayv1beta1.Handler
+		wantHandlerBeforeUpgrade        apigateway.Handler
+		wantHandlerAfterUpgrade         apigateway.Handler
 	}{
 		{
 			name:              "Eventing webhook auth is not enabled before the upgrade",
@@ -427,11 +427,11 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			givenEventingWebhookAuthEnabled: false,
 			wantReconcileResult:             ctrl.Result{},
 			wantReconcileError:              nil,
-			wantHandlerBeforeUpgrade: apigatewayv1beta1.Handler{
+			wantHandlerBeforeUpgrade: apigateway.Handler{
 				Name:   object.OAuthHandlerNameOAuth2Introspection,
 				Config: nil,
 			},
-			wantHandlerAfterUpgrade: apigatewayv1beta1.Handler{
+			wantHandlerAfterUpgrade: apigateway.Handler{
 				Name: object.OAuthHandlerNameJWT,
 				Config: &runtime.RawExtension{
 					Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, credentials.CertsURL)),
@@ -463,13 +463,13 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			givenEventingWebhookAuthEnabled: true,
 			wantReconcileResult:             ctrl.Result{},
 			wantReconcileError:              nil,
-			wantHandlerBeforeUpgrade: apigatewayv1beta1.Handler{
+			wantHandlerBeforeUpgrade: apigateway.Handler{
 				Name: object.OAuthHandlerNameJWT,
 				Config: &runtime.RawExtension{
 					Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, credentials.CertsURL)),
 				},
 			},
-			wantHandlerAfterUpgrade: apigatewayv1beta1.Handler{
+			wantHandlerAfterUpgrade: apigateway.Handler{
 				Name:   object.OAuthHandlerNameOAuth2Introspection,
 				Config: nil,
 			},
@@ -485,7 +485,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			// given
 			featureflags.SetEventingWebhookAuthEnabled(tc.givenEventingWebhookAuthEnabled)
 			reconciler, cli := tc.givenReconcilerSetup()
-			namespacedName := k8stypes.NamespacedName{
+			namespacedName := ktypes.NamespacedName{
 				Namespace: tc.givenSubscription.Namespace,
 				Name:      tc.givenSubscription.Name,
 			}
@@ -499,12 +499,12 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			err = cli.Get(ctx, namespacedName, sub0)
 			require.NoError(t, err)
 
-			namespacedName = k8stypes.NamespacedName{
+			namespacedName = ktypes.NamespacedName{
 				Namespace: sub0.Namespace,
 				Name:      sub0.Status.Backend.APIRuleName,
 			}
 
-			apiRule0 := &apigatewayv1beta1.APIRule{}
+			apiRule0 := &apigateway.APIRule{}
 			err = cli.Get(ctx, namespacedName, apiRule0)
 			require.NoError(t, err)
 
@@ -526,7 +526,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 
 			// given
 			featureflags.SetEventingWebhookAuthEnabled(!tc.givenEventingWebhookAuthEnabled)
-			namespacedName = k8stypes.NamespacedName{
+			namespacedName = ktypes.NamespacedName{
 				Namespace: tc.givenSubscription.Namespace,
 				Name:      tc.givenSubscription.Name,
 			}
@@ -544,12 +544,12 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			err = cli.Get(ctx, namespacedName, sub1)
 			require.NoError(t, err)
 
-			namespacedName = k8stypes.NamespacedName{
+			namespacedName = ktypes.NamespacedName{
 				Namespace: sub1.Namespace,
 				Name:      sub1.Status.Backend.APIRuleName,
 			}
 
-			apiRule1 := &apigatewayv1beta1.APIRule{}
+			apiRule1 := &apigateway.APIRule{}
 			err = cli.Get(ctx, namespacedName, apiRule1)
 			require.NoError(t, err)
 
@@ -597,10 +597,10 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 		{
 			name: "Preserve hashes if conditions are empty",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				return reconcilertesting.NewSubscription("some-test-sub-0", "test",
-					reconcilertesting.WithValidSink("test", "some-test-svc-0"),
-					reconcilertesting.WithConditions(nil),
-					reconcilertesting.WithBackend(eventingv1alpha2.Backend{
+				return eventingtesting.NewSubscription("some-test-sub-0", "test",
+					eventingtesting.WithValidSink("test", "some-test-svc-0"),
+					eventingtesting.WithConditions(nil),
+					eventingtesting.WithBackend(eventingv1alpha2.Backend{
 						Ev2hash:            ev2hash,
 						EventMeshHash:      eventMeshHash,
 						WebhookAuthHash:    webhookAuthHash,
@@ -624,10 +624,10 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 		{
 			name: "Preserve hashes if conditions are not empty",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				return reconcilertesting.NewSubscription("some-test-sub-1", "test",
-					reconcilertesting.WithValidSink("test", "some-test-svc-1"),
-					reconcilertesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
-					reconcilertesting.WithBackend(eventingv1alpha2.Backend{
+				return eventingtesting.NewSubscription("some-test-sub-1", "test",
+					eventingtesting.WithValidSink("test", "some-test-svc-1"),
+					eventingtesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
+					eventingtesting.WithBackend(eventingv1alpha2.Backend{
 						Ev2hash:            ev2hash,
 						EventMeshHash:      eventMeshHash,
 						WebhookAuthHash:    webhookAuthHash,
@@ -659,7 +659,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				featureflags.SetEventingWebhookAuthEnabled(flag)
 				reconciler, cli := tc.givenReconcilerSetup(tc.givenSubscription)
 				reconciler.syncConditionWebhookCallStatus = func(subscription *eventingv1alpha2.Subscription) {}
-				namespacedName := k8stypes.NamespacedName{
+				namespacedName := ktypes.NamespacedName{
 					Namespace: tc.givenSubscription.Namespace,
 					Name:      tc.givenSubscription.Name,
 				}
@@ -693,14 +693,14 @@ func Test_replaceStatusCondition(t *testing.T) {
 		{
 			name: "Updating a condition marks the status as changed",
 			giveSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace",
-					reconcilertesting.WithNotCleanSource(),
-					reconcilertesting.WithNotCleanType())
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace",
+					eventingtesting.WithNotCleanSource(),
+					eventingtesting.WithNotCleanType())
 				sub.Status.InitializeConditions()
 				return sub
 			}(),
 			giveCondition: func() eventingv1alpha2.Condition {
-				return eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, corev1.ConditionTrue, "")
+				return eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, kcore.ConditionTrue, "")
 			}(),
 			wantStatusChanged: true,
 			wantReady:         false,
@@ -708,10 +708,10 @@ func Test_replaceStatusCondition(t *testing.T) {
 		{
 			name: "All conditions true means status is ready",
 			giveSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace",
-					reconcilertesting.WithNotCleanSource(),
-					reconcilertesting.WithNotCleanType(),
-					reconcilertesting.WithWebhookAuthForEventMesh())
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace",
+					eventingtesting.WithNotCleanSource(),
+					eventingtesting.WithNotCleanType(),
+					eventingtesting.WithWebhookAuthForEventMesh())
 				sub.Status.InitializeConditions()
 				sub.Status.Ready = false
 
@@ -719,19 +719,19 @@ func Test_replaceStatusCondition(t *testing.T) {
 				sub.Status.Conditions = []eventingv1alpha2.Condition{
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
-						LastTransitionTime: metav1.Now(),
-						Status:             corev1.ConditionTrue,
+						LastTransitionTime: kmeta.Now(),
+						Status:             kcore.ConditionTrue,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
-						LastTransitionTime: metav1.Now(),
-						Status:             corev1.ConditionTrue,
+						LastTransitionTime: kmeta.Now(),
+						Status:             kcore.ConditionTrue,
 					},
 				}
 				return sub
 			}(),
 			giveCondition: func() eventingv1alpha2.Condition {
-				return eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, corev1.ConditionTrue, "")
+				return eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, kcore.ConditionTrue, "")
 			}(),
 			wantStatusChanged: true, // readiness changed
 			wantReady:         true, // all conditions are true
@@ -768,42 +768,42 @@ func Test_getRequiredConditions(t *testing.T) {
 		{
 			name: "should get subscription conditions if the all the expected conditions are present",
 			subscriptionConditions: []eventingv1alpha2.Condition{
-				{Type: eventingv1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionTrue},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcore.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcore.ConditionFalse},
 			},
 			wantConditions: []eventingv1alpha2.Condition{
-				{Type: eventingv1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionTrue},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcore.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcore.ConditionFalse},
 			},
 		},
 		{
 			name: "should get latest conditions Status compared to the expected condition status",
 			subscriptionConditions: []eventingv1alpha2.Condition{
-				{Type: eventingv1alpha2.ConditionSubscribed, Status: corev1.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
 			},
 			wantConditions: []eventingv1alpha2.Condition{
-				{Type: eventingv1alpha2.ConditionSubscribed, Status: corev1.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcore.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcore.ConditionUnknown},
 			},
 		},
 		{
 			name: "should get rid of unwanted conditions in the subscription, if present",
 			subscriptionConditions: []eventingv1alpha2.Condition{
-				{Type: "Fake Condition Type", Status: corev1.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionFalse},
+				{Type: "Fake Condition Type", Status: kcore.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
 			},
 			wantConditions: []eventingv1alpha2.Condition{
-				{Type: eventingv1alpha2.ConditionSubscribed, Status: corev1.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcore.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcore.ConditionUnknown},
 			},
 		},
 	}
@@ -818,7 +818,7 @@ func Test_getRequiredConditions(t *testing.T) {
 }
 
 func Test_syncConditionSubscribed(t *testing.T) {
-	currentTime := metav1.Now()
+	currentTime := kmeta.Now()
 	errorMessage := "error message"
 	var testCases = []struct {
 		name              string
@@ -829,7 +829,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 		{
 			name: "should replace condition with status false",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Ready = false
 
@@ -838,12 +838,12 @@ func Test_syncConditionSubscribed(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionTrue,
+						Status:             kcore.ConditionTrue,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionTrue,
+						Status:             kcore.ConditionTrue,
 					},
 				}
 				return sub
@@ -852,7 +852,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionSubscribed,
 				LastTransitionTime: currentTime,
-				Status:             corev1.ConditionFalse,
+				Status:             kcore.ConditionFalse,
 				Reason:             eventingv1alpha2.ConditionReasonSubscriptionCreationFailed,
 				Message:            errorMessage,
 			},
@@ -860,7 +860,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 		{
 			name: "should replace condition with status true",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Ready = false
 
@@ -869,12 +869,12 @@ func Test_syncConditionSubscribed(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionFalse,
+						Status:             kcore.ConditionFalse,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionTrue,
+						Status:             kcore.ConditionTrue,
 					},
 				}
 				return sub
@@ -883,7 +883,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionSubscribed,
 				LastTransitionTime: currentTime,
-				Status:             corev1.ConditionTrue,
+				Status:             kcore.ConditionTrue,
 				Reason:             eventingv1alpha2.ConditionReasonSubscriptionCreated,
 				Message:            "EventMesh subscription name is: some-namef73aa86661706ae6ba5acf1d32821ce318051d0e",
 			},
@@ -915,7 +915,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 }
 
 func Test_syncConditionSubscriptionActive(t *testing.T) {
-	currentTime := metav1.Now()
+	currentTime := kmeta.Now()
 
 	var testCases = []struct {
 		name              string
@@ -926,7 +926,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 		{
 			name: "should replace condition with status false",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Ready = false
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
@@ -938,12 +938,12 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionTrue,
+						Status:             kcore.ConditionTrue,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionTrue,
+						Status:             kcore.ConditionTrue,
 					},
 				}
 				return sub
@@ -952,7 +952,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionSubscriptionActive,
 				LastTransitionTime: currentTime,
-				Status:             corev1.ConditionFalse,
+				Status:             kcore.ConditionFalse,
 				Reason:             eventingv1alpha2.ConditionReasonSubscriptionNotActive,
 				Message:            "Waiting for subscription to be active",
 			},
@@ -960,7 +960,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 		{
 			name: "should replace condition with status true",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Ready = false
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{}
@@ -970,12 +970,12 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionFalse,
+						Status:             kcore.ConditionFalse,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionFalse,
+						Status:             kcore.ConditionFalse,
 					},
 				}
 				return sub
@@ -984,7 +984,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionSubscriptionActive,
 				LastTransitionTime: currentTime,
-				Status:             corev1.ConditionTrue,
+				Status:             kcore.ConditionTrue,
 				Reason:             eventingv1alpha2.ConditionReasonSubscriptionActive,
 			},
 		},
@@ -1018,7 +1018,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 }
 
 func Test_syncConditionWebhookCallStatus(t *testing.T) {
-	currentTime := metav1.Now()
+	currentTime := kmeta.Now()
 
 	var testCases = []struct {
 		name              string
@@ -1029,7 +1029,7 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 		{
 			name: "should replace condition with status false if it throws error to check lastDelivery",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Ready = false
 
@@ -1038,12 +1038,12 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionTrue,
+						Status:             kcore.ConditionTrue,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionTrue,
+						Status:             kcore.ConditionTrue,
 					},
 				}
 				// set EventMeshSubscriptionStatus
@@ -1058,7 +1058,7 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 				LastTransitionTime: currentTime,
-				Status:             corev1.ConditionFalse,
+				Status:             kcore.ConditionFalse,
 				Reason:             eventingv1alpha2.ConditionReasonWebhookCallStatus,
 				Message:            `failed to parse LastFailedDelivery: parsing time "invalid" as "2006-01-02T15:04:05Z07:00": cannot parse "invalid" as "2006"`,
 			},
@@ -1066,7 +1066,7 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 		{
 			name: "should replace condition with status false if lastDelivery was not okay",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Ready = false
 
@@ -1075,12 +1075,12 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionFalse,
+						Status:             kcore.ConditionFalse,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionFalse,
+						Status:             kcore.ConditionFalse,
 					},
 				}
 				// set EventMeshSubscriptionStatus
@@ -1096,7 +1096,7 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 				LastTransitionTime: currentTime,
-				Status:             corev1.ConditionFalse,
+				Status:             kcore.ConditionFalse,
 				Reason:             eventingv1alpha2.ConditionReasonWebhookCallStatus,
 				Message:            "abc",
 			},
@@ -1104,7 +1104,7 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 		{
 			name: "should replace condition with status true if lastDelivery was okay",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Ready = false
 
@@ -1113,12 +1113,12 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionFalse,
+						Status:             kcore.ConditionFalse,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 						LastTransitionTime: currentTime,
-						Status:             corev1.ConditionFalse,
+						Status:             kcore.ConditionFalse,
 					},
 				}
 				// set EventMeshSubscriptionStatus
@@ -1134,7 +1134,7 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 				LastTransitionTime: currentTime,
-				Status:             corev1.ConditionTrue,
+				Status:             kcore.ConditionTrue,
 				Reason:             eventingv1alpha2.ConditionReasonWebhookCallStatus,
 				Message:            "",
 			},
@@ -1178,7 +1178,7 @@ func Test_checkStatusActive(t *testing.T) {
 		{
 			name: "should return active since the EventMeshSubscriptionStatus is active",
 			subscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
 					Status: string(types.SubscriptionStatusActive),
@@ -1191,7 +1191,7 @@ func Test_checkStatusActive(t *testing.T) {
 		{
 			name: "should return active if the EventMeshSubscriptionStatus is active and the FailedActivation time is set",
 			subscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Backend.FailedActivation = currentTime.Format(time.RFC3339)
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
@@ -1205,7 +1205,7 @@ func Test_checkStatusActive(t *testing.T) {
 		{
 			name: "should return not active if the EventMeshSubscriptionStatus is inactive",
 			subscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
 					Status: string(types.SubscriptionStatusPaused),
@@ -1219,7 +1219,7 @@ func Test_checkStatusActive(t *testing.T) {
 			name: `should return not active if the EventMeshSubscriptionStatus is inactive and the
             the the FailedActivation time is set`,
 			subscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Backend.FailedActivation = currentTime.Format(time.RFC3339)
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
@@ -1233,7 +1233,7 @@ func Test_checkStatusActive(t *testing.T) {
 		{
 			name: "should error if timed out waiting after retrying",
 			subscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				sub.Status.InitializeConditions()
 				sub.Status.Backend.FailedActivation = currentTime.Add(time.Minute * -1).Format(time.RFC3339)
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
@@ -1270,7 +1270,7 @@ func Test_checkLastFailedDelivery(t *testing.T) {
 		{
 			name: "should return false if there is no lastFailedDelivery",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				// set EventMeshSubscriptionStatus
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
 					LastSuccessfulDelivery:   "",
@@ -1285,7 +1285,7 @@ func Test_checkLastFailedDelivery(t *testing.T) {
 		{
 			name: "should return error if LastFailedDelivery is invalid",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				// set EventMeshSubscriptionStatus
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
 					LastSuccessfulDelivery:   "",
@@ -1300,7 +1300,7 @@ func Test_checkLastFailedDelivery(t *testing.T) {
 		{
 			name: "should return error if LastFailedDelivery is valid but LastSuccessfulDelivery is invalid",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				// set EventMeshSubscriptionStatus
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
 					LastSuccessfulDelivery:   "invalid",
@@ -1315,7 +1315,7 @@ func Test_checkLastFailedDelivery(t *testing.T) {
 		{
 			name: "should return true if last delivery of event was failed",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				// set EventMeshSubscriptionStatus
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
 					LastSuccessfulDelivery:   time.Now().Format(time.RFC3339),
@@ -1330,7 +1330,7 @@ func Test_checkLastFailedDelivery(t *testing.T) {
 		{
 			name: "should return false if last delivery of event was success",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace")
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace")
 				// set EventMeshSubscriptionStatus
 				sub.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{
 					LastSuccessfulDelivery:   time.Now().Add(1 * time.Hour).Format(time.RFC3339),
@@ -1400,7 +1400,7 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *testEnvironment 
 func createFakeClientBuilder(t *testing.T) *fake.ClientBuilder {
 	err := eventingv1alpha2.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
-	err = apigatewayv1beta1.AddToScheme(scheme.Scheme)
+	err = apigateway.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
 	return fake.NewClientBuilder().WithScheme(scheme.Scheme)
 }

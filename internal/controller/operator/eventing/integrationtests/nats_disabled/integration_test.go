@@ -7,17 +7,19 @@ import (
 
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
-	"github.com/kyma-project/eventing-manager/test/matchers"
-	"github.com/kyma-project/eventing-manager/test/utils"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/kyma-project/eventing-manager/test/matchers"
+	"github.com/kyma-project/eventing-manager/test/utils"
+
+	"github.com/stretchr/testify/require"
+	kapps "k8s.io/api/apps/v1"
+
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
-	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 )
 
 const (
@@ -67,7 +69,7 @@ func Test_DeletionOfPublisherResourcesWhenNATSNotEnabled(t *testing.T) {
 	g := gomega.NewWithT(t)
 
 	// given
-	eventingcontroller.IsDeploymentReady = func(deployment *appsv1.Deployment) bool { return true }
+	eventingcontroller.IsDeploymentReady = func(deployment *kapps.Deployment) bool { return true }
 	// define CRs.
 	givenEventing := utils.NewEventingCR(
 		utils.WithEventingCRMinimal(),
@@ -135,7 +137,7 @@ func Test_DeletionOfPublisherResourcesWhenNATSNotEnabled(t *testing.T) {
 		eventing.GetPublisherServiceAccountName(*givenEventing), givenNamespace)
 }
 
-func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
 	testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
@@ -144,7 +146,7 @@ func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *eventingv1a
 	testEnvironment.EnsurePublisherDeploymentENVSet(t, givenEventing)
 }
 
-func ensureK8sResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
 	testEnvironment.EnsureEPPK8sResourcesExists(t, *givenEventing)
 
 	// check if the owner reference is set.
