@@ -17,7 +17,7 @@ import (
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
@@ -112,7 +112,7 @@ func setupSuite() error {
 		return err
 	}
 
-	if err = apigateway.AddToScheme(scheme.Scheme); err != nil {
+	if err = apigatewayv1beta1.AddToScheme(scheme.Scheme); err != nil {
 		return err
 	}
 	// +kubebuilder:scaffold:scheme
@@ -335,7 +335,7 @@ func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscriptio
 }
 
 // ensureAPIRuleStatusUpdatedWithStatusReady updates the status fof the APIRule (mocking APIGateway controller).
-func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigateway.APIRule) {
+func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
 	require.Eventually(t, func() bool {
 		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
 		if err != nil {
@@ -353,25 +353,25 @@ func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T
 }
 
 // ensureAPIRuleNotFound ensures that a APIRule does not exists (or deleted).
-func ensureAPIRuleNotFound(ctx context.Context, t *testing.T, apiRule *apigateway.APIRule) {
+func ensureAPIRuleNotFound(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
 	require.Eventually(t, func() bool {
 		apiRuleKey := client.ObjectKey{
 			Namespace: apiRule.Namespace,
 			Name:      apiRule.Name,
 		}
 
-		apiRule2 := new(apigateway.APIRule)
+		apiRule2 := new(apigatewayv1beta1.APIRule)
 		err := emTestEnsemble.k8sClient.Get(ctx, apiRuleKey, apiRule2)
 		return kerrors.IsNotFound(err)
 	}, bigTimeOut, bigPollingInterval)
 }
 
-func getAPIRulesList(ctx context.Context, svc *kcorev1.Service) (*apigateway.APIRuleList, error) {
+func getAPIRulesList(ctx context.Context, svc *kcorev1.Service) (*apigatewayv1beta1.APIRuleList, error) {
 	labels := map[string]string{
 		constants.ControllerServiceLabelKey:  svc.Name,
 		constants.ControllerIdentityLabelKey: constants.ControllerIdentityLabelValue,
 	}
-	apiRules := &apigateway.APIRuleList{}
+	apiRules := &apigatewayv1beta1.APIRuleList{}
 	err := emTestEnsemble.k8sClient.List(ctx, apiRules, &client.ListOptions{
 		LabelSelector: klabels.SelectorFromSet(labels),
 		Namespace:     svc.Namespace,
@@ -379,7 +379,7 @@ func getAPIRulesList(ctx context.Context, svc *kcorev1.Service) (*apigateway.API
 	return apiRules, err
 }
 
-func getAPIRule(ctx context.Context, apiRule *apigateway.APIRule) (*apigateway.APIRule, error) {
+func getAPIRule(ctx context.Context, apiRule *apigatewayv1beta1.APIRule) (*apigatewayv1beta1.APIRule, error) {
 	lookUpKey := types.NamespacedName{
 		Namespace: apiRule.Namespace,
 		Name:      apiRule.Name,
@@ -388,11 +388,11 @@ func getAPIRule(ctx context.Context, apiRule *apigateway.APIRule) (*apigateway.A
 	return apiRule, err
 }
 
-func filterAPIRulesForASvc(apiRules *apigateway.APIRuleList, svc *kcorev1.Service) apigateway.APIRule {
+func filterAPIRulesForASvc(apiRules *apigatewayv1beta1.APIRuleList, svc *kcorev1.Service) apigatewayv1beta1.APIRule {
 	if len(apiRules.Items) == 1 && *apiRules.Items[0].Spec.Service.Name == svc.Name {
 		return apiRules.Items[0]
 	}
-	return apigateway.APIRule{}
+	return apigatewayv1beta1.APIRule{}
 }
 
 // countEventMeshRequests returns how many requests for a given subscription are sent for each HTTP method

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
 	"github.com/stretchr/testify/require"
 
@@ -67,7 +67,7 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 	testCases := []struct {
 		name                          string
 		givenSubscription             *eventingv1alpha2.Subscription
-		givenAPIRuleFunc              func(subscription *eventingv1alpha2.Subscription) *apigateway.APIRule
+		givenAPIRuleFunc              func(subscription *eventingv1alpha2.Subscription) *apigatewayv1beta1.APIRule
 		wantError                     bool
 		wantEventMeshSubscriptionFunc func(subscription *eventingv1alpha2.Subscription) *types.Subscription
 	}{
@@ -79,7 +79,7 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 				eventingtesting.WithValidSink("ns", svcName),
 				eventingtesting.WithWebhookAuthForEventMesh(),
 			),
-			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigateway.APIRule {
+			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigatewayv1beta1.APIRule {
 				return eventingtesting.NewAPIRule(subscription,
 					eventingtesting.WithPath(),
 					eventingtesting.WithService(svcName, host),
@@ -109,7 +109,7 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 				eventingtesting.WithOrderCreatedFilter(),
 				eventingtesting.WithValidSink("ns", svcName),
 			),
-			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigateway.APIRule {
+			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigatewayv1beta1.APIRule {
 				return eventingtesting.NewAPIRule(subscription,
 					eventingtesting.WithPath(),
 					eventingtesting.WithService(svcName, host),

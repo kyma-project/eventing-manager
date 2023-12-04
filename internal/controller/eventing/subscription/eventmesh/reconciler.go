@@ -24,7 +24,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/object"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	"golang.org/x/xerrors"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -282,7 +282,7 @@ func (r *Reconciler) handleDeleteSubscription(ctx context.Context, subscription 
 }
 
 // syncEventMeshSubscription delegates the subscription synchronization to the backend client. It returns true if the subscription is ready.
-func (r *Reconciler) syncEventMeshSubscription(subscription *eventingv1alpha2.Subscription, apiRule *apigateway.APIRule, logger *zap.SugaredLogger) (bool, error) {
+func (r *Reconciler) syncEventMeshSubscription(subscription *eventingv1alpha2.Subscription, apiRule *apigatewayv1beta1.APIRule, logger *zap.SugaredLogger) (bool, error) {
 	logger.Debug("Syncing subscription with EventMesh")
 
 	if apiRule == nil {
@@ -360,7 +360,7 @@ func syncConditionWebhookCallStatus(subscription *eventingv1alpha2.Subscription)
 
 // syncAPIRule validate the given subscription sink URL and sync its APIRule.
 func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	logger *zap.SugaredLogger) (*apigateway.APIRule, error) {
+	logger *zap.SugaredLogger) (*apigatewayv1beta1.APIRule, error) {
 	if err := r.sinkValidator.Validate(subscription); err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1al
 
 // createOrUpdateAPIRule create new or update existing APIRule for the given subscription.
 func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	sink url.URL, logger *zap.SugaredLogger) (*apigateway.APIRule, error) {
+	sink url.URL, logger *zap.SugaredLogger) (*apigatewayv1beta1.APIRule, error) {
 	svcNs, svcName, err := getSvcNsAndName(sink.Host)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to parse svc name and ns in create or update APIRule: %v", err)
@@ -412,7 +412,7 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 	if err != nil {
 		return nil, xerrors.Errorf("failed to convert URL port to APIRule port: %v", err)
 	}
-	var reusableAPIRule *apigateway.APIRule
+	var reusableAPIRule *apigatewayv1beta1.APIRule
 	existingAPIRules, err := r.getAPIRulesForASvc(ctx, labels, svcNs)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to fetch APIRule for labels=%v : %v", labels, err)
@@ -468,7 +468,7 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 // if the OwnerReferences list is empty, then the APIRule will be deleted
 // else if the OwnerReferences list length was decreased, then the APIRule will be updated.
 func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	reusableAPIRule *apigateway.APIRule) error {
+	reusableAPIRule *apigatewayv1beta1.APIRule) error {
 	// subscription does not have a previous APIRule
 	if len(subscription.Status.Backend.APIRuleName) == 0 {
 		return nil
@@ -480,7 +480,7 @@ func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *ev
 	}
 
 	// get the previous APIRule
-	previousAPIRule := &apigateway.APIRule{}
+	previousAPIRule := &apigatewayv1beta1.APIRule{}
 	key := ktypes.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Status.Backend.APIRuleName}
 	if err := r.Client.Get(ctx, key, previousAPIRule); err != nil {
 		if !kerrors.IsNotFound(err) {
@@ -606,7 +606,7 @@ func (r *Reconciler) filterSubscriptionsOnPort(subList []eventingv1alpha2.Subscr
 	return filteredSubs
 }
 
-func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string, subs []eventingv1alpha2.Subscription, port uint32) *apigateway.APIRule {
+func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string, subs []eventingv1alpha2.Subscription, port uint32) *apigatewayv1beta1.APIRule {
 	randomSuffix := utils.GetRandString(suffixLength)
 	hostName := fmt.Sprintf("%s-%s.%s", externalHostPrefix, randomSuffix, r.Domain)
 	svc := object.GetService(svcName, port)
@@ -619,8 +619,8 @@ func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string
 	return apiRule
 }
 
-func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]string, svcNs string) ([]apigateway.APIRule, error) {
-	existingAPIRules := &apigateway.APIRuleList{}
+func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]string, svcNs string) ([]apigatewayv1beta1.APIRule, error) {
+	existingAPIRules := &apigatewayv1beta1.APIRuleList{}
 	err := r.Client.List(ctx, existingAPIRules, &client.ListOptions{
 		LabelSelector: klabels.SelectorFromSet(labels),
 		Namespace:     svcNs,
@@ -631,7 +631,7 @@ func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]s
 	return existingAPIRules.Items, nil
 }
 
-func (r *Reconciler) filterAPIRulesOnPort(existingAPIRules []apigateway.APIRule, port uint32) *apigateway.APIRule {
+func (r *Reconciler) filterAPIRulesOnPort(existingAPIRules []apigatewayv1beta1.APIRule, port uint32) *apigatewayv1beta1.APIRule {
 	// Assumption: there will be one APIRule for an svc with the labels injected by the controller hence trusting the first match
 	for _, apiRule := range existingAPIRules {
 		if *apiRule.Spec.Service.Port == port {
@@ -751,7 +751,7 @@ func (r *Reconciler) SetupUnmanaged(mgr ctrl.Manager) error {
 
 	apiRuleEventHandler := handler.EnqueueRequestForOwner(r.Scheme(), mgr.GetRESTMapper(),
 		&eventingv1alpha2.Subscription{})
-	if err := ctru.Watch(source.Kind(mgr.GetCache(), &apigateway.APIRule{}), apiRuleEventHandler); err != nil {
+	if err := ctru.Watch(source.Kind(mgr.GetCache(), &apigatewayv1beta1.APIRule{}), apiRuleEventHandler); err != nil {
 		return fmt.Errorf("failed to watch APIRule: %w", err)
 	}
 

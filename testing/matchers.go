@@ -12,7 +12,7 @@ import (
 	kruntime "k8s.io/apimachinery/pkg/runtime"
 	ktypes "k8s.io/apimachinery/pkg/types"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/constants"
@@ -24,28 +24,28 @@ import (
 //
 
 func HaveNotEmptyAPIRule() gomegatypes.GomegaMatcher {
-	return WithTransform(func(a apigateway.APIRule) ktypes.UID {
+	return WithTransform(func(a apigatewayv1beta1.APIRule) ktypes.UID {
 		return a.UID
 	}, Not(BeEmpty()))
 }
 
 func HaveNotEmptyHost() gomegatypes.GomegaMatcher {
-	return WithTransform(func(a apigateway.APIRule) bool {
+	return WithTransform(func(a apigatewayv1beta1.APIRule) bool {
 		return a.Spec.Service != nil && a.Spec.Host != nil
 	}, BeTrue())
 }
 
 func HaveAPIRuleSpecRules(ruleMethods []string, accessStrategy, certsURL, path string) gomegatypes.GomegaMatcher {
-	handler := apigateway.Handler{
+	handler := apigatewayv1beta1.Handler{
 		Name: accessStrategy,
 		Config: &kruntime.RawExtension{
 			Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, certsURL)),
 		},
 	}
-	authenticator := &apigateway.Authenticator{
+	authenticator := &apigatewayv1beta1.Authenticator{
 		Handler: &handler,
 	}
-	return WithTransform(func(a apigateway.APIRule) []apigateway.Rule {
+	return WithTransform(func(a apigatewayv1beta1.APIRule) []apigatewayv1beta1.Rule {
 		return a.Spec.Rules
 	}, ContainElement(
 		MatchFields(IgnoreExtras|IgnoreMissing, Fields{
@@ -57,14 +57,14 @@ func HaveAPIRuleSpecRules(ruleMethods []string, accessStrategy, certsURL, path s
 	))
 }
 
-func haveAPIRuleAccessStrategies(authenticator *apigateway.Authenticator) gomegatypes.GomegaMatcher {
-	return WithTransform(func(a *apigateway.Authenticator) *apigateway.Authenticator {
+func haveAPIRuleAccessStrategies(authenticator *apigatewayv1beta1.Authenticator) gomegatypes.GomegaMatcher {
+	return WithTransform(func(a *apigatewayv1beta1.Authenticator) *apigatewayv1beta1.Authenticator {
 		return a
 	}, Equal(authenticator))
 }
 
 func HaveAPIRuleSpecRulesWithOry(ruleMethods []string, accessStrategy, path string) gomegatypes.GomegaMatcher {
-	return WithTransform(func(a apigateway.APIRule) []apigateway.Rule {
+	return WithTransform(func(a apigatewayv1beta1.APIRule) []apigatewayv1beta1.Rule {
 		return a.Spec.Rules
 	}, ContainElement(
 		MatchFields(IgnoreExtras|IgnoreMissing, Fields{
@@ -77,13 +77,13 @@ func HaveAPIRuleSpecRulesWithOry(ruleMethods []string, accessStrategy, path stri
 }
 
 func haveAPIRuleAccessStrategiesWithOry(accessStrategy string) gomegatypes.GomegaMatcher {
-	return WithTransform(func(a *apigateway.Authenticator) string {
+	return WithTransform(func(a *apigatewayv1beta1.Authenticator) string {
 		return a.Name
 	}, Equal(accessStrategy))
 }
 
 func HaveAPIRuleOwnersRefs(uids ...ktypes.UID) gomegatypes.GomegaMatcher {
-	return WithTransform(func(a apigateway.APIRule) []ktypes.UID {
+	return WithTransform(func(a apigatewayv1beta1.APIRule) []ktypes.UID {
 		ownerRefUIDs := make([]ktypes.UID, 0, len(a.OwnerReferences))
 		for _, ownerRef := range a.OwnerReferences {
 			ownerRefUIDs = append(ownerRefUIDs, ownerRef.UID)

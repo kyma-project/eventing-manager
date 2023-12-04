@@ -10,7 +10,7 @@ import (
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
@@ -152,7 +152,7 @@ func clusterRoleBindingEqual(a, b *krbacv1.ClusterRoleBinding) bool {
 }
 
 // apiRuleEqual asserts the equality of two APIRule objects.
-func apiRuleEqual(a1, a2 *apigateway.APIRule) bool {
+func apiRuleEqual(a1, a2 *apigatewayv1beta1.APIRule) bool {
 	if a1 == a2 {
 		return true
 	}

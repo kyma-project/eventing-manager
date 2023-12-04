@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
@@ -49,7 +49,7 @@ func AddToScheme(scheme *runtime.Scheme) error {
 	if err := eventingv1alpha1.AddToScheme(scheme); err != nil {
 		return err
 	}
-	if err := apigateway.AddToScheme(scheme); err != nil {
+	if err := apigatewayv1beta1.AddToScheme(scheme); err != nil {
 		return err
 	}
 	return nil

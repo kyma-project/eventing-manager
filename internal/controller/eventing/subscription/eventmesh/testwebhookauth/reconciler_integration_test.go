@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -50,7 +50,7 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	getSubscriptionAssert(ctx, g, kymaSubscription).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
 
 	// ensure APIRule is created
-	apiRule := &apigateway.APIRule{
+	apiRule := &apigatewayv1beta1.APIRule{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      kymaSubscription.Status.Backend.APIRuleName,
 			Namespace: kymaSubscription.Namespace,

@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -113,7 +113,7 @@ func setupSuite() error {
 		return err
 	}
 
-	if err = apigateway.AddToScheme(scheme.Scheme); err != nil {
+	if err = apigatewayv1beta1.AddToScheme(scheme.Scheme); err != nil {
 		return err
 	}
 	// +kubebuilder:scaffold:scheme
@@ -313,7 +313,7 @@ func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscriptio
 }
 
 // ensureAPIRuleStatusUpdatedWithStatusReady updates the status fof the APIRule (mocking APIGateway controller).
-func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigateway.APIRule) {
+func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
 	require.Eventually(t, func() bool {
 		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
 		if err != nil {
@@ -330,7 +330,7 @@ func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T
 	}, bigTimeOut, bigPollingInterval)
 }
 
-func getAPIRule(ctx context.Context, apiRule *apigateway.APIRule) (*apigateway.APIRule, error) {
+func getAPIRule(ctx context.Context, apiRule *apigatewayv1beta1.APIRule) (*apigatewayv1beta1.APIRule, error) {
 	lookUpKey := types.NamespacedName{
 		Namespace: apiRule.Namespace,
 		Name:      apiRule.Name,

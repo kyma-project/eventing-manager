@@ -134,7 +134,7 @@ linters-settings:
       - pkg: github.com/kyma-project/eventing-manager/api/operator/v1alpha1
         alias: operatorv1alpha1
       - pkg: github.com/kyma-incubator/api-gateway/api/v1beta1
-        alias: apigateway
+        alias: apigatewayv1beta1
       - pkg: k8s.io/client-go/dynamic/fake
         alias: kdynamicfake
       - pkg: k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake

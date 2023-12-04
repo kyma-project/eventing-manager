@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -270,7 +270,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 		givenEventingWebhookAuthEnabled bool
 		wantReconcileResult             ctrl.Result
 		wantReconcileError              error
-		wantHandler                     apigateway.Handler
+		wantHandler                     apigatewayv1beta1.Handler
 	}{
 		{
 			name:              "Eventing webhook auth is not enabled",
@@ -297,7 +297,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			givenEventingWebhookAuthEnabled: false,
 			wantReconcileResult:             ctrl.Result{},
 			wantReconcileError:              nil,
-			wantHandler: apigateway.Handler{
+			wantHandler: apigatewayv1beta1.Handler{
 				Name:   object.OAuthHandlerNameOAuth2Introspection,
 				Config: nil,
 			},
@@ -327,7 +327,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			givenEventingWebhookAuthEnabled: true,
 			wantReconcileResult:             ctrl.Result{},
 			wantReconcileError:              nil,
-			wantHandler: apigateway.Handler{
+			wantHandler: apigatewayv1beta1.Handler{
 				Name: object.OAuthHandlerNameJWT,
 				Config: &runtime.RawExtension{
 					Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, credentials.CertsURL)),
@@ -360,7 +360,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 				Name:      sub.Status.Backend.APIRuleName,
 			}
 
-			apiRule := &apigateway.APIRule{}
+			apiRule := &apigatewayv1beta1.APIRule{}
 			err = cli.Get(ctx, namespacedName, apiRule)
 			require.NoError(t, err)
 
@@ -399,8 +399,8 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 		givenEventingWebhookAuthEnabled bool
 		wantReconcileResult             ctrl.Result
 		wantReconcileError              error
-		wantHandlerBeforeUpgrade        apigateway.Handler
-		wantHandlerAfterUpgrade         apigateway.Handler
+		wantHandlerBeforeUpgrade        apigatewayv1beta1.Handler
+		wantHandlerAfterUpgrade         apigatewayv1beta1.Handler
 	}{
 		{
 			name:              "Eventing webhook auth is not enabled before the upgrade",
@@ -427,11 +427,11 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			givenEventingWebhookAuthEnabled: false,
 			wantReconcileResult:             ctrl.Result{},
 			wantReconcileError:              nil,
-			wantHandlerBeforeUpgrade: apigateway.Handler{
+			wantHandlerBeforeUpgrade: apigatewayv1beta1.Handler{
 				Name:   object.OAuthHandlerNameOAuth2Introspection,
 				Config: nil,
 			},
-			wantHandlerAfterUpgrade: apigateway.Handler{
+			wantHandlerAfterUpgrade: apigatewayv1beta1.Handler{
 				Name: object.OAuthHandlerNameJWT,
 				Config: &runtime.RawExtension{
 					Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, credentials.CertsURL)),
@@ -463,13 +463,13 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			givenEventingWebhookAuthEnabled: true,
 			wantReconcileResult:             ctrl.Result{},
 			wantReconcileError:              nil,
-			wantHandlerBeforeUpgrade: apigateway.Handler{
+			wantHandlerBeforeUpgrade: apigatewayv1beta1.Handler{
 				Name: object.OAuthHandlerNameJWT,
 				Config: &runtime.RawExtension{
 					Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, credentials.CertsURL)),
 				},
 			},
-			wantHandlerAfterUpgrade: apigateway.Handler{
+			wantHandlerAfterUpgrade: apigatewayv1beta1.Handler{
 				Name:   object.OAuthHandlerNameOAuth2Introspection,
 				Config: nil,
 			},
@@ -504,7 +504,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 				Name:      sub0.Status.Backend.APIRuleName,
 			}
 
-			apiRule0 := &apigateway.APIRule{}
+			apiRule0 := &apigatewayv1beta1.APIRule{}
 			err = cli.Get(ctx, namespacedName, apiRule0)
 			require.NoError(t, err)
 
@@ -549,7 +549,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 				Name:      sub1.Status.Backend.APIRuleName,
 			}
 
-			apiRule1 := &apigateway.APIRule{}
+			apiRule1 := &apigatewayv1beta1.APIRule{}
 			err = cli.Get(ctx, namespacedName, apiRule1)
 			require.NoError(t, err)
 
@@ -1400,7 +1400,7 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *testEnvironment 
 func createFakeClientBuilder(t *testing.T) *fake.ClientBuilder {
 	err := eventingv1alpha2.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
-	err = apigateway.AddToScheme(scheme.Scheme)
+	err = apigatewayv1beta1.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
 	return fake.NewClientBuilder().WithScheme(scheme.Scheme)
 }

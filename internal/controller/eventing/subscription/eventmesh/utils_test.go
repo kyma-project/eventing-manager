@@ -8,7 +8,7 @@ import (
 
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -172,12 +172,12 @@ func Test_getSvcNsAndName(t *testing.T) {
 func Test_computeAPIRuleReadyStatus(t *testing.T) {
 	var testCases = []struct {
 		name         string
-		givenAPIRule *apigateway.APIRule
+		givenAPIRule *apigatewayv1beta1.APIRule
 		wantResult   bool
 	}{
 		{
 			name:         "with uninitialised ApiRule",
-			givenAPIRule: &apigateway.APIRule{},
+			givenAPIRule: &apigatewayv1beta1.APIRule{},
 			wantResult:   false,
 		},
 		{
@@ -187,8 +187,8 @@ func Test_computeAPIRuleReadyStatus(t *testing.T) {
 		},
 		{
 			name: "with nil apiRule.Status.APIRuleStatus",
-			givenAPIRule: &apigateway.APIRule{
-				Status: apigateway.APIRuleStatus{
+			givenAPIRule: &apigatewayv1beta1.APIRule{
+				Status: apigatewayv1beta1.APIRuleStatus{
 					APIRuleStatus: nil,
 				},
 			},
@@ -196,8 +196,8 @@ func Test_computeAPIRuleReadyStatus(t *testing.T) {
 		},
 		{
 			name: "with nil apiRule.Status.AccessRuleStatus",
-			givenAPIRule: &apigateway.APIRule{
-				Status: apigateway.APIRuleStatus{
+			givenAPIRule: &apigatewayv1beta1.APIRule{
+				Status: apigatewayv1beta1.APIRuleStatus{
 					AccessRuleStatus: nil,
 				},
 			},
@@ -205,8 +205,8 @@ func Test_computeAPIRuleReadyStatus(t *testing.T) {
 		},
 		{
 			name: "with nil apiRule.Status.VirtualServiceStatus",
-			givenAPIRule: &apigateway.APIRule{
-				Status: apigateway.APIRuleStatus{
+			givenAPIRule: &apigatewayv1beta1.APIRule{
+				Status: apigatewayv1beta1.APIRuleStatus{
 					VirtualServiceStatus: nil,
 				},
 			},
@@ -214,16 +214,16 @@ func Test_computeAPIRuleReadyStatus(t *testing.T) {
 		},
 		{
 			name: "with StatusOK apiRule",
-			givenAPIRule: &apigateway.APIRule{
-				Status: apigateway.APIRuleStatus{
-					APIRuleStatus: &apigateway.APIRuleResourceStatus{
-						Code: apigateway.StatusOK,
+			givenAPIRule: &apigatewayv1beta1.APIRule{
+				Status: apigatewayv1beta1.APIRuleStatus{
+					APIRuleStatus: &apigatewayv1beta1.APIRuleResourceStatus{
+						Code: apigatewayv1beta1.StatusOK,
 					},
-					AccessRuleStatus: &apigateway.APIRuleResourceStatus{
-						Code: apigateway.StatusOK,
+					AccessRuleStatus: &apigatewayv1beta1.APIRuleResourceStatus{
+						Code: apigatewayv1beta1.StatusOK,
 					},
-					VirtualServiceStatus: &apigateway.APIRuleResourceStatus{
-						Code: apigateway.StatusOK,
+					VirtualServiceStatus: &apigatewayv1beta1.APIRuleResourceStatus{
+						Code: apigatewayv1beta1.StatusOK,
 					},
 				},
 			},
@@ -244,7 +244,7 @@ func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 	var testCases = []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
-		givenAPIRule      *apigateway.APIRule
+		givenAPIRule      *apigatewayv1beta1.APIRule
 		wantExternalSink  string
 		wantError         bool
 	}{
@@ -255,10 +255,10 @@ func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 					Sink: "http://name1.namespace1.svc.cluster.local/test1",
 				},
 			},
-			givenAPIRule: &apigateway.APIRule{
-				Spec: apigateway.APIRuleSpec{
+			givenAPIRule: &apigatewayv1beta1.APIRule{
+				Spec: apigatewayv1beta1.APIRuleSpec{
 					Host:    &host1,
-					Service: &apigateway.Service{},
+					Service: &apigatewayv1beta1.Service{},
 				},
 			},
 			wantExternalSink: "https://kyma-project.io/test1",
@@ -271,10 +271,10 @@ func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 					Sink: "name1",
 				},
 			},
-			givenAPIRule: &apigateway.APIRule{
-				Spec: apigateway.APIRuleSpec{
+			givenAPIRule: &apigatewayv1beta1.APIRule{
+				Spec: apigatewayv1beta1.APIRuleSpec{
 					Host:    &host1,
-					Service: &apigateway.Service{},
+					Service: &apigatewayv1beta1.Service{},
 				},
 			},
 			wantError: true,
@@ -286,10 +286,10 @@ func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 					Sink: "http://name1.namespace1.svc.cluster.local/test1",
 				},
 			},
-			givenAPIRule: &apigateway.APIRule{
-				Spec: apigateway.APIRuleSpec{
+			givenAPIRule: &apigatewayv1beta1.APIRule{
+				Spec: apigatewayv1beta1.APIRuleSpec{
 					Host:    nil,
-					Service: &apigateway.Service{},
+					Service: &apigatewayv1beta1.Service{},
 				},
 			},
 			wantError: true,

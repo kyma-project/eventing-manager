@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kutilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -71,7 +71,7 @@ func init() {
 
 	kutilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 
-	kutilruntime.Must(apigateway.AddToScheme(scheme))
+	kutilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
 
 	kutilruntime.Must(kapiextensionsv1.AddToScheme(scheme))
 

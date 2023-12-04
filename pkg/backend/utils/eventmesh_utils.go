@@ -8,7 +8,7 @@ import (
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
@@ -105,7 +105,7 @@ func getEventMeshEvents(typeInfos []EventTypeInfo, typeMatching eventingv1alpha2
 }
 
 func ConvertKymaSubToEventMeshSub(subscription *eventingv1alpha2.Subscription, typeInfos []EventTypeInfo,
-	apiRule *apigateway.APIRule, defaultWebhookAuth *types.WebhookAuth,
+	apiRule *apigatewayv1beta1.APIRule, defaultWebhookAuth *types.WebhookAuth,
 	defaultProtocolSettings *ProtocolSettings,
 	defaultNamespace string, nameMapper NameMapper) (*types.Subscription, error) { //nolint:gocognit
 	// get default EventMesh subscription object

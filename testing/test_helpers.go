@@ -12,7 +12,7 @@ import (
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/object"
 
-	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kunstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -72,7 +72,7 @@ const (
 	CeSpecVersionHeader = "ce-specversion"
 )
 
-type APIRuleOption func(r *apigateway.APIRule)
+type APIRuleOption func(r *apigatewayv1beta1.APIRule)
 
 // GetFreePort determines a free port on the host. It does so by delegating the job to net.ListenTCP.
 // Then providing a port of 0 to net.ListenTCP, it will automatically choose a port for us.
@@ -322,8 +322,8 @@ func PublisherDeploymentNotReadyEvent() kcorev1.Event {
 }
 
 // NewAPIRule returns a valid APIRule.
-func NewAPIRule(subscription *eventingv1alpha2.Subscription, opts ...APIRuleOption) *apigateway.APIRule {
-	apiRule := &apigateway.APIRule{
+func NewAPIRule(subscription *eventingv1alpha2.Subscription, opts ...APIRuleOption) *apigatewayv1beta1.APIRule {
+	apiRule := &apigatewayv1beta1.APIRule{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name: "foo",
 			OwnerReferences: []kmetav1.OwnerReference{
@@ -344,11 +344,11 @@ func NewAPIRule(subscription *eventingv1alpha2.Subscription, opts ...APIRuleOpti
 }
 
 func WithService(name, host string) APIRuleOption {
-	return func(r *apigateway.APIRule) {
+	return func(r *apigatewayv1beta1.APIRule) {
 		port := uint32(443) //nolint:gomnd // tests
 		isExternal := true
 		r.Spec.Host = &host
-		r.Spec.Service = &apigateway.Service{
+		r.Spec.Service = &apigatewayv1beta1.Service{
 			Name:       &name,
 			Port:       &port,
 			IsExternal: &isExternal,
@@ -357,22 +357,22 @@ func WithService(name, host string) APIRuleOption {
 }
 
 func WithPath() APIRuleOption {
-	return func(r *apigateway.APIRule) {
+	return func(r *apigatewayv1beta1.APIRule) {
 		handlerOAuth := object.OAuthHandlerNameOAuth2Introspection
-		handler := apigateway.Handler{
+		handler := apigatewayv1beta1.Handler{
 			Name: handlerOAuth,
 		}
-		authenticator := &apigateway.Authenticator{
+		authenticator := &apigatewayv1beta1.Authenticator{
 			Handler: &handler,
 		}
-		r.Spec.Rules = []apigateway.Rule{
+		r.Spec.Rules = []apigatewayv1beta1.Rule{
 			{
 				Path: "/path",
 				Methods: []string{
 					http.MethodPost,
 					http.MethodOptions,
 				},
-				AccessStrategies: []*apigateway.Authenticator{
+				AccessStrategies: []*apigatewayv1beta1.Authenticator{
 					authenticator,
 				},
 			},
@@ -380,13 +380,13 @@ func WithPath() APIRuleOption {
 	}
 }
 
-func MarkReady(r *apigateway.APIRule) {
-	statusOK := &apigateway.APIRuleResourceStatus{
-		Code:        apigateway.StatusOK,
+func MarkReady(r *apigatewayv1beta1.APIRule) {
+	statusOK := &apigatewayv1beta1.APIRuleResourceStatus{
+		Code:        apigatewayv1beta1.StatusOK,
 		Description: "",
 	}
 
-	r.Status = apigateway.APIRuleStatus{
+	r.Status = apigatewayv1beta1.APIRuleStatus{
 		APIRuleStatus:        statusOK,
 		VirtualServiceStatus: statusOK,
 		AccessRuleStatus:     statusOK,
