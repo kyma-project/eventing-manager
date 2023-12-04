@@ -6,12 +6,13 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
+	"k8s.io/client-go/rest"
+
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
-	eclogger "github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
-	"k8s.io/client-go/rest"
 )
 
 // Perform a compile-time check.
@@ -28,7 +29,7 @@ type Factory struct {
 	metricsAddress   string
 	metricsCollector *metrics.Collector
 	resyncPeriod     time.Duration
-	logger           *eclogger.Logger
+	logger           *logger.Logger
 }
 
 func NewFactory(
@@ -36,7 +37,7 @@ func NewFactory(
 	metricsAddress string,
 	metricsCollector *metrics.Collector,
 	resyncPeriod time.Duration,
-	logger *eclogger.Logger) *Factory {
+	logger *logger.Logger) *Factory {
 	return &Factory{
 		k8sRestCfg:       k8sRestCfg,
 		metricsAddress:   metricsAddress,

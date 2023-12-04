@@ -12,7 +12,7 @@ import (
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	PublisherManagerMock "github.com/kyma-project/eventing-manager/pkg/ems/api/events/client/mocks"
+	emsclientmocks "github.com/kyma-project/eventing-manager/pkg/ems/api/events/client/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
@@ -260,7 +260,7 @@ func Test_handleKymaSubModified(t *testing.T) {
 			// given
 			eventMesh := NewEventMesh(&OAuth2ClientCredentials{}, nameMapper, defaultLogger)
 			// Set a mock client interface for EventMesh
-			mockClient := new(PublisherManagerMock.PublisherManager)
+			mockClient := new(emsclientmocks.PublisherManager)
 			mockClient.On("Delete", tc.givenEventMeshSub.Name).Return(tc.givenClientDeleteResponse, nil)
 			eventMesh.client = mockClient
 
@@ -378,7 +378,7 @@ func Test_handleEventMeshSubModified(t *testing.T) {
 			// given
 			eventMesh := NewEventMesh(&OAuth2ClientCredentials{}, nameMapper, defaultLogger)
 			// Set a mock client interface for EventMesh
-			mockClient := new(PublisherManagerMock.PublisherManager)
+			mockClient := new(emsclientmocks.PublisherManager)
 			mockClient.On("Delete", tc.givenEventMeshSub.Name).Return(tc.givenClientDeleteResponse, nil)
 			eventMesh.client = mockClient
 
@@ -474,7 +474,7 @@ func Test_handleCreateEventMeshSub(t *testing.T) {
 			// given
 			eventMesh := NewEventMesh(&OAuth2ClientCredentials{}, nameMapper, defaultLogger)
 			// Set a mock client interface for EventMesh
-			mockClient := new(PublisherManagerMock.PublisherManager)
+			mockClient := new(emsclientmocks.PublisherManager)
 			mockClient.On("Create", tc.givenEventMeshSub).Return(tc.givenClientCreateResponse, nil)
 			mockClient.On("Get", tc.givenEventMeshSub.Name).Return(tc.givenEventMeshSub, &types.Response{
 				StatusCode: http.StatusOK,

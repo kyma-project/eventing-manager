@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/stretchr/testify/require"
-	v2 "k8s.io/api/autoscaling/v2"
+	kautoscalingv2 "k8s.io/api/autoscaling/v2"
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -1736,12 +1736,12 @@ func Test_hpaEqual(t *testing.T) {
 			},
 		}
 
-		scaleTargetRef0 = v2.CrossVersionObjectReference{
+		scaleTargetRef0 = kautoscalingv2.CrossVersionObjectReference{
 			Name:       "name-0",
 			Kind:       "kind-0",
 			APIVersion: "version-0",
 		}
-		scaleTargetRef1 = v2.CrossVersionObjectReference{
+		scaleTargetRef1 = kautoscalingv2.CrossVersionObjectReference{
 			Name:       "name-1",
 			Kind:       "kind-0",
 			APIVersion: "version-0",
@@ -1753,9 +1753,9 @@ func Test_hpaEqual(t *testing.T) {
 		maxReplicas0 = int32(3)
 		maxReplicas1 = int32(4)
 
-		metrics0 = []v2.MetricSpec{
+		metrics0 = []kautoscalingv2.MetricSpec{
 			{
-				Type:              v2.MetricSourceType("type-0"),
+				Type:              kautoscalingv2.MetricSourceType("type-0"),
 				Object:            nil,
 				Pods:              nil,
 				Resource:          nil,
@@ -1763,9 +1763,9 @@ func Test_hpaEqual(t *testing.T) {
 				External:          nil,
 			},
 		}
-		metrics1 = []v2.MetricSpec{
+		metrics1 = []kautoscalingv2.MetricSpec{
 			{
-				Type:              v2.MetricSourceType("type-1"),
+				Type:              kautoscalingv2.MetricSourceType("type-1"),
 				Object:            nil,
 				Pods:              nil,
 				Resource:          nil,
@@ -1776,8 +1776,8 @@ func Test_hpaEqual(t *testing.T) {
 	)
 
 	type args struct {
-		a *v2.HorizontalPodAutoscaler
-		b *v2.HorizontalPodAutoscaler
+		a *kautoscalingv2.HorizontalPodAutoscaler
+		b *kautoscalingv2.HorizontalPodAutoscaler
 	}
 	tests := []struct {
 		name string
@@ -1787,26 +1787,26 @@ func Test_hpaEqual(t *testing.T) {
 		{
 			name: "HPAs are equal",
 			args: args{
-				a: &v2.HorizontalPodAutoscaler{
+				a: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
 						Metrics:        metrics0,
 					},
 				},
-				b: &v2.HorizontalPodAutoscaler{
+				b: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
@@ -1819,26 +1819,26 @@ func Test_hpaEqual(t *testing.T) {
 		{
 			name: "HPA names are not equal",
 			args: args{
-				a: &v2.HorizontalPodAutoscaler{
+				a: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
 						Metrics:        metrics0,
 					},
 				},
-				b: &v2.HorizontalPodAutoscaler{
+				b: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name1,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
@@ -1851,26 +1851,26 @@ func Test_hpaEqual(t *testing.T) {
 		{
 			name: "HPA namespaces are not equal",
 			args: args{
-				a: &v2.HorizontalPodAutoscaler{
+				a: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
 						Metrics:        metrics0,
 					},
 				},
-				b: &v2.HorizontalPodAutoscaler{
+				b: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace1,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
@@ -1883,26 +1883,26 @@ func Test_hpaEqual(t *testing.T) {
 		{
 			name: "HPA OwnerReferences are not equal",
 			args: args{
-				a: &v2.HorizontalPodAutoscaler{
+				a: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
 						Metrics:        metrics0,
 					},
 				},
-				b: &v2.HorizontalPodAutoscaler{
+				b: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences1,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
@@ -1915,26 +1915,26 @@ func Test_hpaEqual(t *testing.T) {
 		{
 			name: "HPA ScaleTargetRefs are not equal",
 			args: args{
-				a: &v2.HorizontalPodAutoscaler{
+				a: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
 						Metrics:        metrics0,
 					},
 				},
-				b: &v2.HorizontalPodAutoscaler{
+				b: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef1,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
@@ -1947,26 +1947,26 @@ func Test_hpaEqual(t *testing.T) {
 		{
 			name: "HPA MinReplicas are not equal",
 			args: args{
-				a: &v2.HorizontalPodAutoscaler{
+				a: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
 						Metrics:        metrics0,
 					},
 				},
-				b: &v2.HorizontalPodAutoscaler{
+				b: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas1,
 						MaxReplicas:    maxReplicas0,
@@ -1979,26 +1979,26 @@ func Test_hpaEqual(t *testing.T) {
 		{
 			name: "HPA MaxReplicas are not equal",
 			args: args{
-				a: &v2.HorizontalPodAutoscaler{
+				a: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
 						Metrics:        metrics0,
 					},
 				},
-				b: &v2.HorizontalPodAutoscaler{
+				b: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas1,
@@ -2011,26 +2011,26 @@ func Test_hpaEqual(t *testing.T) {
 		{
 			name: "HPA metrics are not equal",
 			args: args{
-				a: &v2.HorizontalPodAutoscaler{
+				a: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,
 						Metrics:        metrics0,
 					},
 				},
-				b: &v2.HorizontalPodAutoscaler{
+				b: &kautoscalingv2.HorizontalPodAutoscaler{
 					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: v2.HorizontalPodAutoscalerSpec{
+					Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 						ScaleTargetRef: scaleTargetRef0,
 						MinReplicas:    minReplicas0,
 						MaxReplicas:    maxReplicas0,

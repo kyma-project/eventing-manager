@@ -9,7 +9,7 @@ import (
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/nats-io/nats.go"
 
-	jetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
+	backendjetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 
 	"github.com/stretchr/testify/assert"
@@ -189,7 +189,7 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 		name  string
 		mocks func(sub *v1alpha2.Subscription,
 			jsBackend *JetStream,
-			jsCtx *jetstreammocks.JetStreamContext,
+			jsCtx *backendjetstreammocks.JetStreamContext,
 			jsSubKey SubscriptionSubjectIdentifier,
 		)
 	}{
@@ -197,7 +197,7 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 			name: "Bind invalid NATS Subscription should succeed",
 			mocks: func(sub *v1alpha2.Subscription,
 				jsBackend *JetStream,
-				jsCtx *jetstreammocks.JetStreamContext,
+				jsCtx *backendjetstreammocks.JetStreamContext,
 				jsSubKey SubscriptionSubjectIdentifier,
 			) {
 				// inject the subscriptions map
@@ -217,7 +217,7 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 			name: "Skip binding for when no invalid NATS Subscriptions",
 			mocks: func(sub *v1alpha2.Subscription,
 				jsBackend *JetStream,
-				jsCtx *jetstreammocks.JetStreamContext,
+				jsCtx *backendjetstreammocks.JetStreamContext,
 				jsSubKey SubscriptionSubjectIdentifier,
 			) {
 				// inject the subscriptions map
@@ -236,7 +236,7 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 		t.Run(tc.name, func(t *testing.T) {
 			// given
 			callback := func(m *nats.Msg) {}
-			jsCtxMock := &jetstreammocks.JetStreamContext{}
+			jsCtxMock := &backendjetstreammocks.JetStreamContext{}
 			js := &JetStream{
 				jsCtx:   jsCtxMock,
 				cleaner: &cleaner.JetStreamCleaner{},
@@ -268,7 +268,7 @@ func Test_SyncConsumersAndSubscriptions_ForSyncConsumerMaxInFlight(t *testing.T)
 		givenSubMaxInFlight        int
 		givenConsumerMaxAckPending int
 		givenjetstreammocks        func(jsBackend *JetStream,
-			jsCtx *jetstreammocks.JetStreamContext,
+			jsCtx *backendjetstreammocks.JetStreamContext,
 			consumerConfigToUpdate *nats.ConsumerConfig,
 		)
 		wantConfigToUpdate *nats.ConsumerConfig
@@ -279,7 +279,7 @@ func Test_SyncConsumersAndSubscriptions_ForSyncConsumerMaxInFlight(t *testing.T)
 			givenConsumerMaxAckPending: DefaultMaxInFlights,
 			// no updateConsumer calls expected
 			givenjetstreammocks: func(jsBackend *JetStream,
-				jsCtx *jetstreammocks.JetStreamContext,
+				jsCtx *backendjetstreammocks.JetStreamContext,
 				consumerConfigToUpdate *nats.ConsumerConfig) {
 			},
 			wantConfigToUpdate: nil,
@@ -289,7 +289,7 @@ func Test_SyncConsumersAndSubscriptions_ForSyncConsumerMaxInFlight(t *testing.T)
 			givenSubMaxInFlight:        10,
 			givenConsumerMaxAckPending: 20,
 			givenjetstreammocks: func(jsBackend *JetStream,
-				jsCtx *jetstreammocks.JetStreamContext,
+				jsCtx *backendjetstreammocks.JetStreamContext,
 				consumerConfigToUpdate *nats.ConsumerConfig,
 			) {
 				jsCtx.On("UpdateConsumer", jsBackend.Config.JSStreamName, consumerConfigToUpdate).Return(&nats.ConsumerInfo{
@@ -304,7 +304,7 @@ func Test_SyncConsumersAndSubscriptions_ForSyncConsumerMaxInFlight(t *testing.T)
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			jsCtxMock := &jetstreammocks.JetStreamContext{}
+			jsCtxMock := &backendjetstreammocks.JetStreamContext{}
 			js := &JetStream{
 				jsCtx: jsCtxMock,
 			}

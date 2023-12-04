@@ -4,25 +4,25 @@ import (
 	"strings"
 	"sync"
 
-	bebtypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 )
 
 // SafeSubscriptions encapsulates Subscriptions to provide mutual exclusion.
 type SafeSubscriptions struct {
 	sync.RWMutex
-	subscriptions map[string]*bebtypes.Subscription
+	subscriptions map[string]*emstypes.Subscription
 }
 
 // NewSafeSubscriptions returns a new instance of SafeSubscriptions.
 func NewSafeSubscriptions() *SafeSubscriptions {
 	return &SafeSubscriptions{
 		sync.RWMutex{},
-		make(map[string]*bebtypes.Subscription),
+		make(map[string]*emstypes.Subscription),
 	}
 }
 
 // GetSubscription returns a Subscription via the corresponding key.
-func (s *SafeSubscriptions) GetSubscription(key string) *bebtypes.Subscription {
+func (s *SafeSubscriptions) GetSubscription(key string) *emstypes.Subscription {
 	s.RLock()
 	defer s.RUnlock()
 	return s.subscriptions[key]
@@ -47,7 +47,7 @@ func (s *SafeSubscriptions) DeleteSubscriptionsByName(name string) {
 }
 
 // PutSubscription adds a Subscription and it's corresponding key to SafeSubscriptions.
-func (s *SafeSubscriptions) PutSubscription(key string, subscription *bebtypes.Subscription) {
+func (s *SafeSubscriptions) PutSubscription(key string, subscription *emstypes.Subscription) {
 	s.Lock()
 	defer s.Unlock()
 	s.subscriptions[key] = subscription

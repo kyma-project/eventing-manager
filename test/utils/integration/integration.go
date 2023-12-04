@@ -11,19 +11,19 @@ import (
 	"testing"
 	"time"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
-	eventing2 "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
-	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
+	submgrmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
 
 	kapiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	"github.com/stretchr/testify/mock"
 
-	subscriptionmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
+	submgrmocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
 
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
@@ -46,8 +46,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	"github.com/kyma-project/nats-manager/testutils"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
+	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kautoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -62,7 +62,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
-	evnttestutils "github.com/kyma-project/eventing-manager/test/utils"
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
 )
 
 const (
@@ -83,7 +83,7 @@ type TestEnvironment struct {
 	k8sClient           client.Client
 	KubeClient          k8s.Client
 	K8sDynamicClient    *dynamic.DynamicClient
-	Reconciler          *eventing2.Reconciler
+	Reconciler          *eventingcontroller.Reconciler
 	Logger              *logger.Logger
 	Recorder            *record.EventRecorder
 	TestCancelFn        context.CancelFunc
@@ -154,7 +154,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	}
 
 	// setup ctrl manager
-	metricsPort, err := testutils.GetFreePort()
+	metricsPort, err := natstestutils.GetFreePort()
 	if err != nil {
 		return nil, err
 	}
@@ -184,24 +184,24 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, backendConfig, ctrLogger, recorder)
 
 	// define JetStream subscription manager mock.
-	jetStreamSubManagerMock := new(submanagermocks.Manager)
+	jetStreamSubManagerMock := new(submgrmanagermocks.Manager)
 	jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil)
 	jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
 	jetStreamSubManagerMock.On("Stop", mock.Anything).Return(nil)
 
 	// define EventMesh subscription manager mock.
-	eventMeshSubManagerMock := new(submanagermocks.Manager)
+	eventMeshSubManagerMock := new(submgrmanagermocks.Manager)
 	eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil)
 	eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(nil)
 	eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil)
 
 	// define subscription manager factory mock.
-	subManagerFactoryMock := new(subscriptionmanagermocks.ManagerFactory)
+	subManagerFactoryMock := new(submgrmocks.ManagerFactory)
 	subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(jetStreamSubManagerMock)
 	subManagerFactoryMock.On("NewEventMeshManager", mock.Anything).Return(eventMeshSubManagerMock, nil)
 
 	// create a new watcher
-	eventingReconciler := eventing2.NewReconciler(
+	eventingReconciler := eventingcontroller.NewReconciler(
 		k8sClient,
 		kubeClient,
 		dynamicClient,
@@ -231,7 +231,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	}()
 
 	// create namespace
-	ns := testutils.NewNamespace(getTestBackendConfig().Namespace)
+	ns := natstestutils.NewNamespace(getTestBackendConfig().Namespace)
 	if err = client.IgnoreAlreadyExists(k8sClient.Create(ctx, ns)); err != nil {
 		return nil, err
 	}
@@ -271,11 +271,11 @@ func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Con
 	}
 
 	url := "https://eventing-controller.kyma-system.svc.cluster.local"
-	sideEffectClassNone := admissionv1.SideEffectClassNone
-	mwh := getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
+	sideEffectClassNone := kadmissionregistrationv1.SideEffectClassNone
+	mwh := getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
 		{
 			Name: "reconciler.eventing.test",
-			ClientConfig: admissionv1.WebhookClientConfig{
+			ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 				URL:      &url,
 				CABundle: dummyCABundle,
 			},
@@ -286,10 +286,10 @@ func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Con
 	mwh.Name = getTestBackendConfig().MutatingWebhookName
 
 	// setup dummy validating webhook
-	vwh := getValidatingWebhookConfig([]admissionv1.ValidatingWebhook{
+	vwh := getValidatingWebhookConfig([]kadmissionregistrationv1.ValidatingWebhook{
 		{
 			Name: "reconciler2.eventing.test",
-			ClientConfig: admissionv1.WebhookClientConfig{
+			ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 				URL:      &url,
 				CABundle: dummyCABundle,
 			},
@@ -322,8 +322,8 @@ func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Con
 		AttachControlPlaneOutput: attachControlPlaneOutput,
 		UseExistingCluster:       &useExistingCluster,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			MutatingWebhooks:   []*admissionv1.MutatingWebhookConfiguration{mwh},
-			ValidatingWebhooks: []*admissionv1.ValidatingWebhookConfiguration{vwh},
+			MutatingWebhooks:   []*kadmissionregistrationv1.MutatingWebhookConfiguration{mwh},
+			ValidatingWebhooks: []*kadmissionregistrationv1.ValidatingWebhookConfiguration{vwh},
 		},
 	}
 
@@ -399,7 +399,7 @@ func (env TestEnvironment) EnsureNamespaceCreation(t *testing.T, namespace strin
 		return
 	}
 	// create namespace
-	ns := testutils.NewNamespace(namespace)
+	ns := natstestutils.NewNamespace(namespace)
 	require.NoError(t, client.IgnoreAlreadyExists(env.k8sClient.Create(env.Context, ns)))
 }
 
@@ -491,7 +491,7 @@ func (env TestEnvironment) EnsureK8sResourceDeleted(t *testing.T, obj client.Obj
 }
 
 func (env TestEnvironment) EnsureNATSCRDDeleted(t *testing.T) {
-	crdManifest := &apiextensionsv1.CustomResourceDefinition{
+	crdManifest := &kapiextensionsv1.CustomResourceDefinition{
 		TypeMeta: kmetav1.TypeMeta{
 			APIVersion: "apiextensions.k8s.io/v1",
 			Kind:       "CustomResourceDefinition",
@@ -508,7 +508,7 @@ func (env TestEnvironment) EnsureNATSCRDDeleted(t *testing.T) {
 	}, BigTimeOut, BigPollingInterval, "failed to ensure deletion of NATS CRD")
 }
 
-func (env TestEnvironment) EnsureCRDCreated(t *testing.T, crd *apiextensionsv1.CustomResourceDefinition) {
+func (env TestEnvironment) EnsureCRDCreated(t *testing.T, crd *kapiextensionsv1.CustomResourceDefinition) {
 	crd.ResourceVersion = ""
 	require.NoError(t, env.k8sClient.Create(env.Context, crd))
 }
@@ -697,7 +697,7 @@ func (env TestEnvironment) EnsureDeploymentOwnerReferenceSet(t *testing.T, event
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventingCR.Name, "namespace", eventingCR.Namespace)
 		}
-		return evnttestutils.HasOwnerReference(deployment, *eventingCR)
+		return testutils.HasOwnerReference(deployment, *eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing owner reference is set")
 }
 
@@ -708,7 +708,7 @@ func (env TestEnvironment) EnsureEPPPublishServiceOwnerReferenceSet(t *testing.T
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.HasOwnerReference(result, eventingCR)
+		return testutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure PublishService owner reference is set")
 }
 
@@ -719,7 +719,7 @@ func (env TestEnvironment) EnsureEPPMetricsServiceOwnerReferenceSet(t *testing.T
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.HasOwnerReference(result, eventingCR)
+		return testutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure MetricsService owner reference is set")
 }
 
@@ -730,7 +730,7 @@ func (env TestEnvironment) EnsureEPPHealthServiceOwnerReferenceSet(t *testing.T,
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.HasOwnerReference(result, eventingCR)
+		return testutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure HealthService owner reference is set")
 }
 
@@ -741,7 +741,7 @@ func (env TestEnvironment) EnsureEPPServiceAccountOwnerReferenceSet(t *testing.T
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.HasOwnerReference(result, eventingCR)
+		return testutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ServiceAccount owner reference is set")
 }
 
@@ -752,7 +752,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleOwnerReferenceSet(t *testing.T, e
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.HasOwnerReference(result, eventingCR)
+		return testutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRole owner reference is set")
 }
 
@@ -764,7 +764,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingOwnerReferenceSet(t *testi
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.HasOwnerReference(result, eventingCR)
+		return testutils.HasOwnerReference(result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRoleBinding owner reference is set")
 }
 
@@ -776,7 +776,7 @@ func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeplo
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.IsEPPPublishServiceCorrect(*result, *eppDeployment)
+		return testutils.IsEPPPublishServiceCorrect(*result, *eppDeployment)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure PublishService correctness.")
 }
 
@@ -788,7 +788,7 @@ func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeplo
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.IsEPPMetricsServiceCorrect(*result, *eppDeployment)
+		return testutils.IsEPPMetricsServiceCorrect(*result, *eppDeployment)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure MetricsService correctness.")
 }
 
@@ -800,7 +800,7 @@ func (env TestEnvironment) EnsureEPPHealthServiceCorrect(t *testing.T, eppDeploy
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.IsEPPHealthServiceCorrect(*result, *eppDeployment)
+		return testutils.IsEPPHealthServiceCorrect(*result, *eppDeployment)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure HealthService correctness.")
 }
 
@@ -811,7 +811,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleCorrect(t *testing.T, eventingCR 
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.IsEPPClusterRoleCorrect(*result)
+		return testutils.IsEPPClusterRoleCorrect(*result)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRole correctness")
 }
 
@@ -823,7 +823,7 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingCorrect(t *testing.T, even
 			env.Logger.WithContext().Error(err)
 			return false
 		}
-		return evnttestutils.IsEPPClusterRoleBindingCorrect(*result, eventingCR)
+		return testutils.IsEPPClusterRoleBindingCorrect(*result, eventingCR)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRoleBinding correctness")
 }
 
@@ -857,12 +857,12 @@ func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
 			return false
 		}
 
-		if !bytes.Equal(mwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventing2.TLSCertField]) {
+		if !bytes.Equal(mwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventingcontroller.TLSCertField]) {
 			env.Logger.WithContext().Error("CABundle of mutating configuration is not correct")
 			return false
 		}
 
-		if !bytes.Equal(vwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventing2.TLSCertField]) {
+		if !bytes.Equal(vwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventingcontroller.TLSCertField]) {
 			env.Logger.WithContext().Error("CABundle of validating configuration is not correct")
 			return false
 		}
@@ -872,18 +872,18 @@ func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
 
 func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
 	subarr := strings.Split(eventing.Spec.Backend.Config.EventMeshSecret, "/")
-	secret := evnttestutils.NewEventMeshSecret(subarr[1], subarr[0])
+	secret := testutils.NewEventMeshSecret(subarr[1], subarr[0])
 	env.EnsureK8sResourceCreated(t, secret)
 }
 
 func (env TestEnvironment) EnsureEventMeshSecretDeleted(t *testing.T, eventing *v1alpha1.Eventing) {
 	subarr := strings.Split(eventing.Spec.Backend.Config.EventMeshSecret, "/")
-	secret := evnttestutils.NewEventMeshSecret(subarr[1], subarr[0])
+	secret := testutils.NewEventMeshSecret(subarr[1], subarr[0])
 	env.EnsureK8sResourceDeleted(t, secret)
 }
 
 func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
-	secret := evnttestutils.NewOAuthSecret("eventing-webhook-auth", eventing.Namespace)
+	secret := testutils.NewOAuthSecret("eventing-webhook-auth", eventing.Namespace)
 	env.EnsureK8sResourceCreated(t, secret)
 }
 
@@ -995,13 +995,13 @@ func newSecretWithTLSSecret(dummyCABundle []byte) *kcorev1.Secret {
 			Namespace: getTestBackendConfig().Namespace,
 		},
 		Data: map[string][]byte{
-			eventing2.TLSCertField: dummyCABundle,
+			eventingcontroller.TLSCertField: dummyCABundle,
 		},
 	}
 }
 
-func getMutatingWebhookConfig(webhook []admissionv1.MutatingWebhook) *admissionv1.MutatingWebhookConfiguration {
-	return &admissionv1.MutatingWebhookConfiguration{
+func getMutatingWebhookConfig(webhook []kadmissionregistrationv1.MutatingWebhook) *kadmissionregistrationv1.MutatingWebhookConfiguration {
+	return &kadmissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name: getTestBackendConfig().MutatingWebhookName,
 		},
@@ -1009,8 +1009,8 @@ func getMutatingWebhookConfig(webhook []admissionv1.MutatingWebhook) *admissionv
 	}
 }
 
-func getValidatingWebhookConfig(webhook []admissionv1.ValidatingWebhook) *admissionv1.ValidatingWebhookConfiguration {
-	return &admissionv1.ValidatingWebhookConfiguration{
+func getValidatingWebhookConfig(webhook []kadmissionregistrationv1.ValidatingWebhook) *kadmissionregistrationv1.ValidatingWebhookConfiguration {
+	return &kadmissionregistrationv1.ValidatingWebhookConfiguration{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name: getTestBackendConfig().ValidatingWebhookName,
 		},

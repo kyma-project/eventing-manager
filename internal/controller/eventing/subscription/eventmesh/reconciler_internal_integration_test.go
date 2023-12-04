@@ -32,7 +32,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
-	eventinglogger "github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/object"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -990,7 +990,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 		},
 	}
 
-	logger, err := eventinglogger.New(string(kymalogger.JSON), string(kymalogger.INFO))
+	logger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	if err != nil {
 		t.Fatalf(`failed to initiate logger, %v`, err)
 	}
@@ -1141,7 +1141,7 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 		},
 	}
 
-	logger, err := eventinglogger.New(string(kymalogger.JSON), string(kymalogger.INFO))
+	logger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	if err != nil {
 		t.Fatalf(`failed to initiate logger, %v`, err)
 	}
@@ -1363,7 +1363,7 @@ func Test_checkLastFailedDelivery(t *testing.T) {
 type testEnvironment struct {
 	fakeClient  client.Client
 	backend     *mocks.Backend
-	logger      *eventinglogger.Logger
+	logger      *logger.Logger
 	recorder    *record.FakeRecorder
 	cfg         env.Config
 	credentials *eventmesh.OAuth2ClientCredentials
@@ -1376,7 +1376,7 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *testEnvironment 
 	mockedBackend := &mocks.Backend{}
 	fakeClient := createFakeClientBuilder(t).WithObjects(objs...).WithStatusSubresource(objs...).Build()
 	recorder := &record.FakeRecorder{}
-	defaultLogger, err := eventinglogger.New(string(kymalogger.JSON), string(kymalogger.INFO))
+	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	if err != nil {
 		t.Fatalf("initialize logger failed: %v", err)
 	}

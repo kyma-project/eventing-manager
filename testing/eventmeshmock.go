@@ -20,7 +20,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/client"
-	eventmeshtypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 )
 
 const (
@@ -68,9 +68,9 @@ func NewEventMeshMockResponseOverride() *EventMeshMockResponseOverride {
 	}
 }
 
-type ResponseUpdateReq func(w http.ResponseWriter, key string, webhookAuth *eventmeshtypes.WebhookAuth)
-type ResponseUpdateStateReq func(w http.ResponseWriter, key string, state eventmeshtypes.State)
-type ResponseWithSub func(w http.ResponseWriter, subscription eventmeshtypes.Subscription)
+type ResponseUpdateReq func(w http.ResponseWriter, key string, webhookAuth *emstypes.WebhookAuth)
+type ResponseUpdateStateReq func(w http.ResponseWriter, key string, state emstypes.State)
+type ResponseWithSub func(w http.ResponseWriter, subscription emstypes.Subscription)
 type ResponseWithName func(w http.ResponseWriter, subscriptionName string)
 type Response func(w http.ResponseWriter)
 
@@ -128,7 +128,7 @@ func (m *EventMeshMock) Start() string {
 			m.Subscriptions.DeleteSubscription(key)
 			m.DeleteResponse(w)
 		case http.MethodPost:
-			var subscription eventmeshtypes.Subscription
+			var subscription emstypes.Subscription
 			_ = json.NewDecoder(r.Body).Decode(&subscription)
 			key := r.URL.Path + "/" + subscription.Name
 			// check if any response override defined for this subscription
@@ -142,7 +142,7 @@ func (m *EventMeshMock) Start() string {
 			m.Subscriptions.PutSubscription(key, &subscription)
 			m.CreateResponse(w)
 		case http.MethodPatch: // mock update WebhookAuth config
-			var subscription eventmeshtypes.Subscription
+			var subscription emstypes.Subscription
 			err := json.NewDecoder(r.Body).Decode(&subscription)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
@@ -154,7 +154,7 @@ func (m *EventMeshMock) Start() string {
 			m.Requests.PutSubscription(r, subscription)
 			m.UpdateResponse(w, key, subscription.WebhookAuth)
 		case http.MethodPut: // mock pause/resume EventMesh subscription
-			var state eventmeshtypes.State
+			var state emstypes.State
 			if err := json.NewDecoder(r.Body).Decode(&state); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
@@ -219,7 +219,7 @@ func GetSubscriptionResponse(m *EventMeshMock) ResponseWithName {
 		subscriptionSaved := m.Subscriptions.GetSubscription(key)
 		if subscriptionSaved != nil {
 			if subscriptionSaved.SubscriptionStatus == "" {
-				subscriptionSaved.SubscriptionStatus = eventmeshtypes.SubscriptionStatusActive
+				subscriptionSaved.SubscriptionStatus = emstypes.SubscriptionStatusActive
 			}
 			w.WriteHeader(http.StatusOK)
 			err := json.NewEncoder(w).Encode(*subscriptionSaved)
@@ -232,7 +232,7 @@ func GetSubscriptionResponse(m *EventMeshMock) ResponseWithName {
 
 // UpdateSubscriptionResponse updates the webhook auth of subscription in the mock.
 func UpdateSubscriptionResponse(m *EventMeshMock) ResponseUpdateReq {
-	return func(w http.ResponseWriter, key string, webhookAuth *eventmeshtypes.WebhookAuth) {
+	return func(w http.ResponseWriter, key string, webhookAuth *emstypes.WebhookAuth) {
 		subscriptionSaved := m.Subscriptions.GetSubscription(key)
 		if subscriptionSaved != nil {
 			subscriptionSaved.WebhookAuth = webhookAuth
@@ -248,16 +248,16 @@ func UpdateSubscriptionResponse(m *EventMeshMock) ResponseUpdateReq {
 
 // UpdateSubscriptionStateResponse updates the EventMesh subscription status in the mock.
 func UpdateSubscriptionStateResponse(m *EventMeshMock) ResponseUpdateStateReq {
-	return func(w http.ResponseWriter, key string, state eventmeshtypes.State) {
+	return func(w http.ResponseWriter, key string, state emstypes.State) {
 		if subscription := m.Subscriptions.GetSubscription(key); subscription != nil {
 			switch state.Action {
-			case eventmeshtypes.StateActionPause:
+			case emstypes.StateActionPause:
 				{
-					subscription.SubscriptionStatus = eventmeshtypes.SubscriptionStatusPaused
+					subscription.SubscriptionStatus = emstypes.SubscriptionStatusPaused
 				}
-			case eventmeshtypes.StateActionResume:
+			case emstypes.StateActionResume:
 				{
-					subscription.SubscriptionStatus = eventmeshtypes.SubscriptionStatusActive
+					subscription.SubscriptionStatus = emstypes.SubscriptionStatusActive
 				}
 			default:
 				{
@@ -292,8 +292,8 @@ func EventMeshAuthResponseSuccess(w http.ResponseWriter) {
 // EventMeshCreateSuccess writes a Response to the writer for the happy-path of creating an EventMesh subscription.
 func EventMeshCreateSuccess(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusAccepted)
-	response := eventmeshtypes.CreateResponse{
-		Response: eventmeshtypes.Response{
+	response := emstypes.CreateResponse{
+		Response: emstypes.Response{
 			StatusCode: http.StatusAccepted,
 			Message:    "",
 		},
@@ -306,9 +306,9 @@ func EventMeshCreateSuccess(w http.ResponseWriter) {
 // EventMeshGetSuccess writes a Response to the writer for the happy-path of getting an EventMesh subscription.
 func EventMeshGetSuccess(w http.ResponseWriter, name string) {
 	w.WriteHeader(http.StatusOK)
-	s := eventmeshtypes.Subscription{
+	s := emstypes.Subscription{
 		Name:               name,
-		SubscriptionStatus: eventmeshtypes.SubscriptionStatusActive,
+		SubscriptionStatus: emstypes.SubscriptionStatusActive,
 	}
 	err := json.NewEncoder(w).Encode(s)
 	Expect(err).ShouldNot(HaveOccurred())
@@ -317,7 +317,7 @@ func EventMeshGetSuccess(w http.ResponseWriter, name string) {
 // EventMeshListSuccess writes a Response to the writer for the happy-path of listing a EventMesh subscription.
 func EventMeshListSuccess(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusAccepted)
-	response := eventmeshtypes.Response{
+	response := emstypes.Response{
 		StatusCode: http.StatusOK,
 		Message:    "",
 	}

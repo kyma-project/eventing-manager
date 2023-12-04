@@ -14,7 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
+	emerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 )
 
 const randStringlength = 10
@@ -104,7 +104,7 @@ func IsValidScheme(sink string) bool {
 func GetSinkData(sink string) (string, []string, error) {
 	sURL, err := url.ParseRequestURI(sink)
 	if err != nil {
-		return "", nil, pkgerrors.MakeError(ErrParseSink, err)
+		return "", nil, emerrors.MakeError(ErrParseSink, err)
 	}
 	trimmedHost := strings.Split(sURL.Host, ":")[0]
 	subDomains := strings.Split(trimmedHost, ".")

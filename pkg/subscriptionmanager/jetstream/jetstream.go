@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	subscriptionjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
+	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
 
-	manager2 "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	submgrmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -42,7 +42,7 @@ const (
 
 // AddToScheme adds all types of clientset and eventing into the given scheme.
 func AddToScheme(scheme *runtime.Scheme) error {
-	if err := clientgoscheme.AddToScheme(scheme); err != nil {
+	if err := kkubernetesscheme.AddToScheme(scheme); err != nil {
 		return err
 	}
 	if err := eventingv1alpha1.AddToScheme(scheme); err != nil {
@@ -92,7 +92,7 @@ func (sm *SubscriptionManager) Init(mgr manager.Manager) error {
 	return nil
 }
 
-func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionConfig, _ manager2.Params) error {
+func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionConfig, _ submgrmanager.Params) error {
 	sm.metricsCollector.ResetSubscriptionStatus()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -109,7 +109,7 @@ func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionCo
 	jsCleaner := cleaner.NewJetStreamCleaner(sm.logger)
 	jetStreamHandler := backendjetstream.NewJetStream(sm.envCfg,
 		sm.metricsCollector, jsCleaner, defaultSubsConfig, sm.logger)
-	jetStreamReconciler := subscriptionjetstream.NewReconciler(
+	jetStreamReconciler := subscriptioncontrollerjetstream.NewReconciler(
 		ctx,
 		client,
 		jetStreamHandler,

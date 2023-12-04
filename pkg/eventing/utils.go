@@ -3,7 +3,7 @@ package eventing
 import (
 	"fmt"
 
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	kautoscalingv2 "k8s.io/api/autoscaling/v2"
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,8 +43,8 @@ func GetPublisherClusterRoleBindingName(eventing v1alpha1.Eventing) string {
 }
 
 func newHorizontalPodAutoscaler(name, namespace string, min, max, cpuUtilization, memoryUtilization int32,
-	labels map[string]string) *autoscalingv2.HorizontalPodAutoscaler {
-	return &autoscalingv2.HorizontalPodAutoscaler{
+	labels map[string]string) *kautoscalingv2.HorizontalPodAutoscaler {
+	return &kautoscalingv2.HorizontalPodAutoscaler{
 		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "HorizontalPodAutoscaler",
 			APIVersion: "autoscaling/v2",
@@ -54,31 +54,31 @@ func newHorizontalPodAutoscaler(name, namespace string, min, max, cpuUtilization
 			Namespace: namespace,
 			Labels:    labels,
 		},
-		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
+		Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: kautoscalingv2.CrossVersionObjectReference{
 				Kind:       "Deployment",
 				Name:       name,
 				APIVersion: "apps/v1",
 			},
 			MinReplicas: &min,
 			MaxReplicas: max,
-			Metrics: []autoscalingv2.MetricSpec{
+			Metrics: []kautoscalingv2.MetricSpec{
 				{
-					Type: autoscalingv2.ResourceMetricSourceType,
-					Resource: &autoscalingv2.ResourceMetricSource{
+					Type: kautoscalingv2.ResourceMetricSourceType,
+					Resource: &kautoscalingv2.ResourceMetricSource{
 						Name: "cpu",
-						Target: autoscalingv2.MetricTarget{
-							Type:               autoscalingv2.UtilizationMetricType,
+						Target: kautoscalingv2.MetricTarget{
+							Type:               kautoscalingv2.UtilizationMetricType,
 							AverageUtilization: &cpuUtilization,
 						},
 					},
 				},
 				{
-					Type: autoscalingv2.ResourceMetricSourceType,
-					Resource: &autoscalingv2.ResourceMetricSource{
+					Type: kautoscalingv2.ResourceMetricSourceType,
+					Resource: &kautoscalingv2.ResourceMetricSource{
 						Name: "memory",
-						Target: autoscalingv2.MetricTarget{
-							Type:               autoscalingv2.UtilizationMetricType,
+						Target: kautoscalingv2.MetricTarget{
+							Type:               kautoscalingv2.UtilizationMetricType,
 							AverageUtilization: &memoryUtilization,
 						},
 					},

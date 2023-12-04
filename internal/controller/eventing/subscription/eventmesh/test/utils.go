@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	eventmeshreconciler "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
+	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
@@ -45,7 +45,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/constants"
-	eventMeshtypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
@@ -150,7 +150,7 @@ func setupSuite() error {
 	}
 	emTestEnsemble.envConfig = getEnvConfig()
 	col := metrics.NewCollector()
-	testReconciler := eventmeshreconciler.NewReconciler(
+	testReconciler := subscriptioncontrollereventmesh.NewReconciler(
 		context.Background(),
 		k8sManager.GetClient(),
 		defaultLogger,
@@ -249,7 +249,7 @@ func getEnvConfig() env.Config {
 		WebhookActivationTimeout: 0,
 		EventTypePrefix:          eventingtesting.EventMeshPrefix,
 		BEBNamespace:             eventingtesting.EventMeshNamespaceNS,
-		Qos:                      string(eventMeshtypes.QosAtLeastOnce),
+		Qos:                      string(emstypes.QosAtLeastOnce),
 	}
 }
 
@@ -408,7 +408,7 @@ func countEventMeshRequests(subscriptionName, eventType string) (int, int, int) 
 					countGet++
 				}
 			case http.MethodPost:
-				if sub, ok := payload.(eventMeshtypes.Subscription); ok {
+				if sub, ok := payload.(emstypes.Subscription); ok {
 					if len(sub.Events) > 0 {
 						for _, event := range sub.Events {
 							if event.Type == eventType && sub.Name == subscriptionName {
@@ -426,7 +426,7 @@ func countEventMeshRequests(subscriptionName, eventType string) (int, int, int) 
 	return countGet, countPost, countDelete
 }
 
-func getEventMeshSubFromMock(subscriptionName, subscriptionNamespace string) *eventMeshtypes.Subscription {
+func getEventMeshSubFromMock(subscriptionName, subscriptionNamespace string) *emstypes.Subscription {
 	key := getEventMeshSubKeyForMock(subscriptionName, subscriptionNamespace)
 	return emTestEnsemble.eventMeshMock.Subscriptions.GetSubscription(key)
 }

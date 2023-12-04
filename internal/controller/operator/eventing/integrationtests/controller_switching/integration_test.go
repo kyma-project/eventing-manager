@@ -18,14 +18,14 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
-	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
+	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 
 const (
 	projectRootDir = "../../../../../../"
 )
 
-var testEnvironment *testutils.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
 
 // TestMain pre-hook and post-hook to run before and after all tests.
 func TestMain(m *testing.M) {
@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 
 	// setup env test
 	var err error
-	testEnvironment, err = testutils.NewTestEnvironment(testutils.TestEnvironmentConfig{
+	testEnvironment, err = testutilsintegration.NewTestEnvironment(testutilsintegration.TestEnvironmentConfig{
 		ProjectRootDir:            projectRootDir,
 		CELValidationEnabled:      false,
 		APIRuleCRDEnabled:         true,
@@ -197,7 +197,7 @@ func Test_Switching(t *testing.T) {
 	}
 }
 
-func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
 	testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
@@ -205,7 +205,7 @@ func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1a
 	testEnvironment.EnsureDeploymentOwnerReferenceSet(t, givenEventing)
 }
 
-func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
 	testEnvironment.EnsureEPPK8sResourcesExists(t, *givenEventing)
 
 	// check if the owner reference is set.

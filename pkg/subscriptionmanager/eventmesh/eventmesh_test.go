@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	subscriptionmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	submgrmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +37,7 @@ func (c *bebSubMgrMock) Init(_ manager.Manager) error {
 	return nil
 }
 
-func (c *bebSubMgrMock) Start(_ env.DefaultSubscriptionConfig, _ subscriptionmanager.Params) error {
+func (c *bebSubMgrMock) Start(_ env.DefaultSubscriptionConfig, _ submgrmanager.Params) error {
 	return nil
 }
 

@@ -14,14 +14,14 @@ import (
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 
-	integrationutils "github.com/kyma-project/eventing-manager/test/utils/integration"
+	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 
 const (
 	projectRootDir = "../../../../../../"
 )
 
-var testEnvironment *integrationutils.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
 
 // define allowed Eventing CR.
 //
@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 
 	// setup env test
 	var err error
-	testEnvironment, err = integrationutils.NewTestEnvironment(integrationutils.TestEnvironmentConfig{
+	testEnvironment, err = testutilsintegration.NewTestEnvironment(testutilsintegration.TestEnvironmentConfig{
 		ProjectRootDir:            projectRootDir,
 		CELValidationEnabled:      false,
 		APIRuleCRDEnabled:         true,

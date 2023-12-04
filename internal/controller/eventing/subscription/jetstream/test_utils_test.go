@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	ctrljetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
+	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 
 	"github.com/avast/retry-go/v3"
-	natsserver "github.com/nats-io/nats-server/v2/server"
+	natsioserver "github.com/nats-io/nats-server/v2/server"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
@@ -40,7 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	cleanerv1alpha2 "github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	backendcleaner "github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -71,7 +71,7 @@ type Ensemble struct {
 	Cfg                       *rest.Config
 	K8sClient                 client.Client
 	TestEnv                   *envtest.Environment
-	NatsServer                *natsserver.Server
+	NatsServer                *natsioserver.Server
 	NatsPort                  int
 	DefaultSubscriptionConfig env.DefaultSubscriptionConfig
 	SubscriberSvc             *kcorev1.Service
@@ -82,7 +82,7 @@ type Ensemble struct {
 }
 
 type jetStreamTestEnsemble struct {
-	Reconciler       *ctrljetstream.Reconciler
+	Reconciler       *subscriptioncontrollerjetstream.Reconciler
 	jetStreamBackend *jetstream.JetStream
 	JSStreamName     string
 	*Ensemble
@@ -190,13 +190,13 @@ func startReconciler() error {
 	}
 
 	defaultSubConfig := env.DefaultSubscriptionConfig{}
-	cleaner := cleanerv1alpha2.NewJetStreamCleaner(defaultLogger)
+	cleaner := backendcleaner.NewJetStreamCleaner(defaultLogger)
 	jetStreamHandler := jetstream.NewJetStream(envConf, metricsCollector, cleaner, defaultSubConfig, defaultLogger)
 
 	k8sClient := k8sManager.GetClient()
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller-jetstream")
 
-	jsTestEnsemble.Reconciler = ctrljetstream.NewReconciler(ctx,
+	jsTestEnsemble.Reconciler = subscriptioncontrollerjetstream.NewReconciler(ctx,
 		k8sClient,
 		jetStreamHandler,
 		defaultLogger,

@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	kappsv1 "k8s.io/api/apps/v1"
-	v2 "k8s.io/api/autoscaling/v2"
+	kautoscalingv2 "k8s.io/api/autoscaling/v2"
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -95,7 +95,7 @@ func serviceEqual(a, b *kcorev1.Service) bool {
 	return reflect.DeepEqual(a.Spec.Ports, b.Spec.Ports)
 }
 
-func hpaEqual(a, b *v2.HorizontalPodAutoscaler) bool {
+func hpaEqual(a, b *kautoscalingv2.HorizontalPodAutoscaler) bool {
 	if a == b {
 		return true
 	}

@@ -1,9 +1,10 @@
 package jetstream
 
 import (
-	"github.com/kyma-project/eventing-manager/pkg/env"
-	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/nats-io/nats.go"
+
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/errors"
 )
 
 type Builder interface {
@@ -30,7 +31,7 @@ func (b ConnectionBuilder) Build() (ConnectionInterface, error) {
 	}
 	conn, err := nats.Connect(config.URL, jsOptions...)
 	if err != nil || !conn.IsConnected() {
-		return nil, pkgerrors.MakeError(ErrConnect, err)
+		return nil, errors.MakeError(ErrConnect, err)
 	}
 
 	return conn, nil

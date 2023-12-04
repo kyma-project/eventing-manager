@@ -21,7 +21,7 @@ import (
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
-	jetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
+	backendjetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -69,14 +69,14 @@ func Test_Reconcile(t *testing.T) {
 	var testCases = []struct {
 		name                 string
 		givenSubscription    *eventingv1alpha2.Subscription
-		givenReconcilerSetup func() (*Reconciler, *jetstreammocks.Backend)
+		givenReconcilerSetup func() (*Reconciler, *backendjetstreammocks.Backend)
 		wantReconcileResult  ctrl.Result
 		wantReconcileError   error
 	}{
 		{
 			name:              "Return nil and default Result{} when there is no error from the reconciler dependencies",
 			givenSubscription: testSub,
-			givenReconcilerSetup: func() (*Reconciler, *jetstreammocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, testSub)
 				te.Backend.On("SyncSubscription", mock.Anything).Return(nil)
 				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
@@ -98,7 +98,7 @@ func Test_Reconcile(t *testing.T) {
 		{
 			name:              "Return nil and default Result{} when the subscription does not exist on the cluster",
 			givenSubscription: testSub,
-			givenReconcilerSetup: func() (*Reconciler, *jetstreammocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t)
 				return NewReconciler(ctx,
 						te.Client,
@@ -116,7 +116,7 @@ func Test_Reconcile(t *testing.T) {
 		{
 			name:              "Return nil and default Result{} when the subscription has no finalizer",
 			givenSubscription: eventingtesting.NewSubscription(subscriptionName, namespaceName),
-			givenReconcilerSetup: func() (*Reconciler, *jetstreammocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, eventingtesting.NewSubscription(subscriptionName, namespaceName))
 				return NewReconciler(ctx,
 						te.Client,
@@ -134,7 +134,7 @@ func Test_Reconcile(t *testing.T) {
 		{
 			name:              "Return error and default Result{} when backend sync returns error",
 			givenSubscription: testSub,
-			givenReconcilerSetup: func() (*Reconciler, *jetstreammocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, testSub)
 				te.Backend.On("SyncSubscription", mock.Anything).Return(backendSyncErr)
 				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
@@ -158,7 +158,7 @@ func Test_Reconcile(t *testing.T) {
 			name: "Return nil and RequeueAfter with requeue duration when " +
 				"backend sync returns missingSubscriptionErr",
 			givenSubscription: testSub,
-			givenReconcilerSetup: func() (*Reconciler, *jetstreammocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, testSub)
 				te.Backend.On("SyncSubscription", mock.Anything).Return(missingSubSyncErr)
 				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
@@ -180,7 +180,7 @@ func Test_Reconcile(t *testing.T) {
 		{
 			name:              "Return error and default Result{} when backend delete returns error",
 			givenSubscription: testSubUnderDeletion,
-			givenReconcilerSetup: func() (*Reconciler, *jetstreammocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, testSubUnderDeletion)
 				te.Backend.On("DeleteSubscription", mock.Anything).Return(backendDeleteErr)
 				return NewReconciler(ctx,
@@ -199,7 +199,7 @@ func Test_Reconcile(t *testing.T) {
 		{
 			name:              "Return error and default Result{} when validator returns error",
 			givenSubscription: testSub,
-			givenReconcilerSetup: func() (*Reconciler, *jetstreammocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, testSub)
 				te.Backend.On("DeleteSubscriptionsOnly", mock.Anything).Return(nil)
 				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
@@ -727,7 +727,7 @@ func Test_updateSubscription(t *testing.T) {
 type TestEnvironment struct {
 	Context    context.Context
 	Client     client.Client
-	Backend    *jetstreammocks.Backend
+	Backend    *backendjetstreammocks.Backend
 	Reconciler *Reconciler
 	Logger     *logger.Logger
 	Recorder   *record.FakeRecorder
@@ -736,7 +736,7 @@ type TestEnvironment struct {
 
 // setupTestEnvironment is a TestEnvironment constructor.
 func setupTestEnvironment(t *testing.T, objs ...client.Object) *TestEnvironment {
-	mockedBackend := &jetstreammocks.Backend{}
+	mockedBackend := &backendjetstreammocks.Backend{}
 	ctx := context.Background()
 	fakeClient := createFakeClientBuilder(t).WithObjects(objs...).WithStatusSubresource(objs...).Build()
 	recorder := &record.FakeRecorder{}

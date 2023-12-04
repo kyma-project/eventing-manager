@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	ctrlmocks "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks"
+	eventingcontrollermocks "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks"
 
 	kapiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kcorev1 "k8s.io/api/core/v1"
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-	managermocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
+	eventingmocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 
 	kdynamicfake "k8s.io/client-go/dynamic/fake"
 )
@@ -39,8 +39,8 @@ type MockedUnitTestEnvironment struct {
 	Context         context.Context
 	Client          client.Client
 	kubeClient      *k8s.Client
-	eventingManager *managermocks.Manager
-	ctrlManager     *ctrlmocks.Manager
+	eventingManager *eventingmocks.Manager
+	ctrlManager     *eventingcontrollermocks.Manager
 	Reconciler      *Reconciler
 	Logger          *logger.Logger
 	Recorder        *record.FakeRecorder
@@ -62,7 +62,7 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	require.NoError(t, err)
 	err = kcorev1.AddToScheme(newScheme)
 	require.NoError(t, err)
-	err = admissionv1.AddToScheme(newScheme)
+	err = kadmissionregistrationv1.AddToScheme(newScheme)
 	require.NoError(t, err)
 
 	// Create a fake dynamic client
@@ -75,8 +75,8 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	kubeClient := k8s.NewKubeClient(fakeClient, fakeClientSet, "eventing-manager", fakeDynamicClient)
 
 	// setup custom mocks
-	eventingManager := new(managermocks.Manager)
-	mockManager := new(ctrlmocks.Manager)
+	eventingManager := new(eventingmocks.Manager)
+	mockManager := new(eventingcontrollermocks.Manager)
 
 	opts := options.New()
 

@@ -19,7 +19,7 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
-	eventMeshtypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/object"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 	eventmeshsubmatchers "github.com/kyma-project/eventing-manager/testing/eventmeshsub"
@@ -192,7 +192,7 @@ func Test_CreateSubscription(t *testing.T) {
 				}),
 			),
 			wantEventMeshSubMatchers: gomega.And(
-				eventmeshsubmatchers.HaveEvents(eventMeshtypes.Events{
+				eventmeshsubmatchers.HaveEvents(emstypes.Events{
 					{
 						Source: eventingtesting.EventMeshNamespaceNS,
 						Type: fmt.Sprintf("%s.%s.%s0", eventingtesting.EventMeshPrefix,
@@ -224,13 +224,13 @@ func Test_CreateSubscription(t *testing.T) {
 				// should have default values for protocol and webhook auth
 				eventmeshsubmatchers.HaveContentMode(emTestEnsemble.envConfig.ContentMode),
 				eventmeshsubmatchers.HaveExemptHandshake(emTestEnsemble.envConfig.ExemptHandshake),
-				eventmeshsubmatchers.HaveQoS(eventMeshtypes.Qos(emTestEnsemble.envConfig.Qos)),
-				eventmeshsubmatchers.HaveWebhookAuth(eventMeshtypes.WebhookAuth{
+				eventmeshsubmatchers.HaveQoS(emstypes.Qos(emTestEnsemble.envConfig.Qos)),
+				eventmeshsubmatchers.HaveWebhookAuth(emstypes.WebhookAuth{
 					ClientID:     "foo-client-id",
 					ClientSecret: "foo-client-secret",
 					TokenURL:     "foo-token-url",
-					Type:         eventMeshtypes.AuthTypeClientCredentials,
-					GrantType:    eventMeshtypes.GrantTypeClientCredentials,
+					Type:         emstypes.AuthTypeClientCredentials,
+					GrantType:    emstypes.GrantTypeClientCredentials,
 				}),
 			),
 			wantAPIRuleCheck:      true,
@@ -256,7 +256,7 @@ func Test_CreateSubscription(t *testing.T) {
 				}),
 			),
 			wantEventMeshSubMatchers: gomega.And(
-				eventmeshsubmatchers.HaveEvents(eventMeshtypes.Events{
+				eventmeshsubmatchers.HaveEvents(emstypes.Events{
 					{
 						Source: eventingtesting.EventMeshNamespaceNS,
 						Type:   eventingtesting.EventMeshExactType,
@@ -289,7 +289,7 @@ func Test_CreateSubscription(t *testing.T) {
 				}),
 			),
 			wantEventMeshSubMatchers: gomega.And(
-				eventmeshsubmatchers.HaveEvents(eventMeshtypes.Events{
+				eventmeshsubmatchers.HaveEvents(emstypes.Events{
 					{
 						Source: eventingtesting.EventMeshNamespaceNS,
 						Type: fmt.Sprintf("%s.%s.%s", eventingtesting.EventMeshPrefix,
@@ -1131,16 +1131,16 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 
 	var testCases = []struct {
 		name                     string
-		givenCreateResponseFunc  func(w http.ResponseWriter, _ eventMeshtypes.Subscription)
+		givenCreateResponseFunc  func(w http.ResponseWriter, _ emstypes.Subscription)
 		wantSubscriptionMatchers gomegatypes.GomegaMatcher
 		wantEventMeshSubMatchers gomegatypes.GomegaMatcher
 	}{
 		{
 			name: "should not be ready when when EventMesh server is not able to create new EventMesh subscriptions",
-			givenCreateResponseFunc: func(w http.ResponseWriter, _ eventMeshtypes.Subscription) {
+			givenCreateResponseFunc: func(w http.ResponseWriter, _ emstypes.Subscription) {
 				// ups ... server returns 500
 				w.WriteHeader(http.StatusInternalServerError)
-				s := eventMeshtypes.Response{
+				s := emstypes.Response{
 					StatusCode: http.StatusInternalServerError,
 					Message:    "sorry, but this mock does not let you create a EventMesh subscription",
 				}
@@ -1165,8 +1165,8 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 		},
 		{
 			name: "should not be ready when EventMesh server subscription is paused",
-			givenCreateResponseFunc: func(w http.ResponseWriter, sub eventMeshtypes.Subscription) {
-				sub.SubscriptionStatus = eventMeshtypes.SubscriptionStatusPaused
+			givenCreateResponseFunc: func(w http.ResponseWriter, sub emstypes.Subscription) {
+				sub.SubscriptionStatus = emstypes.SubscriptionStatusPaused
 				subKey := getEventMeshKeyForMock(sub.Name)
 				emTestEnsemble.eventMeshMock.Subscriptions.PutSubscription(subKey, &sub)
 				eventingtesting.EventMeshCreateSuccess(w)
@@ -1186,8 +1186,8 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 		},
 		{
 			name: "when EventMesh server subscription webhook is unauthorized",
-			givenCreateResponseFunc: func(w http.ResponseWriter, sub eventMeshtypes.Subscription) {
-				sub.SubscriptionStatus = eventMeshtypes.SubscriptionStatusActive
+			givenCreateResponseFunc: func(w http.ResponseWriter, sub emstypes.Subscription) {
+				sub.SubscriptionStatus = emstypes.SubscriptionStatusActive
 				sub.LastSuccessfulDelivery = time.Now().Format(time.RFC3339)                   // "now",
 				sub.LastFailedDelivery = time.Now().Add(10 * time.Second).Format(time.RFC3339) // "now + 10s"
 				sub.LastFailedDeliveryReason = "Webhook endpoint response code: 401"

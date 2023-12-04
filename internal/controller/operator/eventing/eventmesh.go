@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/eventing-manager/internal/label"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	subscriptionmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	submgrmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
@@ -130,17 +130,17 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	return nil
 }
 
-func (r *Reconciler) getEventMeshSubManagerParams() subscriptionmanager.Params {
-	return subscriptionmanager.Params{
-		subscriptionmanager.ParamNameClientID:     r.oauth2credentials.clientID,
-		subscriptionmanager.ParamNameClientSecret: r.oauth2credentials.clientSecret,
-		subscriptionmanager.ParamNameTokenURL:     r.oauth2credentials.tokenURL,
-		subscriptionmanager.ParamNameCertsURL:     r.oauth2credentials.certsURL,
+func (r *Reconciler) getEventMeshSubManagerParams() submgrmanager.Params {
+	return submgrmanager.Params{
+		submgrmanager.ParamNameClientID:     r.oauth2credentials.clientID,
+		submgrmanager.ParamNameClientSecret: r.oauth2credentials.clientSecret,
+		submgrmanager.ParamNameTokenURL:     r.oauth2credentials.tokenURL,
+		submgrmanager.ParamNameCertsURL:     r.oauth2credentials.certsURL,
 	}
 }
 
 func (r *Reconciler) startEventMeshSubManager(defaultSubsConfig env.DefaultSubscriptionConfig,
-	eventMeshSubMgrParams subscriptionmanager.Params) error {
+	eventMeshSubMgrParams submgrmanager.Params) error {
 	if err := r.eventMeshSubManager.Start(defaultSubsConfig, eventMeshSubMgrParams); err != nil {
 		return err
 	}

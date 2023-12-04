@@ -10,14 +10,14 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
-	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
+	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 
 const (
 	projectRootDir = "../../../../../../"
 )
 
-var testEnvironment *testutils.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
 
 // TestMain pre-hook and post-hook to run before and after all tests.
 func TestMain(m *testing.M) {
@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 
 	// setup env test
 	var err error
-	testEnvironment, err = testutils.NewTestEnvironment(testutils.TestEnvironmentConfig{
+	testEnvironment, err = testutilsintegration.NewTestEnvironment(testutilsintegration.TestEnvironmentConfig{
 		ProjectRootDir:            projectRootDir,
 		CELValidationEnabled:      true,
 		APIRuleCRDEnabled:         false,

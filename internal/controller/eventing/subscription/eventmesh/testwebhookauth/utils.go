@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	eventmeshreconciler "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
+	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
@@ -40,7 +40,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	eventmeshtypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
@@ -78,7 +78,7 @@ var (
 	emTestEnsemble   *eventMeshTestEnsemble
 	k8sCancelFn      context.CancelFunc
 	eventMeshBackend *backendeventmesh.EventMesh
-	testReconciler   *eventmeshreconciler.Reconciler
+	testReconciler   *subscriptioncontrollereventmesh.Reconciler
 	credentials      = &backendeventmesh.OAuth2ClientCredentials{
 		ClientID:     "client-id",
 		ClientSecret: "client-secret",
@@ -146,7 +146,7 @@ func setupSuite() error {
 	emTestEnsemble.envConfig = getEnvConfig()
 	eventMeshBackend = backendeventmesh.NewEventMesh(credentials, emTestEnsemble.nameMapper, defaultLogger)
 	col := metrics.NewCollector()
-	testReconciler = eventmeshreconciler.NewReconciler(
+	testReconciler = subscriptioncontrollereventmesh.NewReconciler(
 		context.Background(),
 		k8sManager.GetClient(),
 		defaultLogger,
@@ -244,7 +244,7 @@ func getEnvConfig() env.Config {
 		WebhookActivationTimeout: 0,
 		EventTypePrefix:          eventingtesting.EventMeshPrefix,
 		BEBNamespace:             eventingtesting.EventMeshNamespaceNS,
-		Qos:                      string(eventmeshtypes.QosAtLeastOnce),
+		Qos:                      string(emstypes.QosAtLeastOnce),
 	}
 }
 
@@ -339,7 +339,7 @@ func getAPIRule(ctx context.Context, apiRule *apigateway.APIRule) (*apigateway.A
 	return apiRule, err
 }
 
-func getEventMeshSubFromMock(subscriptionName, subscriptionNamespace string) *eventmeshtypes.Subscription {
+func getEventMeshSubFromMock(subscriptionName, subscriptionNamespace string) *emstypes.Subscription {
 	key := getEventMeshSubKeyForMock(subscriptionName, subscriptionNamespace)
 	return emTestEnsemble.eventMeshMock.Subscriptions.GetSubscription(key)
 }

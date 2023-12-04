@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	kappsv1 "k8s.io/api/apps/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stype "k8s.io/apimachinery/pkg/types"
+	ktypes "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -105,7 +105,7 @@ func (r *Reconciler) syncStatusWithDeletionErr(ctx context.Context,
 // syncEventingStatus syncs Eventing status.
 func (r *Reconciler) syncEventingStatus(ctx context.Context,
 	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) error {
-	namespacedName := &k8stype.NamespacedName{
+	namespacedName := &ktypes.NamespacedName{
 		Name:      eventing.Name,
 		Namespace: eventing.Namespace,
 	}

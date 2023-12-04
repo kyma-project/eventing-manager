@@ -15,7 +15,7 @@ import (
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test"
-	eventingMatchers "github.com/kyma-project/eventing-manager/test/matchers"
+	testmatchers "github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 
@@ -737,10 +737,10 @@ func Test_Validate_Defaulting(t *testing.T) {
 				},
 			},
 			wantMatches: gomega.And(
-				eventingMatchers.HaveBackendTypeNats(defaultBackendConfig()),
-				eventingMatchers.HavePublisher(defaultPublisher()),
-				eventingMatchers.HavePublisherResources(defaultPublisherResources()),
-				eventingMatchers.HaveLogging(defaultLogging()),
+				testmatchers.HaveBackendTypeNats(defaultBackendConfig()),
+				testmatchers.HavePublisher(defaultPublisher()),
+				testmatchers.HavePublisherResources(defaultPublisherResources()),
+				testmatchers.HaveLogging(defaultLogging()),
 			),
 		},
 		{
@@ -757,10 +757,10 @@ func Test_Validate_Defaulting(t *testing.T) {
 				},
 			},
 			wantMatches: gomega.And(
-				eventingMatchers.HaveBackendTypeNats(defaultBackendConfig()),
-				eventingMatchers.HavePublisher(defaultPublisher()),
-				eventingMatchers.HavePublisherResources(defaultPublisherResources()),
-				eventingMatchers.HaveLogging(defaultLogging()),
+				testmatchers.HaveBackendTypeNats(defaultBackendConfig()),
+				testmatchers.HavePublisher(defaultPublisher()),
+				testmatchers.HavePublisherResources(defaultPublisherResources()),
+				testmatchers.HaveLogging(defaultLogging()),
 			),
 		},
 		{
@@ -803,7 +803,7 @@ func Test_Validate_Defaulting(t *testing.T) {
 				},
 			},
 			wantMatches: gomega.And(
-				eventingMatchers.HaveBackendTypeNats(defaultBackendConfig()),
+				testmatchers.HaveBackendTypeNats(defaultBackendConfig()),
 			),
 		},
 		{
@@ -836,8 +836,8 @@ func Test_Validate_Defaulting(t *testing.T) {
 				},
 			},
 			wantMatches: gomega.And(
-				eventingMatchers.HavePublisher(defaultPublisher()),
-				eventingMatchers.HavePublisherResources(defaultPublisherResources()),
+				testmatchers.HavePublisher(defaultPublisher()),
+				testmatchers.HavePublisherResources(defaultPublisherResources()),
 			),
 		},
 		{
@@ -883,7 +883,7 @@ func Test_Validate_Defaulting(t *testing.T) {
 				},
 			},
 			wantMatches: gomega.And(
-				eventingMatchers.HaveLogging(defaultLogging()),
+				testmatchers.HaveLogging(defaultLogging()),
 			),
 		},
 	}

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	istiosec "istio.io/client-go/pkg/apis/security/v1beta1"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
@@ -43,16 +43,16 @@ type Client interface {
 	GetNATSResources(ctx context.Context, namespace string) (*natsv1alpha1.NATSList, error)
 	PatchApply(ctx context.Context, object client.Object) error
 	GetSecret(ctx context.Context, namespacedName string) (*kcorev1.Secret, error)
-	GetMutatingWebHookConfiguration(ctx context.Context, name string) (*admissionv1.MutatingWebhookConfiguration, error)
+	GetMutatingWebHookConfiguration(ctx context.Context, name string) (*kadmissionregistrationv1.MutatingWebhookConfiguration, error)
 	GetValidatingWebHookConfiguration(ctx context.Context,
-		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
+		name string) (*kadmissionregistrationv1.ValidatingWebhookConfiguration, error)
 	GetCRD(ctx context.Context, name string) (*kapiextensionsv1.CustomResourceDefinition, error)
 	ApplicationCRDExists(ctx context.Context) (bool, error)
 	PeerAuthenticationCRDExists(ctx context.Context) (bool, error)
 	APIRuleCRDExists(ctx context.Context) (bool, error)
 	GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error)
 	GetConfigMap(ctx context.Context, name, namespace string) (*kcorev1.ConfigMap, error)
-	PatchApplyPeerAuthentication(ctx context.Context, authentication *istiosec.PeerAuthentication) error
+	PatchApplyPeerAuthentication(ctx context.Context, authentication *istiopkgsecurityv1beta1.PeerAuthentication) error
 }
 
 type KubeClient struct {
@@ -73,7 +73,7 @@ func NewKubeClient(client client.Client, clientset kapiclientset.Interface, fiel
 }
 
 // PatchApplyPeerAuthentication creates the Istio PeerAuthentications.
-func (c *KubeClient) PatchApplyPeerAuthentication(ctx context.Context, pa *istiosec.PeerAuthentication) error {
+func (c *KubeClient) PatchApplyPeerAuthentication(ctx context.Context, pa *istiopkgsecurityv1beta1.PeerAuthentication) error {
 	// patch apply as unstructured because the GVK is not registered in Scheme.
 	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(pa)
 	if err != nil {
@@ -236,8 +236,8 @@ func (c *KubeClient) APIRuleCRDExists(ctx context.Context) (bool, error) {
 
 // GetMutatingWebHookConfiguration returns the MutatingWebhookConfiguration k8s resource.
 func (c *KubeClient) GetMutatingWebHookConfiguration(ctx context.Context,
-	name string) (*admissionv1.MutatingWebhookConfiguration, error) {
-	var mutatingWH admissionv1.MutatingWebhookConfiguration
+	name string) (*kadmissionregistrationv1.MutatingWebhookConfiguration, error) {
+	var mutatingWH kadmissionregistrationv1.MutatingWebhookConfiguration
 	mutatingWHKey := client.ObjectKey{
 		Name: name,
 	}
@@ -250,8 +250,8 @@ func (c *KubeClient) GetMutatingWebHookConfiguration(ctx context.Context,
 
 // GetValidatingWebHookConfiguration returns the ValidatingWebhookConfiguration k8s resource.
 func (c *KubeClient) GetValidatingWebHookConfiguration(ctx context.Context,
-	name string) (*admissionv1.ValidatingWebhookConfiguration, error) {
-	var validatingWH admissionv1.ValidatingWebhookConfiguration
+	name string) (*kadmissionregistrationv1.ValidatingWebhookConfiguration, error) {
+	var validatingWH kadmissionregistrationv1.ValidatingWebhookConfiguration
 	validatingWHKey := client.ObjectKey{
 		Name: name,
 	}

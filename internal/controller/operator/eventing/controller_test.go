@@ -15,8 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-	submanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
-	watchmock "github.com/kyma-project/eventing-manager/pkg/watcher/mocks"
+	submgrmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
+	watchermocks "github.com/kyma-project/eventing-manager/pkg/watcher/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 )
 
@@ -118,8 +118,8 @@ func Test_handleBackendSwitching(t *testing.T) {
 	testCases := []struct {
 		name                         string
 		givenEventing                *operatorv1alpha1.Eventing
-		givenNATSSubManagerMock      func() *submanagermocks.Manager
-		givenEventMeshSubManagerMock func() *submanagermocks.Manager
+		givenNATSSubManagerMock      func() *submgrmanagermocks.Manager
+		givenEventMeshSubManagerMock func() *submgrmanagermocks.Manager
 		wantNATSStopped              bool
 		wantEventMeshStopped         bool
 		wantEventingState            string
@@ -134,11 +134,11 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithStatusState(operatorv1alpha1.StateReady),
 				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
 			),
-			givenNATSSubManagerMock: func() *submanagermocks.Manager {
-				return new(submanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submgrmanagermocks.Manager {
+				return new(submgrmanagermocks.Manager)
 			},
-			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
-				return new(submanagermocks.Manager)
+			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
+				return new(submgrmanagermocks.Manager)
 			},
 			wantError:                 nil,
 			wantEventingState:         operatorv1alpha1.StateReady,
@@ -154,13 +154,13 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithStatusState(operatorv1alpha1.StateReady),
 				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
 			),
-			givenNATSSubManagerMock: func() *submanagermocks.Manager {
-				managerMock := new(submanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submgrmanagermocks.Manager {
+				managerMock := new(submgrmanagermocks.Manager)
 				managerMock.On("Stop", true).Return(nil).Once()
 				return managerMock
 			},
-			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
-				return new(submanagermocks.Manager)
+			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
+				return new(submgrmanagermocks.Manager)
 			},
 			wantError:                 nil,
 			wantEventingState:         operatorv1alpha1.StateProcessing,
@@ -176,13 +176,13 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithStatusState(operatorv1alpha1.StateReady),
 				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
 			),
-			givenNATSSubManagerMock: func() *submanagermocks.Manager {
-				managerMock := new(submanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submgrmanagermocks.Manager {
+				managerMock := new(submgrmanagermocks.Manager)
 				managerMock.On("Stop", true).Return(errors.New("failed to stop")).Once()
 				return managerMock
 			},
-			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
-				return new(submanagermocks.Manager)
+			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
+				return new(submgrmanagermocks.Manager)
 			},
 			wantError:                 errors.New("failed to stop"),
 			wantEventingState:         operatorv1alpha1.StateReady,
@@ -198,11 +198,11 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithStatusState(operatorv1alpha1.StateReady),
 				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
 			),
-			givenNATSSubManagerMock: func() *submanagermocks.Manager {
-				return new(submanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submgrmanagermocks.Manager {
+				return new(submgrmanagermocks.Manager)
 			},
-			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
-				managerMock := new(submanagermocks.Manager)
+			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
+				managerMock := new(submgrmanagermocks.Manager)
 				managerMock.On("Stop", true).Return(nil).Once()
 				return managerMock
 			},
@@ -220,11 +220,11 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithStatusState(operatorv1alpha1.StateReady),
 				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
 			),
-			givenNATSSubManagerMock: func() *submanagermocks.Manager {
-				return new(submanagermocks.Manager)
+			givenNATSSubManagerMock: func() *submgrmanagermocks.Manager {
+				return new(submgrmanagermocks.Manager)
 			},
-			givenEventMeshSubManagerMock: func() *submanagermocks.Manager {
-				managerMock := new(submanagermocks.Manager)
+			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
+				managerMock := new(submgrmanagermocks.Manager)
 				managerMock.On("Stop", true).Return(errors.New("failed to stop")).Once()
 				return managerMock
 			},
@@ -248,7 +248,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 			testEnv.Reconciler.isNATSSubManagerStarted = true
 			testEnv.Reconciler.isEventMeshSubManagerStarted = true
 
-			mockNatsWatcher := new(watchmock.Watcher)
+			mockNatsWatcher := new(watchermocks.Watcher)
 			if tc.wantNATSStopped {
 				mockNatsWatcher.On("Stop").Once()
 			}
@@ -339,9 +339,9 @@ func Test_startNatsCRWatch(t *testing.T) {
 			)
 
 			// Create mock watcher and controller
-			natsWatcher := new(watchmock.Watcher)
+			natsWatcher := new(watchermocks.Watcher)
 			natsWatcher.On("IsStarted").Return(tc.watchStarted)
-			mockController := new(watchmock.Controller)
+			mockController := new(watchermocks.Controller)
 			if !tc.watchStarted {
 				natsWatcher.On("Start").Once()
 				natsWatcher.On("GetEventsChannel").Return(make(<-chan event.GenericEvent)).Once()
@@ -384,7 +384,7 @@ func Test_stopNatsCRWatch(t *testing.T) {
 			testEnv.Reconciler.natsCRWatchStarted = tc.natsCRWatchStarted
 
 			// Create a fake Watcher
-			natsWatcher := new(watchmock.Watcher)
+			natsWatcher := new(watchermocks.Watcher)
 			natsWatcher.On("Stop").Times(1)
 
 			eventing := testutils.NewEventingCR(

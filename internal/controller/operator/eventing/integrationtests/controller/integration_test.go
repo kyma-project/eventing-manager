@@ -27,7 +27,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
-	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
+	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 	eventTypePrefix = "test-prefix"
 )
 
-var testEnvironment *testutils.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
 
 // TestMain pre-hook and post-hook to run before and after all tests.
 func TestMain(m *testing.M) {
@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 
 	// setup env test
 	var err error
-	testEnvironment, err = testutils.NewTestEnvironment(testutils.TestEnvironmentConfig{
+	testEnvironment, err = testutilsintegration.NewTestEnvironment(testutilsintegration.TestEnvironmentConfig{
 		ProjectRootDir:            projectRootDir,
 		CELValidationEnabled:      false,
 		APIRuleCRDEnabled:         true,
@@ -379,36 +379,36 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 // Test_WatcherEventingCRK8sObjects tests that deleting the k8s objects deployed by Eventing CR
 // should trigger reconciliation.
 func Test_WatcherEventingCRK8sObjects(t *testing.T) {
-	type deletionFunc func(env *testutils.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error
+	type deletionFunc func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error
 
-	deletePublishServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
+	deletePublishServiceFromK8s := func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
 		return env.DeleteServiceFromK8s(eventing.GetPublisherPublishServiceName(eventingCR), eventingCR.Namespace)
 	}
 
-	deleteMetricsServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
+	deleteMetricsServiceFromK8s := func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
 		return env.DeleteServiceFromK8s(eventing.GetPublisherMetricsServiceName(eventingCR), eventingCR.Namespace)
 	}
 
-	deleteHealthServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
+	deleteHealthServiceFromK8s := func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
 		return env.DeleteServiceFromK8s(eventing.GetPublisherHealthServiceName(eventingCR), eventingCR.Namespace)
 	}
 
-	deleteServiceAccountFromK8s := func(env *testutils.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
+	deleteServiceAccountFromK8s := func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
 		return env.DeleteServiceAccountFromK8s(eventing.GetPublisherServiceAccountName(eventingCR), eventingCR.Namespace)
 	}
 
-	deleteClusterRoleFromK8s := func(env *testutils.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
+	deleteClusterRoleFromK8s := func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
 		return env.DeleteClusterRoleFromK8s(eventing.GetPublisherClusterRoleName(eventingCR), eventingCR.Namespace)
 	}
 
-	deleteClusterRoleBindingFromK8s := func(env *testutils.TestEnvironment,
+	deleteClusterRoleBindingFromK8s := func(env *testutilsintegration.TestEnvironment,
 		eventingCR operatorv1alpha1.Eventing,
 	) error {
 		return env.DeleteClusterRoleBindingFromK8s(eventing.GetPublisherClusterRoleBindingName(eventingCR),
 			eventingCR.Namespace)
 	}
 
-	deleteHPAFromK8s := func(env *testutils.TestEnvironment,
+	deleteHPAFromK8s := func(env *testutilsintegration.TestEnvironment,
 		eventingCR operatorv1alpha1.Eventing,
 	) error {
 		return env.DeleteHPAFromK8s(eventing.GetPublisherDeploymentName(eventingCR),
@@ -1021,7 +1021,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 	}
 }
 
-func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
 	testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
@@ -1030,7 +1030,7 @@ func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1a
 	testEnvironment.EnsurePublisherDeploymentENVSet(t, givenEventing)
 }
 
-func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
 	testEnvironment.EnsureEPPK8sResourcesExists(t, *givenEventing)
 
 	// check if the owner reference is set.

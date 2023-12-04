@@ -7,16 +7,16 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	ktypes "k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 
 	"github.com/nats-io/nats.go"
 
-	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
+	"github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/kyma-project/eventing-manager/pkg/object"
 
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 
 	"go.uber.org/zap"
 	"k8s.io/client-go/tools/record"
@@ -174,7 +174,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// Requeue the Request to reconcile it again if there are no NATS Subscriptions synced
-		if errors.Is(syncSubErr, jetstream.ErrMissingSubscription) {
+		if pkgerrors.Is(syncSubErr, jetstream.ErrMissingSubscription) {
 			result = ctrl.Result{RequeueAfter: requeueDuration}
 			syncSubErr = nil
 		}
@@ -247,7 +247,7 @@ func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
 	}
 
 	if err := r.Backend.DeleteSubscription(subscription); err != nil {
-		deleteSubErr := pkgerrors.MakeError(errFailedToDeleteSub, err)
+		deleteSubErr := errors.MakeError(errFailedToDeleteSub, err)
 		// if failed to delete the external dependency here, return with error
 		// so that it can be retried
 		if syncErr := r.syncSubscriptionStatus(ctx, subscription, deleteSubErr, log); syncErr != nil {
@@ -263,7 +263,7 @@ func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
 
 	// update the subscription's finalizers in k8s
 	if err := r.Update(ctx, subscription); err != nil {
-		return ctrl.Result{}, pkgerrors.MakeError(errFailedToUpdateFinalizers, err)
+		return ctrl.Result{}, errors.MakeError(errFailedToUpdateFinalizers, err)
 	}
 
 	for _, t := range types {
@@ -295,7 +295,7 @@ func (r *Reconciler) syncSubscriptionStatus(ctx context.Context,
 // updateSubscriptionStatus updates the subscription's status changes to k8s.
 func (r *Reconciler) updateSubscriptionStatus(ctx context.Context,
 	sub *eventingv1alpha2.Subscription, logger *zap.SugaredLogger) error {
-	namespacedName := &k8stypes.NamespacedName{
+	namespacedName := &ktypes.NamespacedName{
 		Name:      sub.Name,
 		Namespace: sub.Namespace,
 	}
@@ -312,7 +312,7 @@ func (r *Reconciler) updateSubscriptionStatus(ctx context.Context,
 
 	// sync subscription status with k8s
 	if err := r.updateStatus(ctx, actualSubscription, desiredSubscription, logger); err != nil {
-		return pkgerrors.MakeError(errFailedToUpdateStatus, err)
+		return errors.MakeError(errFailedToUpdateStatus, err)
 	}
 
 	return nil
@@ -330,7 +330,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, oldSubscription,
 	if err := r.Status().Update(ctx, newSubscription); err != nil {
 		events.Warn(r.recorder, newSubscription, events.ReasonUpdateFailed,
 			"Update Subscription status failed %s", newSubscription.Name)
-		return pkgerrors.MakeError(errFailedToUpdateStatus, err)
+		return errors.MakeError(errFailedToUpdateStatus, err)
 	}
 	events.Normal(r.recorder, newSubscription, events.ReasonUpdate,
 		"Update Subscription status succeeded %s", newSubscription.Name)
@@ -347,7 +347,7 @@ func (r *Reconciler) addFinalizer(ctx context.Context, sub *eventingv1alpha2.Sub
 
 	// update the subscription's finalizers in k8s
 	if err := r.Update(ctx, sub); err != nil {
-		return ctrl.Result{}, pkgerrors.MakeError(errFailedToUpdateFinalizers, err)
+		return ctrl.Result{}, errors.MakeError(errFailedToUpdateFinalizers, err)
 	}
 
 	return ctrl.Result{}, nil

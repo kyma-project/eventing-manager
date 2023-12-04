@@ -1,56 +1,57 @@
 package eventmeshsub
 
 import (
-	eventMeshtypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
+
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 )
 
-func HaveWebhookAuth(webhookAuth eventMeshtypes.WebhookAuth) gomegatypes.GomegaMatcher {
-	return gomega.WithTransform(func(s *eventMeshtypes.Subscription) eventMeshtypes.WebhookAuth {
+func HaveWebhookAuth(webhookAuth emstypes.WebhookAuth) gomegatypes.GomegaMatcher {
+	return gomega.WithTransform(func(s *emstypes.Subscription) emstypes.WebhookAuth {
 		return *s.WebhookAuth
 	}, gomega.Equal(webhookAuth))
 }
 
-func HaveEvents(events eventMeshtypes.Events) gomegatypes.GomegaMatcher {
-	return gomega.WithTransform(func(s *eventMeshtypes.Subscription) eventMeshtypes.Events { return s.Events },
+func HaveEvents(events emstypes.Events) gomegatypes.GomegaMatcher {
+	return gomega.WithTransform(func(s *emstypes.Subscription) emstypes.Events { return s.Events },
 		gomega.Equal(events))
 }
 
-func HaveQoS(qos eventMeshtypes.Qos) gomegatypes.GomegaMatcher {
-	return gomega.WithTransform(func(s *eventMeshtypes.Subscription) eventMeshtypes.Qos { return s.Qos },
+func HaveQoS(qos emstypes.Qos) gomegatypes.GomegaMatcher {
+	return gomega.WithTransform(func(s *emstypes.Subscription) emstypes.Qos { return s.Qos },
 		gomega.Equal(qos))
 }
 
 func HaveExemptHandshake(exemptHandshake bool) gomegatypes.GomegaMatcher {
-	return gomega.WithTransform(func(s *eventMeshtypes.Subscription) bool { return s.ExemptHandshake },
+	return gomega.WithTransform(func(s *emstypes.Subscription) bool { return s.ExemptHandshake },
 		gomega.Equal(exemptHandshake))
 }
 
 func HaveWebhookURL(webhookURL string) gomegatypes.GomegaMatcher {
-	return gomega.WithTransform(func(s *eventMeshtypes.Subscription) string { return s.WebhookURL },
+	return gomega.WithTransform(func(s *emstypes.Subscription) string { return s.WebhookURL },
 		gomega.Equal(webhookURL))
 }
 
 func HaveStatusPaused() gomegatypes.GomegaMatcher {
-	return gomega.WithTransform(func(s *eventMeshtypes.Subscription) eventMeshtypes.SubscriptionStatus {
+	return gomega.WithTransform(func(s *emstypes.Subscription) emstypes.SubscriptionStatus {
 		return s.SubscriptionStatus
-	}, gomega.Equal(eventMeshtypes.SubscriptionStatusPaused))
+	}, gomega.Equal(emstypes.SubscriptionStatusPaused))
 }
 
 func HaveStatusActive() gomegatypes.GomegaMatcher {
-	return gomega.WithTransform(func(s *eventMeshtypes.Subscription) eventMeshtypes.SubscriptionStatus {
+	return gomega.WithTransform(func(s *emstypes.Subscription) emstypes.SubscriptionStatus {
 		return s.SubscriptionStatus
-	}, gomega.Equal(eventMeshtypes.SubscriptionStatusActive))
+	}, gomega.Equal(emstypes.SubscriptionStatusActive))
 }
 
 func HaveContentMode(contentMode string) gomegatypes.GomegaMatcher {
-	return gomega.WithTransform(func(s *eventMeshtypes.Subscription) string { return s.ContentMode },
+	return gomega.WithTransform(func(s *emstypes.Subscription) string { return s.ContentMode },
 		gomega.Equal(contentMode))
 }
 
 func HaveNonEmptyLastFailedDeliveryReason() gomegatypes.GomegaMatcher {
-	return gomega.WithTransform(func(s *eventMeshtypes.Subscription) string {
+	return gomega.WithTransform(func(s *emstypes.Subscription) string {
 		return s.LastFailedDeliveryReason
 	}, gomega.Not(gomega.BeEmpty()))
 }

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	istio "istio.io/client-go/pkg/apis/security/v1beta1"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,7 +15,7 @@ import (
 
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kapiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 
 	"github.com/stretchr/testify/require"
@@ -127,12 +127,12 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 	// define test cases
 	testCases := []struct {
 		name                          string
-		givenPeerAuthentication       *istio.PeerAuthentication
-		givenUpdatePeerAuthentication *istio.PeerAuthentication
+		givenPeerAuthentication       *istiopkgsecurityv1beta1.PeerAuthentication
+		givenUpdatePeerAuthentication *istiopkgsecurityv1beta1.PeerAuthentication
 	}{
 		{
 			name: "should update resource when exists in k8s",
-			givenPeerAuthentication: &istio.PeerAuthentication{
+			givenPeerAuthentication: &istiopkgsecurityv1beta1.PeerAuthentication{
 				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "eventing-publisher-proxy-metrics",
 					Namespace: "test",
@@ -146,7 +146,7 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 					APIVersion: "security.istio.io/v1beta1",
 				},
 			},
-			givenUpdatePeerAuthentication: &istio.PeerAuthentication{
+			givenUpdatePeerAuthentication: &istiopkgsecurityv1beta1.PeerAuthentication{
 				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "eventing-publisher-proxy-metrics",
 					Namespace: "test",
@@ -183,7 +183,7 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 			// define scheme
 			fakeClientBuilder := fake.NewClientBuilder()
 			newScheme := scheme.Scheme
-			require.NoError(t, istio.AddToScheme(newScheme))
+			require.NoError(t, istiopkgsecurityv1beta1.AddToScheme(newScheme))
 
 			fakeClient := fakeClientBuilder.WithScheme(newScheme).WithObjects(objs...).Build()
 			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager, nil)
@@ -561,19 +561,19 @@ func Test_GetMutatingWebHookConfiguration(t *testing.T) {
 	testCases := []struct {
 		name                string
 		givenName           string
-		wantMutatingWebhook *admissionv1.MutatingWebhookConfiguration
+		wantMutatingWebhook *kadmissionregistrationv1.MutatingWebhookConfiguration
 		wantNotFoundError   bool
 	}{
 		{
 			name:      "success",
 			givenName: "test-wh",
-			wantMutatingWebhook: &admissionv1.MutatingWebhookConfiguration{
+			wantMutatingWebhook: &kadmissionregistrationv1.MutatingWebhookConfiguration{
 				ObjectMeta: kmetav1.ObjectMeta{
 					Name: "test-wh",
 				},
-				Webhooks: []admissionv1.MutatingWebhook{
+				Webhooks: []kadmissionregistrationv1.MutatingWebhook{
 					{
-						ClientConfig: admissionv1.WebhookClientConfig{
+						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 							CABundle: newCABundle,
 						},
 					},
@@ -631,19 +631,19 @@ func Test_GetValidatingWebHookConfiguration(t *testing.T) {
 	testCases := []struct {
 		name                  string
 		givenName             string
-		wantValidatingWebhook *admissionv1.ValidatingWebhookConfiguration
+		wantValidatingWebhook *kadmissionregistrationv1.ValidatingWebhookConfiguration
 		wantNotFoundError     bool
 	}{
 		{
 			name:      "success",
 			givenName: "test-wh",
-			wantValidatingWebhook: &admissionv1.ValidatingWebhookConfiguration{
+			wantValidatingWebhook: &kadmissionregistrationv1.ValidatingWebhookConfiguration{
 				ObjectMeta: kmetav1.ObjectMeta{
 					Name: "test-wh",
 				},
-				Webhooks: []admissionv1.ValidatingWebhook{
+				Webhooks: []kadmissionregistrationv1.ValidatingWebhook{
 					{
-						ClientConfig: admissionv1.WebhookClientConfig{
+						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 							CABundle: newCABundle,
 						},
 					},

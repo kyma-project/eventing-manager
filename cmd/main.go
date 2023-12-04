@@ -27,7 +27,7 @@ import (
 	kapiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	kutilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
@@ -40,7 +40,7 @@ import (
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	istiopeerauthentication "github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
+	"github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
@@ -49,7 +49,7 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	"k8s.io/client-go/dynamic"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -67,18 +67,18 @@ var (
 )
 
 func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	kutilruntime.Must(kkubernetesscheme.AddToScheme(scheme))
 
-	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
+	kutilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 
-	utilruntime.Must(apigateway.AddToScheme(scheme))
+	kutilruntime.Must(apigateway.AddToScheme(scheme))
 
-	utilruntime.Must(kapiextensionsv1.AddToScheme(scheme))
+	kutilruntime.Must(kapiextensionsv1.AddToScheme(scheme))
 
-	utilruntime.Must(jetstream.AddToScheme(scheme))
-	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
-	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(eventingv1alpha2.AddToScheme(scheme))
+	kutilruntime.Must(jetstream.AddToScheme(scheme))
+	kutilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
+	kutilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
+	kutilruntime.Must(eventingv1alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -207,7 +207,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 
 	// sync PeerAuthentications
-	err = istiopeerauthentication.SyncPeerAuthentications(ctx, kubeClient, ctrLogger.WithContext().Named("main"))
+	err = peerauthentication.SyncPeerAuthentications(ctx, kubeClient, ctrLogger.WithContext().Named("main"))
 	if err != nil {
 		setupLog.Error(err, "unable to sync PeerAuthentication")
 		os.Exit(1)

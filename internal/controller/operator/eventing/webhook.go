@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 
-	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
+	emerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -27,29 +27,29 @@ func (r *Reconciler) reconcileWebhooksWithCABundle(ctx context.Context) error {
 	}
 	certificateSecret, err := r.kubeClient.GetSecret(ctx, secretKey.String())
 	if err != nil {
-		return pkgerrors.MakeError(errObjectNotFound, err)
+		return emerrors.MakeError(errObjectNotFound, err)
 	}
 
 	// get the mutating WH config.
 	mutatingWH, err := r.kubeClient.GetMutatingWebHookConfiguration(ctx, r.backendConfig.MutatingWebhookName)
 	if err != nil {
-		return pkgerrors.MakeError(errObjectNotFound, err)
+		return emerrors.MakeError(errObjectNotFound, err)
 	}
 
 	// get the validation WH config.
 	validatingWH, err := r.kubeClient.GetValidatingWebHookConfiguration(ctx, r.backendConfig.ValidatingWebhookName)
 	if err != nil {
-		return pkgerrors.MakeError(errObjectNotFound, err)
+		return emerrors.MakeError(errObjectNotFound, err)
 	}
 
 	// check that the mutating and validating WH config are valid
 	if len(mutatingWH.Webhooks) == 0 {
-		return pkgerrors.MakeError(errInvalidObject,
+		return emerrors.MakeError(errInvalidObject,
 			errors.Errorf("mutatingWH %s does not have associated webhooks",
 				r.backendConfig.MutatingWebhookName))
 	}
 	if len(validatingWH.Webhooks) == 0 {
-		return pkgerrors.MakeError(errInvalidObject,
+		return emerrors.MakeError(errInvalidObject,
 			errors.Errorf("validatingWH %s does not have associated webhooks",
 				r.backendConfig.ValidatingWebhookName))
 	}

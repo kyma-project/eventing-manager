@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	istio "istio.io/client-go/pkg/apis/security/v1beta1"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
@@ -32,7 +32,7 @@ import (
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
-	pkghttp "github.com/kyma-project/eventing-manager/hack/e2e/common/http"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/http"
 	"github.com/kyma-project/eventing-manager/hack/e2e/env"
 )
 
@@ -107,9 +107,9 @@ func (te *TestEnvironment) InitEventPublisherClient() error {
 	maxConnsPerHost := 10
 	maxIdleConnsPerHost := 10
 	idleConnTimeout := 1 * time.Minute
-	t := pkghttp.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
-	clientHTTP := pkghttp.NewHttpClient(t.Clone())
-	clientCE, err := pkghttp.NewCloudEventsClient(t.Clone())
+	t := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	clientHTTP := http.NewHttpClient(t.Clone())
+	clientCE, err := http.NewCloudEventsClient(t.Clone())
 	if err != nil {
 		return err
 	}
@@ -122,8 +122,8 @@ func (te *TestEnvironment) InitSinkClient() {
 	maxConnsPerHost := 10
 	maxIdleConnsPerHost := 10
 	idleConnTimeout := 1 * time.Minute
-	t := pkghttp.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
-	clientHTTP := pkghttp.NewHttpClient(t.Clone())
+	t := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	clientHTTP := http.NewHttpClient(t.Clone())
 	te.SinkClient = eventing.NewSinkClient(context.Background(), clientHTTP, te.TestConfigs.SinkPortForwardedURL, te.Logger)
 }
 
@@ -574,7 +574,7 @@ func (te *TestEnvironment) WaitForEventingCRReady() error {
 	})
 }
 
-func (env *TestEnvironment) GetPeerAuthenticationFromK8s(name, namespace string) (*istio.PeerAuthentication, error) {
+func (env *TestEnvironment) GetPeerAuthenticationFromK8s(name, namespace string) (*istiopkgsecurityv1beta1.PeerAuthentication, error) {
 	result, err := env.K8sDynamicClient.Resource(fixtures.PeerAuthenticationGVR()).Namespace(
 		namespace).Get(env.Context, name, kmetav1.GetOptions{})
 	if err != nil {
@@ -582,7 +582,7 @@ func (env *TestEnvironment) GetPeerAuthenticationFromK8s(name, namespace string)
 	}
 
 	// convert from unstructured to structured.
-	pa := &istio.PeerAuthentication{}
+	pa := &istiopkgsecurityv1beta1.PeerAuthentication{}
 	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(result.Object, pa); err != nil {
 		return nil, err
 	}

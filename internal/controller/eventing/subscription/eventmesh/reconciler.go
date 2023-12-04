@@ -15,7 +15,7 @@ import (
 	klabels "k8s.io/apimachinery/pkg/labels"
 	ktypes "k8s.io/apimachinery/pkg/types"
 
-	recerrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
+	controllererrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
@@ -151,7 +151,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	apiRule, err := r.syncAPIRule(ctx, sub, log)
 	// sync the condition: ConditionAPIRuleStatus
 	sub.Status.SetConditionAPIRuleStatus(err)
-	if !recerrors.IsSkippable(err) {
+	if !controllererrors.IsSkippable(err) {
 		if updateErr := r.updateSubscription(ctx, sub, log); updateErr != nil {
 			return ctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
 		}
@@ -369,7 +369,7 @@ func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1al
 	if err != nil {
 		events.Warn(r.recorder, subscription, events.ReasonValidationFailed,
 			"Parse sink URI failed %s", subscription.Spec.Sink)
-		return nil, recerrors.NewSkippable(xerrors.Errorf("failed to parse sink URL: %v", err))
+		return nil, controllererrors.NewSkippable(xerrors.Errorf("failed to parse sink URL: %v", err))
 	}
 
 	apiRule, err := r.createOrUpdateAPIRule(ctx, subscription, *sURL, logger)
@@ -393,7 +393,7 @@ func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1al
 		return apiRule, nil
 	}
 
-	return apiRule, recerrors.NewSkippable(errors.Errorf("apiRule %s is not ready", apiRule.Name))
+	return apiRule, controllererrors.NewSkippable(errors.Errorf("apiRule %s is not ready", apiRule.Name))
 }
 
 // createOrUpdateAPIRule create new or update existing APIRule for the given subscription.

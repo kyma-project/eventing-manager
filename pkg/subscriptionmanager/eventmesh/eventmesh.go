@@ -22,7 +22,7 @@ import (
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -34,7 +34,7 @@ import (
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
-	subscriptionmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	submgrmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 )
 
 const (
@@ -43,7 +43,7 @@ const (
 
 // AddToScheme adds the own schemes to the runtime scheme.
 func AddToScheme(scheme *runtime.Scheme) error {
-	if err := clientgoscheme.AddToScheme(scheme); err != nil {
+	if err := kkubernetesscheme.AddToScheme(scheme); err != nil {
 		return err
 	}
 	if err := eventingv1alpha1.AddToScheme(scheme); err != nil {
@@ -102,7 +102,7 @@ func (c *SubscriptionManager) Init(mgr manager.Manager) error {
 }
 
 // Start implements the subscriptionmanager.Manager interface and starts the manager.
-func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subscriptionmanager.Params) error {
+func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params submgrmanager.Params) error {
 	c.collector.ResetSubscriptionStatus()
 	ctx, cancel := context.WithCancel(context.Background())
 	c.cancel = cancel
@@ -255,29 +255,29 @@ func cleanupEventMesh(backend backendeventmesh.Backend, dynamicClient dynamic.In
 	return nil
 }
 
-func getOAuth2ClientCredentials(params subscriptionmanager.Params) (*backendeventmesh.OAuth2ClientCredentials, error) {
-	val := params[subscriptionmanager.ParamNameClientID]
+func getOAuth2ClientCredentials(params submgrmanager.Params) (*backendeventmesh.OAuth2ClientCredentials, error) {
+	val := params[submgrmanager.ParamNameClientID]
 	id, ok := val.([]byte)
 	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", subscriptionmanager.ParamNameClientID)
+		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameClientID)
 	}
 
-	val = params[subscriptionmanager.ParamNameClientSecret]
+	val = params[submgrmanager.ParamNameClientSecret]
 	secret, ok := val.([]byte)
 	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", subscriptionmanager.ParamNameClientSecret)
+		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameClientSecret)
 	}
 
-	val = params[subscriptionmanager.ParamNameTokenURL]
+	val = params[submgrmanager.ParamNameTokenURL]
 	tokenURL, ok := val.([]byte)
 	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", subscriptionmanager.ParamNameTokenURL)
+		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameTokenURL)
 	}
 
-	val = params[subscriptionmanager.ParamNameCertsURL]
+	val = params[submgrmanager.ParamNameCertsURL]
 	certsURL, ok := val.([]byte)
 	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", subscriptionmanager.ParamNameCertsURL)
+		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameCertsURL)
 	}
 
 	return &backendeventmesh.OAuth2ClientCredentials{

@@ -12,7 +12,7 @@ import (
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	eventinglogger "github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
@@ -94,7 +94,7 @@ func Test_isFinalizerSet(t *testing.T) {
 }
 
 func Test_addFinalizer(t *testing.T) {
-	defaultLogger, err := eventinglogger.New(string(kymalogger.JSON), string(kymalogger.INFO))
+	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	if err != nil {
 		t.Fatalf("initialize logger failed: %v", err)
 	}
