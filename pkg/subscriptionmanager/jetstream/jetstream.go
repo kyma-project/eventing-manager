@@ -17,8 +17,8 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	kcore "k8s.io/api/core/v1"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
@@ -171,7 +171,7 @@ func cleanupv2(backend backendjetstream.Backend, dynamicClient dynamic.Interface
 
 	// fetch all subscriptions.
 	subscriptionsUnstructured, err := dynamicClient.Resource(
-		eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(kcore.NamespaceAll).List(ctx, kmeta.ListOptions{})
+		eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(kcorev1.NamespaceAll).List(ctx, kmetav1.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "list subscriptions failed")
 	}

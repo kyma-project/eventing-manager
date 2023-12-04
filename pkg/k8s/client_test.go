@@ -19,11 +19,11 @@ import (
 	kapiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 
 	"github.com/stretchr/testify/require"
-	kapps "k8s.io/api/apps/v1"
-	kcore "k8s.io/api/core/v1"
-	krbac "k8s.io/api/rbac/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	krbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -48,34 +48,34 @@ func Test_PatchApply(t *testing.T) {
 	// define test cases
 	testCases := []struct {
 		name                  string
-		givenDeployment       *kapps.Deployment
-		givenUpdateDeployment *kapps.Deployment
+		givenDeployment       *kappsv1.Deployment
+		givenUpdateDeployment *kappsv1.Deployment
 	}{
 		{
 			name: "should update resource when exists in k8s",
-			givenDeployment: &kapps.Deployment{
-				TypeMeta: kmeta.TypeMeta{
+			givenDeployment: &kappsv1.Deployment{
+				TypeMeta: kmetav1.TypeMeta{
 					Kind:       "Deployment",
 					APIVersion: "apps/v1",
 				},
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test",
 				},
-				Spec: kapps.DeploymentSpec{
+				Spec: kappsv1.DeploymentSpec{
 					Replicas: &twoReplicas,
 				},
 			},
-			givenUpdateDeployment: &kapps.Deployment{
-				TypeMeta: kmeta.TypeMeta{
+			givenUpdateDeployment: &kappsv1.Deployment{
+				TypeMeta: kmetav1.TypeMeta{
 					Kind:       "Deployment",
 					APIVersion: "apps/v1",
 				},
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test",
 				},
-				Spec: kapps.DeploymentSpec{
+				Spec: kappsv1.DeploymentSpec{
 					Replicas: &threeReplicas,
 				},
 			},
@@ -133,7 +133,7 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 		{
 			name: "should update resource when exists in k8s",
 			givenPeerAuthentication: &istio.PeerAuthentication{
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "eventing-publisher-proxy-metrics",
 					Namespace: "test",
 					Labels: map[string]string{
@@ -141,13 +141,13 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 						"app.kubernetes.io/version": "0.1.0",
 					},
 				},
-				TypeMeta: kmeta.TypeMeta{
+				TypeMeta: kmetav1.TypeMeta{
 					Kind:       "PeerAuthentication",
 					APIVersion: "security.istio.io/v1beta1",
 				},
 			},
 			givenUpdatePeerAuthentication: &istio.PeerAuthentication{
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "eventing-publisher-proxy-metrics",
 					Namespace: "test",
 					Labels: map[string]string{
@@ -155,7 +155,7 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 						"app.kubernetes.io/version": "0.1.0",
 					},
 				},
-				TypeMeta: kmeta.TypeMeta{
+				TypeMeta: kmetav1.TypeMeta{
 					Kind:       "PeerAuthentication",
 					APIVersion: "security.istio.io/v1beta1",
 				},
@@ -204,7 +204,7 @@ func Test_UpdateDeployment(t *testing.T) {
 	testCases := []struct {
 		name                   string
 		namespace              string
-		givenNewDeploymentSpec kapps.DeploymentSpec
+		givenNewDeploymentSpec kappsv1.DeploymentSpec
 		givenDeploymentExists  bool
 	}{
 		{
@@ -260,13 +260,13 @@ func Test_DeleteResource(t *testing.T) {
 	// Define test cases
 	testCases := []struct {
 		name                  string
-		givenDeployment       *kapps.Deployment
+		givenDeployment       *kappsv1.Deployment
 		givenDeploymentExists bool
 	}{
 		{
 			name: "should delete the deployment",
-			givenDeployment: &kapps.Deployment{
-				ObjectMeta: kmeta.ObjectMeta{
+			givenDeployment: &kappsv1.Deployment{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "test-deployment",
 					Namespace: "test-namespace",
 				},
@@ -275,8 +275,8 @@ func Test_DeleteResource(t *testing.T) {
 		},
 		{
 			name: "should not return error when the deployment does not exist",
-			givenDeployment: &kapps.Deployment{
-				ObjectMeta: kmeta.ObjectMeta{
+			givenDeployment: &kappsv1.Deployment{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "test-deployment",
 					Namespace: "test-namespace2",
 				},
@@ -310,7 +310,7 @@ func Test_DeleteResource(t *testing.T) {
 			err = fakeClient.Get(ctx, types.NamespacedName{
 				Name:      tc.givenDeployment.Name,
 				Namespace: tc.givenDeployment.Namespace,
-			}, &kapps.Deployment{})
+			}, &kappsv1.Deployment{})
 			require.True(t, kerrors.IsNotFound(err), "DeleteResource did not delete deployment")
 		})
 	}
@@ -346,8 +346,8 @@ func Test_DeleteDeployment(t *testing.T) {
 			kubeClient := &KubeClient{
 				client: fakeClient,
 			}
-			deployment := &kapps.Deployment{
-				ObjectMeta: kmeta.ObjectMeta{
+			deployment := &kappsv1.Deployment{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "test-deployment",
 					Namespace: "test-namespace",
 				},
@@ -366,7 +366,7 @@ func Test_DeleteDeployment(t *testing.T) {
 			require.Nil(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
-				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &kapps.Deployment{})
+				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &kappsv1.Deployment{})
 			require.True(t, kerrors.IsNotFound(err), "DeleteDeployment did not delete deployment")
 		})
 	}
@@ -399,8 +399,8 @@ func Test_DeleteClusterRole(t *testing.T) {
 			kubeClient := &KubeClient{
 				client: fakeClient,
 			}
-			clusterRole := &krbac.ClusterRole{
-				ObjectMeta: kmeta.ObjectMeta{
+			clusterRole := &krbacv1.ClusterRole{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "test-clusterrole",
 					Namespace: "test-namespace",
 				},
@@ -419,7 +419,7 @@ func Test_DeleteClusterRole(t *testing.T) {
 			require.Nil(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
-				types.NamespacedName{Name: clusterRole.Name, Namespace: clusterRole.Namespace}, &krbac.ClusterRole{})
+				types.NamespacedName{Name: clusterRole.Name, Namespace: clusterRole.Namespace}, &krbacv1.ClusterRole{})
 			require.True(t, kerrors.IsNotFound(err), "DeleteClusterRole did not delete ClusterRole")
 		})
 	}
@@ -452,8 +452,8 @@ func Test_DeleteClusterRoleBinding(t *testing.T) {
 			kubeClient := &KubeClient{
 				client: fakeClient,
 			}
-			clusterRoleBinding := &krbac.ClusterRoleBinding{
-				ObjectMeta: kmeta.ObjectMeta{
+			clusterRoleBinding := &krbacv1.ClusterRoleBinding{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "test-clusterrolebinding",
 					Namespace: "test-namespace",
 				},
@@ -472,7 +472,7 @@ func Test_DeleteClusterRoleBinding(t *testing.T) {
 			require.Nil(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
-				types.NamespacedName{Name: clusterRoleBinding.Name, Namespace: clusterRoleBinding.Namespace}, &krbac.ClusterRoleBinding{})
+				types.NamespacedName{Name: clusterRoleBinding.Name, Namespace: clusterRoleBinding.Namespace}, &krbacv1.ClusterRoleBinding{})
 			require.True(t, kerrors.IsNotFound(err), "DeleteClusterRoleBinding did not delete ClusterRoleBinding")
 		})
 	}
@@ -484,19 +484,19 @@ func Test_GetSecret(t *testing.T) {
 	testCases := []struct {
 		name                string
 		givenNamespacedName string
-		wantSecret          *kcore.Secret
+		wantSecret          *kcorev1.Secret
 		wantError           error
 		wantNotFoundError   bool
 	}{
 		{
 			name:                "success",
 			givenNamespacedName: "test-namespace/test-secret",
-			wantSecret: &kcore.Secret{
-				TypeMeta: kmeta.TypeMeta{
+			wantSecret: &kcorev1.Secret{
+				TypeMeta: kmetav1.TypeMeta{
 					Kind:       "Secret",
 					APIVersion: "v1",
 				},
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      "test-secret",
 					Namespace: "test-namespace",
 				},
@@ -568,7 +568,7 @@ func Test_GetMutatingWebHookConfiguration(t *testing.T) {
 			name:      "success",
 			givenName: "test-wh",
 			wantMutatingWebhook: &admissionv1.MutatingWebhookConfiguration{
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name: "test-wh",
 				},
 				Webhooks: []admissionv1.MutatingWebhook{
@@ -638,7 +638,7 @@ func Test_GetValidatingWebHookConfiguration(t *testing.T) {
 			name:      "success",
 			givenName: "test-wh",
 			wantValidatingWebhook: &admissionv1.ValidatingWebhookConfiguration{
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name: "test-wh",
 				},
 				Webhooks: []admissionv1.ValidatingWebhook{
@@ -839,17 +839,17 @@ func TestGetSubscriptions(t *testing.T) {
 		{
 			name: "exists subscription",
 			wantSubscriptionList: &eventingv1alpha2.SubscriptionList{
-				TypeMeta: kmeta.TypeMeta{
+				TypeMeta: kmetav1.TypeMeta{
 					Kind:       "SubscriptionList",
 					APIVersion: "eventing.kyma-project.io/v1alpha2",
 				},
 				Items: []eventingv1alpha2.Subscription{
 					{
-						TypeMeta: kmeta.TypeMeta{
+						TypeMeta: kmetav1.TypeMeta{
 							Kind:       "Subscription",
 							APIVersion: "eventing.kyma-project.io/v1alpha2",
 						},
-						ObjectMeta: kmeta.ObjectMeta{
+						ObjectMeta: kmetav1.ObjectMeta{
 							Name:      "test-subscription",
 							Namespace: "test-namespace",
 						},

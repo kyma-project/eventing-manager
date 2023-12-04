@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	kcore "k8s.io/api/core/v1"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -67,8 +67,8 @@ func TestSinkValidator(t *testing.T) {
 
 			// create the service if required for test
 			if testCase.givenSvcNameToCreate != "" {
-				svc := &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				svc := &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:      testCase.givenSvcNameToCreate,
 						Namespace: namespaceName,
 					},

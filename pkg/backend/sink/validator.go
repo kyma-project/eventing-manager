@@ -3,7 +3,7 @@ package sink
 import (
 	"context"
 
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
 
 	"golang.org/x/xerrors"
@@ -63,9 +63,9 @@ func (s defaultSinkValidator) Validate(subscription *v1alpha2.Subscription) erro
 	return nil
 }
 
-func GetClusterLocalService(ctx context.Context, client client.Client, svcNs, svcName string) (*kcore.Service, error) {
+func GetClusterLocalService(ctx context.Context, client client.Client, svcNs, svcName string) (*kcorev1.Service, error) {
 	svcLookupKey := ktypes.NamespacedName{Name: svcName, Namespace: svcNs}
-	svc := &kcore.Service{}
+	svc := &kcorev1.Service{}
 	if err := client.Get(ctx, svcLookupKey, svc); err != nil {
 		return nil, err
 	}

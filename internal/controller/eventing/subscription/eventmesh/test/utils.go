@@ -20,9 +20,9 @@ import (
 	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	klabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -293,13 +293,13 @@ func ensureNamespaceCreated(ctx context.Context, t *testing.T, namespace string)
 	}
 }
 
-func fixtureNamespace(name string) *kcore.Namespace {
-	namespace := kcore.Namespace{
-		TypeMeta: kmeta.TypeMeta{
+func fixtureNamespace(name string) *kcorev1.Namespace {
+	namespace := kcorev1.Namespace{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Namespace",
 			APIVersion: "v1",
 		},
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name: name,
 		},
 	}
@@ -366,7 +366,7 @@ func ensureAPIRuleNotFound(ctx context.Context, t *testing.T, apiRule *apigatewa
 	}, bigTimeOut, bigPollingInterval)
 }
 
-func getAPIRulesList(ctx context.Context, svc *kcore.Service) (*apigateway.APIRuleList, error) {
+func getAPIRulesList(ctx context.Context, svc *kcorev1.Service) (*apigateway.APIRuleList, error) {
 	labels := map[string]string{
 		constants.ControllerServiceLabelKey:  svc.Name,
 		constants.ControllerIdentityLabelKey: constants.ControllerIdentityLabelValue,
@@ -388,7 +388,7 @@ func getAPIRule(ctx context.Context, apiRule *apigateway.APIRule) (*apigateway.A
 	return apiRule, err
 }
 
-func filterAPIRulesForASvc(apiRules *apigateway.APIRuleList, svc *kcore.Service) apigateway.APIRule {
+func filterAPIRulesForASvc(apiRules *apigateway.APIRuleList, svc *kcorev1.Service) apigateway.APIRule {
 	if len(apiRules.Items) == 1 && *apiRules.Items[0].Spec.Service.Name == svc.Name {
 		return apiRules.Items[0]
 	}
@@ -441,16 +441,16 @@ func getEventMeshKeyForMock(name string) string {
 }
 
 // ensureK8sEventReceived checks if a certain event have triggered for the given namespace.
-func ensureK8sEventReceived(t *testing.T, event kcore.Event, namespace string) {
+func ensureK8sEventReceived(t *testing.T, event kcorev1.Event, namespace string) {
 	ctx := context.TODO()
 	require.Eventually(t, func() bool {
 		// get all events from k8s for namespace
-		eventList := &kcore.EventList{}
+		eventList := &kcorev1.EventList{}
 		err := emTestEnsemble.k8sClient.List(ctx, eventList, client.InNamespace(namespace))
 		require.NoError(t, err)
 
 		// find the desired event
-		var receivedEvent *kcore.Event
+		var receivedEvent *kcorev1.Event
 		for i, e := range eventList.Items {
 			if e.Reason == event.Reason {
 				receivedEvent = &eventList.Items[i]

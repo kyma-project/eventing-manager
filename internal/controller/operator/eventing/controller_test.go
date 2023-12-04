@@ -11,7 +11,7 @@ import (
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/stretchr/testify/require"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -94,11 +94,11 @@ func Test_handleEventingCRAllowedCheck(t *testing.T) {
 				require.Equal(t, operatorv1alpha1.StateError, gotEventing.Status.State)
 
 				// check eventing.status.conditions
-				wantConditions := []kmeta.Condition{
+				wantConditions := []kmetav1.Condition{
 					{
 						Type:               string(operatorv1alpha1.ConditionPublisherProxyReady),
-						Status:             kmeta.ConditionFalse,
-						LastTransitionTime: kmeta.Now(),
+						Status:             kmetav1.ConditionFalse,
+						LastTransitionTime: kmetav1.Now(),
 						Reason:             string(operatorv1alpha1.ConditionReasonForbidden),
 						Message: fmt.Sprintf("Only a single Eventing CR with name: %s and namespace: %s "+
 							"is allowed to be created in a Kyma cluster.", givenAllowedEventingCR.Name,
@@ -132,7 +132,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithNATSBackend(),
 				testutils.WithStatusActiveBackend(operatorv1alpha1.NatsBackendType),
 				testutils.WithStatusState(operatorv1alpha1.StateReady),
-				testutils.WithStatusConditions([]kmeta.Condition{{Type: "Available"}}),
+				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
 			),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				return new(submanagermocks.Manager)
@@ -152,7 +152,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithEventMeshBackend("test"),
 				testutils.WithStatusActiveBackend(operatorv1alpha1.NatsBackendType),
 				testutils.WithStatusState(operatorv1alpha1.StateReady),
-				testutils.WithStatusConditions([]kmeta.Condition{{Type: "Available"}}),
+				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
 			),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				managerMock := new(submanagermocks.Manager)
@@ -174,7 +174,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithEventMeshBackend("test"),
 				testutils.WithStatusActiveBackend(operatorv1alpha1.NatsBackendType),
 				testutils.WithStatusState(operatorv1alpha1.StateReady),
-				testutils.WithStatusConditions([]kmeta.Condition{{Type: "Available"}}),
+				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
 			),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				managerMock := new(submanagermocks.Manager)
@@ -196,7 +196,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithNATSBackend(),
 				testutils.WithStatusActiveBackend(operatorv1alpha1.EventMeshBackendType),
 				testutils.WithStatusState(operatorv1alpha1.StateReady),
-				testutils.WithStatusConditions([]kmeta.Condition{{Type: "Available"}}),
+				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
 			),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				return new(submanagermocks.Manager)
@@ -218,7 +218,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 				testutils.WithNATSBackend(),
 				testutils.WithStatusActiveBackend(operatorv1alpha1.EventMeshBackendType),
 				testutils.WithStatusState(operatorv1alpha1.StateReady),
-				testutils.WithStatusConditions([]kmeta.Condition{{Type: "Available"}}),
+				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
 			),
 			givenNATSSubManagerMock: func() *submanagermocks.Manager {
 				return new(submanagermocks.Manager)

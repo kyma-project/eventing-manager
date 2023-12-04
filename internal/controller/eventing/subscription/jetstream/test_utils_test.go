@@ -18,9 +18,9 @@ import (
 	natsserver "github.com/nats-io/nats-server/v2/server"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/rest"
@@ -74,7 +74,7 @@ type Ensemble struct {
 	NatsServer                *natsserver.Server
 	NatsPort                  int
 	DefaultSubscriptionConfig env.DefaultSubscriptionConfig
-	SubscriberSvc             *kcore.Service
+	SubscriberSvc             *kcorev1.Service
 	Cancel                    context.CancelFunc
 	Ctx                       context.Context
 	G                         *gomega.GomegaWithT
@@ -90,7 +90,7 @@ type jetStreamTestEnsemble struct {
 
 type Want struct {
 	K8sSubscription []gomegatypes.GomegaMatcher
-	K8sEvents       []kcore.Event
+	K8sEvents       []kcorev1.Event
 	// NatsSubscriptions holds gomega matchers for a NATS subscription per event-type.
 	NatsSubscriptions map[string][]gomegatypes.GomegaMatcher
 }
@@ -348,7 +348,7 @@ func CheckSubscriptionOnK8s(g *gomega.WithT, ens *Ensemble, subscription *eventi
 	getSubscriptionOnK8S(g, ens, subscription).Should(gomega.And(expectations...), description)
 }
 
-func CheckEventsOnK8s(g *gomega.WithT, ens *Ensemble, expectations ...kcore.Event) {
+func CheckEventsOnK8s(g *gomega.WithT, ens *Ensemble, expectations ...kcorev1.Event) {
 	for _, event := range expectations {
 		getK8sEvents(g, ens).Should(eventingtesting.HaveEvent(event), "Failed to match k8s events")
 	}
@@ -381,14 +381,14 @@ func ConditionInvalidSink(msg string) eventingv1alpha2.Condition {
 	return eventingv1alpha2.MakeCondition(
 		eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonNATSSubscriptionNotActive,
-		kcore.ConditionFalse, msg)
+		kcorev1.ConditionFalse, msg)
 }
 
-func EventInvalidSink(msg string) kcore.Event {
-	return kcore.Event{
+func EventInvalidSink(msg string) kcorev1.Event {
+	return kcorev1.Event{
 		Reason:  string(events.ReasonValidationFailed),
 		Message: msg,
-		Type:    kcore.EventTypeWarning,
+		Type:    kcorev1.EventTypeWarning,
 	}
 }
 
@@ -495,13 +495,13 @@ func EnsureK8sResourceNotCreated(t *testing.T, ens *Ensemble, obj client.Object,
 	require.Equal(t, ens.K8sClient.Create(ens.Ctx, obj), err)
 }
 
-func fixtureNamespace(name string) *kcore.Namespace {
-	namespace := kcore.Namespace{
-		TypeMeta: kmeta.TypeMeta{
+func fixtureNamespace(name string) *kcorev1.Namespace {
+	namespace := kcorev1.Namespace{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "natsNamespace",
 			APIVersion: "v1",
 		},
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name: name,
 		},
 	}
@@ -526,11 +526,11 @@ func getSubscriptionOnK8S(g *gomega.WithT, ens *Ensemble,
 // getK8sEvents returns all kubernetes events for the given namespace.
 // The result can be used in a gomega assertion.
 func getK8sEvents(g *gomega.WithT, ens *Ensemble) gomega.AsyncAssertion {
-	eventList := kcore.EventList{}
-	return g.Eventually(func() kcore.EventList {
+	eventList := kcorev1.EventList{}
+	return g.Eventually(func() kcorev1.EventList {
 		err := ens.K8sClient.List(ens.Ctx, &eventList, client.InNamespace(ens.SubscriberSvc.Namespace))
 		if err != nil {
-			return kcore.EventList{}
+			return kcorev1.EventList{}
 		}
 		return eventList
 	}, SmallTimeout, SmallPollingInterval)

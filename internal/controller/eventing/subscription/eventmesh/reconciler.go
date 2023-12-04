@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	klabels "k8s.io/apimachinery/pkg/labels"
 	ktypes "k8s.io/apimachinery/pkg/types"
 
@@ -266,7 +266,7 @@ func (r *Reconciler) handleDeleteSubscription(ctx context.Context, subscription 
 
 	// update condition in subscription status
 	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed,
-		eventingv1alpha2.ConditionReasonSubscriptionDeleted, kcore.ConditionFalse, "")
+		eventingv1alpha2.ConditionReasonSubscriptionDeleted, kcorev1.ConditionFalse, "")
 	replaceStatusCondition(subscription, condition)
 
 	// remove finalizers from subscription
@@ -316,10 +316,10 @@ func (r *Reconciler) syncEventMeshSubscription(subscription *eventingv1alpha2.Su
 func (r *Reconciler) syncConditionSubscribed(subscription *eventingv1alpha2.Subscription, err error) {
 	// Include the EventMesh subscription ID in the Condition message
 	message := eventingv1alpha2.CreateMessageForConditionReasonSubscriptionCreated(r.nameMapper.MapSubscriptionName(subscription.Name, subscription.Namespace))
-	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, kcore.ConditionTrue, message)
+	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, kcorev1.ConditionTrue, message)
 	if err != nil {
 		message = err.Error()
-		condition = eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreationFailed, kcore.ConditionFalse, message)
+		condition = eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreationFailed, kcorev1.ConditionFalse, message)
 	}
 
 	replaceStatusCondition(subscription, condition)
@@ -329,7 +329,7 @@ func (r *Reconciler) syncConditionSubscribed(subscription *eventingv1alpha2.Subs
 func (r *Reconciler) syncConditionSubscriptionActive(subscription *eventingv1alpha2.Subscription, isActive bool, logger *zap.SugaredLogger) {
 	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonSubscriptionActive,
-		kcore.ConditionTrue,
+		kcorev1.ConditionTrue,
 		"")
 	if !isActive {
 		logger.Infow("Waiting for subscription to be active", "name", subscription.Name,
@@ -337,7 +337,7 @@ func (r *Reconciler) syncConditionSubscriptionActive(subscription *eventingv1alp
 		message := "Waiting for subscription to be active"
 		condition = eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 			eventingv1alpha2.ConditionReasonSubscriptionNotActive,
-			kcore.ConditionFalse,
+			kcorev1.ConditionFalse,
 			message)
 	}
 	replaceStatusCondition(subscription, condition)
@@ -347,13 +347,13 @@ func (r *Reconciler) syncConditionSubscriptionActive(subscription *eventingv1alp
 // checks if the last webhook call returned an error.
 func syncConditionWebhookCallStatus(subscription *eventingv1alpha2.Subscription) {
 	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionWebhookCallStatus,
-		eventingv1alpha2.ConditionReasonWebhookCallStatus, kcore.ConditionFalse, "")
+		eventingv1alpha2.ConditionReasonWebhookCallStatus, kcorev1.ConditionFalse, "")
 	if isWebhookCallError, err := checkLastFailedDelivery(subscription); err != nil {
 		condition.Message = err.Error()
 	} else if isWebhookCallError {
 		condition.Message = subscription.Status.Backend.EventMeshSubscriptionStatus.LastFailedDeliveryReason
 	} else {
-		condition.Status = kcore.ConditionTrue
+		condition.Status = kcorev1.ConditionTrue
 	}
 	replaceStatusCondition(subscription, condition)
 }
@@ -490,7 +490,7 @@ func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *ev
 	}
 
 	// build a new OwnerReference list and exclude the current subscription from the list (if exists)
-	ownerReferences := make([]kmeta.OwnerReference, 0, len(previousAPIRule.OwnerReferences))
+	ownerReferences := make([]kmetav1.OwnerReference, 0, len(previousAPIRule.OwnerReferences))
 	for _, ownerReference := range previousAPIRule.OwnerReferences {
 		if ownerReference.UID != subscription.UID {
 			ownerReferences = append(ownerReferences, ownerReference)
@@ -712,7 +712,7 @@ func replaceStatusCondition(subscription *eventingv1alpha2.Subscription,
 			chosenCondition = c
 		}
 		desiredConditions = append(desiredConditions, chosenCondition)
-		if string(chosenCondition.Status) != string(kmeta.ConditionTrue) {
+		if string(chosenCondition.Status) != string(kmetav1.ConditionTrue) {
 			isReady = false
 		}
 	}
@@ -730,9 +730,9 @@ func replaceStatusCondition(subscription *eventingv1alpha2.Subscription,
 
 // emitConditionEvent emits a kubernetes event and sets the event type based on the Condition status.
 func (r *Reconciler) emitConditionEvent(subscription *eventingv1alpha2.Subscription, condition eventingv1alpha2.Condition) {
-	eventType := kcore.EventTypeNormal
-	if condition.Status == kcore.ConditionFalse {
-		eventType = kcore.EventTypeWarning
+	eventType := kcorev1.EventTypeNormal
+	if condition.Status == kcorev1.ConditionFalse {
+		eventType = kcorev1.EventTypeWarning
 	}
 	r.recorder.Event(subscription, eventType, string(condition.Reason), condition.Message)
 }

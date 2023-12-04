@@ -12,10 +12,10 @@ import (
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
-	kapps "k8s.io/api/apps/v1"
-	kapiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
@@ -163,7 +163,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *kapps.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return tc.givenDeploymentReady
 			}
 			// create unique namespace for this test run.
@@ -246,7 +246,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *kapps.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 			// create unique namespace for this test run.
@@ -300,7 +300,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 	////
 	// given
 	////
-	eventingcontroller.IsDeploymentReady = func(deployment *kapps.Deployment) bool { return true }
+	eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool { return true }
 
 	eventingCR := utils.NewEventingCR(
 		utils.WithEventingCRMinimal(),
@@ -529,7 +529,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 
 			// given
 			g := gomega.NewWithT(t)
-			eventingcontroller.IsDeploymentReady = func(deployment *kapps.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 
@@ -639,7 +639,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *kapps.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return tc.givenDeploymentReady
 			}
 
@@ -749,7 +749,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *kapps.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 
@@ -926,7 +926,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *kapps.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 
@@ -1054,11 +1054,11 @@ type MockKubeClient struct {
 }
 
 // mock only GetCRD and leave the rest as is.
-func (mkc *MockKubeClient) GetCRD(ctx context.Context, name string) (*kapiextensions.CustomResourceDefinition, error) {
+func (mkc *MockKubeClient) GetCRD(ctx context.Context, name string) (*kapiextensionsv1.CustomResourceDefinition, error) {
 	notFoundError := &kerrors.StatusError{
-		ErrStatus: kmeta.Status{
+		ErrStatus: kmetav1.Status{
 			Code:    http.StatusNotFound,
-			Reason:  kmeta.StatusReasonNotFound,
+			Reason:  kmetav1.StatusReasonNotFound,
 			Message: fmt.Sprintf("customresourcedefinitions.apiextensions.k8s.io \"%s\" not found", name),
 		},
 	}

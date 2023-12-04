@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestClearConditions(t *testing.T) {
@@ -12,7 +12,7 @@ func TestClearConditions(t *testing.T) {
 
 	// given
 	givenEventingStatus := &EventingStatus{
-		Conditions: []kmeta.Condition{
+		Conditions: []kmetav1.Condition{
 			{
 				Type: "NATS",
 			},

@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	kcore "k8s.io/api/core/v1"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -700,7 +700,7 @@ func Test_replaceStatusCondition(t *testing.T) {
 				return sub
 			}(),
 			giveCondition: func() eventingv1alpha2.Condition {
-				return eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, kcore.ConditionTrue, "")
+				return eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, kcorev1.ConditionTrue, "")
 			}(),
 			wantStatusChanged: true,
 			wantReady:         false,
@@ -719,19 +719,19 @@ func Test_replaceStatusCondition(t *testing.T) {
 				sub.Status.Conditions = []eventingv1alpha2.Condition{
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
-						LastTransitionTime: kmeta.Now(),
-						Status:             kcore.ConditionTrue,
+						LastTransitionTime: kmetav1.Now(),
+						Status:             kcorev1.ConditionTrue,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
-						LastTransitionTime: kmeta.Now(),
-						Status:             kcore.ConditionTrue,
+						LastTransitionTime: kmetav1.Now(),
+						Status:             kcorev1.ConditionTrue,
 					},
 				}
 				return sub
 			}(),
 			giveCondition: func() eventingv1alpha2.Condition {
-				return eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, kcore.ConditionTrue, "")
+				return eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, kcorev1.ConditionTrue, "")
 			}(),
 			wantStatusChanged: true, // readiness changed
 			wantReady:         true, // all conditions are true
@@ -768,42 +768,42 @@ func Test_getRequiredConditions(t *testing.T) {
 		{
 			name: "should get subscription conditions if the all the expected conditions are present",
 			subscriptionConditions: []eventingv1alpha2.Condition{
-				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionTrue},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcore.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcore.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionFalse},
 			},
 			wantConditions: []eventingv1alpha2.Condition{
-				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionTrue},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcore.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcore.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionFalse},
 			},
 		},
 		{
 			name: "should get latest conditions Status compared to the expected condition status",
 			subscriptionConditions: []eventingv1alpha2.Condition{
-				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
 			},
 			wantConditions: []eventingv1alpha2.Condition{
-				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcore.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcore.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionUnknown},
 			},
 		},
 		{
 			name: "should get rid of unwanted conditions in the subscription, if present",
 			subscriptionConditions: []eventingv1alpha2.Condition{
-				{Type: "Fake Condition Type", Status: kcore.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
+				{Type: "Fake Condition Type", Status: kcorev1.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
 			},
 			wantConditions: []eventingv1alpha2.Condition{
-				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcore.ConditionFalse},
-				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcore.ConditionUnknown},
-				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcore.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionUnknown},
 			},
 		},
 	}
@@ -818,7 +818,7 @@ func Test_getRequiredConditions(t *testing.T) {
 }
 
 func Test_syncConditionSubscribed(t *testing.T) {
-	currentTime := kmeta.Now()
+	currentTime := kmetav1.Now()
 	errorMessage := "error message"
 	var testCases = []struct {
 		name              string
@@ -838,12 +838,12 @@ func Test_syncConditionSubscribed(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionTrue,
+						Status:             kcorev1.ConditionTrue,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionTrue,
+						Status:             kcorev1.ConditionTrue,
 					},
 				}
 				return sub
@@ -852,7 +852,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionSubscribed,
 				LastTransitionTime: currentTime,
-				Status:             kcore.ConditionFalse,
+				Status:             kcorev1.ConditionFalse,
 				Reason:             eventingv1alpha2.ConditionReasonSubscriptionCreationFailed,
 				Message:            errorMessage,
 			},
@@ -869,12 +869,12 @@ func Test_syncConditionSubscribed(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionFalse,
+						Status:             kcorev1.ConditionFalse,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionTrue,
+						Status:             kcorev1.ConditionTrue,
 					},
 				}
 				return sub
@@ -883,7 +883,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionSubscribed,
 				LastTransitionTime: currentTime,
-				Status:             kcore.ConditionTrue,
+				Status:             kcorev1.ConditionTrue,
 				Reason:             eventingv1alpha2.ConditionReasonSubscriptionCreated,
 				Message:            "EventMesh subscription name is: some-namef73aa86661706ae6ba5acf1d32821ce318051d0e",
 			},
@@ -915,7 +915,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 }
 
 func Test_syncConditionSubscriptionActive(t *testing.T) {
-	currentTime := kmeta.Now()
+	currentTime := kmetav1.Now()
 
 	var testCases = []struct {
 		name              string
@@ -938,12 +938,12 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionTrue,
+						Status:             kcorev1.ConditionTrue,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionTrue,
+						Status:             kcorev1.ConditionTrue,
 					},
 				}
 				return sub
@@ -952,7 +952,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionSubscriptionActive,
 				LastTransitionTime: currentTime,
-				Status:             kcore.ConditionFalse,
+				Status:             kcorev1.ConditionFalse,
 				Reason:             eventingv1alpha2.ConditionReasonSubscriptionNotActive,
 				Message:            "Waiting for subscription to be active",
 			},
@@ -970,12 +970,12 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionFalse,
+						Status:             kcorev1.ConditionFalse,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionFalse,
+						Status:             kcorev1.ConditionFalse,
 					},
 				}
 				return sub
@@ -984,7 +984,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionSubscriptionActive,
 				LastTransitionTime: currentTime,
-				Status:             kcore.ConditionTrue,
+				Status:             kcorev1.ConditionTrue,
 				Reason:             eventingv1alpha2.ConditionReasonSubscriptionActive,
 			},
 		},
@@ -1018,7 +1018,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 }
 
 func Test_syncConditionWebhookCallStatus(t *testing.T) {
-	currentTime := kmeta.Now()
+	currentTime := kmetav1.Now()
 
 	var testCases = []struct {
 		name              string
@@ -1038,12 +1038,12 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscriptionActive,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionTrue,
+						Status:             kcorev1.ConditionTrue,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionTrue,
+						Status:             kcorev1.ConditionTrue,
 					},
 				}
 				// set EventMeshSubscriptionStatus
@@ -1058,7 +1058,7 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 				LastTransitionTime: currentTime,
-				Status:             kcore.ConditionFalse,
+				Status:             kcorev1.ConditionFalse,
 				Reason:             eventingv1alpha2.ConditionReasonWebhookCallStatus,
 				Message:            `failed to parse LastFailedDelivery: parsing time "invalid" as "2006-01-02T15:04:05Z07:00": cannot parse "invalid" as "2006"`,
 			},
@@ -1075,12 +1075,12 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionFalse,
+						Status:             kcorev1.ConditionFalse,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionFalse,
+						Status:             kcorev1.ConditionFalse,
 					},
 				}
 				// set EventMeshSubscriptionStatus
@@ -1096,7 +1096,7 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 				LastTransitionTime: currentTime,
-				Status:             kcore.ConditionFalse,
+				Status:             kcorev1.ConditionFalse,
 				Reason:             eventingv1alpha2.ConditionReasonWebhookCallStatus,
 				Message:            "abc",
 			},
@@ -1113,12 +1113,12 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 					{
 						Type:               eventingv1alpha2.ConditionSubscribed,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionFalse,
+						Status:             kcorev1.ConditionFalse,
 					},
 					{
 						Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 						LastTransitionTime: currentTime,
-						Status:             kcore.ConditionFalse,
+						Status:             kcorev1.ConditionFalse,
 					},
 				}
 				// set EventMeshSubscriptionStatus
@@ -1134,7 +1134,7 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 			wantCondition: eventingv1alpha2.Condition{
 				Type:               eventingv1alpha2.ConditionWebhookCallStatus,
 				LastTransitionTime: currentTime,
-				Status:             kcore.ConditionTrue,
+				Status:             kcorev1.ConditionTrue,
 				Reason:             eventingv1alpha2.ConditionReasonWebhookCallStatus,
 				Message:            "",
 			},

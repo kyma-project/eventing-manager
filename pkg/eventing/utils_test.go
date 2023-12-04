@@ -4,14 +4,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 )
 
 func Test_EPPResourcesNames(t *testing.T) {
 	eventingCR := v1alpha1.Eventing{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name: "test1",
 		},
 	}

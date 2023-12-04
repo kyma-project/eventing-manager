@@ -8,7 +8,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/eventing-manager/test"
@@ -21,7 +21,7 @@ import (
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	kapps "k8s.io/api/apps/v1"
+	kappsv1 "k8s.io/api/apps/v1"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -42,9 +42,9 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 		name             string
 		givenEventing    *v1alpha1.Eventing
 		givenBackendType v1alpha1.BackendType
-		givenDeployment  *kapps.Deployment
+		givenDeployment  *kappsv1.Deployment
 		patchApplyErr    error
-		wantedDeployment *kapps.Deployment
+		wantedDeployment *kappsv1.Deployment
 		wantErr          error
 	}{
 		{
@@ -147,8 +147,8 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 	testCases := []struct {
 		name                       string
 		givenEventing              *v1alpha1.Eventing
-		givenCurrentDeploymentFunc func() *kapps.Deployment
-		givenDesiredDeploymentFunc func() *kapps.Deployment
+		givenCurrentDeploymentFunc func() *kappsv1.Deployment
+		givenDesiredDeploymentFunc func() *kappsv1.Deployment
 		givenKubeClientFunc        func() *k8smocks.Client
 	}{
 		{
@@ -156,12 +156,12 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRMinimal(),
 			),
-			givenCurrentDeploymentFunc: func() *kapps.Deployment {
+			givenCurrentDeploymentFunc: func() *kappsv1.Deployment {
 				oldPublisher := testutils.NewDeployment(
 					"test-eventing-nats-publisher",
 					"test-namespace",
 					map[string]string{})
-				oldPublisher.OwnerReferences = []kmeta.OwnerReference{{
+				oldPublisher.OwnerReferences = []kmetav1.OwnerReference{{
 					APIVersion:         "apps/v1",
 					Kind:               "Deployment",
 					Name:               "eventing-controller",
@@ -184,12 +184,12 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingCRMinimal(),
 			),
-			givenCurrentDeploymentFunc: func() *kapps.Deployment {
+			givenCurrentDeploymentFunc: func() *kappsv1.Deployment {
 				oldPublisher := testutils.NewDeployment(
 					"test-eventing-nats-publisher",
 					"test-namespace",
 					map[string]string{})
-				oldPublisher.OwnerReferences = []kmeta.OwnerReference{{
+				oldPublisher.OwnerReferences = []kmetav1.OwnerReference{{
 					APIVersion:         "apps/v1",
 					Kind:               "Deployment",
 					Name:               "eventing-manager",
@@ -373,7 +373,7 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 	testCases := []struct {
 		name                      string
 		givenEventing             *v1alpha1.Eventing
-		givenEPPDeployment        *kapps.Deployment
+		givenEPPDeployment        *kappsv1.Deployment
 		wantError                 bool
 		wantCreatedResourcesCount int
 	}{
@@ -488,7 +488,7 @@ func Test_DeletePublisherProxyResources(t *testing.T) {
 	testCases := []struct {
 		name                      string
 		givenEventing             *v1alpha1.Eventing
-		givenEPPDeployment        *kapps.Deployment
+		givenEPPDeployment        *kappsv1.Deployment
 		wantError                 bool
 		wantDeletedResourcesCount int
 	}{
@@ -570,17 +570,17 @@ func Test_SubscriptionExists(t *testing.T) {
 		{
 			name: "subscriptions should exist",
 			givenSubscriptions: &eventingv1alpha2.SubscriptionList{
-				TypeMeta: kmeta.TypeMeta{
+				TypeMeta: kmetav1.TypeMeta{
 					Kind:       "SubscriptionList",
 					APIVersion: "eventing.kyma-project.io/v1alpha2",
 				},
 				Items: []eventingv1alpha2.Subscription{
 					{
-						TypeMeta: kmeta.TypeMeta{
+						TypeMeta: kmetav1.TypeMeta{
 							Kind:       "Subscription",
 							APIVersion: "eventing.kyma-project.io/v1alpha2",
 						},
-						ObjectMeta: kmeta.ObjectMeta{
+						ObjectMeta: kmetav1.ObjectMeta{
 							Name:      "test-subscription",
 							Namespace: "test-namespace",
 						},

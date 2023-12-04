@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
@@ -27,7 +27,7 @@ const (
 // NewAPIRule creates a APIRule object.
 func NewAPIRule(ns, namePrefix string, opts ...Option) *apigateway.APIRule {
 	s := &apigateway.APIRule{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Namespace:    ns,
 			GenerateName: namePrefix,
 		},
@@ -104,10 +104,10 @@ func WithLabels(labels map[string]string) Option {
 // WithOwnerReference sets the OwnerReferences of an APIRule.
 func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
 	return func(r *apigateway.APIRule) {
-		ownerRefs := make([]kmeta.OwnerReference, 0)
+		ownerRefs := make([]kmetav1.OwnerReference, 0)
 		for _, sub := range subs {
 			blockOwnerDeletion := true
-			ownerRef := kmeta.OwnerReference{
+			ownerRef := kmetav1.OwnerReference{
 				APIVersion:         sub.APIVersion,
 				Kind:               sub.Kind,
 				Name:               sub.Name,

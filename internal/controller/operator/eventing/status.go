@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	kapps "k8s.io/api/apps/v1"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stype "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -29,7 +29,7 @@ func (r *Reconciler) syncStatusWithNATSErr(ctx context.Context,
 	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
-	eventing.Status.UpdateConditionNATSAvailable(kmeta.ConditionFalse, operatorv1alpha1.ConditionReasonNATSNotAvailable,
+	eventing.Status.UpdateConditionNATSAvailable(kmetav1.ConditionFalse, operatorv1alpha1.ConditionReasonNATSNotAvailable,
 		err.Error())
 
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
@@ -48,7 +48,7 @@ func (r *Reconciler) syncStatusWithPublisherProxyErrWithReason(ctx context.Conte
 	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
-	eventing.Status.UpdateConditionPublisherProxyReady(kmeta.ConditionFalse, reason,
+	eventing.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse, reason,
 		err.Error())
 
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
@@ -68,7 +68,7 @@ func (r *Reconciler) syncStatusWithSubscriptionManagerErrWithReason(ctx context.
 	err error, log *zap.SugaredLogger) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
-	eventing.Status.UpdateConditionSubscriptionManagerReady(kmeta.ConditionFalse, reason, err.Error())
+	eventing.Status.UpdateConditionSubscriptionManagerReady(kmetav1.ConditionFalse, reason, err.Error())
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
@@ -79,7 +79,7 @@ func (r *Reconciler) syncStatusWithSubscriptionManagerFailedCondition(ctx contex
 	err error, log *zap.SugaredLogger) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
-	eventing.Status.UpdateConditionSubscriptionManagerReady(kmeta.ConditionFalse,
+	eventing.Status.UpdateConditionSubscriptionManagerReady(kmetav1.ConditionFalse,
 		operatorv1alpha1.ConditionReasonEventMeshSubManagerFailed, err.Error())
 	return r.syncEventingStatus(ctx, eventing, log)
 }
@@ -88,7 +88,7 @@ func (r *Reconciler) syncStatusWithWebhookErr(ctx context.Context,
 	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
-	eventing.Status.UpdateConditionWebhookReady(kmeta.ConditionFalse, operatorv1alpha1.ConditionReasonWebhookFailed,
+	eventing.Status.UpdateConditionWebhookReady(kmetav1.ConditionFalse, operatorv1alpha1.ConditionReasonWebhookFailed,
 		err.Error())
 
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
@@ -96,7 +96,7 @@ func (r *Reconciler) syncStatusWithWebhookErr(ctx context.Context,
 
 func (r *Reconciler) syncStatusWithDeletionErr(ctx context.Context,
 	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
-	eventing.Status.UpdateConditionDeletion(kmeta.ConditionFalse,
+	eventing.Status.UpdateConditionDeletion(kmetav1.ConditionFalse,
 		operatorv1alpha1.ConditionReasonDeletionError, err.Error())
 
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
@@ -143,19 +143,19 @@ func (r *Reconciler) updateStatus(ctx context.Context, oldEventing, newEventing 
 	return nil
 }
 
-func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kapps.Deployment, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kappsv1.Deployment, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
 	// checking if publisher proxy is ready.
 	// get k8s deployment for publisher proxy
 	deployment, err := r.kubeClient.GetDeployment(ctx, deployment.Name, deployment.Namespace)
 	if err != nil {
-		eventing.Status.UpdateConditionPublisherProxyReady(kmeta.ConditionFalse,
+		eventing.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse,
 			operatorv1alpha1.ConditionReasonDeploymentStatusSyncFailed, err.Error())
 		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
 
 	if !IsDeploymentReady(deployment) {
 		eventing.Status.SetStateProcessing()
-		eventing.Status.UpdateConditionPublisherProxyReady(kmeta.ConditionFalse,
+		eventing.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse,
 			operatorv1alpha1.ConditionReasonProcessing, operatorv1alpha1.ConditionPublisherProxyProcessingMessage)
 		log.Info("Reconciliation successful: waiting for publisher proxy to get ready...")
 		return ctrl.Result{RequeueAfter: RequeueTimeForStatusCheck * time.Second}, r.syncEventingStatus(ctx, eventing, log)
@@ -169,6 +169,6 @@ func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kapps.
 }
 
 // to be able to mock this function in tests
-var IsDeploymentReady = func(deployment *kapps.Deployment) bool {
+var IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 	return deployment.Status.AvailableReplicas == *deployment.Spec.Replicas
 }

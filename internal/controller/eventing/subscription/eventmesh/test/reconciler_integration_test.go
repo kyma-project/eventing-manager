@@ -12,8 +12,8 @@ import (
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/assert"
-	kcore "k8s.io/api/core/v1"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
@@ -162,7 +162,7 @@ func Test_CreateSubscription(t *testing.T) {
 				eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
 					eventingv1alpha2.ConditionAPIRuleStatus,
 					eventingv1alpha2.ConditionReasonAPIRuleStatusNotReady,
-					kcore.ConditionFalse, invalidSinkErrMsg)),
+					kcorev1.ConditionFalse, invalidSinkErrMsg)),
 			),
 		},
 		{
@@ -339,19 +339,19 @@ func Test_CreateSubscription(t *testing.T) {
 			if tc.wantSubCreatedEventCheck {
 				message := eventingv1alpha2.CreateMessageForConditionReasonSubscriptionCreated(
 					emTestEnsemble.nameMapper.MapSubscriptionName(givenSubscription.Name, givenSubscription.Namespace))
-				subscriptionCreatedEvent := kcore.Event{
+				subscriptionCreatedEvent := kcorev1.Event{
 					Reason:  string(eventingv1alpha2.ConditionReasonSubscriptionCreated),
 					Message: message,
-					Type:    kcore.EventTypeNormal,
+					Type:    kcorev1.EventTypeNormal,
 				}
 				ensureK8sEventReceived(t, subscriptionCreatedEvent, givenSubscription.Namespace)
 			}
 
 			if tc.wantSubActiveEventCheck {
-				subscriptionActiveEvent := kcore.Event{
+				subscriptionActiveEvent := kcorev1.Event{
 					Reason:  string(eventingv1alpha2.ConditionReasonSubscriptionActive),
 					Message: "",
-					Type:    kcore.EventTypeNormal,
+					Type:    kcorev1.EventTypeNormal,
 				}
 				ensureK8sEventReceived(t, subscriptionActiveEvent, givenSubscription.Namespace)
 			}
@@ -576,7 +576,7 @@ func Test_DeleteSubscription(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule := &apigateway.APIRule{ObjectMeta: kmeta.ObjectMeta{
+	apiRule := &apigateway.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
@@ -593,10 +593,10 @@ func Test_DeleteSubscription(t *testing.T) {
 
 	// then
 	// check if k8s event was triggered for Subscription deletion
-	subscriptionDeletedEvent := kcore.Event{
+	subscriptionDeletedEvent := kcorev1.Event{
 		Reason:  string(eventingv1alpha2.ConditionReasonSubscriptionDeleted),
 		Message: "",
-		Type:    kcore.EventTypeWarning,
+		Type:    kcorev1.EventTypeWarning,
 	}
 	ensureK8sEventReceived(t, subscriptionDeletedEvent, givenSubscription.Namespace)
 
@@ -622,7 +622,7 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 		eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
 			eventingv1alpha2.ConditionAPIRuleStatus,
 			eventingv1alpha2.ConditionReasonAPIRuleStatusNotReady,
-			kcore.ConditionFalse,
+			kcorev1.ConditionFalse,
 			invalidSinkErrMsg,
 		)),
 	)
@@ -761,7 +761,7 @@ func Test_SinkChangeAndAPIRule(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule := &apigateway.APIRule{ObjectMeta: kmeta.ObjectMeta{
+	apiRule := &apigateway.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
@@ -786,7 +786,7 @@ func Test_SinkChangeAndAPIRule(t *testing.T) {
 
 	// fetch the new APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule = &apigateway.APIRule{ObjectMeta: kmeta.ObjectMeta{
+	apiRule = &apigateway.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: updatedSubscription.Status.Backend.APIRuleName, Namespace: updatedSubscription.Namespace}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
@@ -829,7 +829,7 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule1 := &apigateway.APIRule{ObjectMeta: kmeta.ObjectMeta{
+	apiRule1 := &apigateway.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace}}
 	getAPIRuleAssert(ctx, g, apiRule1).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule1)
@@ -859,7 +859,7 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule2 := &apigateway.APIRule{ObjectMeta: kmeta.ObjectMeta{
+	apiRule2 := &apigateway.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription2.Status.Backend.APIRuleName, Namespace: createdSubscription2.Namespace}}
 	getAPIRuleAssert(ctx, g, apiRule2).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule2)
@@ -954,7 +954,7 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule1 := &apigateway.APIRule{ObjectMeta: kmeta.ObjectMeta{
+	apiRule1 := &apigateway.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace}}
 	getAPIRuleAssert(ctx, g, apiRule1).Should(gomega.And(
 		eventingtesting.HaveNotEmptyAPIRule(),
@@ -980,7 +980,7 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 	getSubscriptionAssert(ctx, g, createdSubscription2).Should(eventingtesting.IsAnEmptySubscription())
 
 	// fetch the APIRule again and check
-	apiRule1 = &apigateway.APIRule{ObjectMeta: kmeta.ObjectMeta{
+	apiRule1 = &apigateway.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace}}
 	getAPIRuleAssert(ctx, g, apiRule1).Should(gomega.And(
 		eventingtesting.HaveNotEmptyAPIRule(),
@@ -1039,7 +1039,7 @@ func Test_APIRuleRecreateAfterManualDelete(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule := &apigateway.APIRule{ObjectMeta: kmeta.ObjectMeta{
+	apiRule := &apigateway.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
@@ -1051,7 +1051,7 @@ func Test_APIRuleRecreateAfterManualDelete(t *testing.T) {
 
 	// phase 3: Check if APIRule is re-created by the reconciler
 	getSubscriptionAssert(ctx, g, createdSubscription).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
-	apiRule = &apigateway.APIRule{ObjectMeta: kmeta.ObjectMeta{
+	apiRule = &apigateway.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 }
@@ -1089,7 +1089,7 @@ func Test_EventMeshSubRecreateAfterManualDelete(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule := &apigateway.APIRule{ObjectMeta: kmeta.ObjectMeta{
+	apiRule := &apigateway.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
@@ -1152,7 +1152,7 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 				eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
 					eventingv1alpha2.ConditionSubscribed,
 					eventingv1alpha2.ConditionReasonSubscriptionCreationFailed,
-					kcore.ConditionFalse,
+					kcorev1.ConditionFalse,
 					"failed to get subscription from EventMesh: create subscription failed: 500; 500 Internal"+
 						" Server Error;{\"message\":\"sorry, but this mock does not let you create a"+
 						" EventMesh subscription\"}\n",
@@ -1176,7 +1176,7 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 				eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
 					eventingv1alpha2.ConditionSubscriptionActive,
 					eventingv1alpha2.ConditionReasonSubscriptionNotActive,
-					kcore.ConditionFalse,
+					kcorev1.ConditionFalse,
 					"Waiting for subscription to be active"),
 				),
 			),
@@ -1201,7 +1201,7 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 				eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
 					eventingv1alpha2.ConditionWebhookCallStatus,
 					eventingv1alpha2.ConditionReasonWebhookCallStatus,
-					kcore.ConditionFalse,
+					kcorev1.ConditionFalse,
 					"Webhook endpoint response code: 401"),
 				),
 			),

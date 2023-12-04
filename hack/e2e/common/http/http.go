@@ -5,14 +5,14 @@ import (
 	"time"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	cloudeventsclient "github.com/cloudevents/sdk-go/v2/client"
+	ceclient "github.com/cloudevents/sdk-go/v2/client"
 )
 
 func NewHttpClient(transport *http.Transport) *http.Client {
 	return &http.Client{Transport: transport}
 }
 
-func NewCloudEventsClient(transport *http.Transport) (*cloudeventsclient.Client, error) {
+func NewCloudEventsClient(transport *http.Transport) (*ceclient.Client, error) {
 	p, err := cloudevents.NewHTTP(cloudevents.WithRoundTripper(transport))
 	if err != nil {
 		return nil, err

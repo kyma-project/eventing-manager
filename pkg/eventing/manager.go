@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	kapps "k8s.io/api/apps/v1"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -39,8 +39,8 @@ type Manager interface {
 		ctx context.Context,
 		eventing *v1alpha1.Eventing,
 		natsConfig *env.NATSConfig,
-		backendType v1alpha1.BackendType) (*kapps.Deployment, error)
-	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *kapps.Deployment) error
+		backendType v1alpha1.BackendType) (*kappsv1.Deployment, error)
+	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *kappsv1.Deployment) error
 	DeletePublisherProxyResources(ctx context.Context, eventing *v1alpha1.Eventing) error
 	GetBackendConfig() *env.BackendConfig
 	SetBackendConfig(env.BackendConfig)
@@ -78,7 +78,7 @@ func (em EventingManager) DeployPublisherProxy(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
 	natsConfig *env.NATSConfig,
-	backendType v1alpha1.BackendType) (*kapps.Deployment, error) {
+	backendType v1alpha1.BackendType) (*kappsv1.Deployment, error) {
 	// update EC reconciler NATS and public config from the data in the eventing CR
 	deployment, err := em.applyPublisherProxyDeployment(ctx, eventing, natsConfig, backendType)
 	if err != nil {
@@ -91,8 +91,8 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
 	natsConfig *env.NATSConfig,
-	backendType v1alpha1.BackendType) (*kapps.Deployment, error) {
-	var desiredPublisher *kapps.Deployment
+	backendType v1alpha1.BackendType) (*kappsv1.Deployment, error) {
+	var desiredPublisher *kappsv1.Deployment
 
 	switch backendType {
 	case v1alpha1.NatsBackendType:
@@ -144,7 +144,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 
 func (em *EventingManager) migratePublisherDeploymentFromEC(
 	ctx context.Context, eventing *v1alpha1.Eventing,
-	currentPublisher kapps.Deployment, desiredPublisher kapps.Deployment) error {
+	currentPublisher kappsv1.Deployment, desiredPublisher kappsv1.Deployment) error {
 	// If Eventing CR is already owner of deployment, then it means that the publisher deployment
 	// was already migrated.
 	if len(currentPublisher.OwnerReferences) == 1 && currentPublisher.OwnerReferences[0].Name == eventing.Name {
@@ -190,7 +190,7 @@ func (em *EventingManager) SetBackendConfig(config env.BackendConfig) {
 func (em EventingManager) DeployPublisherProxyResources(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
-	publisherDeployment *kapps.Deployment) error {
+	publisherDeployment *kappsv1.Deployment) error {
 	// define list of resources to create for EPP.
 	resources := []client.Object{
 		// ServiceAccount
@@ -232,12 +232,12 @@ func (em EventingManager) DeployPublisherProxyResources(
 
 func (em EventingManager) DeletePublisherProxyResources(ctx context.Context, eventing *v1alpha1.Eventing) error {
 	// define list of resources to delete for EPP.
-	publisherDeployment := &kapps.Deployment{
-		TypeMeta: kmeta.TypeMeta{
+	publisherDeployment := &kappsv1.Deployment{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      GetPublisherDeploymentName(*eventing),
 			Namespace: eventing.Namespace,
 		},

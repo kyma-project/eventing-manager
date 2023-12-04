@@ -15,10 +15,10 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 
-	nats2 "github.com/cloudevents/sdk-go/protocol/nats/v2"
-	v2 "github.com/cloudevents/sdk-go/v2"
+	cenats "github.com/cloudevents/sdk-go/protocol/nats/v2"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
-	cev2http "github.com/cloudevents/sdk-go/v2/protocol/http"
+	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
@@ -90,7 +90,7 @@ func SendCloudEventToJetStream(jetStreamClient *JetStream, subject, eventData, c
 	// convert  to the CE Event
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	message := cev2http.NewMessageFromHttpRequest(req)
+	message := cehttp.NewMessageFromHttpRequest(req)
 	defer func() { _ = message.Finish(nil) }()
 	event, err := binding.ToEvent(ctx, message)
 	if err != nil {
@@ -100,13 +100,13 @@ func SendCloudEventToJetStream(jetStreamClient *JetStream, subject, eventData, c
 		return validateErr
 	}
 	// get a CE sender for the embedded NATS using CE-SDK
-	natsOpts := nats2.NatsOptions()
+	natsOpts := cenats.NatsOptions()
 	url := jetStreamClient.Config.URL
-	sender, err := nats2.NewSender(url, subject, natsOpts)
+	sender, err := cenats.NewSender(url, subject, natsOpts)
 	if err != nil {
 		return nil
 	}
-	client, err := v2.NewClient(sender)
+	client, err := cloudevents.NewClient(sender)
 	if err != nil {
 		return err
 	}

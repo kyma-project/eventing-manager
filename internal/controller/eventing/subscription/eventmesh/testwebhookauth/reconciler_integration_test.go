@@ -8,7 +8,7 @@ import (
 
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
@@ -51,7 +51,7 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 
 	// ensure APIRule is created
 	apiRule := &apigateway.APIRule{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      kymaSubscription.Status.Backend.APIRuleName,
 			Namespace: kymaSubscription.Namespace,
 		},

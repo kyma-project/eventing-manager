@@ -1,10 +1,10 @@
 package cache
 
 import (
-	kapps "k8s.io/api/apps/v1"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
-	kcore "k8s.io/api/core/v1"
-	krbac "k8s.io/api/rbac/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kautoscalingv1 "k8s.io/api/autoscaling/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	krbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -22,11 +22,11 @@ func applySelectors(options cache.Options) cache.Options {
 	// TODO(marcobebway) filter by label "app.kubernetes.io/created-by=eventing-manager" when it is released
 	instanceEventing := fromLabelSelector(label.SelectorInstanceEventing())
 	options.ByObject = map[client.Object]cache.ByObject{
-		&kapps.Deployment{}:                      instanceEventing,
-		&kcore.ServiceAccount{}:                  instanceEventing,
-		&krbac.ClusterRole{}:                     instanceEventing,
-		&krbac.ClusterRoleBinding{}:              instanceEventing,
-		&autoscalingv1.HorizontalPodAutoscaler{}: instanceEventing,
+		&kappsv1.Deployment{}:                     instanceEventing,
+		&kcorev1.ServiceAccount{}:                 instanceEventing,
+		&krbacv1.ClusterRole{}:                    instanceEventing,
+		&krbacv1.ClusterRoleBinding{}:             instanceEventing,
+		&kautoscalingv1.HorizontalPodAutoscaler{}: instanceEventing,
 	}
 	return options
 }

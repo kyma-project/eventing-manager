@@ -23,9 +23,9 @@ import (
 	"os"
 
 	"github.com/go-logr/zapr"
-	kapiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kapiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
@@ -73,7 +73,7 @@ func init() {
 
 	utilruntime.Must(apigateway.AddToScheme(scheme))
 
-	utilruntime.Must(kapiextensions.AddToScheme(scheme))
+	utilruntime.Must(kapiextensionsv1.AddToScheme(scheme))
 
 	utilruntime.Must(jetstream.AddToScheme(scheme))
 	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
@@ -182,7 +182,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		subManagerFactory,
 		opts,
 		&operatorv1alpha1.Eventing{
-			ObjectMeta: kmeta.ObjectMeta{
+			ObjectMeta: kmetav1.ObjectMeta{
 				Name:      backendConfig.EventingCRName,
 				Namespace: backendConfig.EventingCRNamespace,
 			},

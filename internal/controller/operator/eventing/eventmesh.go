@@ -9,9 +9,9 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -171,7 +171,7 @@ func (r *Reconciler) stopEventMeshSubManager(runCleanup bool, log *zap.SugaredLo
 	return nil
 }
 
-func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *kcore.Secret) (*kcore.Secret, error) {
+func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *kcorev1.Secret) (*kcorev1.Secret, error) {
 	desiredSecret, err := getSecretForPublisher(secret)
 	if err != nil {
 		return nil, fmt.Errorf("invalid secret for Event Publisher: %v", err)
@@ -228,7 +228,7 @@ func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context, secretNames
 	var exists bool
 	var clientID, clientSecret, tokenURL, certsURL []byte
 
-	oauth2Secret := new(kcore.Secret)
+	oauth2Secret := new(kcorev1.Secret)
 	oauth2SecretNamespacedName := types.NamespacedName{
 		Namespace: secretNamespace,
 		Name:      r.backendConfig.EventingWebhookAuthSecretName,
@@ -281,20 +281,20 @@ func (r *Reconciler) isOauth2CredentialsInitialized() bool {
 		len(r.oauth2credentials.certsURL) > 0
 }
 
-func newSecret(name, namespace string) *kcore.Secret {
-	return &kcore.Secret{
-		TypeMeta: kmeta.TypeMeta{
+func newSecret(name, namespace string) *kcorev1.Secret {
+	return &kcorev1.Secret{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Secret",
-			APIVersion: kcore.SchemeGroupVersion.String(),
+			APIVersion: kcorev1.SchemeGroupVersion.String(),
 		},
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 	}
 }
 
-func getSecretForPublisher(eventMeshSecret *kcore.Secret) (*kcore.Secret, error) {
+func getSecretForPublisher(eventMeshSecret *kcorev1.Secret) (*kcorev1.Secret, error) {
 	secret := newSecret(eventing.PublisherName, eventMeshSecret.Namespace)
 
 	secret.Labels = map[string]string{
@@ -354,7 +354,7 @@ func getSecretStringData(clientID, clientSecret, tokenEndpoint, grantType, publi
 	}
 }
 
-func setUpEnvironmentForEventMesh(secret *kcore.Secret, eventingCR *v1alpha1.Eventing) error {
+func setUpEnvironmentForEventMesh(secret *kcorev1.Secret, eventingCR *v1alpha1.Eventing) error {
 	err := os.Setenv("BEB_API_URL", fmt.Sprintf("%s%s", string(secret.Data[PublisherSecretEMSHostKey]), EventMeshPublishEndpointForSubscriber))
 	if err != nil {
 		return fmt.Errorf("set BEB_API_URL env var failed: %v", err)

@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
@@ -36,7 +36,7 @@ func Test_isInDeletion(t *testing.T) {
 		{
 			name: "Deletion timestamp is zero",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				zero := kmeta.Time{}
+				zero := kmetav1.Time{}
 				sub := eventingtesting.NewSubscription("some-name", "some-namespace",
 					eventingtesting.WithNotCleanSource(),
 					eventingtesting.WithNotCleanType())
@@ -48,7 +48,7 @@ func Test_isInDeletion(t *testing.T) {
 		{
 			name: "Deletion timestamp is set to a useful time",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				newTime := kmeta.NewTime(time.Now())
+				newTime := kmetav1.NewTime(time.Now())
 				sub := eventingtesting.NewSubscription("some-name", "some-namespace",
 					eventingtesting.WithNotCleanSource(),
 					eventingtesting.WithNotCleanType())
@@ -80,7 +80,7 @@ func Test_isFinalizerSet(t *testing.T) {
 		{
 			name: "Finalizer is set",
 			givenSubscription: &eventingv1alpha2.Subscription{
-				ObjectMeta: kmeta.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
+				ObjectMeta: kmetav1.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
 			},
 			wantResult: true,
 		},
@@ -116,7 +116,7 @@ func Test_addFinalizer(t *testing.T) {
 		{
 			name: "with one finalizers",
 			givenSubscription: &eventingv1alpha2.Subscription{
-				ObjectMeta: kmeta.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
+				ObjectMeta: kmetav1.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
 			},
 			wantFinalizersLen: 2,
 			wantFinalizers:    []string{eventingv1alpha2.Finalizer, eventingv1alpha2.Finalizer},

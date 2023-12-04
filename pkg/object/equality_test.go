@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 	v2 "k8s.io/api/autoscaling/v2"
-	kcore "k8s.io/api/core/v1"
-	krbac "k8s.io/api/rbac/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	krbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
@@ -44,7 +44,7 @@ func TestApiRuleEqual(t *testing.T) {
 		},
 	}
 	apiRule := apigateway.APIRule{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "bar",
 			Labels:    labels,
@@ -158,13 +158,13 @@ func TestApiRuleEqual(t *testing.T) {
 		"should be unequal when OwnerReferences are diff": {
 			prep: func() *apigateway.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
-				newOwnerRef := kmeta.OwnerReference{
+				newOwnerRef := kmetav1.OwnerReference{
 					APIVersion: "foo",
 					Kind:       "foo",
 					Name:       "foo",
 					UID:        "uid",
 				}
-				apiRuleCopy.OwnerReferences = []kmeta.OwnerReference{
+				apiRuleCopy.OwnerReferences = []kmetav1.OwnerReference{
 					newOwnerRef,
 				}
 				return apiRuleCopy
@@ -194,13 +194,13 @@ func Test_isSubscriptionStatusEqual(t *testing.T) {
 			name: "should not be equal if the conditions are not equal",
 			subscriptionStatus1: eventingv1alpha2.SubscriptionStatus{
 				Conditions: []eventingv1alpha2.Condition{
-					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionTrue},
+					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
 				},
 				Ready: true,
 			},
 			subscriptionStatus2: eventingv1alpha2.SubscriptionStatus{
 				Conditions: []eventingv1alpha2.Condition{
-					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionFalse},
+					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionFalse},
 				},
 				Ready: true,
 			},
@@ -210,13 +210,13 @@ func Test_isSubscriptionStatusEqual(t *testing.T) {
 			name: "should not be equal if the ready status is not equal",
 			subscriptionStatus1: eventingv1alpha2.SubscriptionStatus{
 				Conditions: []eventingv1alpha2.Condition{
-					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionTrue},
+					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
 				},
 				Ready: true,
 			},
 			subscriptionStatus2: eventingv1alpha2.SubscriptionStatus{
 				Conditions: []eventingv1alpha2.Condition{
-					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionTrue},
+					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
 				},
 				Ready: false,
 			},
@@ -226,7 +226,7 @@ func Test_isSubscriptionStatusEqual(t *testing.T) {
 			name: "should be equal if all the fields are equal",
 			subscriptionStatus1: eventingv1alpha2.SubscriptionStatus{
 				Conditions: []eventingv1alpha2.Condition{
-					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionTrue},
+					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
 				},
 				Ready: true,
 				Backend: eventingv1alpha2.Backend{
@@ -235,7 +235,7 @@ func Test_isSubscriptionStatusEqual(t *testing.T) {
 			},
 			subscriptionStatus2: eventingv1alpha2.SubscriptionStatus{
 				Conditions: []eventingv1alpha2.Condition{
-					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcore.ConditionTrue},
+					{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
 				},
 				Ready: true,
 				Backend: eventingv1alpha2.Backend{
@@ -429,8 +429,8 @@ func Test_isSubscriptionStatusEqual(t *testing.T) {
 //}
 
 func Test_ownerReferencesDeepEqual(t *testing.T) {
-	ownerReference := func(version, kind, name, uid string, controller, block *bool) kmeta.OwnerReference {
-		return kmeta.OwnerReference{
+	ownerReference := func(version, kind, name, uid string, controller, block *bool) kmetav1.OwnerReference {
+		return kmetav1.OwnerReference{
 			APIVersion:         version,
 			Kind:               kind,
 			Name:               name,
@@ -442,8 +442,8 @@ func Test_ownerReferencesDeepEqual(t *testing.T) {
 
 	tests := []struct {
 		name                  string
-		givenOwnerReferences1 []kmeta.OwnerReference
-		givenOwnerReferences2 []kmeta.OwnerReference
+		givenOwnerReferences1 []kmetav1.OwnerReference
+		givenOwnerReferences2 []kmetav1.OwnerReference
 		wantEqual             bool
 	}{
 		{
@@ -454,18 +454,18 @@ func Test_ownerReferencesDeepEqual(t *testing.T) {
 		},
 		{
 			name:                  "both OwnerReferences are empty",
-			givenOwnerReferences1: []kmeta.OwnerReference{},
-			givenOwnerReferences2: []kmeta.OwnerReference{},
+			givenOwnerReferences1: []kmetav1.OwnerReference{},
+			givenOwnerReferences2: []kmetav1.OwnerReference{},
 			wantEqual:             true,
 		},
 		{
 			name: "same OwnerReferences and same order",
-			givenOwnerReferences1: []kmeta.OwnerReference{
+			givenOwnerReferences1: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 				ownerReference("v-1", "k-1", "n-1", "u-1", ptr.To(false), ptr.To(false)),
 				ownerReference("v-2", "k-2", "n-2", "u-2", ptr.To(false), ptr.To(false)),
 			},
-			givenOwnerReferences2: []kmeta.OwnerReference{
+			givenOwnerReferences2: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 				ownerReference("v-1", "k-1", "n-1", "u-1", ptr.To(false), ptr.To(false)),
 				ownerReference("v-2", "k-2", "n-2", "u-2", ptr.To(false), ptr.To(false)),
@@ -474,12 +474,12 @@ func Test_ownerReferencesDeepEqual(t *testing.T) {
 		},
 		{
 			name: "same OwnerReferences but different order",
-			givenOwnerReferences1: []kmeta.OwnerReference{
+			givenOwnerReferences1: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 				ownerReference("v-1", "k-1", "n-1", "u-1", ptr.To(false), ptr.To(false)),
 				ownerReference("v-2", "k-2", "n-2", "u-2", ptr.To(false), ptr.To(false)),
 			},
-			givenOwnerReferences2: []kmeta.OwnerReference{
+			givenOwnerReferences2: []kmetav1.OwnerReference{
 				ownerReference("v-2", "k-2", "n-2", "u-2", ptr.To(false), ptr.To(false)),
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 				ownerReference("v-1", "k-1", "n-1", "u-1", ptr.To(false), ptr.To(false)),
@@ -488,60 +488,60 @@ func Test_ownerReferencesDeepEqual(t *testing.T) {
 		},
 		{
 			name: "different OwnerReference APIVersion",
-			givenOwnerReferences1: []kmeta.OwnerReference{
+			givenOwnerReferences1: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 			},
-			givenOwnerReferences2: []kmeta.OwnerReference{
+			givenOwnerReferences2: []kmetav1.OwnerReference{
 				ownerReference("v-1", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 			},
 			wantEqual: false,
 		},
 		{
 			name: "different OwnerReference Kind",
-			givenOwnerReferences1: []kmeta.OwnerReference{
+			givenOwnerReferences1: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 			},
-			givenOwnerReferences2: []kmeta.OwnerReference{
+			givenOwnerReferences2: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-1", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 			},
 			wantEqual: false,
 		},
 		{
 			name: "different OwnerReference Name",
-			givenOwnerReferences1: []kmeta.OwnerReference{
+			givenOwnerReferences1: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 			},
-			givenOwnerReferences2: []kmeta.OwnerReference{
+			givenOwnerReferences2: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-1", "u-0", ptr.To(false), ptr.To(false)),
 			},
 			wantEqual: false,
 		},
 		{
 			name: "different OwnerReference UID",
-			givenOwnerReferences1: []kmeta.OwnerReference{
+			givenOwnerReferences1: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 			},
-			givenOwnerReferences2: []kmeta.OwnerReference{
+			givenOwnerReferences2: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-1", ptr.To(false), ptr.To(false)),
 			},
 			wantEqual: false,
 		},
 		{
 			name: "different OwnerReference Controller",
-			givenOwnerReferences1: []kmeta.OwnerReference{
+			givenOwnerReferences1: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 			},
-			givenOwnerReferences2: []kmeta.OwnerReference{
+			givenOwnerReferences2: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(true), ptr.To(false)),
 			},
 			wantEqual: false,
 		},
 		{
 			name: "different OwnerReference BlockOwnerDeletion",
-			givenOwnerReferences1: []kmeta.OwnerReference{
+			givenOwnerReferences1: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(false)),
 			},
-			givenOwnerReferences2: []kmeta.OwnerReference{
+			givenOwnerReferences2: []kmetav1.OwnerReference{
 				ownerReference("v-0", "k-0", "n-0", "u-0", ptr.To(false), ptr.To(true)),
 			},
 			wantEqual: false,
@@ -561,8 +561,8 @@ func Test_containerEqual(t *testing.T) {
 	quantityB, _ := resource.ParseQuantity("10k")
 
 	type args struct {
-		c1 *kcore.Container
-		c2 *kcore.Container
+		c1 *kcorev1.Container
+		c2 *kcorev1.Container
 	}
 	tests := []struct {
 		name string
@@ -572,29 +572,29 @@ func Test_containerEqual(t *testing.T) {
 		{
 			name: "container are equal",
 			args: args{
-				c1: &kcore.Container{
+				c1: &kcorev1.Container{
 					Name:       "test",
 					Image:      "bla",
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []kcore.ContainerPort{{
+					Ports: []kcorev1.ContainerPort{{
 						Name:          "testport",
 						HostPort:      1,
 						ContainerPort: 2,
 						Protocol:      "http",
 						HostIP:        "192.168.1.1",
 					}},
-					Resources: kcore.ResourceRequirements{
-						Limits: map[kcore.ResourceName]resource.Quantity{
+					Resources: kcorev1.ResourceRequirements{
+						Limits: map[kcorev1.ResourceName]resource.Quantity{
 							"cpu": quantityA,
 						},
-						Requests: map[kcore.ResourceName]resource.Quantity{
+						Requests: map[kcorev1.ResourceName]resource.Quantity{
 							"mem": quantityA,
 						},
 					},
-					ReadinessProbe: &kcore.Probe{
-						ProbeHandler:        kcore.ProbeHandler{},
+					ReadinessProbe: &kcorev1.Probe{
+						ProbeHandler:        kcorev1.ProbeHandler{},
 						InitialDelaySeconds: 0,
 						TimeoutSeconds:      0,
 						PeriodSeconds:       0,
@@ -602,29 +602,29 @@ func Test_containerEqual(t *testing.T) {
 						FailureThreshold:    0,
 					},
 				},
-				c2: &kcore.Container{
+				c2: &kcorev1.Container{
 					Name:       "test",
 					Image:      "bla",
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []kcore.ContainerPort{{
+					Ports: []kcorev1.ContainerPort{{
 						Name:          "testport",
 						HostPort:      1,
 						ContainerPort: 2,
 						Protocol:      "http",
 						HostIP:        "192.168.1.1",
 					}},
-					Resources: kcore.ResourceRequirements{
-						Limits: map[kcore.ResourceName]resource.Quantity{
+					Resources: kcorev1.ResourceRequirements{
+						Limits: map[kcorev1.ResourceName]resource.Quantity{
 							"cpu": quantityA,
 						},
-						Requests: map[kcore.ResourceName]resource.Quantity{
+						Requests: map[kcorev1.ResourceName]resource.Quantity{
 							"mem": quantityA,
 						},
 					},
-					ReadinessProbe: &kcore.Probe{
-						ProbeHandler:        kcore.ProbeHandler{},
+					ReadinessProbe: &kcorev1.Probe{
+						ProbeHandler:        kcorev1.ProbeHandler{},
 						InitialDelaySeconds: 0,
 						TimeoutSeconds:      0,
 						PeriodSeconds:       0,
@@ -638,29 +638,29 @@ func Test_containerEqual(t *testing.T) {
 		{
 			name: "ContainerPort are not equal",
 			args: args{
-				c1: &kcore.Container{
+				c1: &kcorev1.Container{
 					Name:       "test",
 					Image:      "bla",
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []kcore.ContainerPort{{
+					Ports: []kcorev1.ContainerPort{{
 						Name:          "testport",
 						HostPort:      1,
 						ContainerPort: 2,
 						Protocol:      "http",
 						HostIP:        "192.168.1.1",
 					}},
-					Resources: kcore.ResourceRequirements{
-						Limits: map[kcore.ResourceName]resource.Quantity{
+					Resources: kcorev1.ResourceRequirements{
+						Limits: map[kcorev1.ResourceName]resource.Quantity{
 							"cpu": quantityA,
 						},
-						Requests: map[kcore.ResourceName]resource.Quantity{
+						Requests: map[kcorev1.ResourceName]resource.Quantity{
 							"mem": quantityA,
 						},
 					},
-					ReadinessProbe: &kcore.Probe{
-						ProbeHandler:        kcore.ProbeHandler{},
+					ReadinessProbe: &kcorev1.Probe{
+						ProbeHandler:        kcorev1.ProbeHandler{},
 						InitialDelaySeconds: 0,
 						TimeoutSeconds:      0,
 						PeriodSeconds:       0,
@@ -668,29 +668,29 @@ func Test_containerEqual(t *testing.T) {
 						FailureThreshold:    0,
 					},
 				},
-				c2: &kcore.Container{
+				c2: &kcorev1.Container{
 					Name:       "test",
 					Image:      "bla",
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []kcore.ContainerPort{{
+					Ports: []kcorev1.ContainerPort{{
 						Name:          "testport",
 						HostPort:      1,
 						ContainerPort: 3,
 						Protocol:      "http",
 						HostIP:        "192.168.1.1",
 					}},
-					Resources: kcore.ResourceRequirements{
-						Limits: map[kcore.ResourceName]resource.Quantity{
+					Resources: kcorev1.ResourceRequirements{
+						Limits: map[kcorev1.ResourceName]resource.Quantity{
 							"cpu": quantityA,
 						},
-						Requests: map[kcore.ResourceName]resource.Quantity{
+						Requests: map[kcorev1.ResourceName]resource.Quantity{
 							"mem": quantityA,
 						},
 					},
-					ReadinessProbe: &kcore.Probe{
-						ProbeHandler:        kcore.ProbeHandler{},
+					ReadinessProbe: &kcorev1.Probe{
+						ProbeHandler:        kcorev1.ProbeHandler{},
 						InitialDelaySeconds: 0,
 						TimeoutSeconds:      0,
 						PeriodSeconds:       0,
@@ -704,29 +704,29 @@ func Test_containerEqual(t *testing.T) {
 		{
 			name: "resources are not equal",
 			args: args{
-				c1: &kcore.Container{
+				c1: &kcorev1.Container{
 					Name:       "test",
 					Image:      "bla",
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []kcore.ContainerPort{{
+					Ports: []kcorev1.ContainerPort{{
 						Name:          "testport",
 						HostPort:      1,
 						ContainerPort: 2,
 						Protocol:      "http",
 						HostIP:        "192.168.1.1",
 					}},
-					Resources: kcore.ResourceRequirements{
-						Limits: map[kcore.ResourceName]resource.Quantity{
+					Resources: kcorev1.ResourceRequirements{
+						Limits: map[kcorev1.ResourceName]resource.Quantity{
 							"cpu": quantityA,
 						},
-						Requests: map[kcore.ResourceName]resource.Quantity{
+						Requests: map[kcorev1.ResourceName]resource.Quantity{
 							"mem": quantityA,
 						},
 					},
-					ReadinessProbe: &kcore.Probe{
-						ProbeHandler:        kcore.ProbeHandler{},
+					ReadinessProbe: &kcorev1.Probe{
+						ProbeHandler:        kcorev1.ProbeHandler{},
 						InitialDelaySeconds: 0,
 						TimeoutSeconds:      0,
 						PeriodSeconds:       0,
@@ -734,29 +734,29 @@ func Test_containerEqual(t *testing.T) {
 						FailureThreshold:    0,
 					},
 				},
-				c2: &kcore.Container{
+				c2: &kcorev1.Container{
 					Name:       "test",
 					Image:      "bla",
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []kcore.ContainerPort{{
+					Ports: []kcorev1.ContainerPort{{
 						Name:          "testport",
 						HostPort:      1,
 						ContainerPort: 2,
 						Protocol:      "http",
 						HostIP:        "192.168.1.1",
 					}},
-					Resources: kcore.ResourceRequirements{
-						Limits: map[kcore.ResourceName]resource.Quantity{
+					Resources: kcorev1.ResourceRequirements{
+						Limits: map[kcorev1.ResourceName]resource.Quantity{
 							"cpu": quantityB,
 						},
-						Requests: map[kcore.ResourceName]resource.Quantity{
+						Requests: map[kcorev1.ResourceName]resource.Quantity{
 							"mem": quantityB,
 						},
 					},
-					ReadinessProbe: &kcore.Probe{
-						ProbeHandler:        kcore.ProbeHandler{},
+					ReadinessProbe: &kcorev1.Probe{
+						ProbeHandler:        kcorev1.ProbeHandler{},
 						InitialDelaySeconds: 0,
 						TimeoutSeconds:      0,
 						PeriodSeconds:       0,
@@ -770,13 +770,13 @@ func Test_containerEqual(t *testing.T) {
 		{
 			name: "ports are not equal",
 			args: args{
-				c1: &kcore.Container{
+				c1: &kcorev1.Container{
 					Name:       "test",
 					Image:      "bla",
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []kcore.ContainerPort{
+					Ports: []kcorev1.ContainerPort{
 						{
 							Name:          "testport-0",
 							HostPort:      1,
@@ -785,16 +785,16 @@ func Test_containerEqual(t *testing.T) {
 							HostIP:        "192.168.1.1",
 						},
 					},
-					Resources: kcore.ResourceRequirements{
-						Limits: map[kcore.ResourceName]resource.Quantity{
+					Resources: kcorev1.ResourceRequirements{
+						Limits: map[kcorev1.ResourceName]resource.Quantity{
 							"cpu": quantityA,
 						},
-						Requests: map[kcore.ResourceName]resource.Quantity{
+						Requests: map[kcorev1.ResourceName]resource.Quantity{
 							"mem": quantityA,
 						},
 					},
-					ReadinessProbe: &kcore.Probe{
-						ProbeHandler:        kcore.ProbeHandler{},
+					ReadinessProbe: &kcorev1.Probe{
+						ProbeHandler:        kcorev1.ProbeHandler{},
 						InitialDelaySeconds: 0,
 						TimeoutSeconds:      0,
 						PeriodSeconds:       0,
@@ -802,13 +802,13 @@ func Test_containerEqual(t *testing.T) {
 						FailureThreshold:    0,
 					},
 				},
-				c2: &kcore.Container{
+				c2: &kcorev1.Container{
 					Name:       "test",
 					Image:      "bla",
 					Command:    []string{"1", "2"},
 					Args:       []string{"a", "b"},
 					WorkingDir: "foodir",
-					Ports: []kcore.ContainerPort{
+					Ports: []kcorev1.ContainerPort{
 						{
 							Name:          "testport-0",
 							HostPort:      1,
@@ -824,16 +824,16 @@ func Test_containerEqual(t *testing.T) {
 							HostIP:        "192.168.1.1",
 						},
 					},
-					Resources: kcore.ResourceRequirements{
-						Limits: map[kcore.ResourceName]resource.Quantity{
+					Resources: kcorev1.ResourceRequirements{
+						Limits: map[kcorev1.ResourceName]resource.Quantity{
 							"cpu": quantityA,
 						},
-						Requests: map[kcore.ResourceName]resource.Quantity{
+						Requests: map[kcorev1.ResourceName]resource.Quantity{
 							"mem": quantityA,
 						},
 					},
-					ReadinessProbe: &kcore.Probe{
-						ProbeHandler:        kcore.ProbeHandler{},
+					ReadinessProbe: &kcorev1.Probe{
+						ProbeHandler:        kcorev1.ProbeHandler{},
 						InitialDelaySeconds: 0,
 						TimeoutSeconds:      0,
 						PeriodSeconds:       0,
@@ -867,7 +867,7 @@ func Test_serviceAccountEqual(t *testing.T) {
 		labels0 = map[string]string{"key": "val-0"}
 		labels1 = map[string]string{"key": "val-1"}
 
-		ownerReferences0 = []kmeta.OwnerReference{
+		ownerReferences0 = []kmetav1.OwnerReference{
 			{
 				Name:               "name-0",
 				APIVersion:         "version-0",
@@ -877,7 +877,7 @@ func Test_serviceAccountEqual(t *testing.T) {
 				BlockOwnerDeletion: ptr.To(false),
 			},
 		}
-		ownerReferences1 = []kmeta.OwnerReference{
+		ownerReferences1 = []kmetav1.OwnerReference{
 			{
 				Name:               "name-1",
 				APIVersion:         "version-0",
@@ -888,8 +888,8 @@ func Test_serviceAccountEqual(t *testing.T) {
 			},
 		}
 
-		serviceAccount = &kcore.ServiceAccount{
-			ObjectMeta: kmeta.ObjectMeta{
+		serviceAccount = &kcorev1.ServiceAccount{
+			ObjectMeta: kmetav1.ObjectMeta{
 				Name:            name0,
 				Namespace:       namespace0,
 				Labels:          labels0,
@@ -899,8 +899,8 @@ func Test_serviceAccountEqual(t *testing.T) {
 	)
 
 	type args struct {
-		a *kcore.ServiceAccount
-		b *kcore.ServiceAccount
+		a *kcorev1.ServiceAccount
+		b *kcorev1.ServiceAccount
 	}
 	tests := []struct {
 		name string
@@ -934,16 +934,16 @@ func Test_serviceAccountEqual(t *testing.T) {
 		{
 			name: "ServiceAccounts are equal",
 			args: args{
-				a: &kcore.ServiceAccount{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.ServiceAccount{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
 					},
 				},
-				b: &kcore.ServiceAccount{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.ServiceAccount{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						Labels:          labels0,
@@ -956,16 +956,16 @@ func Test_serviceAccountEqual(t *testing.T) {
 		{
 			name: "ServiceAccount names are not equal",
 			args: args{
-				a: &kcore.ServiceAccount{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.ServiceAccount{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
 					},
 				},
-				b: &kcore.ServiceAccount{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.ServiceAccount{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name1,
 						Namespace:       namespace0,
 						Labels:          labels0,
@@ -978,16 +978,16 @@ func Test_serviceAccountEqual(t *testing.T) {
 		{
 			name: "ServiceAccount namespaces are not equal",
 			args: args{
-				a: &kcore.ServiceAccount{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.ServiceAccount{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
 					},
 				},
-				b: &kcore.ServiceAccount{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.ServiceAccount{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace1,
 						Labels:          labels0,
@@ -1000,16 +1000,16 @@ func Test_serviceAccountEqual(t *testing.T) {
 		{
 			name: "ServiceAccount labels are not equal",
 			args: args{
-				a: &kcore.ServiceAccount{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.ServiceAccount{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
 					},
 				},
-				b: &kcore.ServiceAccount{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.ServiceAccount{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						Labels:          labels1,
@@ -1022,16 +1022,16 @@ func Test_serviceAccountEqual(t *testing.T) {
 		{
 			name: "ServiceAccount OwnerReferences are not equal",
 			args: args{
-				a: &kcore.ServiceAccount{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.ServiceAccount{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
 					},
 				},
-				b: &kcore.ServiceAccount{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.ServiceAccount{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						Labels:          labels0,
@@ -1061,7 +1061,7 @@ func Test_clusterRoleEqual(t *testing.T) {
 		labels0 = map[string]string{"key": "val-0"}
 		labels1 = map[string]string{"key": "val-1"}
 
-		ownerReferences0 = []kmeta.OwnerReference{
+		ownerReferences0 = []kmetav1.OwnerReference{
 			{
 				Name:               "name-0",
 				APIVersion:         "version-0",
@@ -1071,7 +1071,7 @@ func Test_clusterRoleEqual(t *testing.T) {
 				BlockOwnerDeletion: ptr.To(false),
 			},
 		}
-		ownerReferences1 = []kmeta.OwnerReference{
+		ownerReferences1 = []kmetav1.OwnerReference{
 			{
 				Name:               "name-1",
 				APIVersion:         "version-0",
@@ -1082,7 +1082,7 @@ func Test_clusterRoleEqual(t *testing.T) {
 			},
 		}
 
-		rules0 = []krbac.PolicyRule{
+		rules0 = []krbacv1.PolicyRule{
 			{
 				Verbs:           []string{"val-0"},
 				APIGroups:       []string{"val-0"},
@@ -1091,7 +1091,7 @@ func Test_clusterRoleEqual(t *testing.T) {
 				NonResourceURLs: []string{"val-0"},
 			},
 		}
-		rules1 = []krbac.PolicyRule{
+		rules1 = []krbacv1.PolicyRule{
 			{
 				Verbs:           []string{"val-1"},
 				APIGroups:       []string{"val-0"},
@@ -1101,8 +1101,8 @@ func Test_clusterRoleEqual(t *testing.T) {
 			},
 		}
 
-		clusterRole = &krbac.ClusterRole{
-			ObjectMeta: kmeta.ObjectMeta{
+		clusterRole = &krbacv1.ClusterRole{
+			ObjectMeta: kmetav1.ObjectMeta{
 				Name:            name0,
 				Labels:          labels0,
 				OwnerReferences: ownerReferences0,
@@ -1112,8 +1112,8 @@ func Test_clusterRoleEqual(t *testing.T) {
 	)
 
 	type args struct {
-		a *krbac.ClusterRole
-		b *krbac.ClusterRole
+		a *krbacv1.ClusterRole
+		b *krbacv1.ClusterRole
 	}
 	tests := []struct {
 		name string
@@ -1147,16 +1147,16 @@ func Test_clusterRoleEqual(t *testing.T) {
 		{
 			name: "ClusterRoles are equal",
 			args: args{
-				a: &krbac.ClusterRole{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &krbacv1.ClusterRole{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
 					},
 					Rules: rules0,
 				},
-				b: &krbac.ClusterRole{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &krbacv1.ClusterRole{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
@@ -1169,16 +1169,16 @@ func Test_clusterRoleEqual(t *testing.T) {
 		{
 			name: "ClusterRole names are not equal",
 			args: args{
-				a: &krbac.ClusterRole{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &krbacv1.ClusterRole{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
 					},
 					Rules: rules0,
 				},
-				b: &krbac.ClusterRole{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &krbacv1.ClusterRole{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name1,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
@@ -1191,16 +1191,16 @@ func Test_clusterRoleEqual(t *testing.T) {
 		{
 			name: "ClusterRole labels are not equal",
 			args: args{
-				a: &krbac.ClusterRole{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &krbacv1.ClusterRole{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
 					},
 					Rules: rules0,
 				},
-				b: &krbac.ClusterRole{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &krbacv1.ClusterRole{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Labels:          labels1,
 						OwnerReferences: ownerReferences0,
@@ -1213,16 +1213,16 @@ func Test_clusterRoleEqual(t *testing.T) {
 		{
 			name: "ClusterRole OwnerReferences are not equal",
 			args: args{
-				a: &krbac.ClusterRole{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &krbacv1.ClusterRole{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
 					},
 					Rules: rules0,
 				},
-				b: &krbac.ClusterRole{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &krbacv1.ClusterRole{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences1,
@@ -1235,16 +1235,16 @@ func Test_clusterRoleEqual(t *testing.T) {
 		{
 			name: "ClusterRole Rules are not equal",
 			args: args{
-				a: &krbac.ClusterRole{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &krbacv1.ClusterRole{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
 					},
 					Rules: rules0,
 				},
-				b: &krbac.ClusterRole{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &krbacv1.ClusterRole{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Labels:          labels0,
 						OwnerReferences: ownerReferences0,
@@ -1271,7 +1271,7 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 	)
 
 	var (
-		ownerReferences0 = []kmeta.OwnerReference{
+		ownerReferences0 = []kmetav1.OwnerReference{
 			{
 				Name:               "name-0",
 				APIVersion:         "version-0",
@@ -1281,7 +1281,7 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 				BlockOwnerDeletion: ptr.To(false),
 			},
 		}
-		ownerReferences1 = []kmeta.OwnerReference{
+		ownerReferences1 = []kmetav1.OwnerReference{
 			{
 				Name:               "name-1",
 				APIVersion:         "version-0",
@@ -1292,7 +1292,7 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 			},
 		}
 
-		subjects0 = []krbac.Subject{
+		subjects0 = []krbacv1.Subject{
 			{
 				Kind:      "kind-0",
 				APIGroup:  "group-0",
@@ -1300,7 +1300,7 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 				Namespace: "namespace-0",
 			},
 		}
-		subjects1 = []krbac.Subject{
+		subjects1 = []krbacv1.Subject{
 			{
 				Kind:      "kind-1",
 				APIGroup:  "group-0",
@@ -1309,12 +1309,12 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 			},
 		}
 
-		roleRef0 = krbac.RoleRef{
+		roleRef0 = krbacv1.RoleRef{
 			APIGroup: "group-0",
 			Kind:     "kind-0",
 			Name:     "name-0",
 		}
-		roleRef1 = krbac.RoleRef{
+		roleRef1 = krbacv1.RoleRef{
 			APIGroup: "group-1",
 			Kind:     "kind-0",
 			Name:     "name-0",
@@ -1322,8 +1322,8 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 	)
 
 	type args struct {
-		a *krbac.ClusterRoleBinding
-		b *krbac.ClusterRoleBinding
+		a *krbacv1.ClusterRoleBinding
+		b *krbacv1.ClusterRoleBinding
 	}
 	tests := []struct {
 		name string
@@ -1333,16 +1333,16 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 		{
 			name: "ClusterRoleBindings are equal",
 			args: args{
-				a: &krbac.ClusterRoleBinding{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &krbacv1.ClusterRoleBinding{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						OwnerReferences: ownerReferences0,
 					},
 					Subjects: subjects0,
 					RoleRef:  roleRef0,
 				},
-				b: &krbac.ClusterRoleBinding{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &krbacv1.ClusterRoleBinding{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						OwnerReferences: ownerReferences0,
 					},
@@ -1355,16 +1355,16 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 		{
 			name: "ClusterRoleBinding names are not equal",
 			args: args{
-				a: &krbac.ClusterRoleBinding{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &krbacv1.ClusterRoleBinding{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						OwnerReferences: ownerReferences0,
 					},
 					Subjects: subjects0,
 					RoleRef:  roleRef0,
 				},
-				b: &krbac.ClusterRoleBinding{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &krbacv1.ClusterRoleBinding{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name1,
 						OwnerReferences: ownerReferences0,
 					},
@@ -1377,16 +1377,16 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 		{
 			name: "ClusterRoleBinding OwnerReferences are not equal",
 			args: args{
-				a: &krbac.ClusterRoleBinding{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &krbacv1.ClusterRoleBinding{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						OwnerReferences: ownerReferences0,
 					},
 					Subjects: subjects0,
 					RoleRef:  roleRef0,
 				},
-				b: &krbac.ClusterRoleBinding{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &krbacv1.ClusterRoleBinding{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						OwnerReferences: ownerReferences1,
 					},
@@ -1399,16 +1399,16 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 		{
 			name: "ClusterRoleBinding Subjects are not equal",
 			args: args{
-				a: &krbac.ClusterRoleBinding{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &krbacv1.ClusterRoleBinding{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						OwnerReferences: ownerReferences0,
 					},
 					Subjects: subjects0,
 					RoleRef:  roleRef0,
 				},
-				b: &krbac.ClusterRoleBinding{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &krbacv1.ClusterRoleBinding{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						OwnerReferences: ownerReferences0,
 					},
@@ -1421,16 +1421,16 @@ func Test_clusterRoleBindingEqual(t *testing.T) {
 		{
 			name: "ClusterRoleBinding RoleRefs are not equal",
 			args: args{
-				a: &krbac.ClusterRoleBinding{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &krbacv1.ClusterRoleBinding{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						OwnerReferences: ownerReferences0,
 					},
 					Subjects: subjects0,
 					RoleRef:  roleRef0,
 				},
-				b: &krbac.ClusterRoleBinding{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &krbacv1.ClusterRoleBinding{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						OwnerReferences: ownerReferences0,
 					},
@@ -1460,7 +1460,7 @@ func Test_serviceEqual(t *testing.T) {
 	)
 
 	var (
-		ownerReferences0 = []kmeta.OwnerReference{
+		ownerReferences0 = []kmetav1.OwnerReference{
 			{
 				Name:               "name-0",
 				APIVersion:         "version-0",
@@ -1470,7 +1470,7 @@ func Test_serviceEqual(t *testing.T) {
 				BlockOwnerDeletion: ptr.To(false),
 			},
 		}
-		ownerReferences1 = []kmeta.OwnerReference{
+		ownerReferences1 = []kmetav1.OwnerReference{
 			{
 				Name:               "name-1",
 				APIVersion:         "version-0",
@@ -1481,7 +1481,7 @@ func Test_serviceEqual(t *testing.T) {
 			},
 		}
 
-		ports0 = []kcore.ServicePort{
+		ports0 = []kcorev1.ServicePort{
 			{
 				Name:        "name-0",
 				Protocol:    "protocol-0",
@@ -1495,7 +1495,7 @@ func Test_serviceEqual(t *testing.T) {
 				NodePort: 0,
 			},
 		}
-		ports1 = []kcore.ServicePort{
+		ports1 = []kcorev1.ServicePort{
 			{
 				Name:        "name-1",
 				Protocol:    "protocol-0",
@@ -1519,8 +1519,8 @@ func Test_serviceEqual(t *testing.T) {
 	)
 
 	type args struct {
-		a *kcore.Service
-		b *kcore.Service
+		a *kcorev1.Service
+		b *kcorev1.Service
 	}
 	tests := []struct {
 		name string
@@ -1530,24 +1530,24 @@ func Test_serviceEqual(t *testing.T) {
 		{
 			name: "Services are equal",
 			args: args{
-				a: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector0,
 					},
 				},
-				b: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector0,
 					},
@@ -1558,24 +1558,24 @@ func Test_serviceEqual(t *testing.T) {
 		{
 			name: "Service names are not equal",
 			args: args{
-				a: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector0,
 					},
 				},
-				b: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name1,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector0,
 					},
@@ -1586,24 +1586,24 @@ func Test_serviceEqual(t *testing.T) {
 		{
 			name: "Service namespaces are not equal",
 			args: args{
-				a: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector0,
 					},
 				},
-				b: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace1,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector0,
 					},
@@ -1614,24 +1614,24 @@ func Test_serviceEqual(t *testing.T) {
 		{
 			name: "Service OwnerReferences are not equal",
 			args: args{
-				a: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector0,
 					},
 				},
-				b: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences1,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector0,
 					},
@@ -1642,24 +1642,24 @@ func Test_serviceEqual(t *testing.T) {
 		{
 			name: "Service ports are not equal",
 			args: args{
-				a: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector0,
 					},
 				},
-				b: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports1,
 						Selector: selector0,
 					},
@@ -1670,24 +1670,24 @@ func Test_serviceEqual(t *testing.T) {
 		{
 			name: "Service selectors are not equal",
 			args: args{
-				a: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				a: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector0,
 					},
 				},
-				b: &kcore.Service{
-					ObjectMeta: kmeta.ObjectMeta{
+				b: &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
 					},
-					Spec: kcore.ServiceSpec{
+					Spec: kcorev1.ServiceSpec{
 						Ports:    ports0,
 						Selector: selector1,
 					},
@@ -1715,7 +1715,7 @@ func Test_hpaEqual(t *testing.T) {
 	)
 
 	var (
-		ownerReferences0 = []kmeta.OwnerReference{
+		ownerReferences0 = []kmetav1.OwnerReference{
 			{
 				Name:               "name-0",
 				APIVersion:         "version-0",
@@ -1725,7 +1725,7 @@ func Test_hpaEqual(t *testing.T) {
 				BlockOwnerDeletion: ptr.To(false),
 			},
 		}
-		ownerReferences1 = []kmeta.OwnerReference{
+		ownerReferences1 = []kmetav1.OwnerReference{
 			{
 				Name:               "name-1",
 				APIVersion:         "version-0",
@@ -1788,7 +1788,7 @@ func Test_hpaEqual(t *testing.T) {
 			name: "HPAs are equal",
 			args: args{
 				a: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1801,7 +1801,7 @@ func Test_hpaEqual(t *testing.T) {
 					},
 				},
 				b: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1820,7 +1820,7 @@ func Test_hpaEqual(t *testing.T) {
 			name: "HPA names are not equal",
 			args: args{
 				a: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1833,7 +1833,7 @@ func Test_hpaEqual(t *testing.T) {
 					},
 				},
 				b: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name1,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1852,7 +1852,7 @@ func Test_hpaEqual(t *testing.T) {
 			name: "HPA namespaces are not equal",
 			args: args{
 				a: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1865,7 +1865,7 @@ func Test_hpaEqual(t *testing.T) {
 					},
 				},
 				b: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace1,
 						OwnerReferences: ownerReferences0,
@@ -1884,7 +1884,7 @@ func Test_hpaEqual(t *testing.T) {
 			name: "HPA OwnerReferences are not equal",
 			args: args{
 				a: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1897,7 +1897,7 @@ func Test_hpaEqual(t *testing.T) {
 					},
 				},
 				b: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences1,
@@ -1916,7 +1916,7 @@ func Test_hpaEqual(t *testing.T) {
 			name: "HPA ScaleTargetRefs are not equal",
 			args: args{
 				a: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1929,7 +1929,7 @@ func Test_hpaEqual(t *testing.T) {
 					},
 				},
 				b: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1948,7 +1948,7 @@ func Test_hpaEqual(t *testing.T) {
 			name: "HPA MinReplicas are not equal",
 			args: args{
 				a: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1961,7 +1961,7 @@ func Test_hpaEqual(t *testing.T) {
 					},
 				},
 				b: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1980,7 +1980,7 @@ func Test_hpaEqual(t *testing.T) {
 			name: "HPA MaxReplicas are not equal",
 			args: args{
 				a: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -1993,7 +1993,7 @@ func Test_hpaEqual(t *testing.T) {
 					},
 				},
 				b: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -2012,7 +2012,7 @@ func Test_hpaEqual(t *testing.T) {
 			name: "HPA metrics are not equal",
 			args: args{
 				a: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -2025,7 +2025,7 @@ func Test_hpaEqual(t *testing.T) {
 					},
 				},
 				b: &v2.HorizontalPodAutoscaler{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name0,
 						Namespace:       namespace0,
 						OwnerReferences: ownerReferences0,
@@ -2052,15 +2052,15 @@ func Test_hpaEqual(t *testing.T) {
 
 func Test_envEqual(t *testing.T) {
 	type args struct {
-		e1 []kcore.EnvVar
-		e2 []kcore.EnvVar
+		e1 []kcorev1.EnvVar
+		e2 []kcorev1.EnvVar
 	}
 
-	var11 := kcore.EnvVar{
+	var11 := kcorev1.EnvVar{
 		Name:  "var1",
 		Value: "var1",
 	}
-	var12 := kcore.EnvVar{
+	var12 := kcorev1.EnvVar{
 		Name:  "var1",
 		Value: "var2",
 	}
@@ -2073,32 +2073,32 @@ func Test_envEqual(t *testing.T) {
 		{
 			name: "envs equal, order equals",
 			args: args{
-				e1: []kcore.EnvVar{var11, var12},
-				e2: []kcore.EnvVar{var11, var12},
+				e1: []kcorev1.EnvVar{var11, var12},
+				e2: []kcorev1.EnvVar{var11, var12},
 			},
 			want: true,
 		},
 		{
 			name: "envs equal, different order",
 			args: args{
-				e1: []kcore.EnvVar{var11, var12},
-				e2: []kcore.EnvVar{var12, var11},
+				e1: []kcorev1.EnvVar{var11, var12},
+				e2: []kcorev1.EnvVar{var12, var11},
 			},
 			want: true,
 		},
 		{
 			name: "different length",
 			args: args{
-				e1: []kcore.EnvVar{var11, var11},
-				e2: []kcore.EnvVar{var11},
+				e1: []kcorev1.EnvVar{var11, var11},
+				e2: []kcorev1.EnvVar{var11},
 			},
 			want: false,
 		},
 		{
 			name: "envs different",
 			args: args{
-				e1: []kcore.EnvVar{var11, var12},
-				e2: []kcore.EnvVar{var11, var11},
+				e1: []kcorev1.EnvVar{var11, var12},
+				e2: []kcorev1.EnvVar{var11, var11},
 			},
 			want: false,
 		},
@@ -2114,12 +2114,12 @@ func Test_envEqual(t *testing.T) {
 
 func Test_probeEqual(t *testing.T) {
 	var (
-		probe = &kcore.Probe{}
+		probe = &kcorev1.Probe{}
 	)
 
 	type args struct {
-		p1 *kcore.Probe
-		p2 *kcore.Probe
+		p1 *kcorev1.Probe
+		p2 *kcorev1.Probe
 	}
 	tests := []struct {
 		name string
@@ -2153,10 +2153,10 @@ func Test_probeEqual(t *testing.T) {
 		{
 			name: "Probes are not equal",
 			args: args{
-				p1: &kcore.Probe{
+				p1: &kcorev1.Probe{
 					InitialDelaySeconds: 1,
 				},
-				p2: &kcore.Probe{
+				p2: &kcorev1.Probe{
 					InitialDelaySeconds: 2,
 				},
 			},

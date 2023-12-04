@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-project/eventing-manager/test/utils"
 
 	"github.com/stretchr/testify/require"
-	kapps "k8s.io/api/apps/v1"
+	kappsv1 "k8s.io/api/apps/v1"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -69,7 +69,7 @@ func Test_DeletionOfPublisherResourcesWhenNATSNotEnabled(t *testing.T) {
 	g := gomega.NewWithT(t)
 
 	// given
-	eventingcontroller.IsDeploymentReady = func(deployment *kapps.Deployment) bool { return true }
+	eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool { return true }
 	// define CRs.
 	givenEventing := utils.NewEventingCR(
 		utils.WithEventingCRMinimal(),

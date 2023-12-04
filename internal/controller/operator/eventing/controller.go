@@ -23,12 +23,12 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
-	kapps "k8s.io/api/apps/v1"
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	kcore "k8s.io/api/core/v1"
-	krbac "k8s.io/api/rbac/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kautoscalingv2 "k8s.io/api/autoscaling/v2"
+	kcorev1 "k8s.io/api/core/v1"
+	krbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
@@ -173,10 +173,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// watch cluster-scoped resources, such as ClusterRole and ClusterRoleBinding.
 	if !r.clusterScopedResourcesWatched {
-		if err := r.watchResource(&krbac.ClusterRole{}, eventingCR); err != nil {
+		if err := r.watchResource(&krbacv1.ClusterRole{}, eventingCR); err != nil {
 			return ctrl.Result{}, err
 		}
-		if err := r.watchResource(&krbac.ClusterRoleBinding{}, eventingCR); err != nil {
+		if err := r.watchResource(&krbacv1.ClusterRoleBinding{}, eventingCR); err != nil {
 			return ctrl.Result{}, err
 		}
 		r.clusterScopedResourcesWatched = true
@@ -215,7 +215,7 @@ func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing 
 	// update conditions in status.
 	errorMessage := fmt.Sprintf("Only a single Eventing CR with name: %s and namespace: %s "+
 		"is allowed to be created in a Kyma cluster.", r.allowedEventingCR.Name, r.allowedEventingCR.Namespace)
-	eventing.Status.UpdateConditionPublisherProxyReady(kmeta.ConditionFalse,
+	eventing.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse,
 		operatorv1alpha1.ConditionReasonForbidden, errorMessage)
 
 	return false, r.syncEventingStatus(ctx, eventing, log)
@@ -259,7 +259,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	var err error
 	r.controller, err = ctrl.NewControllerManagedBy(mgr).
 		For(&operatorv1alpha1.Eventing{}).
-		Owns(&kapps.Deployment{},
+		Owns(&kappsv1.Deployment{},
 			builder.WithPredicates(
 				predicate.Funcs{
 					CreateFunc: r.SkipEnqueueOnCreate(),
@@ -267,7 +267,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			),
 		).
-		Owns(&kcore.Service{},
+		Owns(&kcorev1.Service{},
 			builder.WithPredicates(
 				predicate.Funcs{
 					CreateFunc: r.SkipEnqueueOnCreate(),
@@ -275,7 +275,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			),
 		).
-		Owns(&kcore.ServiceAccount{},
+		Owns(&kcorev1.ServiceAccount{},
 			builder.WithPredicates(
 				predicate.Funcs{
 					CreateFunc: r.SkipEnqueueOnCreate(),
@@ -283,7 +283,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			),
 		).
-		Owns(&autoscalingv2.HorizontalPodAutoscaler{},
+		Owns(&kautoscalingv2.HorizontalPodAutoscaler{},
 			builder.WithPredicates(
 				predicate.Funcs{
 					CreateFunc: r.SkipEnqueueOnCreate(),
@@ -557,7 +557,7 @@ func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *operat
 func (r *Reconciler) handlePublisherProxy(
 	ctx context.Context,
 	eventing *operatorv1alpha1.Eventing,
-	backendType operatorv1alpha1.BackendType) (*kapps.Deployment, error) {
+	backendType operatorv1alpha1.BackendType) (*kappsv1.Deployment, error) {
 	// get nats config with NATS server url
 	var natsConfig *env.NATSConfig
 	if backendType == operatorv1alpha1.NatsBackendType {

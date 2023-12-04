@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
-	kapps "k8s.io/api/apps/v1"
-	kcore "k8s.io/api/core/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -46,7 +46,7 @@ func newNATSPublisherDeployment(
 	eventing *v1alpha1.Eventing,
 	natsConfig env.NATSConfig,
 	publisherConfig env.PublisherConfig,
-) *kapps.Deployment {
+) *kappsv1.Deployment {
 	return newDeployment(
 		eventing,
 		publisherConfig,
@@ -63,7 +63,7 @@ func newNATSPublisherDeployment(
 func newEventMeshPublisherDeployment(
 	eventing *v1alpha1.Eventing,
 	publisherConfig env.PublisherConfig,
-) *kapps.Deployment {
+) *kappsv1.Deployment {
 	return newDeployment(
 		eventing,
 		publisherConfig,
@@ -76,25 +76,25 @@ func newEventMeshPublisherDeployment(
 	)
 }
 
-type DeployOpt func(deployment *kapps.Deployment)
+type DeployOpt func(deployment *kappsv1.Deployment)
 
-func newDeployment(eventing *v1alpha1.Eventing, publisherConfig env.PublisherConfig, opts ...DeployOpt) *kapps.Deployment {
-	newDeployment := &kapps.Deployment{
-		TypeMeta: kmeta.TypeMeta{
+func newDeployment(eventing *v1alpha1.Eventing, publisherConfig env.PublisherConfig, opts ...DeployOpt) *kappsv1.Deployment {
+	newDeployment := &kappsv1.Deployment{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      GetPublisherDeploymentName(*eventing),
 			Namespace: eventing.Namespace,
 		},
-		Spec: kapps.DeploymentSpec{
-			Template: kcore.PodTemplateSpec{
-				ObjectMeta: kmeta.ObjectMeta{
+		Spec: kappsv1.DeploymentSpec{
+			Template: kcorev1.PodTemplateSpec{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name: GetPublisherDeploymentName(*eventing),
 				},
-				Spec: kcore.PodSpec{
-					RestartPolicy:                 kcore.RestartPolicyAlways,
+				Spec: kcorev1.PodSpec{
+					RestartPolicy:                 kcorev1.RestartPolicyAlways,
 					ServiceAccountName:            GetPublisherServiceAccountName(*eventing),
 					TerminationGracePeriodSeconds: &TerminationGracePeriodSeconds,
 					PriorityClassName:             publisherConfig.PriorityClassName,
@@ -102,7 +102,7 @@ func newDeployment(eventing *v1alpha1.Eventing, publisherConfig env.PublisherCon
 				},
 			},
 		},
-		Status: kapps.DeploymentStatus{},
+		Status: kappsv1.DeploymentStatus{},
 	}
 	for _, o := range opts {
 		o(newDeployment)
@@ -110,15 +110,15 @@ func newDeployment(eventing *v1alpha1.Eventing, publisherConfig env.PublisherCon
 	return newDeployment
 }
 
-func getPodSecurityContext() *kcore.PodSecurityContext {
+func getPodSecurityContext() *kcorev1.PodSecurityContext {
 	const id = 10001
-	return &kcore.PodSecurityContext{
+	return &kcorev1.PodSecurityContext{
 		FSGroup:      utils.Int64Ptr(id),
 		RunAsUser:    utils.Int64Ptr(id),
 		RunAsGroup:   utils.Int64Ptr(id),
 		RunAsNonRoot: utils.BoolPtr(true),
-		SeccompProfile: &kcore.SeccompProfile{
-			Type: kcore.SeccompProfileTypeRuntimeDefault,
+		SeccompProfile: &kcorev1.SeccompProfile{
+			Type: kcorev1.SeccompProfileTypeRuntimeDefault,
 		},
 	}
 }
@@ -137,43 +137,43 @@ func getLabels(publisherName string, backendType v1alpha1.BackendType) map[strin
 }
 
 func WithLabels(publisherName string, backendType v1alpha1.BackendType) DeployOpt {
-	return func(d *kapps.Deployment) {
+	return func(d *kappsv1.Deployment) {
 		labels := getLabels(publisherName, backendType)
 		d.ObjectMeta.Labels = labels
 		d.Spec.Template.ObjectMeta.Labels = labels
 	}
 }
 
-func getSelector(publisherName string) *kmeta.LabelSelector {
+func getSelector(publisherName string) *kmetav1.LabelSelector {
 	labels := map[string]string{
 		label.KeyInstance:  label.ValueEventing,
 		label.KeyName:      publisherName,
 		label.KeyDashboard: label.ValueEventing,
 	}
-	return kmeta.SetAsLabelSelector(labels)
+	return kmetav1.SetAsLabelSelector(labels)
 }
 
 func WithSelector(publisherName string) DeployOpt {
-	return func(d *kapps.Deployment) {
+	return func(d *kappsv1.Deployment) {
 		d.Spec.Selector = getSelector(publisherName)
 	}
 }
 
 func WithPriorityClassName(name string) DeployOpt {
-	return func(deployment *kapps.Deployment) {
+	return func(deployment *kappsv1.Deployment) {
 		deployment.Spec.Template.Spec.PriorityClassName = name
 	}
 }
 
 func WithAffinity(publisherName string) DeployOpt {
-	return func(d *kapps.Deployment) {
-		d.Spec.Template.Spec.Affinity = &kcore.Affinity{
-			PodAntiAffinity: &kcore.PodAntiAffinity{
-				PreferredDuringSchedulingIgnoredDuringExecution: []kcore.WeightedPodAffinityTerm{
+	return func(d *kappsv1.Deployment) {
+		d.Spec.Template.Spec.Affinity = &kcorev1.Affinity{
+			PodAntiAffinity: &kcorev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []kcorev1.WeightedPodAffinityTerm{
 					{
 						Weight: 100,
-						PodAffinityTerm: kcore.PodAffinityTerm{
-							LabelSelector: &kmeta.LabelSelector{
+						PodAffinityTerm: kcorev1.PodAffinityTerm{
+							LabelSelector: &kmetav1.LabelSelector{
 								MatchLabels: map[string]string{label.KeyName: publisherName},
 							},
 							TopologyKey: "kubernetes.io/hostname",
@@ -185,8 +185,8 @@ func WithAffinity(publisherName string) DeployOpt {
 	}
 }
 func WithContainers(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) DeployOpt {
-	return func(d *kapps.Deployment) {
-		d.Spec.Template.Spec.Containers = []kcore.Container{
+	return func(d *kappsv1.Deployment) {
+		d.Spec.Template.Spec.Containers = []kcorev1.Container{
 			{
 				Name:            GetPublisherDeploymentName(*eventing),
 				Image:           publisherConfig.Image,
@@ -205,7 +205,7 @@ func WithContainers(publisherConfig env.PublisherConfig, eventing *v1alpha1.Even
 }
 
 func WithLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) DeployOpt {
-	return func(d *kapps.Deployment) {
+	return func(d *kappsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
 			if strings.EqualFold(container.Name, GetPublisherDeploymentName(*eventing)) {
 				d.Spec.Template.Spec.Containers[i].Env = append(d.Spec.Template.Spec.Containers[i].Env, getLogEnvVars(publisherConfig, eventing)...)
@@ -216,7 +216,7 @@ func WithLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Even
 
 func WithNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig,
 	eventing *v1alpha1.Eventing) DeployOpt {
-	return func(d *kapps.Deployment) {
+	return func(d *kappsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
 			if strings.EqualFold(container.Name, GetPublisherDeploymentName(*eventing)) {
 				d.Spec.Template.Spec.Containers[i].Env = getNATSEnvVars(natsConfig, publisherConfig, eventing)
@@ -226,8 +226,8 @@ func WithNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherCon
 }
 
 func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig,
-	eventing *v1alpha1.Eventing) []kcore.EnvVar {
-	return []kcore.EnvVar{
+	eventing *v1alpha1.Eventing) []kcorev1.EnvVar {
+	return []kcorev1.EnvVar{
 		{Name: "BACKEND", Value: "nats"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
 		{Name: "NATS_URL", Value: natsConfig.URL},
@@ -240,50 +240,50 @@ func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConf
 	}
 }
 
-func getImagePullPolicy(imagePullPolicy string) kcore.PullPolicy {
+func getImagePullPolicy(imagePullPolicy string) kcorev1.PullPolicy {
 	switch imagePullPolicy {
 	case "IfNotPresent":
-		return kcore.PullIfNotPresent
+		return kcorev1.PullIfNotPresent
 	case "Always":
-		return kcore.PullAlways
+		return kcorev1.PullAlways
 	case "Never":
-		return kcore.PullNever
+		return kcorev1.PullNever
 	default:
-		return kcore.PullIfNotPresent
+		return kcorev1.PullIfNotPresent
 	}
 }
 
-func getContainerSecurityContext() *kcore.SecurityContext {
-	return &kcore.SecurityContext{
+func getContainerSecurityContext() *kcorev1.SecurityContext {
+	return &kcorev1.SecurityContext{
 		Privileged:               utils.BoolPtr(false),
 		AllowPrivilegeEscalation: utils.BoolPtr(false),
 		RunAsNonRoot:             utils.BoolPtr(true),
-		Capabilities: &kcore.Capabilities{
-			Drop: []kcore.Capability{"ALL"},
+		Capabilities: &kcorev1.Capabilities{
+			Drop: []kcorev1.Capability{"ALL"},
 		},
 	}
 }
 
-func getReadinessProbe() *kcore.Probe {
-	return &kcore.Probe{
-		ProbeHandler: kcore.ProbeHandler{
-			HTTPGet: &kcore.HTTPGetAction{
+func getReadinessProbe() *kcorev1.Probe {
+	return &kcorev1.Probe{
+		ProbeHandler: kcorev1.ProbeHandler{
+			HTTPGet: &kcorev1.HTTPGetAction{
 				Path:   "/readyz",
 				Port:   intstr.FromInt32(8080),
-				Scheme: kcore.URISchemeHTTP,
+				Scheme: kcorev1.URISchemeHTTP,
 			},
 		},
 		FailureThreshold: 3,
 	}
 }
 
-func getLivenessProbe() *kcore.Probe {
-	return &kcore.Probe{
-		ProbeHandler: kcore.ProbeHandler{
-			HTTPGet: &kcore.HTTPGetAction{
+func getLivenessProbe() *kcorev1.Probe {
+	return &kcorev1.Probe{
+		ProbeHandler: kcorev1.ProbeHandler{
+			HTTPGet: &kcorev1.HTTPGetAction{
 				Path:   "/healthz",
 				Port:   intstr.FromInt32(8080),
-				Scheme: kcore.URISchemeHTTP,
+				Scheme: kcorev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: livenessInitialDelaySecs,
@@ -294,8 +294,8 @@ func getLivenessProbe() *kcore.Probe {
 	}
 }
 
-func getContainerPorts() []kcore.ContainerPort {
-	return []kcore.ContainerPort{
+func getContainerPorts() []kcorev1.ContainerPort {
+	return []kcorev1.ContainerPort{
 		{
 			Name:          publisherPortName,
 			ContainerPort: publisherPortNum,
@@ -307,29 +307,29 @@ func getContainerPorts() []kcore.ContainerPort {
 	}
 }
 
-func getLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) []kcore.EnvVar {
-	return []kcore.EnvVar{
+func getLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) []kcorev1.EnvVar {
+	return []kcorev1.EnvVar{
 		{Name: "APP_LOG_FORMAT", Value: publisherConfig.AppLogFormat},
 		{Name: "APP_LOG_LEVEL", Value: strings.ToLower(eventing.Spec.LogLevel)},
 	}
 }
 
-func getResources(requestsCPU, requestsMemory, limitsCPU, limitsMemory string) kcore.ResourceRequirements {
-	return kcore.ResourceRequirements{
-		Requests: kcore.ResourceList{
-			kcore.ResourceCPU:    resource.MustParse(requestsCPU),
-			kcore.ResourceMemory: resource.MustParse(requestsMemory),
+func getResources(requestsCPU, requestsMemory, limitsCPU, limitsMemory string) kcorev1.ResourceRequirements {
+	return kcorev1.ResourceRequirements{
+		Requests: kcorev1.ResourceList{
+			kcorev1.ResourceCPU:    resource.MustParse(requestsCPU),
+			kcorev1.ResourceMemory: resource.MustParse(requestsMemory),
 		},
-		Limits: kcore.ResourceList{
-			kcore.ResourceCPU:    resource.MustParse(limitsCPU),
-			kcore.ResourceMemory: resource.MustParse(limitsMemory),
+		Limits: kcorev1.ResourceList{
+			kcorev1.ResourceCPU:    resource.MustParse(limitsCPU),
+			kcorev1.ResourceMemory: resource.MustParse(limitsMemory),
 		},
 	}
 }
 
 func WithBEBEnvVars(publisherName string, publisherConfig env.PublisherConfig,
 	eventing *v1alpha1.Eventing) DeployOpt {
-	return func(d *kapps.Deployment) {
+	return func(d *kappsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
 			if strings.EqualFold(container.Name, publisherName) {
 				d.Spec.Template.Spec.Containers[i].Env = getEventMeshEnvVars(publisherName, publisherConfig, eventing)
@@ -339,8 +339,8 @@ func WithBEBEnvVars(publisherName string, publisherConfig env.PublisherConfig,
 }
 
 func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConfig,
-	eventing *v1alpha1.Eventing) []kcore.EnvVar {
-	return []kcore.EnvVar{
+	eventing *v1alpha1.Eventing) []kcorev1.EnvVar {
+	return []kcorev1.EnvVar{
 		{Name: "BACKEND", Value: "beb"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
 		{Name: "EVENT_TYPE_PREFIX", Value: eventing.Spec.Backend.Config.EventTypePrefix},
@@ -348,41 +348,41 @@ func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConf
 		{Name: "REQUEST_TIMEOUT", Value: publisherConfig.RequestTimeout},
 		{
 			Name: "CLIENT_ID",
-			ValueFrom: &kcore.EnvVarSource{
-				SecretKeyRef: &kcore.SecretKeySelector{
-					LocalObjectReference: kcore.LocalObjectReference{Name: publisherName},
+			ValueFrom: &kcorev1.EnvVarSource{
+				SecretKeyRef: &kcorev1.SecretKeySelector{
+					LocalObjectReference: kcorev1.LocalObjectReference{Name: publisherName},
 					Key:                  PublisherSecretClientIDKey,
 				}},
 		},
 		{
 			Name: "CLIENT_SECRET",
-			ValueFrom: &kcore.EnvVarSource{
-				SecretKeyRef: &kcore.SecretKeySelector{
-					LocalObjectReference: kcore.LocalObjectReference{Name: publisherName},
+			ValueFrom: &kcorev1.EnvVarSource{
+				SecretKeyRef: &kcorev1.SecretKeySelector{
+					LocalObjectReference: kcorev1.LocalObjectReference{Name: publisherName},
 					Key:                  PublisherSecretClientSecretKey,
 				}},
 		},
 		{
 			Name: "TOKEN_ENDPOINT",
-			ValueFrom: &kcore.EnvVarSource{
-				SecretKeyRef: &kcore.SecretKeySelector{
-					LocalObjectReference: kcore.LocalObjectReference{Name: publisherName},
+			ValueFrom: &kcorev1.EnvVarSource{
+				SecretKeyRef: &kcorev1.SecretKeySelector{
+					LocalObjectReference: kcorev1.LocalObjectReference{Name: publisherName},
 					Key:                  PublisherSecretTokenEndpointKey,
 				}},
 		},
 		{
 			Name: "EMS_PUBLISH_URL",
-			ValueFrom: &kcore.EnvVarSource{
-				SecretKeyRef: &kcore.SecretKeySelector{
-					LocalObjectReference: kcore.LocalObjectReference{Name: publisherName},
+			ValueFrom: &kcorev1.EnvVarSource{
+				SecretKeyRef: &kcorev1.SecretKeySelector{
+					LocalObjectReference: kcorev1.LocalObjectReference{Name: publisherName},
 					Key:                  PublisherSecretEMSURLKey,
 				}},
 		},
 		{
 			Name: "BEB_NAMESPACE_VALUE",
-			ValueFrom: &kcore.EnvVarSource{
-				SecretKeyRef: &kcore.SecretKeySelector{
-					LocalObjectReference: kcore.LocalObjectReference{Name: publisherName},
+			ValueFrom: &kcorev1.EnvVarSource{
+				SecretKeyRef: &kcorev1.SecretKeySelector{
+					LocalObjectReference: kcorev1.LocalObjectReference{Name: publisherName},
 					Key:                  PublisherSecretBEBNamespaceKey,
 				}},
 		},

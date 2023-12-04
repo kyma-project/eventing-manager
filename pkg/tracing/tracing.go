@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	cev2protocolhttp "github.com/cloudevents/sdk-go/v2/protocol/http"
+	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 
-	cev2 "github.com/cloudevents/sdk-go/v2/event"
+	ceevent "github.com/cloudevents/sdk-go/v2/event"
 )
 
 const (
@@ -27,7 +27,7 @@ const (
 	b3FlagsKey        = "X-B3-Flags"
 )
 
-func AddTracingHeadersToContext(ctx context.Context, ce *cev2.Event) context.Context {
+func AddTracingHeadersToContext(ctx context.Context, ce *ceevent.Event) context.Context {
 	traceHeader := http.Header{}
 	if traceParent, ok := ce.Extensions()[traceParentCEExtensionsKey]; ok {
 		traceHeader.Add(traceParentKey, fmt.Sprintf("%v", traceParent))
@@ -61,12 +61,12 @@ func AddTracingHeadersToContext(ctx context.Context, ce *cev2.Event) context.Con
 		removeCEExtension(ce, b3FlagsCEExtensionsKey)
 	}
 	if len(traceHeader) > 0 {
-		ctx = cev2protocolhttp.WithCustomHeader(ctx, traceHeader)
+		ctx = cehttp.WithCustomHeader(ctx, traceHeader)
 	}
 	return ctx
 }
 
-func removeCEExtension(e *cev2.Event, key string) {
+func removeCEExtension(e *ceevent.Event, key string) {
 	v1Context := e.Context.AsV1()
 	delete(v1Context.Extensions, key)
 }

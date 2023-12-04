@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -28,9 +28,9 @@ func Test_disableCacheForObjects(t *testing.T) {
 			want: client.Options{
 				Cache: &client.CacheOptions{
 					DisableFor: []client.Object{
-						&kcore.Secret{},
-						&kcore.Service{},
-						&kcore.ConfigMap{},
+						&kcorev1.Secret{},
+						&kcorev1.Service{},
+						&kcorev1.ConfigMap{},
 					},
 				},
 			},
@@ -76,15 +76,15 @@ func deepEqualCacheOptions(a, b *client.CacheOptions) bool {
 func computeDisableForMap(cacheOptions *client.CacheOptions, disableForMap map[string]interface{}) {
 	keyOf := func(i interface{}) string { return fmt.Sprintf(">>> %T", i) }
 	for _, obj := range cacheOptions.DisableFor {
-		if obj, ok := obj.(*kcore.Secret); ok {
+		if obj, ok := obj.(*kcorev1.Secret); ok {
 			key := keyOf(obj)
 			disableForMap[key] = nil
 		}
-		if obj, ok := obj.(*kcore.Service); ok {
+		if obj, ok := obj.(*kcorev1.Service); ok {
 			key := keyOf(obj)
 			disableForMap[key] = nil
 		}
-		if obj, ok := obj.(*kcore.ConfigMap); ok {
+		if obj, ok := obj.(*kcorev1.ConfigMap); ok {
 			key := keyOf(obj)
 			disableForMap[key] = nil
 		}

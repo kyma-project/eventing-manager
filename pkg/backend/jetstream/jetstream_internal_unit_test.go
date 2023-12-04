@@ -5,7 +5,7 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
 
-	cev2 "github.com/cloudevents/sdk-go/v2/event"
+	ceevent "github.com/cloudevents/sdk-go/v2/event"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/nats-io/nats.go"
 
@@ -764,7 +764,7 @@ func Test_revertEventTypeToOriginal(t *testing.T) {
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			ce := cev2.New(cev2.CloudEventsVersionV1)
+			ce := ceevent.New(ceevent.CloudEventsVersionV1)
 			ce.SetType(tc.givenType)
 			ce.SetSource(tc.givenSource)
 			if tc.givenOriginalType != "" {

@@ -10,7 +10,7 @@ import (
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 
@@ -266,7 +266,7 @@ func Test_CreateSubscription(t *testing.T) {
 							"failed to validate subscription sink URL. It is not a valid cluster local svc: Service \"testapp\" not found",
 						)),
 				},
-				K8sEvents: []kcore.Event{
+				K8sEvents: []kcorev1.Event{
 					EventInvalidSink("Sink does not correspond to a valid cluster local svc")},
 			},
 		},

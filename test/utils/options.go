@@ -1,9 +1,9 @@
 package utils
 
 import (
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -60,14 +60,14 @@ func WithEventingPublisherData(minReplicas, maxReplicas int, requestCPU, request
 				Min: minReplicas,
 				Max: maxReplicas,
 			},
-			Resources: kcore.ResourceRequirements{
-				Requests: kcore.ResourceList{
-					kcore.ResourceCPU:    resource.MustParse(requestCPU),
-					kcore.ResourceMemory: resource.MustParse(requestMemory),
+			Resources: kcorev1.ResourceRequirements{
+				Requests: kcorev1.ResourceList{
+					kcorev1.ResourceCPU:    resource.MustParse(requestCPU),
+					kcorev1.ResourceMemory: resource.MustParse(requestMemory),
 				},
-				Limits: kcore.ResourceList{
-					kcore.ResourceCPU:    resource.MustParse(limitCPU),    // "100m"
-					kcore.ResourceMemory: resource.MustParse(limitMemory), // "128Mi"
+				Limits: kcorev1.ResourceList{
+					kcorev1.ResourceCPU:    resource.MustParse(limitCPU),    // "100m"
+					kcorev1.ResourceMemory: resource.MustParse(limitMemory), // "128Mi"
 				},
 			},
 		}
@@ -140,7 +140,7 @@ func WithStatusState(state string) EventingOption {
 	}
 }
 
-func WithStatusConditions(conditions []kmeta.Condition) EventingOption {
+func WithStatusConditions(conditions []kmetav1.Condition) EventingOption {
 	return func(e *v1alpha1.Eventing) error {
 		e.Status.Conditions = conditions
 		return nil

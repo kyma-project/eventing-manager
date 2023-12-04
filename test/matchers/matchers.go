@@ -4,9 +4,9 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
 	gomegatypes "github.com/onsi/gomega/types"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -48,9 +48,9 @@ func HaveFinalizer() gomegatypes.GomegaMatcher {
 		}, gomega.BeTrue())
 }
 
-func HaveCondition(condition kmeta.Condition) gomegatypes.GomegaMatcher {
+func HaveCondition(condition kmetav1.Condition) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(
-		func(n *v1alpha1.Eventing) []kmeta.Condition {
+		func(n *v1alpha1.Eventing) []kmetav1.Condition {
 			return n.Status.Conditions
 		},
 		gomega.ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras|gstruct.IgnoreMissing, gstruct.Fields{
@@ -62,45 +62,45 @@ func HaveCondition(condition kmeta.Condition) gomegatypes.GomegaMatcher {
 }
 
 func HavePublisherProxyReadyConditionDeployed() gomegatypes.GomegaMatcher {
-	return HaveCondition(kmeta.Condition{
+	return HaveCondition(kmetav1.Condition{
 		Type:    string(v1alpha1.ConditionPublisherProxyReady),
-		Status:  kmeta.ConditionTrue,
+		Status:  kmetav1.ConditionTrue,
 		Reason:  string(v1alpha1.ConditionReasonDeployed),
 		Message: v1alpha1.ConditionPublisherProxyReadyMessage,
 	})
 }
 
 func HavePublisherProxyReadyConditionProcessing() gomegatypes.GomegaMatcher {
-	return HaveCondition(kmeta.Condition{
+	return HaveCondition(kmetav1.Condition{
 		Type:    string(v1alpha1.ConditionPublisherProxyReady),
-		Status:  kmeta.ConditionFalse,
+		Status:  kmetav1.ConditionFalse,
 		Reason:  string(v1alpha1.ConditionReasonProcessing),
 		Message: v1alpha1.ConditionPublisherProxyProcessingMessage,
 	})
 }
 
 func HavePublisherProxyConditionForbiddenWithMsg(msg string) gomegatypes.GomegaMatcher {
-	return HaveCondition(kmeta.Condition{
+	return HaveCondition(kmetav1.Condition{
 		Type:    string(v1alpha1.ConditionPublisherProxyReady),
-		Status:  kmeta.ConditionFalse,
+		Status:  kmetav1.ConditionFalse,
 		Reason:  string(v1alpha1.ConditionReasonForbidden),
 		Message: msg,
 	})
 }
 
 func HaveNATSAvailableCondition() gomegatypes.GomegaMatcher {
-	return HaveCondition(kmeta.Condition{
+	return HaveCondition(kmetav1.Condition{
 		Type:    string(v1alpha1.ConditionNATSAvailable),
-		Status:  kmeta.ConditionTrue,
+		Status:  kmetav1.ConditionTrue,
 		Reason:  string(v1alpha1.ConditionReasonNATSAvailable),
 		Message: v1alpha1.ConditionNATSAvailableMessage,
 	})
 }
 
 func HaveNATSNotAvailableConditionWith(message string) gomegatypes.GomegaMatcher {
-	return HaveCondition(kmeta.Condition{
+	return HaveCondition(kmetav1.Condition{
 		Type:    string(v1alpha1.ConditionNATSAvailable),
-		Status:  kmeta.ConditionFalse,
+		Status:  kmetav1.ConditionFalse,
 		Reason:  string(v1alpha1.ConditionReasonNATSNotAvailable),
 		Message: message,
 	})
@@ -111,27 +111,27 @@ func HaveNATSNotAvailableCondition() gomegatypes.GomegaMatcher {
 }
 
 func HaveEventMeshSubManagerReadyCondition() gomegatypes.GomegaMatcher {
-	return HaveCondition(kmeta.Condition{
+	return HaveCondition(kmetav1.Condition{
 		Type:    string(v1alpha1.ConditionSubscriptionManagerReady),
-		Status:  kmeta.ConditionTrue,
+		Status:  kmetav1.ConditionTrue,
 		Reason:  string(v1alpha1.ConditionReasonEventMeshSubManagerReady),
 		Message: v1alpha1.ConditionSubscriptionManagerReadyMessage,
 	})
 }
 
 func HaveEventMeshSubManagerNotReadyCondition(message string) gomegatypes.GomegaMatcher {
-	return HaveCondition(kmeta.Condition{
+	return HaveCondition(kmetav1.Condition{
 		Type:    string(v1alpha1.ConditionSubscriptionManagerReady),
-		Status:  kmeta.ConditionFalse,
+		Status:  kmetav1.ConditionFalse,
 		Reason:  string(v1alpha1.ConditionReasonEventMeshSubManagerFailed),
 		Message: message,
 	})
 }
 
 func HaveDeletionErrorCondition(message string) gomegatypes.GomegaMatcher {
-	return HaveCondition(kmeta.Condition{
+	return HaveCondition(kmetav1.Condition{
 		Type:    string(v1alpha1.ConditionDeleted),
-		Status:  kmeta.ConditionFalse,
+		Status:  kmetav1.ConditionFalse,
 		Reason:  string(v1alpha1.ConditionReasonDeletionError),
 		Message: message,
 	})
@@ -178,7 +178,7 @@ func HavePublisher(p v1alpha1.Publisher) gomegatypes.GomegaMatcher {
 			}, gomega.Equal(p.Replicas.Max)))
 }
 
-func HavePublisherResources(res kcore.ResourceRequirements) gomegatypes.GomegaMatcher {
+func HavePublisherResources(res kcorev1.ResourceRequirements) gomegatypes.GomegaMatcher {
 	return gomega.And(
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) *resource.Quantity {

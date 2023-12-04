@@ -16,9 +16,9 @@ import (
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -279,13 +279,13 @@ func ensureNamespaceCreated(ctx context.Context, t *testing.T, namespace string)
 	}
 }
 
-func fixtureNamespace(name string) *kcore.Namespace {
-	namespace := kcore.Namespace{
-		TypeMeta: kmeta.TypeMeta{
+func fixtureNamespace(name string) *kcorev1.Namespace {
+	namespace := kcorev1.Namespace{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Namespace",
 			APIVersion: "v1",
 		},
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name: name,
 		},
 	}

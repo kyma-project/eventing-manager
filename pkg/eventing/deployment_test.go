@@ -5,12 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	kapps "k8s.io/api/apps/v1"
-	kcore "k8s.io/api/core/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kcorev1 "k8s.io/api/core/v1"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/internal/label"
@@ -34,7 +34,7 @@ func TestNewDeployment(t *testing.T) {
 		name                  string
 		givenPublisherName    string
 		givenBackendType      v1alpha1.BackendType
-		wantBackendAssertions func(t *testing.T, publisherName string, deployment kapps.Deployment)
+		wantBackendAssertions func(t *testing.T, publisherName string, deployment kappsv1.Deployment)
 	}{
 		{
 			name:                  "NATS should be set properly after calling the constructor",
@@ -55,7 +55,7 @@ func TestNewDeployment(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			var deployment *kapps.Deployment
+			var deployment *kappsv1.Deployment
 			var natsConfig env.NATSConfig
 
 			switch tc.givenBackendType {
@@ -122,7 +122,7 @@ func Test_GetNATSEnvVars(t *testing.T) {
 		givenEnvs       map[string]string
 		givenNATSConfig env.NATSConfig
 		givenEventing   *v1alpha1.Eventing
-		wantEnvs        []kcore.EnvVar
+		wantEnvs        []kcorev1.EnvVar
 	}{
 		{
 			name: "JS envs should stay empty",
@@ -130,7 +130,7 @@ func Test_GetNATSEnvVars(t *testing.T) {
 				"PUBLISHER_REQUEST_TIMEOUT": "10s",
 			},
 			givenEventing: testutils.NewEventingCR(),
-			wantEnvs: []kcore.EnvVar{
+			wantEnvs: []kcorev1.EnvVar{
 				{Name: "BACKEND", Value: "nats"},
 				{Name: "PORT", Value: "8080"},
 				{Name: "NATS_URL", Value: ""},
@@ -151,7 +151,7 @@ func Test_GetNATSEnvVars(t *testing.T) {
 				URL:          "test-url",
 			},
 			givenEventing: testutils.NewEventingCR(),
-			wantEnvs: []kcore.EnvVar{
+			wantEnvs: []kcorev1.EnvVar{
 				{Name: "BACKEND", Value: "nats"},
 				{Name: "PORT", Value: "8080"},
 				{Name: "NATS_URL", Value: "test-url"},
@@ -180,14 +180,14 @@ func Test_GetLogEnvVars(t *testing.T) {
 	testCases := []struct {
 		name          string
 		givenEventing *v1alpha1.Eventing
-		wantEnvs      []kcore.EnvVar
+		wantEnvs      []kcorev1.EnvVar
 	}{
 		{
 			name: "APP_LOG_FORMAT should be text and APP_LOG_LEVEL should become the default info value",
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingLogLevel("Info"),
 			),
-			wantEnvs: []kcore.EnvVar{
+			wantEnvs: []kcorev1.EnvVar{
 				{Name: "APP_LOG_FORMAT", Value: "json"},
 				{Name: "APP_LOG_LEVEL", Value: "info"},
 			},
@@ -197,7 +197,7 @@ func Test_GetLogEnvVars(t *testing.T) {
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingLogLevel("Warn"),
 			),
-			wantEnvs: []kcore.EnvVar{
+			wantEnvs: []kcorev1.EnvVar{
 				{Name: "APP_LOG_FORMAT", Value: "json"},
 				{Name: "APP_LOG_LEVEL", Value: "warn"},
 			},
@@ -207,7 +207,7 @@ func Test_GetLogEnvVars(t *testing.T) {
 			givenEventing: testutils.NewEventingCR(
 				testutils.WithEventingLogLevel("Error"),
 			),
-			wantEnvs: []kcore.EnvVar{
+			wantEnvs: []kcorev1.EnvVar{
 				{Name: "APP_LOG_FORMAT", Value: "json"},
 				{Name: "APP_LOG_LEVEL", Value: "error"},
 			},
@@ -288,7 +288,7 @@ func Test_GetEventMeshEnvVars(t *testing.T) {
 }
 
 // natsBackendAssertions checks that the NATS-specific data was set in the NewNATSPublisherDeployment.
-func natsBackendAssertions(t *testing.T, publisherName string, deployment kapps.Deployment) {
+func natsBackendAssertions(t *testing.T, publisherName string, deployment kappsv1.Deployment) {
 	container := findPublisherContainer(publisherName, deployment)
 	assert.NotNil(t, container)
 
@@ -307,7 +307,7 @@ func natsBackendAssertions(t *testing.T, publisherName string, deployment kapps.
 }
 
 // eventMeshBackendAssertions checks that the eventmesh-specific data was set in the NewEventMeshPublisherDeployment.
-func eventMeshBackendAssertions(t *testing.T, publisherName string, deployment kapps.Deployment) {
+func eventMeshBackendAssertions(t *testing.T, publisherName string, deployment kappsv1.Deployment) {
 	container := findPublisherContainer(publisherName, deployment)
 	assert.NotNil(t, container)
 
@@ -320,8 +320,8 @@ func eventMeshBackendAssertions(t *testing.T, publisherName string, deployment k
 }
 
 // findPublisherContainer gets the publisher proxy container by its name.
-func findPublisherContainer(publisherName string, deployment kapps.Deployment) kcore.Container {
-	var container kcore.Container
+func findPublisherContainer(publisherName string, deployment kappsv1.Deployment) kcorev1.Container {
+	var container kcorev1.Container
 	for _, c := range deployment.Spec.Template.Spec.Containers {
 		if strings.EqualFold(c.Name, publisherName) {
 			container = c
@@ -421,14 +421,14 @@ func Test_getSelector(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *kmeta.LabelSelector
+		want *kmetav1.LabelSelector
 	}{
 		{
 			name: "should return the correct selector",
 			args: args{
 				publisherName: publisherName,
 			},
-			want: &kmeta.LabelSelector{
+			want: &kmetav1.LabelSelector{
 				MatchLabels: map[string]string{
 					label.KeyInstance:  label.ValueEventing,
 					label.KeyName:      publisherName,

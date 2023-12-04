@@ -18,8 +18,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
-	kcore "k8s.io/api/core/v1"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -178,7 +178,7 @@ func markAllV1Alpha2SubscriptionsAsNotReady(dynamicClient dynamic.Interface, log
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	// Fetch all subscriptions.
-	subscriptionsUnstructured, err := dynamicClient.Resource(eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(kcore.NamespaceAll).List(ctx, kmeta.ListOptions{})
+	subscriptionsUnstructured, err := dynamicClient.Resource(eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(kcorev1.NamespaceAll).List(ctx, kmetav1.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "list subscriptions failed")
 	}
@@ -214,7 +214,7 @@ func cleanupEventMesh(backend backendeventmesh.Backend, dynamicClient dynamic.In
 	}
 
 	// Fetch all subscriptions.
-	subscriptionsUnstructured, err := dynamicClient.Resource(eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(kcore.NamespaceAll).List(ctx, kmeta.ListOptions{})
+	subscriptionsUnstructured, err := dynamicClient.Resource(eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(kcorev1.NamespaceAll).List(ctx, kmetav1.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "list subscriptions failed")
 	}
@@ -229,7 +229,7 @@ func cleanupEventMesh(backend backendeventmesh.Backend, dynamicClient dynamic.In
 		sub := v
 		if apiRule := sub.Status.Backend.APIRuleName; apiRule != "" {
 			if err := dynamicClient.Resource(backendutils.APIRuleGroupVersionResource()).Namespace(sub.Namespace).
-				Delete(ctx, apiRule, kmeta.DeleteOptions{}); err != nil {
+				Delete(ctx, apiRule, kmetav1.DeleteOptions{}); err != nil {
 				isCleanupSuccessful = false
 				logger.Errorw("Failed to delete APIRule", "namespace", sub.Namespace, "name", apiRule, "error", err)
 			}

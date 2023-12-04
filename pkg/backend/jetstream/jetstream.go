@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	http2 "github.com/cloudevents/sdk-go/v2/protocol/http"
+	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 
-	cev2 "github.com/cloudevents/sdk-go/v2"
-	cev2protocol "github.com/cloudevents/sdk-go/v2/protocol"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	ceprotocol "github.com/cloudevents/sdk-go/v2/protocol"
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -343,7 +343,7 @@ func (js *JetStream) initCloudEventClient(config env.NATSConfig) error {
 		IdleConnTimeout:     config.IdleConnTimeout,
 	}
 
-	client, err := cev2.NewClientHTTP(cev2.WithRoundTripper(transport))
+	client, err := cloudevents.NewClientHTTP(cloudevents.WithRoundTripper(transport))
 	if err != nil {
 		return err
 	}
@@ -474,7 +474,7 @@ func (js *JetStream) deleteSubscriptionFromJetStreamOnly(jsSub Subscriber,
 	return nil
 }
 
-func (js *JetStream) revertEventTypeToOriginal(event *cev2.Event, sugaredLogger *zap.SugaredLogger) {
+func (js *JetStream) revertEventTypeToOriginal(event *cloudevents.Event, sugaredLogger *zap.SugaredLogger) {
 	// check if original type header exists in the cloud event.
 	if orgType, ok := event.Extensions()[originalTypeHeaderName]; ok && orgType != "" {
 		event.SetType(fmt.Sprintf("%v", orgType))
@@ -516,7 +516,7 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 		// setup context for dispatching
 		ctxWithCancel, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		ctxWithCE := cev2.ContextWithTarget(ctxWithCancel, sink)
+		ctxWithCE := cloudevents.ContextWithTarget(ctxWithCancel, sink)
 		traceCtxWithCE := tracing.AddTracingHeadersToContext(ctxWithCE, ce)
 
 		// decorate the logger with CloudEvent context
@@ -531,10 +531,10 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 		start := time.Now()
 		result := js.client.Send(traceCtxWithCE, *ce)
 		duration := time.Since(start)
-		var res *http2.Result
-		if !cev2protocol.IsACK(result) {
+		var res *cehttp.Result
+		if !ceprotocol.IsACK(result) {
 			status := http.StatusInternalServerError
-			if cev2.ResultAs(result, &res) {
+			if cloudevents.ResultAs(result, &res) {
 				status = res.StatusCode
 			}
 
@@ -557,7 +557,7 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 		}
 
 		status := http.StatusOK
-		if cev2.ResultAs(result, &res) {
+		if cloudevents.ResultAs(result, &res) {
 			status = res.StatusCode
 		}
 

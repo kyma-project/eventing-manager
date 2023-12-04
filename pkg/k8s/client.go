@@ -7,12 +7,12 @@ import (
 
 	istiosec "istio.io/client-go/pkg/apis/security/v1beta1"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
-	kapps "k8s.io/api/apps/v1"
-	kcore "k8s.io/api/core/v1"
-	krbac "k8s.io/api/rbac/v1"
-	kapiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	krbacv1 "k8s.io/api/rbac/v1"
+	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kapiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -33,25 +33,25 @@ var NatsGVK = schema.GroupVersionResource{
 
 //go:generate go run github.com/vektra/mockery/v2 --name=Client --outpkg=mocks --case=underscore
 type Client interface {
-	GetDeployment(ctx context.Context, name, namespace string) (*kapps.Deployment, error)
-	GetDeploymentDynamic(ctx context.Context, name, namespace string) (*kapps.Deployment, error)
-	UpdateDeployment(ctx context.Context, deployment *kapps.Deployment) error
+	GetDeployment(ctx context.Context, name, namespace string) (*kappsv1.Deployment, error)
+	GetDeploymentDynamic(ctx context.Context, name, namespace string) (*kappsv1.Deployment, error)
+	UpdateDeployment(ctx context.Context, deployment *kappsv1.Deployment) error
 	DeleteDeployment(ctx context.Context, name, namespace string) error
 	DeleteClusterRole(ctx context.Context, name, namespace string) error
 	DeleteClusterRoleBinding(ctx context.Context, name, namespace string) error
 	DeleteResource(ctx context.Context, object client.Object) error
 	GetNATSResources(ctx context.Context, namespace string) (*natsv1alpha1.NATSList, error)
 	PatchApply(ctx context.Context, object client.Object) error
-	GetSecret(ctx context.Context, namespacedName string) (*kcore.Secret, error)
+	GetSecret(ctx context.Context, namespacedName string) (*kcorev1.Secret, error)
 	GetMutatingWebHookConfiguration(ctx context.Context, name string) (*admissionv1.MutatingWebhookConfiguration, error)
 	GetValidatingWebHookConfiguration(ctx context.Context,
 		name string) (*admissionv1.ValidatingWebhookConfiguration, error)
-	GetCRD(ctx context.Context, name string) (*kapiextensions.CustomResourceDefinition, error)
+	GetCRD(ctx context.Context, name string) (*kapiextensionsv1.CustomResourceDefinition, error)
 	ApplicationCRDExists(ctx context.Context) (bool, error)
 	PeerAuthenticationCRDExists(ctx context.Context) (bool, error)
 	APIRuleCRDExists(ctx context.Context) (bool, error)
 	GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error)
-	GetConfigMap(ctx context.Context, name, namespace string) (*kcore.ConfigMap, error)
+	GetConfigMap(ctx context.Context, name, namespace string) (*kcorev1.ConfigMap, error)
 	PatchApplyPeerAuthentication(ctx context.Context, authentication *istiosec.PeerAuthentication) error
 }
 
@@ -82,35 +82,35 @@ func (c *KubeClient) PatchApplyPeerAuthentication(ctx context.Context, pa *istio
 	return c.PatchApply(ctx, &unstructured.Unstructured{Object: obj})
 }
 
-func (c *KubeClient) GetDeployment(ctx context.Context, name, namespace string) (*kapps.Deployment, error) {
-	deployment := &kapps.Deployment{}
+func (c *KubeClient) GetDeployment(ctx context.Context, name, namespace string) (*kappsv1.Deployment, error) {
+	deployment := &kappsv1.Deployment{}
 	if err := c.client.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, deployment); err != nil {
 		return nil, client.IgnoreNotFound(err)
 	}
 	return deployment, nil
 }
 
-func (c *KubeClient) GetDeploymentDynamic(ctx context.Context, name, namespace string) (*kapps.Deployment, error) {
+func (c *KubeClient) GetDeploymentDynamic(ctx context.Context, name, namespace string) (*kappsv1.Deployment, error) {
 	deploymentRes := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
-	result, err := c.dynamicClient.Resource(deploymentRes).Namespace(namespace).Get(ctx, name, kmeta.GetOptions{})
+	result, err := c.dynamicClient.Resource(deploymentRes).Namespace(namespace).Get(ctx, name, kmetav1.GetOptions{})
 	if err != nil {
 		return nil, client.IgnoreNotFound(err)
 	}
 
-	deployment := &kapps.Deployment{}
+	deployment := &kappsv1.Deployment{}
 	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(result.Object, deployment); err != nil {
 		return nil, err
 	}
 	return deployment, nil
 }
 
-func (c *KubeClient) UpdateDeployment(ctx context.Context, deployment *kapps.Deployment) error {
+func (c *KubeClient) UpdateDeployment(ctx context.Context, deployment *kappsv1.Deployment) error {
 	return c.client.Update(ctx, deployment)
 }
 
 func (c *KubeClient) DeleteDeployment(ctx context.Context, name, namespace string) error {
-	deployment := &kapps.Deployment{
-		ObjectMeta: kmeta.ObjectMeta{
+	deployment := &kappsv1.Deployment{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -122,8 +122,8 @@ func (c *KubeClient) DeleteDeployment(ctx context.Context, name, namespace strin
 }
 
 func (c *KubeClient) DeleteClusterRole(ctx context.Context, name, namespace string) error {
-	role := &krbac.ClusterRole{
-		ObjectMeta: kmeta.ObjectMeta{
+	role := &krbacv1.ClusterRole{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -135,8 +135,8 @@ func (c *KubeClient) DeleteClusterRole(ctx context.Context, name, namespace stri
 }
 
 func (c *KubeClient) DeleteClusterRoleBinding(ctx context.Context, name, namespace string) error {
-	binding := &krbac.ClusterRoleBinding{
-		ObjectMeta: kmeta.ObjectMeta{
+	binding := &krbacv1.ClusterRoleBinding{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -155,7 +155,7 @@ func (c *KubeClient) DeleteResource(ctx context.Context, object client.Object) e
 }
 
 func (c *KubeClient) GetNATSResources(ctx context.Context, namespace string) (*natsv1alpha1.NATSList, error) {
-	unstructuredList, err := c.dynamicClient.Resource(NatsGVK).Namespace(namespace).List(ctx, kmeta.ListOptions{})
+	unstructuredList, err := c.dynamicClient.Resource(NatsGVK).Namespace(namespace).List(ctx, kmetav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -190,12 +190,12 @@ func (c *KubeClient) PatchApply(ctx context.Context, object client.Object) error
 
 // GetSecret returns the secret with the given namespaced name.
 // namespacedName is in the format of "namespace/name".
-func (c *KubeClient) GetSecret(ctx context.Context, namespacedName string) (*kcore.Secret, error) {
+func (c *KubeClient) GetSecret(ctx context.Context, namespacedName string) (*kcorev1.Secret, error) {
 	substrings := strings.Split(namespacedName, "/")
 	if len(substrings) != 2 {
 		return nil, errors.New("invalid namespaced name. It must be in the format of 'namespace/name'")
 	}
-	secret := &kcore.Secret{}
+	secret := &kcorev1.Secret{}
 	err := c.client.Get(ctx, client.ObjectKey{
 		Namespace: substrings[0],
 		Name:      substrings[1],
@@ -206,8 +206,8 @@ func (c *KubeClient) GetSecret(ctx context.Context, namespacedName string) (*kco
 	return secret, nil
 }
 
-func (c *KubeClient) GetCRD(ctx context.Context, name string) (*kapiextensions.CustomResourceDefinition, error) {
-	return c.clientset.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, name, kmeta.GetOptions{})
+func (c *KubeClient) GetCRD(ctx context.Context, name string) (*kapiextensionsv1.CustomResourceDefinition, error) {
+	return c.clientset.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, name, kmetav1.GetOptions{})
 }
 
 func (c *KubeClient) ApplicationCRDExists(ctx context.Context) (bool, error) {
@@ -271,8 +271,8 @@ func (c *KubeClient) GetSubscriptions(ctx context.Context) (*eventingv1alpha2.Su
 }
 
 // GetConfigMap returns a ConfigMap based on the given name and namespace.
-func (c *KubeClient) GetConfigMap(ctx context.Context, name, namespace string) (*kcore.ConfigMap, error) {
-	cm := &kcore.ConfigMap{}
+func (c *KubeClient) GetConfigMap(ctx context.Context, name, namespace string) (*kcorev1.ConfigMap, error) {
+	cm := &kcorev1.ConfigMap{}
 	key := client.ObjectKey{Name: name, Namespace: namespace}
 	if err := c.client.Get(ctx, key, cm); err != nil {
 		return nil, err

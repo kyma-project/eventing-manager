@@ -7,7 +7,7 @@ import (
 
 	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	"github.com/stretchr/testify/require"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 
@@ -25,7 +25,7 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 	var (
 		host   = ptr.To("some.host")
 		status = apigateway.APIRuleStatus{
-			LastProcessedTime:    ptr.To(kmeta.Time{}),
+			LastProcessedTime:    ptr.To(kmetav1.Time{}),
 			ObservedGeneration:   512,
 			APIRuleStatus:        nil,
 			VirtualServiceStatus: nil,
@@ -46,7 +46,7 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 			name: "ApiRule attributes are applied from src to dst",
 			args: args{
 				givenSrc: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name,
 						GenerateName:    generateName,
 						ResourceVersion: resourceVersion,
@@ -55,7 +55,7 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 					Status: status,
 				},
 				givenDst: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name,
 						GenerateName:    generateName,
 						ResourceVersion: resourceVersion,
@@ -64,7 +64,7 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 					Status: status,
 				},
 				wantDst: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name,
 						GenerateName:    "",
 						ResourceVersion: resourceVersion,
@@ -156,8 +156,8 @@ func TestNewAPIRule(t *testing.T) {
 				opts:       nil,
 			},
 			want: &apigateway.APIRule{
-				TypeMeta: kmeta.TypeMeta{},
-				ObjectMeta: kmeta.ObjectMeta{
+				TypeMeta: kmetav1.TypeMeta{},
+				ObjectMeta: kmetav1.ObjectMeta{
 					Namespace:    namespace,
 					GenerateName: namePrefix,
 				},
@@ -291,13 +291,13 @@ func TestWithLabels(t *testing.T) {
 					"key-0": "val-0",
 				},
 				givenObject: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Labels: nil,
 					},
 				},
 			},
 			wantObject: &apigateway.APIRule{
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Labels: map[string]string{
 						"key-0": "val-0",
 					},
@@ -311,13 +311,13 @@ func TestWithLabels(t *testing.T) {
 					"key-0": "val-0",
 				},
 				givenObject: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Labels: map[string]string{},
 					},
 				},
 			},
 			wantObject: &apigateway.APIRule{
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Labels: map[string]string{
 						"key-0": "val-0",
 					},
@@ -331,7 +331,7 @@ func TestWithLabels(t *testing.T) {
 					"key-0": "val-0",
 				},
 				givenObject: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Labels: map[string]string{
 							"key-1": "val-1",
 							"key-2": "val-2",
@@ -340,7 +340,7 @@ func TestWithLabels(t *testing.T) {
 				},
 			},
 			wantObject: &apigateway.APIRule{
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Labels: map[string]string{
 						"key-0": "val-0",
 					},
@@ -383,12 +383,12 @@ func TestWithOwnerReference(t *testing.T) {
 
 	var (
 		sub0 = eventingv1alpha2.Subscription{
-			TypeMeta:   kmeta.TypeMeta{Kind: kind0, APIVersion: apiVersion0},
-			ObjectMeta: kmeta.ObjectMeta{Name: name0, UID: uid0},
+			TypeMeta:   kmetav1.TypeMeta{Kind: kind0, APIVersion: apiVersion0},
+			ObjectMeta: kmetav1.ObjectMeta{Name: name0, UID: uid0},
 		}
 		sub1 = eventingv1alpha2.Subscription{
-			TypeMeta:   kmeta.TypeMeta{Kind: kind1, APIVersion: apiVersion1},
-			ObjectMeta: kmeta.ObjectMeta{Name: name1, UID: uid1},
+			TypeMeta:   kmetav1.TypeMeta{Kind: kind1, APIVersion: apiVersion1},
+			ObjectMeta: kmetav1.ObjectMeta{Name: name1, UID: uid1},
 		}
 	)
 
@@ -406,14 +406,14 @@ func TestWithOwnerReference(t *testing.T) {
 			args: args{
 				givenSubs: nil,
 				givenObject: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						OwnerReferences: nil,
 					},
 				},
 			},
 			wantObject: &apigateway.APIRule{
-				ObjectMeta: kmeta.ObjectMeta{
-					OwnerReferences: []kmeta.OwnerReference{},
+				ObjectMeta: kmetav1.ObjectMeta{
+					OwnerReferences: []kmetav1.OwnerReference{},
 				},
 			},
 		},
@@ -422,14 +422,14 @@ func TestWithOwnerReference(t *testing.T) {
 			args: args{
 				givenSubs: []eventingv1alpha2.Subscription{},
 				givenObject: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						OwnerReferences: nil,
 					},
 				},
 			},
 			wantObject: &apigateway.APIRule{
-				ObjectMeta: kmeta.ObjectMeta{
-					OwnerReferences: []kmeta.OwnerReference{},
+				ObjectMeta: kmetav1.ObjectMeta{
+					OwnerReferences: []kmetav1.OwnerReference{},
 				},
 			},
 		},
@@ -441,14 +441,14 @@ func TestWithOwnerReference(t *testing.T) {
 					sub1,
 				},
 				givenObject: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
+					ObjectMeta: kmetav1.ObjectMeta{
 						OwnerReferences: nil,
 					},
 				},
 			},
 			wantObject: &apigateway.APIRule{
-				ObjectMeta: kmeta.ObjectMeta{
-					OwnerReferences: []kmeta.OwnerReference{
+				ObjectMeta: kmetav1.ObjectMeta{
+					OwnerReferences: []kmetav1.OwnerReference{
 						{
 							APIVersion:         apiVersion0,
 							Kind:               kind0,
@@ -475,14 +475,14 @@ func TestWithOwnerReference(t *testing.T) {
 					sub1,
 				},
 				givenObject: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
-						OwnerReferences: []kmeta.OwnerReference{},
+					ObjectMeta: kmetav1.ObjectMeta{
+						OwnerReferences: []kmetav1.OwnerReference{},
 					},
 				},
 			},
 			wantObject: &apigateway.APIRule{
-				ObjectMeta: kmeta.ObjectMeta{
-					OwnerReferences: []kmeta.OwnerReference{
+				ObjectMeta: kmetav1.ObjectMeta{
+					OwnerReferences: []kmetav1.OwnerReference{
 						{
 							APIVersion:         apiVersion0,
 							Kind:               kind0,
@@ -509,8 +509,8 @@ func TestWithOwnerReference(t *testing.T) {
 					sub1,
 				},
 				givenObject: &apigateway.APIRule{
-					ObjectMeta: kmeta.ObjectMeta{
-						OwnerReferences: []kmeta.OwnerReference{
+					ObjectMeta: kmetav1.ObjectMeta{
+						OwnerReferences: []kmetav1.OwnerReference{
 							{
 								APIVersion:         apiVersion2,
 								Kind:               kind2,
@@ -523,8 +523,8 @@ func TestWithOwnerReference(t *testing.T) {
 				},
 			},
 			wantObject: &apigateway.APIRule{
-				ObjectMeta: kmeta.ObjectMeta{
-					OwnerReferences: []kmeta.OwnerReference{
+				ObjectMeta: kmetav1.ObjectMeta{
+					OwnerReferences: []kmetav1.OwnerReference{
 						{
 							APIVersion:         apiVersion0,
 							Kind:               kind0,

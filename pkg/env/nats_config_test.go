@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 
@@ -34,11 +34,11 @@ func Test_GetNewNATSConfig(t *testing.T) {
 	}
 
 	givenEventing := &v1alpha1.Eventing{
-		TypeMeta: kmeta.TypeMeta{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Eventing",
 			APIVersion: "operator.kyma-project.io/v1alpha1",
 		},
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test-ns",
 			UID:       "1234-5678-1234-5678",

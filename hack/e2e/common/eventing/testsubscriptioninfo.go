@@ -1,7 +1,7 @@
 package eventing
 
 import (
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -36,7 +36,7 @@ func (s TestSubscriptionInfo) V1Alpha1SpecFilters() []*eventingv1alpha1.EventMes
 
 func (s TestSubscriptionInfo) ToSubscriptionV1Alpha1(sink, namespace string) *eventingv1alpha1.Subscription {
 	return &eventingv1alpha1.Subscription{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      s.Name,
 			Namespace: namespace,
 		},
@@ -51,7 +51,7 @@ func (s TestSubscriptionInfo) ToSubscriptionV1Alpha1(sink, namespace string) *ev
 
 func (s TestSubscriptionInfo) ToSubscriptionV1Alpha2(sink, namespace string) *eventingv1alpha2.Subscription {
 	return &eventingv1alpha2.Subscription{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      s.Name,
 			Namespace: namespace,
 		},

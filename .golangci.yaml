@@ -149,6 +149,27 @@ linters-settings:
         alias: ctrl
       - pkg: sigs.k8s.io/controller-runtime/pkg/log
         alias: ctrllog
+      - pkg: k8s.io/api/autoscaling/v1
+        alias: kautoscalingv1
+      - pkg: k8s.io/api/autoscaling/v2
+        alias: kautoscalingv2
+      - pkg: k8s.io/api/admissionregistration/v1
+        alias: kadmissionregistrationv1
+      - pkg: github.com/cloudevents/sdk-go/v2
+        alias: cloudevents
+      - pkg: github.com/cloudevents/sdk-go/protocol/nats/v2
+        alias: cenats
+      - pkg: github.com/cloudevents/sdk-go/v2/binding
+        alias: cebinding
+      - pkg: github.com/cloudevents/sdk-go/v2/client
+        alias: ceclient
+      - pkg: github.com/cloudevents/sdk-go/v2/event
+        alias: ceevent
+      - pkg: github.com/cloudevents/sdk-go/v2/protocol
+        alias: ceprotocol
+      - pkg: github.com/cloudevents/sdk-go/v2/protocol/http
+        alias: cehttp
+
   ireturn:
     allow:
       - anon

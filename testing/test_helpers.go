@@ -13,8 +13,8 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/object"
 
 	apigateway "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	kcore "k8s.io/api/core/v1"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kunstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kruntime "k8s.io/apimachinery/pkg/runtime"
 	kschema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -196,7 +196,7 @@ func WithV1alpha1EmptyConfig() SubscriptionV1alpha1Opt {
 	}
 }
 
-func NewBEBMessagingSecret(name, namespace string) *kcore.Secret {
+func NewBEBMessagingSecret(name, namespace string) *kcorev1.Secret {
 	messagingValue := `
 				[{
 					"broker": {
@@ -236,8 +236,8 @@ func NewBEBMessagingSecret(name, namespace string) *kcore.Secret {
 					"uri": "https://rest-messaging"
 				}]`
 
-	return &kcore.Secret{
-		ObjectMeta: kmeta.ObjectMeta{
+	return &kcorev1.Secret{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -248,9 +248,9 @@ func NewBEBMessagingSecret(name, namespace string) *kcore.Secret {
 	}
 }
 
-func NewNamespace(name string) *kcore.Namespace {
-	namespace := kcore.Namespace{
-		ObjectMeta: kmeta.ObjectMeta{
+func NewNamespace(name string) *kcorev1.Namespace {
+	namespace := kcorev1.Namespace{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name: name,
 		},
 	}
@@ -273,60 +273,60 @@ func GetBinaryMessageHeaders() http.Header {
 func PublisherProxyDefaultReadyCondition() eventingv1alpha1.Condition {
 	return eventingv1alpha1.MakeCondition(eventingv1alpha1.ConditionPublisherProxyReady,
 		eventingv1alpha1.ConditionReasonPublisherDeploymentReady,
-		kcore.ConditionTrue, "")
+		kcorev1.ConditionTrue, "")
 }
 
 func PublisherProxyDefaultNotReadyCondition() eventingv1alpha1.Condition {
 	return eventingv1alpha1.MakeCondition(eventingv1alpha1.ConditionPublisherProxyReady,
 		eventingv1alpha1.ConditionReasonPublisherDeploymentNotReady,
-		kcore.ConditionFalse, "")
+		kcorev1.ConditionFalse, "")
 }
 
 func SubscriptionControllerDefaultReadyCondition() eventingv1alpha1.Condition {
 	return eventingv1alpha1.MakeCondition(eventingv1alpha1.ConditionControllerReady,
 		eventingv1alpha1.ConditionReasonSubscriptionControllerReady,
-		kcore.ConditionTrue, "")
+		kcorev1.ConditionTrue, "")
 }
 
-func SubscriptionControllerReadyConditionWith(ready kcore.ConditionStatus,
+func SubscriptionControllerReadyConditionWith(ready kcorev1.ConditionStatus,
 	reason eventingv1alpha1.ConditionReason) eventingv1alpha1.Condition {
 	return eventingv1alpha1.MakeCondition(eventingv1alpha1.ConditionControllerReady, reason, ready, "")
 }
 
-func SubscriptionControllerReadyEvent() kcore.Event {
-	return kcore.Event{
+func SubscriptionControllerReadyEvent() kcorev1.Event {
+	return kcorev1.Event{
 		Reason: string(eventingv1alpha1.ConditionReasonSubscriptionControllerReady),
-		Type:   kcore.EventTypeNormal,
+		Type:   kcorev1.EventTypeNormal,
 	}
 }
 
-func SubscriptionControllerNotReadyEvent() kcore.Event {
-	return kcore.Event{
+func SubscriptionControllerNotReadyEvent() kcorev1.Event {
+	return kcorev1.Event{
 		Reason: string(eventingv1alpha1.ConditionReasonSubscriptionControllerNotReady),
-		Type:   kcore.EventTypeWarning,
+		Type:   kcorev1.EventTypeWarning,
 	}
 }
 
-func PublisherDeploymentReadyEvent() kcore.Event {
-	return kcore.Event{
+func PublisherDeploymentReadyEvent() kcorev1.Event {
+	return kcorev1.Event{
 		Reason: string(eventingv1alpha1.ConditionReasonPublisherDeploymentReady),
-		Type:   kcore.EventTypeNormal,
+		Type:   kcorev1.EventTypeNormal,
 	}
 }
 
-func PublisherDeploymentNotReadyEvent() kcore.Event {
-	return kcore.Event{
+func PublisherDeploymentNotReadyEvent() kcorev1.Event {
+	return kcorev1.Event{
 		Reason: string(eventingv1alpha1.ConditionReasonPublisherDeploymentNotReady),
-		Type:   kcore.EventTypeWarning,
+		Type:   kcorev1.EventTypeWarning,
 	}
 }
 
 // NewAPIRule returns a valid APIRule.
 func NewAPIRule(subscription *eventingv1alpha2.Subscription, opts ...APIRuleOption) *apigateway.APIRule {
 	apiRule := &apigateway.APIRule{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name: "foo",
-			OwnerReferences: []kmeta.OwnerReference{
+			OwnerReferences: []kmetav1.OwnerReference{
 				{
 					APIVersion: "eventing.kyma-project.io/v1alpha1",
 					Kind:       "subscriptions",
@@ -397,7 +397,7 @@ type SubscriptionOpt func(subscription *eventingv1alpha2.Subscription)
 
 func NewSubscription(name, namespace string, opts ...SubscriptionOpt) *eventingv1alpha2.Subscription {
 	newSub := &eventingv1alpha2.Subscription{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -644,7 +644,7 @@ func WithValidSink(svcNamespace, svcName string) SubscriptionOpt {
 }
 
 // WithSinkURLFromSvc sets a kubernetes service as the sink.
-func WithSinkURLFromSvc(svc *kcore.Service) SubscriptionOpt {
+func WithSinkURLFromSvc(svc *kcorev1.Service) SubscriptionOpt {
 	return WithSinkURL(ValidSinkURL(svc.Namespace, svc.Name))
 }
 
@@ -666,7 +666,7 @@ func WithSinkURL(sinkURL string) SubscriptionOpt {
 // WithNonZeroDeletionTimestamp sets the deletion timestamp of the subscription to Now().
 func WithNonZeroDeletionTimestamp() SubscriptionOpt {
 	return func(subscription *eventingv1alpha2.Subscription) {
-		now := kmeta.Now()
+		now := kmetav1.Now()
 		subscription.DeletionTimestamp = &now
 	}
 }
@@ -676,14 +676,14 @@ func SetSink(svcNamespace, svcName string, subscription *eventingv1alpha2.Subscr
 	subscription.Spec.Sink = ValidSinkURL(svcNamespace, svcName)
 }
 
-func NewSubscriberSvc(name, namespace string) *kcore.Service {
-	return &kcore.Service{
-		ObjectMeta: kmeta.ObjectMeta{
+func NewSubscriberSvc(name, namespace string) *kcorev1.Service {
+	return &kcorev1.Service{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: kcore.ServiceSpec{
-			Ports: []kcore.ServicePort{
+		Spec: kcorev1.ServiceSpec{
+			Ports: []kcorev1.ServicePort{
 				{
 					Protocol: "TCP",
 					Port:     443, //nolint:gomnd // tests
@@ -723,7 +723,7 @@ func ToUnstructuredAPIRule(obj interface{}) (*kunstructured.Unstructured, error)
 // SetupSchemeOrDie add a scheme to eventing API schemes.
 func SetupSchemeOrDie() (*kruntime.Scheme, error) {
 	scheme := kruntime.NewScheme()
-	if err := kcore.AddToScheme(scheme); err != nil {
+	if err := kcorev1.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type TypeMatching string
@@ -69,8 +69,8 @@ type SubscriptionStatus struct {
 
 // Subscription is the Schema for the subscriptions API.
 type Subscription struct {
-	kmeta.TypeMeta   `json:",inline"`
-	kmeta.ObjectMeta `json:"metadata,omitempty"`
+	kmetav1.TypeMeta   `json:",inline"`
+	kmetav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   SubscriptionSpec   `json:"spec,omitempty"`
 	Status SubscriptionStatus `json:"status,omitempty"`
@@ -133,8 +133,8 @@ func (s *Subscription) ToUnstructuredSub() (*kunstructured.Unstructured, error) 
 
 // SubscriptionList contains a list of Subscription.
 type SubscriptionList struct {
-	kmeta.TypeMeta `json:",inline"`
-	kmeta.ListMeta `json:"metadata,omitempty"`
+	kmetav1.TypeMeta `json:",inline"`
+	kmetav1.ListMeta `json:"metadata,omitempty"`
 	Items          []Subscription `json:"items"`
 }
 

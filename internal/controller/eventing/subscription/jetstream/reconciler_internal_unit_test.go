@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -385,10 +385,10 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 	jetStreamError := errors.New("JetStream is not ready")
 	falseNatsSubActiveCondition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonNATSSubscriptionNotActive,
-		kcore.ConditionFalse, jetStreamError.Error())
+		kcorev1.ConditionFalse, jetStreamError.Error())
 	trueNatsSubActiveCondition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonNATSSubscriptionActive,
-		kcore.ConditionTrue, "")
+		kcorev1.ConditionTrue, "")
 
 	testCases := []struct {
 		name           string

@@ -18,10 +18,10 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 
 	"go.uber.org/zap"
-	kapps "k8s.io/api/apps/v1"
-	kcore "k8s.io/api/core/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
@@ -290,8 +290,8 @@ func (te *TestEnvironment) CreateSinkService(name, namespace string) error {
 
 func (te *TestEnvironment) DeleteDeployment(name, namespace string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Delete(te.Context, &kapps.Deployment{
-			ObjectMeta: kmeta.ObjectMeta{
+		return te.K8sClient.Delete(te.Context, &kappsv1.Deployment{
+			ObjectMeta: kmetav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -301,8 +301,8 @@ func (te *TestEnvironment) DeleteDeployment(name, namespace string) error {
 
 func (te *TestEnvironment) DeleteService(name, namespace string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Delete(te.Context, &kcore.Service{
-			ObjectMeta: kmeta.ObjectMeta{
+		return te.K8sClient.Delete(te.Context, &kcorev1.Service{
+			ObjectMeta: kmetav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -310,8 +310,8 @@ func (te *TestEnvironment) DeleteService(name, namespace string) error {
 	})
 }
 
-func (te *TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*kapps.Deployment, error) {
-	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, kmeta.GetOptions{})
+func (te *TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*kappsv1.Deployment, error) {
+	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, kmetav1.GetOptions{})
 }
 
 func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string) error {
@@ -319,7 +319,7 @@ func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string)
 	return common.Retry(Attempts, Interval, func() error {
 		te.Logger.Debug(fmt.Sprintf("waiting for deployment: %s to get ready with image: %s", name, image))
 		// Get the deployment from the cluster.
-		gotDeployment, err := common.RetryGet(FewAttempts, SmallInterval, func() (*kapps.Deployment, error) {
+		gotDeployment, err := common.RetryGet(FewAttempts, SmallInterval, func() (*kappsv1.Deployment, error) {
 			return te.GetDeploymentFromK8s(name, namespace)
 		})
 		if err != nil {
@@ -353,7 +353,7 @@ func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string)
 func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) error {
 	// define subscription to delete.
 	sub := &eventingv1alpha2.Subscription{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -537,8 +537,8 @@ func (te *TestEnvironment) GetEventingCRFromK8s(name, namespace string) (*operat
 	return &eventingCR, err
 }
 
-func (te *TestEnvironment) GetDeployment(name, namespace string) (*kapps.Deployment, error) {
-	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, kmeta.GetOptions{})
+func (te *TestEnvironment) GetDeployment(name, namespace string) (*kappsv1.Deployment, error) {
+	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, kmetav1.GetOptions{})
 }
 
 func (te *TestEnvironment) WaitForEventingCRReady() error {
@@ -576,7 +576,7 @@ func (te *TestEnvironment) WaitForEventingCRReady() error {
 
 func (env *TestEnvironment) GetPeerAuthenticationFromK8s(name, namespace string) (*istio.PeerAuthentication, error) {
 	result, err := env.K8sDynamicClient.Resource(fixtures.PeerAuthenticationGVR()).Namespace(
-		namespace).Get(env.Context, name, kmeta.GetOptions{})
+		namespace).Get(env.Context, name, kmetav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

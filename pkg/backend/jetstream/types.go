@@ -5,10 +5,12 @@ package jetstream
 import (
 	"sync"
 
-	backendutilsv2 "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/nats-io/nats.go"
 
-	cev2 "github.com/cloudevents/sdk-go/v2"
+	backendutilsv2 "github.com/kyma-project/eventing-manager/pkg/backend/utils"
+
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
@@ -55,7 +57,7 @@ type JetStream struct {
 	Config        env.NATSConfig
 	Conn          *nats.Conn
 	jsCtx         nats.JetStreamContext
-	client        cev2.Client
+	client        cloudevents.Client
 	subscriptions map[SubscriptionSubjectIdentifier]Subscriber
 	sinks         sync.Map
 	// connClosedHandler gets called by the NATS server when Conn is closed and retry attempts are exhausted.

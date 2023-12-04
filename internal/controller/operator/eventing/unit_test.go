@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
 
@@ -60,7 +60,7 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	require.NoError(t, err)
 	err = operatorv1alpha1.AddToScheme(newScheme)
 	require.NoError(t, err)
-	err = kcore.AddToScheme(newScheme)
+	err = kcorev1.AddToScheme(newScheme)
 	require.NoError(t, err)
 	err = admissionv1.AddToScheme(newScheme)
 	require.NoError(t, err)

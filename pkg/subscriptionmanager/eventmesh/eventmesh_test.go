@@ -18,7 +18,7 @@ import (
 	subscriptionmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/client"
@@ -103,7 +103,7 @@ func Test_cleanupEventMesh(t *testing.T) {
 	unstructuredAPIRule, err := eventingtesting.ToUnstructuredAPIRule(apiRule)
 	require.NoError(t, err)
 	unstructuredAPIRuleBeforeCleanup, err := bebSubMgr.Client.Resource(utils.APIRuleGroupVersionResource()).Namespace(
-		"test").Create(ctx, unstructuredAPIRule, kmeta.CreateOptions{})
+		"test").Create(ctx, unstructuredAPIRule, kmetav1.CreateOptions{})
 	require.NoError(t, err)
 	require.NotNil(t, unstructuredAPIRuleBeforeCleanup)
 
@@ -123,14 +123,14 @@ func Test_cleanupEventMesh(t *testing.T) {
 
 	// check that the Kyma subscription exists
 	unstructuredSub, err := bebSubMgr.Client.Resource(eventingtesting.SubscriptionGroupVersionResource()).Namespace(
-		"test").Get(ctx, subscription.Name, kmeta.GetOptions{})
+		"test").Get(ctx, subscription.Name, kmetav1.GetOptions{})
 	require.NoError(t, err)
 	_, err = eventingtesting.ToSubscription(unstructuredSub)
 	require.NoError(t, err)
 
 	// check that the APIRule exists
 	unstructuredAPIRuleBeforeCleanup, err = bebSubMgr.Client.Resource(utils.APIRuleGroupVersionResource()).Namespace(
-		"test").Get(ctx, apiRule.Name, kmeta.GetOptions{})
+		"test").Get(ctx, apiRule.Name, kmetav1.GetOptions{})
 	require.NoError(t, err)
 	require.NotNil(t, unstructuredAPIRuleBeforeCleanup)
 
@@ -147,7 +147,7 @@ func Test_cleanupEventMesh(t *testing.T) {
 
 	// the Kyma subscription status should be empty
 	unstructuredSub, err = bebSubMgr.Client.Resource(eventingtesting.SubscriptionGroupVersionResource()).Namespace(
-		"test").Get(ctx, subscription.Name, kmeta.GetOptions{})
+		"test").Get(ctx, subscription.Name, kmetav1.GetOptions{})
 	require.NoError(t, err)
 	gotSub, err := eventingtesting.ToSubscription(unstructuredSub)
 	require.NoError(t, err)
@@ -156,7 +156,7 @@ func Test_cleanupEventMesh(t *testing.T) {
 
 	// the associated APIRule should be deleted
 	unstructuredAPIRuleAfterCleanup, err := bebSubMgr.Client.Resource(utils.APIRuleGroupVersionResource()).Namespace(
-		"test").Get(ctx, apiRule.Name, kmeta.GetOptions{})
+		"test").Get(ctx, apiRule.Name, kmetav1.GetOptions{})
 	require.Error(t, err)
 	require.Nil(t, unstructuredAPIRuleAfterCleanup)
 	bebMock.Stop()
@@ -195,7 +195,7 @@ func Test_markAllV1Alpha2SubscriptionsAsNotReady(t *testing.T) {
 
 	// verify that the subscription status is ready
 	unstructuredSub, err := fakeClient.Resource(eventingtesting.SubscriptionGroupVersionResource()).Namespace(
-		"test").Get(ctx, subscription.Name, kmeta.GetOptions{})
+		"test").Get(ctx, subscription.Name, kmetav1.GetOptions{})
 	require.NoError(t, err)
 	gotSub, err := eventingtesting.ToSubscription(unstructuredSub)
 	require.NoError(t, err)
@@ -207,7 +207,7 @@ func Test_markAllV1Alpha2SubscriptionsAsNotReady(t *testing.T) {
 
 	// then
 	unstructuredSub, err = fakeClient.Resource(eventingtesting.SubscriptionGroupVersionResource()).Namespace(
-		"test").Get(ctx, subscription.Name, kmeta.GetOptions{})
+		"test").Get(ctx, subscription.Name, kmetav1.GetOptions{})
 	require.NoError(t, err)
 	gotSub, err = eventingtesting.ToSubscription(unstructuredSub)
 	require.NoError(t, err)

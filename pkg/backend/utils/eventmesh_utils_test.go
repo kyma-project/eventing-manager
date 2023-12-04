@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 
 	. "github.com/onsi/gomega"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
@@ -336,20 +336,20 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	s1 := &eventingv1alpha2.Subscription{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "subscription1",
 			Namespace: "my-namespace",
 		},
 	}
 	s2 := &eventingv1alpha2.Subscription{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "mysub",
 			Namespace: "another-namespace",
 		},
 	}
 
 	s3 := &eventingv1alpha2.Subscription{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "name1",
 			Namespace: "name2",
 		},
@@ -358,7 +358,7 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 		},
 	}
 	s4 := &eventingv1alpha2.Subscription{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "name1",
 			Namespace: "name2",
 		},
@@ -367,7 +367,7 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 		},
 	}
 	s5 := &eventingv1alpha2.Subscription{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "name2",
 			Namespace: "name1",
 		},

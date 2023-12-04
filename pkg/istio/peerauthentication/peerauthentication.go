@@ -10,8 +10,8 @@ import (
 	istiosecv1beta1 "istio.io/api/security/v1beta1"
 	istiotypes "istio.io/api/type/v1beta1"
 	istio "istio.io/client-go/pkg/apis/security/v1beta1"
-	kapps "k8s.io/api/apps/v1"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 )
@@ -51,9 +51,9 @@ func SyncPeerAuthentications(ctx context.Context, kubeClient k8s.Client, log *za
 }
 
 // EventPublisherProxyMetrics returns the PeerAuthentication for the Event-Publisher-Proxy metrics endpoint.
-func EventPublisherProxyMetrics(namespace string, ref []kmeta.OwnerReference) *istio.PeerAuthentication {
+func EventPublisherProxyMetrics(namespace string, ref []kmetav1.OwnerReference) *istio.PeerAuthentication {
 	return &istio.PeerAuthentication{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "eventing-publisher-proxy-metrics",
 			Namespace: namespace,
 			Labels: map[string]string{
@@ -75,9 +75,9 @@ func EventPublisherProxyMetrics(namespace string, ref []kmeta.OwnerReference) *i
 }
 
 // EventingManagerMetrics returns the PeerAuthentication for the Eventing-Manager metrics endpoint.
-func EventingManagerMetrics(namespace string, ref []kmeta.OwnerReference) *istio.PeerAuthentication {
+func EventingManagerMetrics(namespace string, ref []kmetav1.OwnerReference) *istio.PeerAuthentication {
 	return &istio.PeerAuthentication{
-		ObjectMeta: kmeta.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "eventing-manager-metrics",
 			Namespace: namespace,
 			Labels: map[string]string{
@@ -99,15 +99,15 @@ func EventingManagerMetrics(namespace string, ref []kmeta.OwnerReference) *istio
 	}
 }
 
-func typeMeta() kmeta.TypeMeta {
-	return kmeta.TypeMeta{
+func typeMeta() kmetav1.TypeMeta {
+	return kmetav1.TypeMeta{
 		Kind:       "PeerAuthentication",
 		APIVersion: "security.istio.io/v1beta1",
 	}
 }
 
-func ownerReferences(deploy kapps.Deployment) []kmeta.OwnerReference {
-	return []kmeta.OwnerReference{
+func ownerReferences(deploy kappsv1.Deployment) []kmetav1.OwnerReference {
+	return []kmetav1.OwnerReference{
 		{
 			APIVersion:         "apps/v1",
 			Kind:               "Deployment",

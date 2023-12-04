@@ -12,7 +12,7 @@ import (
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
-	kapps "k8s.io/api/apps/v1"
+	kappsv1 "k8s.io/api/apps/v1"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -146,7 +146,7 @@ func Test_Switching(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *kapps.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 			// create unique namespace for this test run.

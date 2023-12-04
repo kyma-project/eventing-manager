@@ -8,9 +8,9 @@ import (
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
-	kcore "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	kmeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -902,7 +902,7 @@ func Test_Validate_Defaulting(t *testing.T) {
 
 			// then
 			testEnvironment.GetEventingAssert(g, &v1alpha1.Eventing{
-				ObjectMeta: kmeta.ObjectMeta{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      tc.givenUnstructuredEventing.GetName(),
 					Namespace: tc.givenUnstructuredEventing.GetNamespace(),
 				},
@@ -930,13 +930,13 @@ func defaultPublisher() v1alpha1.Publisher {
 	}
 }
 
-func defaultPublisherResources() kcore.ResourceRequirements {
-	return kcore.ResourceRequirements{
-		Limits: kcore.ResourceList{
+func defaultPublisherResources() kcorev1.ResourceRequirements {
+	return kcorev1.ResourceRequirements{
+		Limits: kcorev1.ResourceList{
 			"cpu":    resource.MustParse("500m"),
 			"memory": resource.MustParse("512Mi"),
 		},
-		Requests: kcore.ResourceList{
+		Requests: kcorev1.ResourceList{
 			"cpu":    resource.MustParse("40m"),
 			"memory": resource.MustParse("256Mi"),
 		},
