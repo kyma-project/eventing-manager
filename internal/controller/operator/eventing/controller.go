@@ -448,7 +448,10 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// set state processing if not set yet
 	r.InitStateProcessing(eventing)
 	if eventing.Spec.Backend == nil {
-		return ctrl.Result{Requeue: true}, r.syncStatusForEmptyBackend(ctx, eventing, log)
+		return kctrl.Result{Requeue: true}, r.syncStatusForEmptyBackend(ctx,
+			operatorv1alpha1.ConditionReasonBackendNotSpecified,
+			operatorv1alpha1.ConditionBackendNotSpecifiedMessage,
+			eventing, log)
 	}
 
 	// sync webhooks CABundle.
@@ -523,9 +526,13 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *operato
 			// into CrashLoopBackOff.
 			log.Infof("NATS module not enabled, deleting publisher proxy resources")
 			delErr := r.eventingManager.DeletePublisherProxyResources(ctx, eventing)
+			if delErr != nil {
+				return kctrl.Result{}, delErr
+			}
 			// update the Eventing CR status.
 			notFoundErr := fmt.Errorf("NATS module has to be installed: %v", err)
-			return kctrl.Result{}, errors.Join(r.syncStatusWithNATSErr(ctx, eventing, notFoundErr, log), delErr)
+			return kctrl.Result{}, r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
+				notFoundErr, log)
 		}
 		return kctrl.Result{}, err
 	}
@@ -537,7 +544,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *operato
 	// check nats CR if it exists and is in natsAvailable state
 	err = r.checkNATSAvailability(ctx, eventing)
 	if err != nil {
-		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing, err, log)
 	}
 
 	// set NATSAvailable condition to true and update status

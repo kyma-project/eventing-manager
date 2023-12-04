@@ -87,7 +87,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			),
 			givenNATSReady: false,
 			wantMatches: gomega.And(
-				matchers.HaveStatusError(),
+				matchers.HaveStatusWarning(),
 				matchers.HaveNATSNotAvailableCondition(),
 				matchers.HaveFinalizer(),
 			),
@@ -146,7 +146,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			),
 			givenNATSCRDMissing: true,
 			wantMatches: gomega.And(
-				matchers.HaveStatusError(),
+				matchers.HaveStatusWarning(),
 				matchers.HaveNATSNotAvailableConditionWith("NATS module has to be installed: "+
 					"customresourcedefinitions.apiextensions.k8s.io \"nats.operator.kyma-project.io\" not found"),
 				matchers.HaveFinalizer(),
