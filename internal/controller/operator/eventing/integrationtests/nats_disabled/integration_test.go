@@ -117,7 +117,7 @@ func Test_DeletionOfPublisherResourcesWhenNATSNotEnabled(t *testing.T) {
 	// then
 	// wait until Eventing CR status is Error.
 	testEnvironment.GetEventingAssert(g, givenEventing).Should(gomega.And(
-		matchers.HaveStatusError(),
+		matchers.HaveStatusWarning(),
 		matchers.HaveNATSNotAvailableConditionWith("NATS module has to be installed: customresourcedefinitions.apiextensions.k8s.io \"nats.operator.kyma-project.io\" not found"),
 	))
 

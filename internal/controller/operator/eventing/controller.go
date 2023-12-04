@@ -544,7 +544,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *operato
 	// check nats CR if it exists and is in natsAvailable state
 	err = r.checkNATSAvailability(ctx, eventing)
 	if err != nil {
-		return kctrl.Result{}, r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 
 	// set NATSAvailable condition to true and update status
@@ -613,7 +613,7 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 	}
 
 	// Start the EventMesh subscription controller
-	err = r.reconcileEventMeshSubManager(ctx, eventing)
+	err = r.reconcileEventMeshSubManager(ctx, eventing, log)
 	if err != nil {
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}

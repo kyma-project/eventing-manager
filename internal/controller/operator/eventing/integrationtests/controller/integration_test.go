@@ -16,6 +16,7 @@ import (
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -87,7 +88,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			),
 			givenNATSReady: false,
 			wantMatches: gomega.And(
-				matchers.HaveStatusWarning(),
+				matchers.HaveStatusError(),
 				matchers.HaveNATSNotAvailableCondition(),
 				matchers.HaveFinalizer(),
 			),
@@ -163,8 +164,8 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			),
 			wantMatches: gomega.And(
 				matchers.HaveStatusWarning(),
-				matchers.HaveBackendNotAvailableConditionWith(eventingv1alpha1.ConditionBackendNotSpecifiedMessage,
-					eventingv1alpha1.ConditionReasonBackendNotSpecified),
+				matchers.HaveBackendNotAvailableConditionWith(operatorv1alpha1.ConditionBackendNotSpecifiedMessage,
+					operatorv1alpha1.ConditionReasonBackendNotSpecified),
 				matchers.HaveFinalizer(),
 			),
 		},
@@ -590,12 +591,13 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 
 func Test_CreateEventingCR_EventMesh(t *testing.T) {
 	testCases := []struct {
-		name                 string
-		givenEventing        *operatorv1alpha1.Eventing
-		givenDeploymentReady bool
-		shouldFailSubManager bool
-		wantMatches          gomegatypes.GomegaMatcher
-		wantEnsureK8sObjects bool
+		name                          string
+		givenEventing                 *operatorv1alpha1.Eventing
+		givenDeploymentReady          bool
+		shouldFailSubManager          bool
+		shouldEventMeshSecretNotFound bool
+		wantMatches                   gomegatypes.GomegaMatcher
+		wantEnsureK8sObjects          bool
 	}{
 		{
 			name: "Eventing CR should have error state when subscription manager is not ready",
@@ -607,10 +609,25 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			wantMatches: gomega.And(
 				matchers.HaveStatusError(),
 				matchers.HaveEventMeshSubManagerNotReadyCondition(
-					"failed to get EventMesh secret: Secret \"test-secret-name1\" not found"),
+					"failed to sync Publisher Proxy secret: unexpected error"),
 				matchers.HaveFinalizer(),
 			),
 			shouldFailSubManager: true,
+		},
+		{
+			name: "Eventing CR should have warning state when EventMesh secret is missing",
+			givenEventing: utils.NewEventingCR(
+				utils.WithEventMeshBackend("test-secret-name2"),
+				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+			),
+			wantMatches: gomega.And(
+				matchers.HaveStatusWarning(),
+				matchers.HaveEventMeshSubManagerNotReadyCondition(
+					eventingcontroller.EventMeshSecretMissingMessage),
+				matchers.HaveFinalizer(),
+			),
+			shouldEventMeshSecretNotFound: true,
 		},
 		{
 			name: "Eventing CR should have ready state when all deployment replicas are ready",
@@ -664,9 +681,18 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			// create eventing-webhook-auth secret.
 			testEnvironment.EnsureOAuthSecretCreated(t, tc.givenEventing)
 
-			if !tc.shouldFailSubManager {
+			if !tc.shouldEventMeshSecretNotFound {
 				// create EventMesh secret.
 				testEnvironment.EnsureEventMeshSecretCreated(t, tc.givenEventing)
+			}
+
+			originalKubeClient := testEnvironment.KubeClient
+			if tc.shouldFailSubManager {
+				mockedKubeClient := &MockKubeClient{
+					Client: originalKubeClient,
+				}
+				testEnvironment.KubeClient = mockedKubeClient
+				testEnvironment.Reconciler.SetKubeClient(mockedKubeClient)
 			}
 
 			// when
@@ -674,8 +700,11 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
 
 			defer func() {
+				testEnvironment.KubeClient = originalKubeClient
+				testEnvironment.Reconciler.SetKubeClient(originalKubeClient)
+
 				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
-				if !*testEnvironment.EnvTestInstance.UseExistingCluster && !tc.shouldFailSubManager {
+				if !*testEnvironment.EnvTestInstance.UseExistingCluster && !tc.shouldFailSubManager && !tc.shouldEventMeshSecretNotFound {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
@@ -1076,4 +1105,8 @@ func (mkc *MockKubeClient) GetCRD(ctx context.Context, name string) (*kapiextens
 		},
 	}
 	return nil, notFoundError
+}
+
+func (mkc *MockKubeClient) PatchApply(ctx context.Context, object kclient.Object) error {
+	return fmt.Errorf("unexpected error")
 }
