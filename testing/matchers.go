@@ -8,11 +8,12 @@ import (
 	. "github.com/onsi/gomega"         //nolint:revive,stylecheck // using . import for convenience
 	. "github.com/onsi/gomega/gstruct" //nolint:revive,stylecheck // using . import for convenience
 	gomegatypes "github.com/onsi/gomega/types"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
+	kcorev1 "k8s.io/api/core/v1"
+	kruntime "k8s.io/apimachinery/pkg/runtime"
+	ktypes "k8s.io/apimachinery/pkg/types"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/constants"
 	"github.com/kyma-project/eventing-manager/pkg/object"
@@ -23,7 +24,7 @@ import (
 //
 
 func HaveNotEmptyAPIRule() gomegatypes.GomegaMatcher {
-	return WithTransform(func(a apigatewayv1beta1.APIRule) types.UID {
+	return WithTransform(func(a apigatewayv1beta1.APIRule) ktypes.UID {
 		return a.UID
 	}, Not(BeEmpty()))
 }
@@ -37,7 +38,7 @@ func HaveNotEmptyHost() gomegatypes.GomegaMatcher {
 func HaveAPIRuleSpecRules(ruleMethods []string, accessStrategy, certsURL, path string) gomegatypes.GomegaMatcher {
 	handler := apigatewayv1beta1.Handler{
 		Name: accessStrategy,
-		Config: &runtime.RawExtension{
+		Config: &kruntime.RawExtension{
 			Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, certsURL)),
 		},
 	}
@@ -81,9 +82,9 @@ func haveAPIRuleAccessStrategiesWithOry(accessStrategy string) gomegatypes.Gomeg
 	}, Equal(accessStrategy))
 }
 
-func HaveAPIRuleOwnersRefs(uids ...types.UID) gomegatypes.GomegaMatcher {
-	return WithTransform(func(a apigatewayv1beta1.APIRule) []types.UID {
-		ownerRefUIDs := make([]types.UID, 0, len(a.OwnerReferences))
+func HaveAPIRuleOwnersRefs(uids ...ktypes.UID) gomegatypes.GomegaMatcher {
+	return WithTransform(func(a apigatewayv1beta1.APIRule) []ktypes.UID {
+		ownerRefUIDs := make([]ktypes.UID, 0, len(a.OwnerReferences))
 		for _, ownerRef := range a.OwnerReferences {
 			ownerRefUIDs = append(ownerRefUIDs, ownerRef.UID)
 		}
@@ -96,7 +97,7 @@ func HaveAPIRuleOwnersRefs(uids ...types.UID) gomegatypes.GomegaMatcher {
 //
 
 func HaveValidClientID(clientIDKey, clientID string) gomegatypes.GomegaMatcher {
-	return WithTransform(func(secret *corev1.Secret) bool {
+	return WithTransform(func(secret *kcorev1.Secret) bool {
 		if secret != nil {
 			return string(secret.Data[clientIDKey]) == clientID
 		}
@@ -105,7 +106,7 @@ func HaveValidClientID(clientIDKey, clientID string) gomegatypes.GomegaMatcher {
 }
 
 func HaveValidClientSecret(clientSecretKey, clientSecret string) gomegatypes.GomegaMatcher {
-	return WithTransform(func(secret *corev1.Secret) bool {
+	return WithTransform(func(secret *kcorev1.Secret) bool {
 		if secret != nil {
 			return string(secret.Data[clientSecretKey]) == clientSecret
 		}
@@ -114,7 +115,7 @@ func HaveValidClientSecret(clientSecretKey, clientSecret string) gomegatypes.Gom
 }
 
 func HaveValidTokenEndpoint(tokenEndpointKey, tokenEndpoint string) gomegatypes.GomegaMatcher {
-	return WithTransform(func(secret *corev1.Secret) bool {
+	return WithTransform(func(secret *kcorev1.Secret) bool {
 		if secret != nil {
 			return string(secret.Data[tokenEndpointKey]) == tokenEndpoint
 		}
@@ -123,7 +124,7 @@ func HaveValidTokenEndpoint(tokenEndpointKey, tokenEndpoint string) gomegatypes.
 }
 
 func HaveValidEMSPublishURL(emsPublishURLKey, emsPublishURL string) gomegatypes.GomegaMatcher {
-	return WithTransform(func(secret *corev1.Secret) bool {
+	return WithTransform(func(secret *kcorev1.Secret) bool {
 		if secret != nil {
 			return string(secret.Data[emsPublishURLKey]) == emsPublishURL
 		}
@@ -132,7 +133,7 @@ func HaveValidEMSPublishURL(emsPublishURLKey, emsPublishURL string) gomegatypes.
 }
 
 func HaveValidBEBNamespace(bebNamespaceKey, namespace string) gomegatypes.GomegaMatcher {
-	return WithTransform(func(secret *corev1.Secret) bool {
+	return WithTransform(func(secret *kcorev1.Secret) bool {
 		if secret != nil {
 			return string(secret.Data[bebNamespaceKey]) == namespace
 		}
@@ -212,14 +213,14 @@ func HaveSubscriptionActiveCondition() gomegatypes.GomegaMatcher {
 	return HaveCondition(eventingv1alpha2.MakeCondition(
 		eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonSubscriptionActive,
-		corev1.ConditionTrue, ""))
+		kcorev1.ConditionTrue, ""))
 }
 
 func HaveAPIRuleTrueStatusCondition() gomegatypes.GomegaMatcher {
 	return HaveCondition(eventingv1alpha2.MakeCondition(
 		eventingv1alpha2.ConditionAPIRuleStatus,
 		eventingv1alpha2.ConditionReasonAPIRuleStatusReady,
-		corev1.ConditionTrue,
+		kcorev1.ConditionTrue,
 		"",
 	))
 }
@@ -236,7 +237,7 @@ func DefaultReadyCondition() eventingv1alpha2.Condition {
 	return eventingv1alpha2.MakeCondition(
 		eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonNATSSubscriptionActive,
-		corev1.ConditionTrue, "")
+		kcorev1.ConditionTrue, "")
 }
 
 func HaveStatusTypes(cleanEventTypes []eventingv1alpha2.EventType) gomegatypes.GomegaMatcher {
@@ -251,9 +252,9 @@ func HaveNotFoundSubscription() gomegatypes.GomegaMatcher {
 	return WithTransform(func(isDeleted bool) bool { return isDeleted }, BeTrue())
 }
 
-func HaveEvent(event corev1.Event) gomegatypes.GomegaMatcher {
+func HaveEvent(event kcorev1.Event) gomegatypes.GomegaMatcher {
 	return WithTransform(
-		func(l corev1.EventList) []corev1.Event {
+		func(l kcorev1.EventList) []kcorev1.Event {
 			return l.Items
 		}, ContainElement(MatchFields(IgnoreExtras|IgnoreMissing, Fields{
 			"Reason":  Equal(event.Reason),

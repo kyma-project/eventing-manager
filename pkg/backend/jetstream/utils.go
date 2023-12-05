@@ -8,12 +8,13 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
 
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 
-	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/nats-io/nats.go"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/kyma-project/eventing-manager/pkg/errors"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
@@ -53,9 +54,9 @@ func (js *JetStream) getDefaultSubscriptionOptions(consumer SubscriptionSubjectI
 	}
 }
 
-var ErrInvalidStorageType = pkgerrors.NewArgumentError("invalid stream storage type: %q")
-var ErrInvalidRetentionPolicy = pkgerrors.NewArgumentError("invalid stream retention policy: %q")
-var ErrInvalidDiscardPolicy = pkgerrors.NewArgumentError("invalid stream discard policy: %q")
+var ErrInvalidStorageType = errors.NewArgumentError("invalid stream storage type: %q")
+var ErrInvalidRetentionPolicy = errors.NewArgumentError("invalid stream retention policy: %q")
+var ErrInvalidDiscardPolicy = errors.NewArgumentError("invalid stream discard policy: %q")
 
 // toJetStreamStorageType converts a string to a nats.StorageType.
 func toJetStreamStorageType(s string) (nats.StorageType, error) {
@@ -239,7 +240,7 @@ func GetCleanEventTypes(sub *eventingv1alpha2.Subscription, cleaner cleaner.Clea
 func GetBackendJetStreamTypes(subscription *eventingv1alpha2.Subscription,
 	jsSubjects []string) ([]eventingv1alpha2.JetStreamTypes, error) {
 	if len(jsSubjects) != len(subscription.Spec.Types) {
-		return nil, errors.New("length of JetStream subjects do not match with eventTypes from spec")
+		return nil, pkgerrors.New("length of JetStream subjects do not match with eventTypes from spec")
 	}
 
 	var jsTypes []eventingv1alpha2.JetStreamTypes

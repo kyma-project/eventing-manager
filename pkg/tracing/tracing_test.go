@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	cev2event "github.com/cloudevents/sdk-go/v2/event"
-	cev2protocolhttp "github.com/cloudevents/sdk-go/v2/protocol/http"
+	ceevent "github.com/cloudevents/sdk-go/v2/event"
+	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 	. "github.com/onsi/gomega"
 )
 
@@ -15,7 +15,7 @@ func TestAddTracingHeadersToContext(t *testing.T) {
 	g := NewGomegaWithT(t)
 	testCases := []struct {
 		name            string
-		event           *cev2event.Event
+		event           *ceevent.Event
 		expectedHeaders http.Header
 	}{
 		{
@@ -62,13 +62,13 @@ func TestAddTracingHeadersToContext(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			gotContext := AddTracingHeadersToContext(ctx, tc.event)
-			g.Expect(cev2protocolhttp.HeaderFrom(gotContext)).To(Equal(tc.expectedHeaders))
+			g.Expect(cehttp.HeaderFrom(gotContext)).To(Equal(tc.expectedHeaders))
 			g.Expect(len(getTracingExtensions(tc.event))).To(Equal(0))
 		})
 	}
 }
 
-func getTracingExtensions(event *cev2event.Event) map[string]string {
+func getTracingExtensions(event *ceevent.Event) map[string]string {
 	traceExtensions := make(map[string]string)
 	for k, v := range event.Extensions() {
 		if k == traceParentCEExtensionsKey ||
@@ -83,9 +83,9 @@ func getTracingExtensions(event *cev2event.Event) map[string]string {
 	return traceExtensions
 }
 
-func NewEventWithExtensions(extensions map[string]string) *cev2event.Event {
-	event := &cev2event.Event{
-		Context: &cev2event.EventContextV1{},
+func NewEventWithExtensions(extensions map[string]string) *ceevent.Event {
+	event := &ceevent.Event{
+		Context: &ceevent.EventContextV1{},
 	}
 	for k, v := range extensions {
 		event.SetExtension(k, v)

@@ -3,19 +3,19 @@ package v1alpha2
 import (
 	"encoding/json"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	kunstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	kschema "k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func SubscriptionGroupVersionResource() schema.GroupVersionResource {
-	return schema.GroupVersionResource{
+func SubscriptionGroupVersionResource() kschema.GroupVersionResource {
+	return kschema.GroupVersionResource{
 		Version:  GroupVersion.Version,
 		Group:    GroupVersion.Group,
 		Resource: "subscriptions",
 	}
 }
 
-func ConvertUnstructListToSubList(unstructuredList *unstructured.UnstructuredList) (*SubscriptionList, error) {
+func ConvertUnstructListToSubList(unstructuredList *kunstructured.UnstructuredList) (*SubscriptionList, error) {
 	subscriptionList := new(SubscriptionList)
 	subscriptionListBytes, err := unstructuredList.MarshalJSON()
 	if err != nil {

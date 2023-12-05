@@ -7,20 +7,20 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	ktypes "k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 
 	"github.com/nats-io/nats.go"
 
-	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
+	"github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/kyma-project/eventing-manager/pkg/object"
 
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 
 	"go.uber.org/zap"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -73,7 +73,7 @@ func NewReconciler(ctx context.Context, client client.Client, jsBackend jetstrea
 }
 
 // SetupUnmanaged creates a controller under the client control.
-func (r *Reconciler) SetupUnmanaged(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupUnmanaged(mgr kctrl.Manager) error {
 	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		r.namedLogger().Errorw("Failed to create unmanaged controller", "error", err)
@@ -107,7 +107,7 @@ func (r *Reconciler) SetupUnmanaged(mgr ctrl.Manager) error {
 // Generate required RBAC to emit kubernetes events in the controller.
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Result, error) {
 	r.namedLogger().Debugw("Received subscription v1alpha2 reconciliation request",
 		"namespace", req.Namespace, "name", req.Name)
 
@@ -115,7 +115,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	currentSubscription := &eventingv1alpha2.Subscription{}
 	err := r.Client.Get(ctx, req.NamespacedName, currentSubscription)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return kctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	// copy the subscription object, so we don't modify the source object
@@ -140,9 +140,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// update the cleanEventTypes and config values in the subscription status, if changed
 	if err = r.syncEventTypes(desiredSubscription); err != nil {
 		if syncErr := r.syncSubscriptionStatus(ctx, desiredSubscription, err, log); syncErr != nil {
-			return ctrl.Result{}, err
+			return kctrl.Result{}, err
 		}
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	// Check for valid sink
@@ -154,35 +154,35 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				"name", desiredSubscription.Name,
 				"error", deleteErr,
 			)
-			return ctrl.Result{}, deleteErr
+			return kctrl.Result{}, deleteErr
 		}
 
 		// No point in reconciling as the sink is invalid,
 		// return latest error to requeue the reconciliation request
 		if syncErr := r.syncSubscriptionStatus(ctx, desiredSubscription, err, log); syncErr != nil {
-			return ctrl.Result{}, err
+			return kctrl.Result{}, err
 		}
 		// No point in reconciling as the sink is invalid, return latest error to requeue the reconciliation request
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	// Synchronize Kyma subscription to JetStream backend
 	if syncSubErr := r.Backend.SyncSubscription(desiredSubscription); syncSubErr != nil {
-		result := ctrl.Result{}
+		result := kctrl.Result{}
 		if syncErr := r.syncSubscriptionStatus(ctx, desiredSubscription, syncSubErr, log); syncErr != nil {
 			return result, syncErr
 		}
 
 		// Requeue the Request to reconcile it again if there are no NATS Subscriptions synced
-		if errors.Is(syncSubErr, jetstream.ErrMissingSubscription) {
-			result = ctrl.Result{RequeueAfter: requeueDuration}
+		if pkgerrors.Is(syncSubErr, jetstream.ErrMissingSubscription) {
+			result = kctrl.Result{RequeueAfter: requeueDuration}
 			syncSubErr = nil
 		}
 		return result, syncSubErr
 	}
 
 	// Update Subscription status
-	return ctrl.Result{}, r.syncSubscriptionStatus(ctx, desiredSubscription, nil, log)
+	return kctrl.Result{}, r.syncSubscriptionStatus(ctx, desiredSubscription, nil, log)
 }
 
 func (r *Reconciler) updateSubscriptionMetrics(current, desired *eventingv1alpha2.Subscription) {
@@ -239,21 +239,21 @@ func (r *Reconciler) enqueueReconciliationForSubscriptions(subs []eventingv1alph
 
 // handleSubscriptionDeletion deletes the JetStream subscription and removes its finalizer if it is set.
 func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
-	subscription *eventingv1alpha2.Subscription, log *zap.SugaredLogger) (ctrl.Result, error) {
+	subscription *eventingv1alpha2.Subscription, log *zap.SugaredLogger) (kctrl.Result, error) {
 
 	// delete the JetStream subscription/consumer
 	if !utils.ContainsString(subscription.ObjectMeta.Finalizers, eventingv1alpha2.Finalizer) {
-		return ctrl.Result{}, nil
+		return kctrl.Result{}, nil
 	}
 
 	if err := r.Backend.DeleteSubscription(subscription); err != nil {
-		deleteSubErr := pkgerrors.MakeError(errFailedToDeleteSub, err)
+		deleteSubErr := errors.MakeError(errFailedToDeleteSub, err)
 		// if failed to delete the external dependency here, return with error
 		// so that it can be retried
 		if syncErr := r.syncSubscriptionStatus(ctx, subscription, deleteSubErr, log); syncErr != nil {
-			return ctrl.Result{}, syncErr
+			return kctrl.Result{}, syncErr
 		}
-		return ctrl.Result{}, deleteSubErr
+		return kctrl.Result{}, deleteSubErr
 	}
 
 	types := subscription.Status.Backend.Types
@@ -263,7 +263,7 @@ func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
 
 	// update the subscription's finalizers in k8s
 	if err := r.Update(ctx, subscription); err != nil {
-		return ctrl.Result{}, pkgerrors.MakeError(errFailedToUpdateFinalizers, err)
+		return kctrl.Result{}, errors.MakeError(errFailedToUpdateFinalizers, err)
 	}
 
 	for _, t := range types {
@@ -276,7 +276,7 @@ func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
 		)
 	}
 
-	return ctrl.Result{}, nil
+	return kctrl.Result{}, nil
 }
 
 // syncSubscriptionStatus syncs Subscription status and updates the k8s subscription.
@@ -295,7 +295,7 @@ func (r *Reconciler) syncSubscriptionStatus(ctx context.Context,
 // updateSubscriptionStatus updates the subscription's status changes to k8s.
 func (r *Reconciler) updateSubscriptionStatus(ctx context.Context,
 	sub *eventingv1alpha2.Subscription, logger *zap.SugaredLogger) error {
-	namespacedName := &k8stypes.NamespacedName{
+	namespacedName := &ktypes.NamespacedName{
 		Name:      sub.Name,
 		Namespace: sub.Namespace,
 	}
@@ -312,7 +312,7 @@ func (r *Reconciler) updateSubscriptionStatus(ctx context.Context,
 
 	// sync subscription status with k8s
 	if err := r.updateStatus(ctx, actualSubscription, desiredSubscription, logger); err != nil {
-		return pkgerrors.MakeError(errFailedToUpdateStatus, err)
+		return errors.MakeError(errFailedToUpdateStatus, err)
 	}
 
 	return nil
@@ -330,7 +330,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, oldSubscription,
 	if err := r.Status().Update(ctx, newSubscription); err != nil {
 		events.Warn(r.recorder, newSubscription, events.ReasonUpdateFailed,
 			"Update Subscription status failed %s", newSubscription.Name)
-		return pkgerrors.MakeError(errFailedToUpdateStatus, err)
+		return errors.MakeError(errFailedToUpdateStatus, err)
 	}
 	events.Normal(r.recorder, newSubscription, events.ReasonUpdate,
 		"Update Subscription status succeeded %s", newSubscription.Name)
@@ -342,15 +342,15 @@ func (r *Reconciler) updateStatus(ctx context.Context, oldSubscription,
 }
 
 // addFinalizer appends the eventing finalizer to the subscription and updates it in k8s.
-func (r *Reconciler) addFinalizer(ctx context.Context, sub *eventingv1alpha2.Subscription) (ctrl.Result, error) {
+func (r *Reconciler) addFinalizer(ctx context.Context, sub *eventingv1alpha2.Subscription) (kctrl.Result, error) {
 	sub.ObjectMeta.Finalizers = append(sub.ObjectMeta.Finalizers, eventingv1alpha2.Finalizer)
 
 	// update the subscription's finalizers in k8s
 	if err := r.Update(ctx, sub); err != nil {
-		return ctrl.Result{}, pkgerrors.MakeError(errFailedToUpdateFinalizers, err)
+		return kctrl.Result{}, errors.MakeError(errFailedToUpdateFinalizers, err)
 	}
 
-	return ctrl.Result{}, nil
+	return kctrl.Result{}, nil
 }
 
 // syncEventTypes sets the latest cleaned types and jetStreamTypes to the subscription status.

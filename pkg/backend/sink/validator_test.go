@@ -6,14 +6,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	controllertesting "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 func TestSinkValidator(t *testing.T) {
@@ -58,17 +58,17 @@ func TestSinkValidator(t *testing.T) {
 		testCase := tC
 		t.Run(testCase.name, func(t *testing.T) {
 			// given
-			sub := controllertesting.NewSubscription(
+			sub := eventingtesting.NewSubscription(
 				"foo", namespaceName,
-				controllertesting.WithConditions([]eventingv1alpha2.Condition{}),
-				controllertesting.WithStatus(true),
-				controllertesting.WithSink(testCase.givenSubscriptionSink),
+				eventingtesting.WithConditions([]eventingv1alpha2.Condition{}),
+				eventingtesting.WithStatus(true),
+				eventingtesting.WithSink(testCase.givenSubscriptionSink),
 			)
 
 			// create the service if required for test
 			if testCase.givenSvcNameToCreate != "" {
-				svc := &corev1.Service{
-					ObjectMeta: v1.ObjectMeta{
+				svc := &kcorev1.Service{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:      testCase.givenSvcNameToCreate,
 						Namespace: namespaceName,
 					},

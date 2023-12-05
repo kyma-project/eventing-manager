@@ -5,12 +5,13 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/stretchr/testify/require"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/eventing-manager/pkg/env"
 )
 
 func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
@@ -27,8 +28,8 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 	testCases := []struct {
 		name             string
 		givenObjects     []client.Object
-		wantMutatingWH   *admissionv1.MutatingWebhookConfiguration
-		wantValidatingWH *admissionv1.ValidatingWebhookConfiguration
+		wantMutatingWH   *kadmissionregistrationv1.MutatingWebhookConfiguration
+		wantValidatingWH *kadmissionregistrationv1.ValidatingWebhookConfiguration
 		wantError        error
 	}{
 		{
@@ -46,9 +47,9 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 			name: "mutatingWH exists, validatingWH does not exist",
 			givenObjects: []client.Object{
 				getSecretWithTLSSecret(nil),
-				getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
+				getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
 					{
-						ClientConfig: admissionv1.WebhookClientConfig{},
+						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{},
 					},
 				}),
 			},
@@ -67,9 +68,9 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 			name: "validatingWH does not contain webhooks",
 			givenObjects: []client.Object{
 				getSecretWithTLSSecret(nil),
-				getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
+				getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
 					{
-						ClientConfig: admissionv1.WebhookClientConfig{},
+						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{},
 					},
 				}),
 				getValidatingWebhookConfig(nil),
@@ -80,27 +81,27 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 			name: "WHs do not contain valid CABundle",
 			givenObjects: []client.Object{
 				getSecretWithTLSSecret(dummyCABundle),
-				getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
+				getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
 					{
-						ClientConfig: admissionv1.WebhookClientConfig{},
+						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{},
 					},
 				}),
-				getValidatingWebhookConfig([]admissionv1.ValidatingWebhook{
+				getValidatingWebhookConfig([]kadmissionregistrationv1.ValidatingWebhook{
 					{
-						ClientConfig: admissionv1.WebhookClientConfig{},
+						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{},
 					},
 				}),
 			},
-			wantMutatingWH: getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
+			wantMutatingWH: getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
 				{
-					ClientConfig: admissionv1.WebhookClientConfig{
+					ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 						CABundle: dummyCABundle,
 					},
 				},
 			}),
-			wantValidatingWH: getValidatingWebhookConfig([]admissionv1.ValidatingWebhook{
+			wantValidatingWH: getValidatingWebhookConfig([]kadmissionregistrationv1.ValidatingWebhook{
 				{
-					ClientConfig: admissionv1.WebhookClientConfig{
+					ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 						CABundle: dummyCABundle,
 					},
 				},
@@ -111,31 +112,31 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 			name: "WHs contains valid CABundle",
 			givenObjects: []client.Object{
 				getSecretWithTLSSecret(dummyCABundle),
-				getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
+				getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
 					{
-						ClientConfig: admissionv1.WebhookClientConfig{
+						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 							CABundle: dummyCABundle,
 						},
 					},
 				}),
-				getValidatingWebhookConfig([]admissionv1.ValidatingWebhook{
+				getValidatingWebhookConfig([]kadmissionregistrationv1.ValidatingWebhook{
 					{
-						ClientConfig: admissionv1.WebhookClientConfig{
+						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 							CABundle: dummyCABundle,
 						},
 					},
 				}),
 			},
-			wantMutatingWH: getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
+			wantMutatingWH: getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
 				{
-					ClientConfig: admissionv1.WebhookClientConfig{
+					ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 						CABundle: dummyCABundle,
 					},
 				},
 			}),
-			wantValidatingWH: getValidatingWebhookConfig([]admissionv1.ValidatingWebhook{
+			wantValidatingWH: getValidatingWebhookConfig([]kadmissionregistrationv1.ValidatingWebhook{
 				{
-					ClientConfig: admissionv1.WebhookClientConfig{
+					ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 						CABundle: dummyCABundle,
 					},
 				},
@@ -146,31 +147,31 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 			name: "WHs contains outdated valid CABundle",
 			givenObjects: []client.Object{
 				getSecretWithTLSSecret(newCABundle),
-				getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
+				getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
 					{
-						ClientConfig: admissionv1.WebhookClientConfig{
+						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 							CABundle: dummyCABundle,
 						},
 					},
 				}),
-				getValidatingWebhookConfig([]admissionv1.ValidatingWebhook{
+				getValidatingWebhookConfig([]kadmissionregistrationv1.ValidatingWebhook{
 					{
-						ClientConfig: admissionv1.WebhookClientConfig{
+						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 							CABundle: dummyCABundle,
 						},
 					},
 				}),
 			},
-			wantMutatingWH: getMutatingWebhookConfig([]admissionv1.MutatingWebhook{
+			wantMutatingWH: getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
 				{
-					ClientConfig: admissionv1.WebhookClientConfig{
+					ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 						CABundle: newCABundle,
 					},
 				},
 			}),
-			wantValidatingWH: getValidatingWebhookConfig([]admissionv1.ValidatingWebhook{
+			wantValidatingWH: getValidatingWebhookConfig([]kadmissionregistrationv1.ValidatingWebhook{
 				{
-					ClientConfig: admissionv1.WebhookClientConfig{
+					ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
 						CABundle: newCABundle,
 					},
 				},
@@ -206,13 +207,13 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 	}
 }
 
-func getSecretWithTLSSecret(dummyCABundle []byte) *corev1.Secret {
-	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
+func getSecretWithTLSSecret(dummyCABundle []byte) *kcorev1.Secret {
+	return &kcorev1.Secret{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      getTestBackendConfig().WebhookSecretName,
 			Namespace: getTestBackendConfig().Namespace,
 		},
@@ -222,18 +223,18 @@ func getSecretWithTLSSecret(dummyCABundle []byte) *corev1.Secret {
 	}
 }
 
-func getMutatingWebhookConfig(webhook []admissionv1.MutatingWebhook) *admissionv1.MutatingWebhookConfiguration {
-	return &admissionv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
+func getMutatingWebhookConfig(webhook []kadmissionregistrationv1.MutatingWebhook) *kadmissionregistrationv1.MutatingWebhookConfiguration {
+	return &kadmissionregistrationv1.MutatingWebhookConfiguration{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name: getTestBackendConfig().MutatingWebhookName,
 		},
 		Webhooks: webhook,
 	}
 }
 
-func getValidatingWebhookConfig(webhook []admissionv1.ValidatingWebhook) *admissionv1.ValidatingWebhookConfiguration {
-	return &admissionv1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
+func getValidatingWebhookConfig(webhook []kadmissionregistrationv1.ValidatingWebhook) *kadmissionregistrationv1.ValidatingWebhookConfiguration {
+	return &kadmissionregistrationv1.ValidatingWebhookConfiguration{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name: getTestBackendConfig().ValidatingWebhookName,
 		},
 		Webhooks: webhook,

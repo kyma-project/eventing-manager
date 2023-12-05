@@ -10,7 +10,7 @@ import (
 	"time"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	cev2event "github.com/cloudevents/sdk-go/v2/event"
+	ceevent "github.com/cloudevents/sdk-go/v2/event"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -30,7 +30,7 @@ type SinkClient struct {
 type SinkEvent struct {
 	// Header stores the non CE events, e.g. X-B3-Sampled and Traceparent
 	http.Header
-	cev2event.Event
+	ceevent.Event
 }
 
 func NewSinkClient(ctx context.Context, clientHTTP *http.Client, sinkURL string, logger *zap.Logger) *SinkClient {

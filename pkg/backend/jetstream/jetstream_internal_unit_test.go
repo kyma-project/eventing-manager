@@ -5,20 +5,22 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
 
-	cev2 "github.com/cloudevents/sdk-go/v2/event"
-	jetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
-	"github.com/kyma-project/eventing-manager/pkg/logger"
+	ceevent "github.com/cloudevents/sdk-go/v2/event"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/nats-io/nats.go"
 
+	backendjetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
+
 	"github.com/stretchr/testify/assert"
+
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	subtesting "github.com/kyma-project/eventing-manager/testing"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 // Test_SyncConsumersAndSubscriptions_ForEmptyTypes tests the subscription without any EventType.
@@ -187,7 +189,7 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 		name  string
 		mocks func(sub *v1alpha2.Subscription,
 			jsBackend *JetStream,
-			jsCtx *jetstreammocks.JetStreamContext,
+			jsCtx *backendjetstreammocks.JetStreamContext,
 			jsSubKey SubscriptionSubjectIdentifier,
 		)
 	}{
@@ -195,7 +197,7 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 			name: "Bind invalid NATS Subscription should succeed",
 			mocks: func(sub *v1alpha2.Subscription,
 				jsBackend *JetStream,
-				jsCtx *jetstreammocks.JetStreamContext,
+				jsCtx *backendjetstreammocks.JetStreamContext,
 				jsSubKey SubscriptionSubjectIdentifier,
 			) {
 				// inject the subscriptions map
@@ -215,7 +217,7 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 			name: "Skip binding for when no invalid NATS Subscriptions",
 			mocks: func(sub *v1alpha2.Subscription,
 				jsBackend *JetStream,
-				jsCtx *jetstreammocks.JetStreamContext,
+				jsCtx *backendjetstreammocks.JetStreamContext,
 				jsSubKey SubscriptionSubjectIdentifier,
 			) {
 				// inject the subscriptions map
@@ -234,7 +236,7 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 		t.Run(tc.name, func(t *testing.T) {
 			// given
 			callback := func(m *nats.Msg) {}
-			jsCtxMock := &jetstreammocks.JetStreamContext{}
+			jsCtxMock := &backendjetstreammocks.JetStreamContext{}
 			js := &JetStream{
 				jsCtx:   jsCtxMock,
 				cleaner: &cleaner.JetStreamCleaner{},
@@ -266,7 +268,7 @@ func Test_SyncConsumersAndSubscriptions_ForSyncConsumerMaxInFlight(t *testing.T)
 		givenSubMaxInFlight        int
 		givenConsumerMaxAckPending int
 		givenjetstreammocks        func(jsBackend *JetStream,
-			jsCtx *jetstreammocks.JetStreamContext,
+			jsCtx *backendjetstreammocks.JetStreamContext,
 			consumerConfigToUpdate *nats.ConsumerConfig,
 		)
 		wantConfigToUpdate *nats.ConsumerConfig
@@ -277,7 +279,7 @@ func Test_SyncConsumersAndSubscriptions_ForSyncConsumerMaxInFlight(t *testing.T)
 			givenConsumerMaxAckPending: DefaultMaxInFlights,
 			// no updateConsumer calls expected
 			givenjetstreammocks: func(jsBackend *JetStream,
-				jsCtx *jetstreammocks.JetStreamContext,
+				jsCtx *backendjetstreammocks.JetStreamContext,
 				consumerConfigToUpdate *nats.ConsumerConfig) {
 			},
 			wantConfigToUpdate: nil,
@@ -287,7 +289,7 @@ func Test_SyncConsumersAndSubscriptions_ForSyncConsumerMaxInFlight(t *testing.T)
 			givenSubMaxInFlight:        10,
 			givenConsumerMaxAckPending: 20,
 			givenjetstreammocks: func(jsBackend *JetStream,
-				jsCtx *jetstreammocks.JetStreamContext,
+				jsCtx *backendjetstreammocks.JetStreamContext,
 				consumerConfigToUpdate *nats.ConsumerConfig,
 			) {
 				jsCtx.On("UpdateConsumer", jsBackend.Config.JSStreamName, consumerConfigToUpdate).Return(&nats.ConsumerInfo{
@@ -302,12 +304,12 @@ func Test_SyncConsumersAndSubscriptions_ForSyncConsumerMaxInFlight(t *testing.T)
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			jsCtxMock := &jetstreammocks.JetStreamContext{}
+			jsCtxMock := &backendjetstreammocks.JetStreamContext{}
 			js := &JetStream{
 				jsCtx: jsCtxMock,
 			}
-			sub := subtesting.NewSubscription("test", "test",
-				subtesting.WithMaxInFlight(tc.givenSubMaxInFlight),
+			sub := eventingtesting.NewSubscription("test", "test",
+				eventingtesting.WithMaxInFlight(tc.givenSubMaxInFlight),
 			)
 
 			// setup the jetstreammocks
@@ -762,7 +764,7 @@ func Test_revertEventTypeToOriginal(t *testing.T) {
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			ce := cev2.New(cev2.CloudEventsVersionV1)
+			ce := ceevent.New(ceevent.CloudEventsVersionV1)
 			ce.SetType(tc.givenType)
 			ce.SetSource(tc.givenSource)
 			if tc.givenOriginalType != "" {
@@ -783,50 +785,50 @@ func Test_revertEventTypeToOriginal(t *testing.T) {
 // HELPER FUNCTIONS
 
 func NewSubscriptionWithEmptyTypes() *v1alpha2.Subscription {
-	return subtesting.NewSubscription("test", "test",
-		subtesting.WithStatusTypes(nil),
+	return eventingtesting.NewSubscription("test", "test",
+		eventingtesting.WithStatusTypes(nil),
 	)
 }
 
 func NewSubscriptionWithOneType() *v1alpha2.Subscription {
-	return subtesting.NewSubscription("test", "test",
-		subtesting.WithSourceAndType(subtesting.EventSource, subtesting.CloudEventType),
-		subtesting.WithTypeMatchingStandard(),
-		subtesting.WithMaxInFlight(DefaultMaxInFlights),
-		subtesting.WithStatusTypes([]v1alpha2.EventType{
+	return eventingtesting.NewSubscription("test", "test",
+		eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.CloudEventType),
+		eventingtesting.WithTypeMatchingStandard(),
+		eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
+		eventingtesting.WithStatusTypes([]v1alpha2.EventType{
 			{
-				OriginalType: subtesting.CloudEventType,
-				CleanType:    subtesting.CloudEventType,
+				OriginalType: eventingtesting.CloudEventType,
+				CleanType:    eventingtesting.CloudEventType,
 			},
 		}),
 	)
 }
 
 func NewSubscriptionsWithMultipleTypes() []v1alpha2.Subscription {
-	sub1 := subtesting.NewSubscription("test1", "test1",
-		subtesting.WithSourceAndType(subtesting.EventSourceClean, subtesting.OrderCreatedV1Event),
-		subtesting.WithTypeMatchingStandard(),
-		subtesting.WithMaxInFlight(DefaultMaxInFlights),
-		subtesting.WithStatusTypes([]v1alpha2.EventType{
+	sub1 := eventingtesting.NewSubscription("test1", "test1",
+		eventingtesting.WithSourceAndType(eventingtesting.EventSourceClean, eventingtesting.OrderCreatedV1Event),
+		eventingtesting.WithTypeMatchingStandard(),
+		eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
+		eventingtesting.WithStatusTypes([]v1alpha2.EventType{
 			{
-				OriginalType: subtesting.OrderCreatedV1Event,
-				CleanType:    subtesting.OrderCreatedV1Event,
+				OriginalType: eventingtesting.OrderCreatedV1Event,
+				CleanType:    eventingtesting.OrderCreatedV1Event,
 			},
 		}),
 	)
-	sub2 := subtesting.NewSubscription("test2", "test2",
-		subtesting.WithSourceAndType(subtesting.EventSourceClean, subtesting.OrderCreatedV1Event),
-		subtesting.WithSourceAndType(subtesting.EventSourceClean, subtesting.OrderCreatedV1EventNotClean),
-		subtesting.WithTypeMatchingStandard(),
-		subtesting.WithMaxInFlight(DefaultMaxInFlights),
-		subtesting.WithStatusTypes([]v1alpha2.EventType{
+	sub2 := eventingtesting.NewSubscription("test2", "test2",
+		eventingtesting.WithSourceAndType(eventingtesting.EventSourceClean, eventingtesting.OrderCreatedV1Event),
+		eventingtesting.WithSourceAndType(eventingtesting.EventSourceClean, eventingtesting.OrderCreatedV1EventNotClean),
+		eventingtesting.WithTypeMatchingStandard(),
+		eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
+		eventingtesting.WithStatusTypes([]v1alpha2.EventType{
 			{
-				OriginalType: subtesting.OrderCreatedV1Event,
-				CleanType:    subtesting.OrderCreatedV1Event,
+				OriginalType: eventingtesting.OrderCreatedV1Event,
+				CleanType:    eventingtesting.OrderCreatedV1Event,
 			},
 			{
-				OriginalType: subtesting.OrderCreatedV1Event,
-				CleanType:    subtesting.OrderCreatedV1Event,
+				OriginalType: eventingtesting.OrderCreatedV1Event,
+				CleanType:    eventingtesting.OrderCreatedV1Event,
 			},
 		}),
 	)

@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-project/eventing-manager/testing/event/cehelper"
 
 	"github.com/avast/retry-go/v3"
-	pkgerrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -208,7 +208,7 @@ func (s Subscriber) CheckEvent(expectedData string) error {
 			// check if a response was received and that it's code is in 2xx-range
 			resp, err := http.Get(s.checkURL)
 			if err != nil {
-				return pkgerrors.Wrapf(err, "get HTTP request failed")
+				return errors.Wrapf(err, "get HTTP request failed")
 			}
 			if !is2XXStatusCode(resp.StatusCode) {
 				return fmt.Errorf("expected resonse code 2xx, actual response code: %d", resp.StatusCode)
@@ -218,7 +218,7 @@ func (s Subscriber) CheckEvent(expectedData string) error {
 			defer func() { _ = resp.Body.Close() }()
 			body, err = io.ReadAll(resp.Body)
 			if err != nil {
-				return pkgerrors.Wrapf(err, "read data failed")
+				return errors.Wrapf(err, "read data failed")
 			}
 
 			// compare response body with expectations
@@ -233,7 +233,7 @@ func (s Subscriber) CheckEvent(expectedData string) error {
 		retry.OnRetry(func(n uint, err error) { log.Printf("[%v] try failed: %s", n, err) }),
 	)
 	if err != nil {
-		return pkgerrors.Wrapf(err, "check event after retries failed")
+		return errors.Wrapf(err, "check event after retries failed")
 	}
 
 	log.Print("event received")
@@ -249,7 +249,7 @@ func (s Subscriber) CheckRetries(expectedNoOfRetries int, expectedData string) e
 		func() error {
 			resp, err := http.Get(s.checkRetriesURL)
 			if err != nil {
-				return pkgerrors.Wrapf(err, "get HTTP request failed")
+				return errors.Wrapf(err, "get HTTP request failed")
 			}
 			if !is2XXStatusCode(resp.StatusCode) {
 				return fmt.Errorf("expected resonse code 2xx, actual response code: %d", resp.StatusCode)
@@ -257,11 +257,11 @@ func (s Subscriber) CheckRetries(expectedNoOfRetries int, expectedData string) e
 			defer func() { _ = resp.Body.Close() }()
 			body, err = io.ReadAll(resp.Body)
 			if err != nil {
-				return pkgerrors.Wrapf(err, "read data failed")
+				return errors.Wrapf(err, "read data failed")
 			}
 			actualRetires, err := strconv.Atoi(string(body))
 			if err != nil {
-				return pkgerrors.Wrapf(err, "read data failed")
+				return errors.Wrapf(err, "read data failed")
 			}
 			if actualRetires < expectedNoOfRetries {
 				return fmt.Errorf("number of retries do not match (actualRetires=%d, expectedRetries=%d)", actualRetires, expectedNoOfRetries)
@@ -274,12 +274,12 @@ func (s Subscriber) CheckRetries(expectedNoOfRetries int, expectedData string) e
 		retry.OnRetry(func(n uint, err error) { log.Printf("[%v] try failed: %s", n, err) }),
 	)
 	if err != nil {
-		return pkgerrors.Wrapf(err, "check event after retries failed")
+		return errors.Wrapf(err, "check event after retries failed")
 	}
 	// test if 'expectedData' was received exactly 'expectedNoOfRetries' times
 	for i := 1; i < expectedNoOfRetries; i++ {
 		if err := s.CheckEvent(expectedData); err != nil {
-			return pkgerrors.Wrapf(err, "check received data after retries failed")
+			return errors.Wrapf(err, "check received data after retries failed")
 		}
 	}
 	// OK

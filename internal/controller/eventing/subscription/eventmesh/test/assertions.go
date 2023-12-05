@@ -5,10 +5,11 @@ import (
 	"log"
 
 	"github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
@@ -29,7 +30,7 @@ func getSubscriptionAssert(ctx context.Context, g *gomega.GomegaWithT,
 }
 
 // getAPIRuleForASvcAssert fetches an apiRule for a given service and allows making assertions on it.
-func getAPIRuleForASvcAssert(ctx context.Context, g *gomega.GomegaWithT, svc *corev1.Service) gomega.AsyncAssertion {
+func getAPIRuleForASvcAssert(ctx context.Context, g *gomega.GomegaWithT, svc *kcorev1.Service) gomega.AsyncAssertion {
 	return g.Eventually(func() apigatewayv1beta1.APIRule {
 		apiRules, err := getAPIRulesList(ctx, svc)
 		g.Expect(err).Should(gomega.BeNil())

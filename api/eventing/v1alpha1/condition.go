@@ -3,8 +3,8 @@ package v1alpha1
 import (
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ConditionType string
@@ -25,9 +25,9 @@ type Condition struct {
 	// Short description of the condition.
 	Type ConditionType `json:"type,omitempty"`
 	// Status of the condition. The value is either `True`, `False`, or `Unknown`.
-	Status corev1.ConditionStatus `json:"status"`
+	Status kcorev1.ConditionStatus `json:"status"`
 	// Defines the date of the last condition status change.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime kmetav1.Time `json:"lastTransitionTime,omitempty"`
 	// Defines the reason for the condition status change.
 	Reason ConditionReason `json:"reason,omitempty"`
 	// Provides more details about the condition status change.
@@ -84,7 +84,7 @@ func (s SubscriptionStatus) IsReady() bool {
 
 	// the subscription is ready if all its conditions are evaluated to true
 	for _, c := range s.Conditions {
-		if c.Status != corev1.ConditionTrue {
+		if c.Status != kcorev1.ConditionTrue {
 			return false
 		}
 	}
@@ -114,23 +114,23 @@ func MakeSubscriptionConditions() []Condition {
 	conditions := []Condition{
 		{
 			Type:               ConditionAPIRuleStatus,
-			LastTransitionTime: metav1.Now(),
-			Status:             corev1.ConditionUnknown,
+			LastTransitionTime: kmetav1.Now(),
+			Status:             kcorev1.ConditionUnknown,
 		},
 		{
 			Type:               ConditionSubscribed,
-			LastTransitionTime: metav1.Now(),
-			Status:             corev1.ConditionUnknown,
+			LastTransitionTime: kmetav1.Now(),
+			Status:             kcorev1.ConditionUnknown,
 		},
 		{
 			Type:               ConditionSubscriptionActive,
-			LastTransitionTime: metav1.Now(),
-			Status:             corev1.ConditionUnknown,
+			LastTransitionTime: kmetav1.Now(),
+			Status:             kcorev1.ConditionUnknown,
 		},
 		{
 			Type:               ConditionWebhookCallStatus,
-			LastTransitionTime: metav1.Now(),
-			Status:             corev1.ConditionUnknown,
+			LastTransitionTime: kmetav1.Now(),
+			Status:             kcorev1.ConditionUnknown,
 		},
 	}
 	return conditions
@@ -160,11 +160,11 @@ func containConditionType(conditions []Condition, conditionType ConditionType) b
 	return false
 }
 
-func MakeCondition(conditionType ConditionType, reason ConditionReason, status corev1.ConditionStatus, message string) Condition {
+func MakeCondition(conditionType ConditionType, reason ConditionReason, status kcorev1.ConditionStatus, message string) Condition {
 	return Condition{
 		Type:               conditionType,
 		Status:             status,
-		LastTransitionTime: metav1.Now(),
+		LastTransitionTime: kmetav1.Now(),
 		Reason:             reason,
 		// TODO: https://github.com/kyma-project/kyma/issues/9770
 		Message: message,
@@ -173,7 +173,7 @@ func MakeCondition(conditionType ConditionType, reason ConditionReason, status c
 
 func (s *SubscriptionStatus) IsConditionSubscribed() bool {
 	for _, condition := range s.Conditions {
-		if condition.Type == ConditionSubscribed && condition.Status == corev1.ConditionTrue {
+		if condition.Type == ConditionSubscribed && condition.Status == kcorev1.ConditionTrue {
 			return true
 		}
 	}
@@ -183,29 +183,29 @@ func (s *SubscriptionStatus) IsConditionSubscribed() bool {
 func (s *SubscriptionStatus) IsConditionWebhookCall() bool {
 	for _, condition := range s.Conditions {
 		if condition.Type == ConditionWebhookCallStatus &&
-			(condition.Status == corev1.ConditionTrue || condition.Status == corev1.ConditionUnknown) {
+			(condition.Status == kcorev1.ConditionTrue || condition.Status == kcorev1.ConditionUnknown) {
 			return true
 		}
 	}
 	return false
 }
 
-func (s *SubscriptionStatus) GetConditionAPIRuleStatus() corev1.ConditionStatus {
+func (s *SubscriptionStatus) GetConditionAPIRuleStatus() kcorev1.ConditionStatus {
 	for _, condition := range s.Conditions {
 		if condition.Type == ConditionAPIRuleStatus {
 			return condition.Status
 		}
 	}
-	return corev1.ConditionUnknown
+	return kcorev1.ConditionUnknown
 }
 
 func (s *SubscriptionStatus) SetConditionAPIRuleStatus(err error) {
 	reason := ConditionReasonAPIRuleStatusReady
-	status := corev1.ConditionTrue
+	status := kcorev1.ConditionTrue
 	message := ""
 	if err != nil {
 		reason = ConditionReasonAPIRuleStatusNotReady
-		status = corev1.ConditionFalse
+		status = kcorev1.ConditionFalse
 		message = err.Error()
 	}
 

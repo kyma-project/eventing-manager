@@ -18,13 +18,13 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
@@ -34,7 +34,7 @@ import (
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
-	subscriptionmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	submgrmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 )
 
 const (
@@ -43,7 +43,7 @@ const (
 
 // AddToScheme adds the own schemes to the runtime scheme.
 func AddToScheme(scheme *runtime.Scheme) error {
-	if err := clientgoscheme.AddToScheme(scheme); err != nil {
+	if err := kkubernetesscheme.AddToScheme(scheme); err != nil {
 		return err
 	}
 	if err := eventingv1alpha1.AddToScheme(scheme); err != nil {
@@ -102,7 +102,7 @@ func (c *SubscriptionManager) Init(mgr manager.Manager) error {
 }
 
 // Start implements the subscriptionmanager.Manager interface and starts the manager.
-func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subscriptionmanager.Params) error {
+func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params submgrmanager.Params) error {
 	c.collector.ResetSubscriptionStatus()
 	ctx, cancel := context.WithCancel(context.Background())
 	c.cancel = cancel
@@ -116,7 +116,7 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subs
 	c.envCfg = env.GetConfig()
 	nameMapper := backendutils.NewBEBSubscriptionNameMapper(strings.TrimSpace(c.domain),
 		backendeventmesh.MaxSubscriptionNameLength)
-	ctrl.Log.WithName("BEB-subscription-manager").Info("using BEB name mapper",
+	kctrl.Log.WithName("BEB-subscription-manager").Info("using BEB name mapper",
 		"domainName", c.domain,
 		"maxNameLength", backendeventmesh.MaxSubscriptionNameLength)
 
@@ -178,7 +178,7 @@ func markAllV1Alpha2SubscriptionsAsNotReady(dynamicClient dynamic.Interface, log
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	// Fetch all subscriptions.
-	subscriptionsUnstructured, err := dynamicClient.Resource(eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
+	subscriptionsUnstructured, err := dynamicClient.Resource(eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(kcorev1.NamespaceAll).List(ctx, kmetav1.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "list subscriptions failed")
 	}
@@ -214,7 +214,7 @@ func cleanupEventMesh(backend backendeventmesh.Backend, dynamicClient dynamic.In
 	}
 
 	// Fetch all subscriptions.
-	subscriptionsUnstructured, err := dynamicClient.Resource(eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
+	subscriptionsUnstructured, err := dynamicClient.Resource(eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(kcorev1.NamespaceAll).List(ctx, kmetav1.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "list subscriptions failed")
 	}
@@ -229,7 +229,7 @@ func cleanupEventMesh(backend backendeventmesh.Backend, dynamicClient dynamic.In
 		sub := v
 		if apiRule := sub.Status.Backend.APIRuleName; apiRule != "" {
 			if err := dynamicClient.Resource(backendutils.APIRuleGroupVersionResource()).Namespace(sub.Namespace).
-				Delete(ctx, apiRule, metav1.DeleteOptions{}); err != nil {
+				Delete(ctx, apiRule, kmetav1.DeleteOptions{}); err != nil {
 				isCleanupSuccessful = false
 				logger.Errorw("Failed to delete APIRule", "namespace", sub.Namespace, "name", apiRule, "error", err)
 			}
@@ -255,29 +255,29 @@ func cleanupEventMesh(backend backendeventmesh.Backend, dynamicClient dynamic.In
 	return nil
 }
 
-func getOAuth2ClientCredentials(params subscriptionmanager.Params) (*backendeventmesh.OAuth2ClientCredentials, error) {
-	val := params[subscriptionmanager.ParamNameClientID]
+func getOAuth2ClientCredentials(params submgrmanager.Params) (*backendeventmesh.OAuth2ClientCredentials, error) {
+	val := params[submgrmanager.ParamNameClientID]
 	id, ok := val.([]byte)
 	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", subscriptionmanager.ParamNameClientID)
+		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameClientID)
 	}
 
-	val = params[subscriptionmanager.ParamNameClientSecret]
+	val = params[submgrmanager.ParamNameClientSecret]
 	secret, ok := val.([]byte)
 	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", subscriptionmanager.ParamNameClientSecret)
+		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameClientSecret)
 	}
 
-	val = params[subscriptionmanager.ParamNameTokenURL]
+	val = params[submgrmanager.ParamNameTokenURL]
 	tokenURL, ok := val.([]byte)
 	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", subscriptionmanager.ParamNameTokenURL)
+		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameTokenURL)
 	}
 
-	val = params[subscriptionmanager.ParamNameCertsURL]
+	val = params[submgrmanager.ParamNameCertsURL]
 	certsURL, ok := val.([]byte)
 	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", subscriptionmanager.ParamNameCertsURL)
+		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameCertsURL)
 	}
 
 	return &backendeventmesh.OAuth2ClientCredentials{

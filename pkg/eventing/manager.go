@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	ecv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -38,8 +39,8 @@ type Manager interface {
 		ctx context.Context,
 		eventing *v1alpha1.Eventing,
 		natsConfig *env.NATSConfig,
-		backendType v1alpha1.BackendType) (*appsv1.Deployment, error)
-	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *appsv1.Deployment) error
+		backendType v1alpha1.BackendType) (*kappsv1.Deployment, error)
+	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *kappsv1.Deployment) error
 	DeletePublisherProxyResources(ctx context.Context, eventing *v1alpha1.Eventing) error
 	GetBackendConfig() *env.BackendConfig
 	SetBackendConfig(env.BackendConfig)
@@ -77,7 +78,7 @@ func (em EventingManager) DeployPublisherProxy(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
 	natsConfig *env.NATSConfig,
-	backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
+	backendType v1alpha1.BackendType) (*kappsv1.Deployment, error) {
 	// update EC reconciler NATS and public config from the data in the eventing CR
 	deployment, err := em.applyPublisherProxyDeployment(ctx, eventing, natsConfig, backendType)
 	if err != nil {
@@ -90,8 +91,8 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
 	natsConfig *env.NATSConfig,
-	backendType v1alpha1.BackendType) (*appsv1.Deployment, error) {
-	var desiredPublisher *appsv1.Deployment
+	backendType v1alpha1.BackendType) (*kappsv1.Deployment, error) {
+	var desiredPublisher *kappsv1.Deployment
 
 	switch backendType {
 	case v1alpha1.NatsBackendType:
@@ -143,7 +144,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 
 func (em *EventingManager) migratePublisherDeploymentFromEC(
 	ctx context.Context, eventing *v1alpha1.Eventing,
-	currentPublisher appsv1.Deployment, desiredPublisher appsv1.Deployment) error {
+	currentPublisher kappsv1.Deployment, desiredPublisher kappsv1.Deployment) error {
 	// If Eventing CR is already owner of deployment, then it means that the publisher deployment
 	// was already migrated.
 	if len(currentPublisher.OwnerReferences) == 1 && currentPublisher.OwnerReferences[0].Name == eventing.Name {
@@ -189,7 +190,7 @@ func (em *EventingManager) SetBackendConfig(config env.BackendConfig) {
 func (em EventingManager) DeployPublisherProxyResources(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
-	publisherDeployment *appsv1.Deployment) error {
+	publisherDeployment *kappsv1.Deployment) error {
 	// define list of resources to create for EPP.
 	resources := []client.Object{
 		// ServiceAccount
@@ -231,12 +232,12 @@ func (em EventingManager) DeployPublisherProxyResources(
 
 func (em EventingManager) DeletePublisherProxyResources(ctx context.Context, eventing *v1alpha1.Eventing) error {
 	// define list of resources to delete for EPP.
-	publisherDeployment := &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
+	publisherDeployment := &kappsv1.Deployment{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      GetPublisherDeploymentName(*eventing),
 			Namespace: eventing.Namespace,
 		},
@@ -278,12 +279,12 @@ func (em *EventingManager) SubscriptionExists(ctx context.Context) (bool, error)
 	return false, nil
 }
 
-func convertECBackendType(backendType v1alpha1.BackendType) (ecv1alpha1.BackendType, error) {
+func convertECBackendType(backendType v1alpha1.BackendType) (eventingv1alpha1.BackendType, error) {
 	switch backendType {
 	case v1alpha1.EventMeshBackendType:
-		return ecv1alpha1.BEBBackendType, nil
+		return eventingv1alpha1.BEBBackendType, nil
 	case v1alpha1.NatsBackendType:
-		return ecv1alpha1.NatsBackendType, nil
+		return eventingv1alpha1.NatsBackendType, nil
 	default:
 		return "", fmt.Errorf("unknown backend type: %s", backendType)
 	}

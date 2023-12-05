@@ -11,22 +11,22 @@ import (
 	"testing"
 	"time"
 
-	eventmeshreconciler "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
+	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	kctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -40,19 +40,19 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	eventmeshtypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
-	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 type eventMeshTestEnsemble struct {
 	k8sClient     client.Client
 	testEnv       *envtest.Environment
-	eventMeshMock *reconcilertesting.EventMeshMock
+	eventMeshMock *eventingtesting.EventMeshMock
 	nameMapper    backendutils.NameMapper
 	envConfig     env.Config
 }
@@ -78,7 +78,7 @@ var (
 	emTestEnsemble   *eventMeshTestEnsemble
 	k8sCancelFn      context.CancelFunc
 	eventMeshBackend *backendeventmesh.EventMesh
-	testReconciler   *eventmeshreconciler.Reconciler
+	testReconciler   *subscriptioncontrollereventmesh.Reconciler
 	credentials      = &backendeventmesh.OAuth2ClientCredentials{
 		ClientID:     "client-id",
 		ClientSecret: "client-secret",
@@ -97,7 +97,7 @@ func setupSuite() error {
 	if err != nil {
 		return err
 	}
-	logf.SetLogger(zapr.NewLogger(defaultLogger.WithContext().Desugar()))
+	kctrllog.SetLogger(zapr.NewLogger(defaultLogger.WithContext().Desugar()))
 
 	// setup test Env
 	cfg, err := startTestEnv()
@@ -121,7 +121,7 @@ func setupSuite() error {
 	// start eventMesh manager instance
 	syncPeriod := syncPeriodSeconds * time.Second
 	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+	k8sManager, err := kctrl.NewManager(cfg, kctrl.Options{
 		Scheme:                 scheme.Scheme,
 		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
 		Metrics:                server.Options{BindAddress: "0"}, // disable
@@ -146,7 +146,7 @@ func setupSuite() error {
 	emTestEnsemble.envConfig = getEnvConfig()
 	eventMeshBackend = backendeventmesh.NewEventMesh(credentials, emTestEnsemble.nameMapper, defaultLogger)
 	col := metrics.NewCollector()
-	testReconciler = eventmeshreconciler.NewReconciler(
+	testReconciler = subscriptioncontrollereventmesh.NewReconciler(
 		context.Background(),
 		k8sManager.GetClient(),
 		defaultLogger,
@@ -168,7 +168,7 @@ func setupSuite() error {
 	// start k8s client
 	go func() {
 		var ctx context.Context
-		ctx, k8sCancelFn = context.WithCancel(ctrl.SetupSignalHandler())
+		ctx, k8sCancelFn = context.WithCancel(kctrl.SetupSignalHandler())
 		err = k8sManager.Start(ctx)
 		if err != nil {
 			panic(err)
@@ -242,9 +242,9 @@ func getEnvConfig() env.Config {
 		ClientSecret:             "foo-secret",
 		TokenEndpoint:            emTestEnsemble.eventMeshMock.TokenURL,
 		WebhookActivationTimeout: 0,
-		EventTypePrefix:          reconcilertesting.EventMeshPrefix,
-		BEBNamespace:             reconcilertesting.EventMeshNamespaceNS,
-		Qos:                      string(eventmeshtypes.QosAtLeastOnce),
+		EventTypePrefix:          eventingtesting.EventMeshPrefix,
+		BEBNamespace:             eventingtesting.EventMeshNamespaceNS,
+		Qos:                      string(emstypes.QosAtLeastOnce),
 	}
 }
 
@@ -257,8 +257,8 @@ func tearDownSuite() error {
 	return err
 }
 
-func startNewEventMeshMock() *reconcilertesting.EventMeshMock {
-	emMock := reconcilertesting.NewEventMeshMock()
+func startNewEventMeshMock() *eventingtesting.EventMeshMock {
+	emMock := eventingtesting.NewEventMeshMock()
 	emMock.Start()
 	return emMock
 }
@@ -274,18 +274,18 @@ func ensureNamespaceCreated(ctx context.Context, t *testing.T, namespace string)
 	// create namespace
 	ns := fixtureNamespace(namespace)
 	err := emTestEnsemble.k8sClient.Create(ctx, ns)
-	if !k8serrors.IsAlreadyExists(err) {
+	if !kerrors.IsAlreadyExists(err) {
 		require.NoError(t, err)
 	}
 }
 
-func fixtureNamespace(name string) *corev1.Namespace {
-	namespace := corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
+func fixtureNamespace(name string) *kcorev1.Namespace {
+	namespace := kcorev1.Namespace{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Namespace",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name: name,
 		},
 	}
@@ -322,7 +322,7 @@ func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T
 
 		newAPIRule := fetchedAPIRule.DeepCopy()
 		// mark the ApiRule status as ready
-		reconcilertesting.MarkReady(newAPIRule)
+		eventingtesting.MarkReady(newAPIRule)
 
 		// update ApiRule status on k8s
 		err = emTestEnsemble.k8sClient.Status().Update(ctx, newAPIRule)
@@ -339,7 +339,7 @@ func getAPIRule(ctx context.Context, apiRule *apigatewayv1beta1.APIRule) (*apiga
 	return apiRule, err
 }
 
-func getEventMeshSubFromMock(subscriptionName, subscriptionNamespace string) *eventmeshtypes.Subscription {
+func getEventMeshSubFromMock(subscriptionName, subscriptionNamespace string) *emstypes.Subscription {
 	key := getEventMeshSubKeyForMock(subscriptionName, subscriptionNamespace)
 	return emTestEnsemble.eventMeshMock.Subscriptions.GetSubscription(key)
 }

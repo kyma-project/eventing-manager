@@ -7,13 +7,14 @@ import (
 	"strings"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/event"
 
-	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/pkg/errors"
+
+	emerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 )
 
 const randStringlength = 10
@@ -77,7 +78,7 @@ func Int64Ptr(i int64) *int64 {
 func StringPtr(s string) *string {
 	return &s
 }
-func ProcMountTypePtr(p v1.ProcMountType) *v1.ProcMountType {
+func ProcMountTypePtr(p kcorev1.ProcMountType) *kcorev1.ProcMountType {
 	return &p
 }
 
@@ -103,7 +104,7 @@ func IsValidScheme(sink string) bool {
 func GetSinkData(sink string) (string, []string, error) {
 	sURL, err := url.ParseRequestURI(sink)
 	if err != nil {
-		return "", nil, pkgerrors.MakeError(ErrParseSink, err)
+		return "", nil, emerrors.MakeError(ErrParseSink, err)
 	}
 	trimmedHost := strings.Split(sURL.Host, ":")[0]
 	subDomains := strings.Split(trimmedHost, ".")

@@ -4,15 +4,16 @@ import (
 	"context"
 	"testing"
 
-	ctrlmocks "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks"
+	eventingcontrollermocks "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks"
 
-	apiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
+	kapixclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 
+	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	kcorev1 "k8s.io/api/core/v1"
+
 	"github.com/kyma-project/eventing-manager/pkg/env"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
-	corev1 "k8s.io/api/core/v1"
 
 	"github.com/kyma-project/eventing-manager/options"
 
@@ -20,8 +21,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-	managermocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,7 +28,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	fakedynamic "k8s.io/client-go/dynamic/fake"
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	eventingmocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
+
+	kdynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
 // MockedUnitTestEnvironment provides mocked resources for unit tests.
@@ -37,8 +39,8 @@ type MockedUnitTestEnvironment struct {
 	Context         context.Context
 	Client          client.Client
 	kubeClient      *k8s.Client
-	eventingManager *managermocks.Manager
-	ctrlManager     *ctrlmocks.Manager
+	eventingManager *eventingmocks.Manager
+	ctrlManager     *eventingcontrollermocks.Manager
 	Reconciler      *Reconciler
 	Logger          *logger.Logger
 	Recorder        *record.FakeRecorder
@@ -56,25 +58,25 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	newScheme := runtime.NewScheme()
 	err = natsv1alpha1.AddToScheme(newScheme)
 	require.NoError(t, err)
-	err = eventingv1alpha1.AddToScheme(newScheme)
+	err = operatorv1alpha1.AddToScheme(newScheme)
 	require.NoError(t, err)
-	err = corev1.AddToScheme(newScheme)
+	err = kcorev1.AddToScheme(newScheme)
 	require.NoError(t, err)
-	err = admissionv1.AddToScheme(newScheme)
+	err = kadmissionregistrationv1.AddToScheme(newScheme)
 	require.NoError(t, err)
 
 	// Create a fake dynamic client
-	fakeDynamicClient := fakedynamic.NewSimpleDynamicClient(newScheme)
+	fakeDynamicClient := kdynamicfake.NewSimpleDynamicClient(newScheme)
 
 	fakeClientBuilder := fake.NewClientBuilder().WithScheme(newScheme)
 	fakeClient := fakeClientBuilder.WithObjects(objs...).WithStatusSubresource(objs...).Build()
-	fakeClientSet := apiclientsetfake.NewSimpleClientset()
+	fakeClientSet := kapixclientsetfake.NewSimpleClientset()
 	recorder := &record.FakeRecorder{}
 	kubeClient := k8s.NewKubeClient(fakeClient, fakeClientSet, "eventing-manager", fakeDynamicClient)
 
 	// setup custom mocks
-	eventingManager := new(managermocks.Manager)
-	mockManager := new(ctrlmocks.Manager)
+	eventingManager := new(eventingmocks.Manager)
+	mockManager := new(eventingcontrollermocks.Manager)
 
 	opts := options.New()
 
@@ -109,8 +111,8 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	}
 }
 
-func (testEnv *MockedUnitTestEnvironment) GetEventing(name, namespace string) (eventingv1alpha1.Eventing, error) {
-	var evnt eventingv1alpha1.Eventing
+func (testEnv *MockedUnitTestEnvironment) GetEventing(name, namespace string) (operatorv1alpha1.Eventing, error) {
+	var evnt operatorv1alpha1.Eventing
 	err := testEnv.Client.Get(testEnv.Context, types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,

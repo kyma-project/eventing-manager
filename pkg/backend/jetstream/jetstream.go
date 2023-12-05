@@ -8,19 +8,18 @@ import (
 	"strings"
 	"time"
 
-	http2 "github.com/cloudevents/sdk-go/v2/protocol/http"
+	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
+	"github.com/kyma-project/eventing-manager/pkg/errors"
 
-	cev2 "github.com/cloudevents/sdk-go/v2"
-	cev2protocol "github.com/cloudevents/sdk-go/v2/protocol"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	ceprotocol "github.com/cloudevents/sdk-go/v2/protocol"
 	"github.com/nats-io/nats.go"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	ecenv "github.com/kyma-project/eventing-manager/pkg/env"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
@@ -231,7 +230,7 @@ func (js *JetStream) getJetStreamSubject(source, subject string, typeMatching ev
 
 func (js *JetStream) validateConfig() error {
 	if js.Config.JSStreamName == "" {
-		return errors.New("Stream name cannot be empty")
+		return pkgerrors.New("Stream name cannot be empty")
 	}
 	if len(js.Config.JSStreamName) > jsMaxStreamNameLength {
 		return fmt.Errorf("stream name should be max %d characters long", jsMaxStreamNameLength)
@@ -283,7 +282,7 @@ func (js *JetStream) ensureStreamExistsAndIsConfiguredCorrectly() error {
 		return err
 	}
 	info, err := js.jsCtx.StreamInfo(js.Config.JSStreamName)
-	if errors.Is(err, nats.ErrStreamNotFound) {
+	if pkgerrors.Is(err, nats.ErrStreamNotFound) {
 		info, err = js.jsCtx.AddStream(streamConfig)
 		if err != nil {
 			return err
@@ -343,7 +342,7 @@ func (js *JetStream) initCloudEventClient(config env.NATSConfig) error {
 		IdleConnTimeout:     config.IdleConnTimeout,
 	}
 
-	client, err := cev2.NewClientHTTP(cev2.WithRoundTripper(transport))
+	client, err := cloudevents.NewClientHTTP(cloudevents.WithRoundTripper(transport))
 	if err != nil {
 		return err
 	}
@@ -395,7 +394,7 @@ func (js *JetStream) cleanupUnnecessaryJetStreamSubscribers(
 	key SubscriptionSubjectIdentifier) error {
 	consumer, err := js.jsCtx.ConsumerInfo(js.Config.JSStreamName, key.ConsumerName())
 	if err != nil {
-		if errors.Is(err, nats.ErrConsumerNotFound) {
+		if pkgerrors.Is(err, nats.ErrConsumerNotFound) {
 			log.Infow("Deleting invalid Consumer!")
 			if err = js.deleteConsumerFromJetStream(key.ConsumerName()); err != nil {
 				return err
@@ -447,7 +446,7 @@ func (js *JetStream) deleteSubscriptionFromJetStream(jsSub Subscriber, jsSubKey 
 	if jsSub.IsValid() {
 		// unsubscribe will also delete the consumer on JS server
 		if err := jsSub.Unsubscribe(); err != nil {
-			return pkgerrors.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
+			return errors.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
 		}
 	}
 
@@ -467,14 +466,14 @@ func (js *JetStream) deleteSubscriptionFromJetStreamOnly(jsSub Subscriber,
 	if jsSub.IsValid() {
 		// The Unsubscribe function should not delete the consumer because it was added manually.
 		if err := jsSub.Unsubscribe(); err != nil {
-			return pkgerrors.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
+			return errors.MakeSubscriptionError(ErrFailedUnsubscribe, err, jsSub)
 		}
 	}
 	delete(js.subscriptions, jsSubKey)
 	return nil
 }
 
-func (js *JetStream) revertEventTypeToOriginal(event *cev2.Event, sugaredLogger *zap.SugaredLogger) {
+func (js *JetStream) revertEventTypeToOriginal(event *cloudevents.Event, sugaredLogger *zap.SugaredLogger) {
 	// check if original type header exists in the cloud event.
 	if orgType, ok := event.Extensions()[originalTypeHeaderName]; ok && orgType != "" {
 		event.SetType(fmt.Sprintf("%v", orgType))
@@ -516,7 +515,7 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 		// setup context for dispatching
 		ctxWithCancel, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		ctxWithCE := cev2.ContextWithTarget(ctxWithCancel, sink)
+		ctxWithCE := cloudevents.ContextWithTarget(ctxWithCancel, sink)
 		traceCtxWithCE := tracing.AddTracingHeadersToContext(ctxWithCE, ce)
 
 		// decorate the logger with CloudEvent context
@@ -531,10 +530,10 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 		start := time.Now()
 		result := js.client.Send(traceCtxWithCE, *ce)
 		duration := time.Since(start)
-		var res *http2.Result
-		if !cev2protocol.IsACK(result) {
+		var res *cehttp.Result
+		if !ceprotocol.IsACK(result) {
 			status := http.StatusInternalServerError
-			if cev2.ResultAs(result, &res) {
+			if cloudevents.ResultAs(result, &res) {
 				status = res.StatusCode
 			}
 
@@ -557,7 +556,7 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 		}
 
 		status := http.StatusOK
-		if cev2.ResultAs(result, &res) {
+		if cloudevents.ResultAs(result, &res) {
 			status = res.StatusCode
 		}
 
@@ -570,9 +569,9 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 // deleteConsumerFromJS deletes consumer on NATS Server.
 func (js *JetStream) deleteConsumerFromJetStream(name string) error {
 	if err := js.jsCtx.DeleteConsumer(js.Config.JSStreamName, name); err != nil &&
-		!errors.Is(err, nats.ErrConsumerNotFound) {
+		!pkgerrors.Is(err, nats.ErrConsumerNotFound) {
 		// if it is not a Not Found error, then return error
-		return pkgerrors.MakeConsumerError(ErrDeleteConsumer, err, name)
+		return errors.MakeConsumerError(ErrDeleteConsumer, err, name)
 	}
 
 	return nil
@@ -601,7 +600,7 @@ func (js *JetStream) syncConsumerAndSubscription(subscription *eventingv1alpha2.
 		}
 
 		if _, ok := js.subscriptions[jsSubKey]; !ok {
-			return pkgerrors.MakeError(ErrMissingSubscription, err)
+			return errors.MakeError(ErrMissingSubscription, err)
 		}
 
 		// try to bind invalid NATS Subscriptions
@@ -627,17 +626,17 @@ func (js *JetStream) getOrCreateConsumer(subscription *eventingv1alpha2.Subscrip
 
 	consumerInfo, err := js.jsCtx.ConsumerInfo(js.Config.JSStreamName, jsSubKey.ConsumerName())
 	if err != nil {
-		if errors.Is(err, nats.ErrConsumerNotFound) {
-			ecSubsConfig := ecenv.DefaultSubscriptionConfig(js.subsConfig)
+		if pkgerrors.Is(err, nats.ErrConsumerNotFound) {
+			ecSubsConfig := env.DefaultSubscriptionConfig(js.subsConfig)
 			consumerInfo, err = js.jsCtx.AddConsumer(
 				js.Config.JSStreamName,
 				js.getConsumerConfig(jsSubKey, jsSubject, subscription.GetMaxInFlightMessages(&ecSubsConfig)),
 			)
 			if err != nil {
-				return nil, pkgerrors.MakeError(ErrAddConsumer, err)
+				return nil, errors.MakeError(ErrAddConsumer, err)
 			}
 		} else {
-			return nil, pkgerrors.MakeError(ErrGetConsumer, err)
+			return nil, errors.MakeError(ErrGetConsumer, err)
 		}
 	}
 	return consumerInfo, nil
@@ -649,14 +648,14 @@ func (js *JetStream) createNATSSubscription(subscription *eventingv1alpha2.Subsc
 	jsSubject := js.GetJetStreamSubject(subscription.Spec.Source, subject.CleanType, subscription.Spec.TypeMatching)
 	jsSubKey := NewSubscriptionSubjectIdentifier(subscription, jsSubject)
 
-	ecSubsConfig := ecenv.DefaultSubscriptionConfig(js.subsConfig)
+	ecSubsConfig := env.DefaultSubscriptionConfig(js.subsConfig)
 	jsSubscription, err := js.jsCtx.Subscribe(
 		jsSubject,
 		asyncCallback,
 		js.getDefaultSubscriptionOptions(jsSubKey, subscription.GetMaxInFlightMessages(&ecSubsConfig))...,
 	)
 	if err != nil {
-		return pkgerrors.MakeError(ErrFailedSubscribe, err)
+		return errors.MakeError(ErrFailedSubscribe, err)
 	}
 	// save created JetStream subscription in storage
 	js.subscriptions[jsSubKey] = &Subscription{Subscription: jsSubscription}
@@ -682,7 +681,7 @@ func (js *JetStream) bindInvalidSubscriptions(subscription *eventingv1alpha2.Sub
 		nats.Bind(js.Config.JSStreamName, jsSubKey.ConsumerName()),
 	)
 	if err != nil {
-		return pkgerrors.MakeError(ErrFailedSubscribe, err)
+		return errors.MakeError(ErrFailedSubscribe, err)
 	}
 	// save recreated JetStream subscription in storage
 	js.subscriptions[jsSubKey] = &Subscription{Subscription: jsSubscription}
@@ -693,7 +692,7 @@ func (js *JetStream) bindInvalidSubscriptions(subscription *eventingv1alpha2.Sub
 // is propagated to the NATS consumer as MaxAckPending.
 func (js *JetStream) syncConsumerMaxInFlight(subscription *eventingv1alpha2.Subscription,
 	consumerInfo nats.ConsumerInfo) error {
-	ecSubsConfig := ecenv.DefaultSubscriptionConfig(js.subsConfig)
+	ecSubsConfig := env.DefaultSubscriptionConfig(js.subsConfig)
 	maxInFlight := subscription.GetMaxInFlightMessages(&ecSubsConfig)
 
 	if consumerInfo.Config.MaxAckPending == maxInFlight {
@@ -706,7 +705,7 @@ func (js *JetStream) syncConsumerMaxInFlight(subscription *eventingv1alpha2.Subs
 
 	// update the consumer
 	if _, updateErr := js.jsCtx.UpdateConsumer(js.Config.JSStreamName, &consumerConfig); updateErr != nil {
-		return pkgerrors.MakeError(ErrUpdateConsumer, updateErr)
+		return errors.MakeError(ErrUpdateConsumer, updateErr)
 	}
 	return nil
 }

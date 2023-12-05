@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"net/url"
 
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 
-	cev2event "github.com/cloudevents/sdk-go/v2/event"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+
+	ceevent "github.com/cloudevents/sdk-go/v2/event"
 	"github.com/nats-io/nats.go"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
@@ -40,8 +41,8 @@ func APIRuleGroupVersionResource() schema.GroupVersionResource {
 	}
 }
 
-func ConvertMsgToCE(msg *nats.Msg) (*cev2event.Event, error) {
-	event := cev2event.New(cev2event.CloudEventsVersionV1)
+func ConvertMsgToCE(msg *nats.Msg) (*ceevent.Event, error) {
+	event := ceevent.New(ceevent.CloudEventsVersionV1)
 	err := json.Unmarshal(msg.Data, &event)
 	if err != nil {
 		return nil, err
@@ -84,7 +85,7 @@ func UpdateSubscriptionStatus(ctx context.Context, dClient dynamic.Interface,
 	_, err = dClient.
 		Resource(eventingv1alpha2.SubscriptionGroupVersionResource()).
 		Namespace(sub.Namespace).
-		UpdateStatus(ctx, unstructuredObj, metav1.UpdateOptions{})
+		UpdateStatus(ctx, unstructuredObj, kmetav1.UpdateOptions{})
 
 	return err
 }

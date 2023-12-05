@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
+	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
 
-	manager2 "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	submgrmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
@@ -17,13 +17,13 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -42,7 +42,7 @@ const (
 
 // AddToScheme adds all types of clientset and eventing into the given scheme.
 func AddToScheme(scheme *runtime.Scheme) error {
-	if err := clientgoscheme.AddToScheme(scheme); err != nil {
+	if err := kkubernetesscheme.AddToScheme(scheme); err != nil {
 		return err
 	}
 	if err := eventingv1alpha1.AddToScheme(scheme); err != nil {
@@ -92,7 +92,7 @@ func (sm *SubscriptionManager) Init(mgr manager.Manager) error {
 	return nil
 }
 
-func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionConfig, _ manager2.Params) error {
+func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionConfig, _ submgrmanager.Params) error {
 	sm.metricsCollector.ResetSubscriptionStatus()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -109,7 +109,7 @@ func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionCo
 	jsCleaner := cleaner.NewJetStreamCleaner(sm.logger)
 	jetStreamHandler := backendjetstream.NewJetStream(sm.envCfg,
 		sm.metricsCollector, jsCleaner, defaultSubsConfig, sm.logger)
-	jetStreamReconciler := jetstream.NewReconciler(
+	jetStreamReconciler := subscriptioncontrollerjetstream.NewReconciler(
 		ctx,
 		client,
 		jetStreamHandler,
@@ -171,7 +171,7 @@ func cleanupv2(backend backendjetstream.Backend, dynamicClient dynamic.Interface
 
 	// fetch all subscriptions.
 	subscriptionsUnstructured, err := dynamicClient.Resource(
-		eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
+		eventingv1alpha2.SubscriptionGroupVersionResource()).Namespace(kcorev1.NamespaceAll).List(ctx, kmetav1.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "list subscriptions failed")
 	}

@@ -7,24 +7,25 @@ import (
 
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	"github.com/kyma-project/eventing-manager/test/matchers"
-	"github.com/kyma-project/eventing-manager/test/utils"
-	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	"github.com/kyma-project/eventing-manager/test/matchers"
+	"github.com/kyma-project/eventing-manager/test/utils"
+	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 
 const (
 	projectRootDir = "../../../../../../"
 )
 
-var testEnvironment *testutils.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
 
 // TestMain pre-hook and post-hook to run before and after all tests.
 func TestMain(m *testing.M) {
@@ -33,7 +34,7 @@ func TestMain(m *testing.M) {
 
 	// setup env test
 	var err error
-	testEnvironment, err = testutils.NewTestEnvironment(testutils.TestEnvironmentConfig{
+	testEnvironment, err = testutilsintegration.NewTestEnvironment(testutilsintegration.TestEnvironmentConfig{
 		ProjectRootDir:            projectRootDir,
 		CELValidationEnabled:      false,
 		APIRuleCRDEnabled:         true,
@@ -58,7 +59,7 @@ func TestMain(m *testing.M) {
 
 func Test_Switching(t *testing.T) {
 	// given - common for all test cases.
-	setEventMeshSecretConfig := func(eventingCR *eventingv1alpha1.Eventing, name, namespace string) {
+	setEventMeshSecretConfig := func(eventingCR *operatorv1alpha1.Eventing, name, namespace string) {
 		eventingCR.Spec.Backend.Config.EventMeshSecret = fmt.Sprintf("%s/%s", namespace, name)
 	}
 
@@ -67,8 +68,8 @@ func Test_Switching(t *testing.T) {
 		name                     string
 		givenNATS                *natsv1alpha1.NATS
 		givenEventMeshSecretName string
-		givenEventing            *eventingv1alpha1.Eventing
-		givenSwitchedEventing    *eventingv1alpha1.Eventing
+		givenEventing            *operatorv1alpha1.Eventing
+		givenSwitchedEventing    *operatorv1alpha1.Eventing
 		wantPreSwitchMatches     gomegatypes.GomegaMatcher
 		wantPostSwitchMatches    gomegatypes.GomegaMatcher
 	}{
@@ -145,7 +146,7 @@ func Test_Switching(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 			// create unique namespace for this test run.
@@ -165,9 +166,9 @@ func Test_Switching(t *testing.T) {
 			// create eventing-webhook-auth secret.
 			testEnvironment.EnsureOAuthSecretCreated(t, tc.givenEventing)
 			// create EventMesh secret.
-			if tc.givenEventing.Spec.Backend.Type == eventingv1alpha1.EventMeshBackendType {
+			if tc.givenEventing.Spec.Backend.Type == operatorv1alpha1.EventMeshBackendType {
 				testEnvironment.EnsureEventMeshSecretCreated(t, tc.givenEventing)
-			} else if tc.givenSwitchedEventing.Spec.Backend.Type == eventingv1alpha1.EventMeshBackendType {
+			} else if tc.givenSwitchedEventing.Spec.Backend.Type == operatorv1alpha1.EventMeshBackendType {
 				testEnvironment.EnsureEventMeshSecretCreated(t, tc.givenSwitchedEventing)
 			}
 
@@ -196,7 +197,7 @@ func Test_Switching(t *testing.T) {
 	}
 }
 
-func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
 	testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
@@ -204,7 +205,7 @@ func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *eventingv1a
 	testEnvironment.EnsureDeploymentOwnerReferenceSet(t, givenEventing)
 }
 
-func ensureK8sResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
 	testEnvironment.EnsureEPPK8sResourcesExists(t, *givenEventing)
 
 	// check if the owner reference is set.

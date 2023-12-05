@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
 	"github.com/kyma-project/eventing-manager/test/utils"
@@ -17,7 +17,7 @@ func Test_readDomainFromConfigMap(t *testing.T) {
 	// given
 	ctx := context.TODO()
 
-	cm := &corev1.ConfigMap{
+	cm := &kcorev1.ConfigMap{
 		Data: map[string]string{
 			shootInfoConfigMapKeyDomain: utils.Domain,
 		},

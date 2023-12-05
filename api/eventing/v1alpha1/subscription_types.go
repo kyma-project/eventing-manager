@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/mitchellh/hashstructure/v2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
 )
@@ -242,8 +242,8 @@ type SubscriptionStatus struct {
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Clean Event Types",type="string",JSONPath=".status.cleanEventTypes"
 type Subscription struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	kmetav1.TypeMeta   `json:",inline"`
+	kmetav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   SubscriptionSpec   `json:"spec,omitempty"`
 	Status SubscriptionStatus `json:"status,omitempty"`
@@ -265,9 +265,9 @@ func (s Subscription) MarshalJSON() ([]byte, error) {
 // SubscriptionList contains a list of Subscription.
 // +kubebuilder:object:root=true
 type SubscriptionList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Subscription `json:"items"`
+	kmetav1.TypeMeta `json:",inline"`
+	kmetav1.ListMeta `json:"metadata,omitempty"`
+	Items          []Subscription `json:"items"`
 }
 
 // InitializeCleanEventTypes initializes the SubscriptionStatus.CleanEventTypes with an empty slice of strings.

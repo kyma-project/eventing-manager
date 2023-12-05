@@ -2,7 +2,7 @@ package testing
 
 import (
 	"github.com/nats-io/nats-server/v2/server"
-	natstestserver "github.com/nats-io/nats-server/v2/test"
+	natsiotest "github.com/nats-io/nats-server/v2/test"
 )
 
 type NatsServerOpt func(opts *server.Options)
@@ -21,11 +21,11 @@ func WithPort(port int) NatsServerOpt {
 
 // RunNatsServerOnPort will run a server with the given server options.
 func RunNatsServerOnPort(opts ...NatsServerOpt) *server.Server {
-	serverOpts := &natstestserver.DefaultTestOptions
+	serverOpts := &natsiotest.DefaultTestOptions
 	for _, opt := range opts {
 		opt(serverOpts)
 	}
-	return natstestserver.RunServer(serverOpts)
+	return natsiotest.RunServer(serverOpts)
 }
 
 // StartDefaultJetStreamServer will run a server on the given port.

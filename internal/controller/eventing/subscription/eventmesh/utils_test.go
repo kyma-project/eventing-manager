@@ -6,13 +6,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	eventinglogger "github.com/kyma-project/eventing-manager/pkg/logger"
-	reconcilertesting "github.com/kyma-project/eventing-manager/testing"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
+
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 func Test_isInDeletion(t *testing.T) {
@@ -24,9 +25,9 @@ func Test_isInDeletion(t *testing.T) {
 		{
 			name: "Deletion timestamp uninitialized",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace",
-					reconcilertesting.WithNotCleanSource(),
-					reconcilertesting.WithNotCleanType())
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace",
+					eventingtesting.WithNotCleanSource(),
+					eventingtesting.WithNotCleanType())
 				sub.DeletionTimestamp = nil
 				return sub
 			},
@@ -35,10 +36,10 @@ func Test_isInDeletion(t *testing.T) {
 		{
 			name: "Deletion timestamp is zero",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				zero := metav1.Time{}
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace",
-					reconcilertesting.WithNotCleanSource(),
-					reconcilertesting.WithNotCleanType())
+				zero := kmetav1.Time{}
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace",
+					eventingtesting.WithNotCleanSource(),
+					eventingtesting.WithNotCleanType())
 				sub.DeletionTimestamp = &zero
 				return sub
 			},
@@ -47,10 +48,10 @@ func Test_isInDeletion(t *testing.T) {
 		{
 			name: "Deletion timestamp is set to a useful time",
 			givenSubscription: func() *eventingv1alpha2.Subscription {
-				newTime := metav1.NewTime(time.Now())
-				sub := reconcilertesting.NewSubscription("some-name", "some-namespace",
-					reconcilertesting.WithNotCleanSource(),
-					reconcilertesting.WithNotCleanType())
+				newTime := kmetav1.NewTime(time.Now())
+				sub := eventingtesting.NewSubscription("some-name", "some-namespace",
+					eventingtesting.WithNotCleanSource(),
+					eventingtesting.WithNotCleanType())
 				sub.DeletionTimestamp = &newTime
 				return sub
 			},
@@ -79,7 +80,7 @@ func Test_isFinalizerSet(t *testing.T) {
 		{
 			name: "Finalizer is set",
 			givenSubscription: &eventingv1alpha2.Subscription{
-				ObjectMeta: metav1.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
+				ObjectMeta: kmetav1.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
 			},
 			wantResult: true,
 		},
@@ -93,7 +94,7 @@ func Test_isFinalizerSet(t *testing.T) {
 }
 
 func Test_addFinalizer(t *testing.T) {
-	defaultLogger, err := eventinglogger.New(string(kymalogger.JSON), string(kymalogger.INFO))
+	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	if err != nil {
 		t.Fatalf("initialize logger failed: %v", err)
 	}
@@ -115,7 +116,7 @@ func Test_addFinalizer(t *testing.T) {
 		{
 			name: "with one finalizers",
 			givenSubscription: &eventingv1alpha2.Subscription{
-				ObjectMeta: metav1.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
+				ObjectMeta: kmetav1.ObjectMeta{Finalizers: []string{eventingv1alpha2.Finalizer}},
 			},
 			wantFinalizersLen: 2,
 			wantFinalizers:    []string{eventingv1alpha2.Finalizer, eventingv1alpha2.Finalizer},

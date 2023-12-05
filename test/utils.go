@@ -10,8 +10,8 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	apiv1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -39,13 +39,13 @@ func NewSugaredLogger() (*zap.SugaredLogger, error) {
 	return logger.Sugar(), nil
 }
 
-func NewNamespace(name string) *apiv1.Namespace {
-	namespace := apiv1.Namespace{
-		TypeMeta: metav1.TypeMeta{
+func NewNamespace(name string) *kcorev1.Namespace {
+	namespace := kcorev1.Namespace{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Namespace",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name: name,
 		},
 	}
@@ -89,7 +89,7 @@ func GetFreePort() (int, error) {
 
 // findEnvVar returns the env variable which has `name == envVar.Name`,
 // or `nil` if there is no such env variable.
-func FindEnvVar(envVars []apiv1.EnvVar, name string) *apiv1.EnvVar {
+func FindEnvVar(envVars []kcorev1.EnvVar, name string) *kcorev1.EnvVar {
 	for _, n := range envVars {
 		if name == n.Name {
 			return &n

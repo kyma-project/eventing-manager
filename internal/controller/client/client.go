@@ -1,7 +1,7 @@
 package client
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -14,9 +14,9 @@ func New(config *rest.Config, options client.Options) (client.Client, error) {
 func disableCacheForObjects(options client.Options) client.Options {
 	options.Cache = &client.CacheOptions{
 		DisableFor: []client.Object{
-			&corev1.Secret{},
-			&corev1.Service{},
-			&corev1.ConfigMap{},
+			&kcorev1.Secret{},
+			&kcorev1.Service{},
+			&kcorev1.ConfigMap{},
 		},
 	}
 	return options

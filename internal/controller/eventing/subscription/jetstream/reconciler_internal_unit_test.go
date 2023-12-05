@@ -8,25 +8,25 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	apierr "k8s.io/apimachinery/pkg/api/errors"
+	kcorev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
-	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
+	backendjetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
-	controllertesting "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 const (
@@ -45,17 +45,17 @@ func Test_Reconcile(t *testing.T) {
 	req := require.New(t)
 
 	// A subscription with the correct Finalizer, ready for reconciliation with the backend.
-	testSub := controllertesting.NewSubscription("sub1", namespaceName,
-		controllertesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
-		controllertesting.WithSource(controllertesting.EventSourceClean),
-		controllertesting.WithEventType(controllertesting.OrderCreatedV1Event),
+	testSub := eventingtesting.NewSubscription("sub1", namespaceName,
+		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
+		eventingtesting.WithSource(eventingtesting.EventSourceClean),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
 	)
 	// A subscription marked for deletion.
-	testSubUnderDeletion := controllertesting.NewSubscription("sub2", namespaceName,
-		controllertesting.WithNonZeroDeletionTimestamp(),
-		controllertesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
-		controllertesting.WithSource(controllertesting.EventSourceClean),
-		controllertesting.WithEventType(controllertesting.OrderCreatedV1Event),
+	testSubUnderDeletion := eventingtesting.NewSubscription("sub2", namespaceName,
+		eventingtesting.WithNonZeroDeletionTimestamp(),
+		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
+		eventingtesting.WithSource(eventingtesting.EventSourceClean),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
 	)
 
 	backendSyncErr := errors.New("backend sync error")
@@ -69,18 +69,18 @@ func Test_Reconcile(t *testing.T) {
 	var testCases = []struct {
 		name                 string
 		givenSubscription    *eventingv1alpha2.Subscription
-		givenReconcilerSetup func() (*Reconciler, *mocks.Backend)
-		wantReconcileResult  ctrl.Result
+		givenReconcilerSetup func() (*Reconciler, *backendjetstreammocks.Backend)
+		wantReconcileResult  kctrl.Result
 		wantReconcileError   error
 	}{
 		{
 			name:              "Return nil and default Result{} when there is no error from the reconciler dependencies",
 			givenSubscription: testSub,
-			givenReconcilerSetup: func() (*Reconciler, *mocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, testSub)
 				te.Backend.On("SyncSubscription", mock.Anything).Return(nil)
 				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
-					[]string{controllertesting.JetStreamSubject})
+					[]string{eventingtesting.JetStreamSubject})
 				te.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
 				return NewReconciler(ctx,
 						te.Client,
@@ -92,13 +92,13 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
 		},
 		{
 			name:              "Return nil and default Result{} when the subscription does not exist on the cluster",
 			givenSubscription: testSub,
-			givenReconcilerSetup: func() (*Reconciler, *mocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t)
 				return NewReconciler(ctx,
 						te.Client,
@@ -110,14 +110,14 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
 		},
 		{
 			name:              "Return nil and default Result{} when the subscription has no finalizer",
-			givenSubscription: controllertesting.NewSubscription(subscriptionName, namespaceName),
-			givenReconcilerSetup: func() (*Reconciler, *mocks.Backend) {
-				te := setupTestEnvironment(t, controllertesting.NewSubscription(subscriptionName, namespaceName))
+			givenSubscription: eventingtesting.NewSubscription(subscriptionName, namespaceName),
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
+				te := setupTestEnvironment(t, eventingtesting.NewSubscription(subscriptionName, namespaceName))
 				return NewReconciler(ctx,
 						te.Client,
 						te.Backend,
@@ -128,17 +128,17 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
 		},
 		{
 			name:              "Return error and default Result{} when backend sync returns error",
 			givenSubscription: testSub,
-			givenReconcilerSetup: func() (*Reconciler, *mocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, testSub)
 				te.Backend.On("SyncSubscription", mock.Anything).Return(backendSyncErr)
 				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
-					[]string{controllertesting.JetStreamSubject})
+					[]string{eventingtesting.JetStreamSubject})
 				te.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
 				return NewReconciler(ctx,
 
@@ -151,18 +151,18 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  backendSyncErr,
 		},
 		{
 			name: "Return nil and RequeueAfter with requeue duration when " +
 				"backend sync returns missingSubscriptionErr",
 			givenSubscription: testSub,
-			givenReconcilerSetup: func() (*Reconciler, *mocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, testSub)
 				te.Backend.On("SyncSubscription", mock.Anything).Return(missingSubSyncErr)
 				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
-					[]string{controllertesting.JetStreamSubject})
+					[]string{eventingtesting.JetStreamSubject})
 				te.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
 				return NewReconciler(ctx,
 						te.Client,
@@ -174,13 +174,13 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{RequeueAfter: requeueDuration},
+			wantReconcileResult: kctrl.Result{RequeueAfter: requeueDuration},
 			wantReconcileError:  nil,
 		},
 		{
 			name:              "Return error and default Result{} when backend delete returns error",
 			givenSubscription: testSubUnderDeletion,
-			givenReconcilerSetup: func() (*Reconciler, *mocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, testSubUnderDeletion)
 				te.Backend.On("DeleteSubscription", mock.Anything).Return(backendDeleteErr)
 				return NewReconciler(ctx,
@@ -193,17 +193,17 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  errFailedToDeleteSub,
 		},
 		{
 			name:              "Return error and default Result{} when validator returns error",
 			givenSubscription: testSub,
-			givenReconcilerSetup: func() (*Reconciler, *mocks.Backend) {
+			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
 				te := setupTestEnvironment(t, testSub)
 				te.Backend.On("DeleteSubscriptionsOnly", mock.Anything).Return(nil)
 				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
-					[]string{controllertesting.JetStreamSubject})
+					[]string{eventingtesting.JetStreamSubject})
 				te.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
 				return NewReconciler(ctx,
 						te.Client,
@@ -215,7 +215,7 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  validatorErr,
 		},
 	}
@@ -225,7 +225,7 @@ func Test_Reconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
 			reconciler, mockedBackend := tc.givenReconcilerSetup()
-			r := ctrl.Request{NamespacedName: types.NamespacedName{
+			r := kctrl.Request{NamespacedName: types.NamespacedName{
 				Namespace: tc.givenSubscription.Namespace,
 				Name:      tc.givenSubscription.Name,
 			}}
@@ -285,8 +285,8 @@ func Test_handleSubscriptionDeletion(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 
 			// given
-			sub := controllertesting.NewSubscription(subscriptionName, namespaceName,
-				controllertesting.WithFinalizers(testCase.givenFinalizers),
+			sub := eventingtesting.NewSubscription(subscriptionName, namespaceName,
+				eventingtesting.WithFinalizers(testCase.givenFinalizers),
 			)
 
 			testEnvironment := setupTestEnvironment(t, sub)
@@ -329,10 +329,10 @@ func Test_addFinalizer(t *testing.T) {
 	ctx := context.Background()
 	eventingFinalizer := []string{eventingv1alpha2.Finalizer}
 	var emptyFinalizer []string
-	sub := controllertesting.NewSubscription(subscriptionName, namespaceName)
+	sub := eventingtesting.NewSubscription(subscriptionName, namespaceName)
 	testEnvironment := setupTestEnvironment(t, sub)
 	r := testEnvironment.Reconciler
-	fakeSub := controllertesting.NewSubscription("fake", namespaceName)
+	fakeSub := eventingtesting.NewSubscription("fake", namespaceName)
 
 	testCases := []struct {
 		name             string
@@ -346,7 +346,7 @@ func Test_addFinalizer(t *testing.T) {
 		{
 			name:            "addFinalizer() should propagate the error returned by the update operation",
 			givenFinalizers: eventingFinalizer,
-			wantErrorMessage: apierr.NewNotFound(
+			wantErrorMessage: kerrors.NewNotFound(
 				schema.GroupResource{
 					Group:    "eventing.kyma-project.io",
 					Resource: "subscriptions",
@@ -385,10 +385,10 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 	jetStreamError := errors.New("JetStream is not ready")
 	falseNatsSubActiveCondition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonNATSSubscriptionNotActive,
-		corev1.ConditionFalse, jetStreamError.Error())
+		kcorev1.ConditionFalse, jetStreamError.Error())
 	trueNatsSubActiveCondition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonNATSSubscriptionActive,
-		corev1.ConditionTrue, "")
+		kcorev1.ConditionTrue, "")
 
 	testCases := []struct {
 		name           string
@@ -399,9 +399,9 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 	}{
 		{
 			name: "Subscription with no conditions should stay not ready with false condition",
-			givenSub: controllertesting.NewSubscription(subscriptionName, namespaceName,
-				controllertesting.WithConditions([]eventingv1alpha2.Condition{}),
-				controllertesting.WithStatus(true),
+			givenSub: eventingtesting.NewSubscription(subscriptionName, namespaceName,
+				eventingtesting.WithConditions([]eventingv1alpha2.Condition{}),
+				eventingtesting.WithStatus(true),
 			),
 			givenError:     jetStreamError,
 			wantConditions: []eventingv1alpha2.Condition{falseNatsSubActiveCondition},
@@ -409,9 +409,9 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 		},
 		{
 			name: "Subscription with false ready condition should stay not ready with false condition",
-			givenSub: controllertesting.NewSubscription(subscriptionName, namespaceName,
-				controllertesting.WithConditions([]eventingv1alpha2.Condition{falseNatsSubActiveCondition}),
-				controllertesting.WithStatus(false),
+			givenSub: eventingtesting.NewSubscription(subscriptionName, namespaceName,
+				eventingtesting.WithConditions([]eventingv1alpha2.Condition{falseNatsSubActiveCondition}),
+				eventingtesting.WithStatus(false),
 			),
 			givenError:     jetStreamError,
 			wantConditions: []eventingv1alpha2.Condition{falseNatsSubActiveCondition},
@@ -419,9 +419,9 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 		},
 		{
 			name: "Subscription should become ready because because, there is no reconciliation error",
-			givenSub: controllertesting.NewSubscription(subscriptionName, namespaceName,
-				controllertesting.WithConditions([]eventingv1alpha2.Condition{falseNatsSubActiveCondition}),
-				controllertesting.WithStatus(false),
+			givenSub: eventingtesting.NewSubscription(subscriptionName, namespaceName,
+				eventingtesting.WithConditions([]eventingv1alpha2.Condition{falseNatsSubActiveCondition}),
+				eventingtesting.WithStatus(false),
 			),
 			givenError:     nil,
 			wantConditions: []eventingv1alpha2.Condition{trueNatsSubActiveCondition},
@@ -429,9 +429,9 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 		},
 		{
 			name: "Subscription should stay with ready condition and status",
-			givenSub: controllertesting.NewSubscription(subscriptionName, namespaceName,
-				controllertesting.WithConditions([]eventingv1alpha2.Condition{trueNatsSubActiveCondition}),
-				controllertesting.WithStatus(true),
+			givenSub: eventingtesting.NewSubscription(subscriptionName, namespaceName,
+				eventingtesting.WithConditions([]eventingv1alpha2.Condition{trueNatsSubActiveCondition}),
+				eventingtesting.WithStatus(true),
 			),
 			givenError:     nil,
 			wantConditions: []eventingv1alpha2.Condition{trueNatsSubActiveCondition},
@@ -439,9 +439,9 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 		},
 		{
 			name: "Subscription should become not ready because of the occurred error",
-			givenSub: controllertesting.NewSubscription(subscriptionName, namespaceName,
-				controllertesting.WithConditions([]eventingv1alpha2.Condition{trueNatsSubActiveCondition}),
-				controllertesting.WithStatus(true),
+			givenSub: eventingtesting.NewSubscription(subscriptionName, namespaceName,
+				eventingtesting.WithConditions([]eventingv1alpha2.Condition{trueNatsSubActiveCondition}),
+				eventingtesting.WithStatus(true),
 			),
 			givenError:     jetStreamError,
 			wantConditions: []eventingv1alpha2.Condition{falseNatsSubActiveCondition},
@@ -480,16 +480,16 @@ func Test_syncEventTypes(t *testing.T) {
 	testEnvironment := setupTestEnvironment(t)
 	r := testEnvironment.Reconciler
 
-	jsSubjects := []string{controllertesting.JetStreamSubjectV2}
+	jsSubjects := []string{eventingtesting.JetStreamSubjectV2}
 	eventTypes := []eventingv1alpha2.EventType{
 		{
-			OriginalType: controllertesting.OrderCreatedUncleanEvent,
-			CleanType:    controllertesting.OrderCreatedCleanEvent,
+			OriginalType: eventingtesting.OrderCreatedUncleanEvent,
+			CleanType:    eventingtesting.OrderCreatedCleanEvent,
 		},
 	}
 	jsTypes := []eventingv1alpha2.JetStreamTypes{
 		{
-			OriginalType: controllertesting.OrderCreatedUncleanEvent,
+			OriginalType: eventingtesting.OrderCreatedUncleanEvent,
 			ConsumerName: "a59e97ceb4883938c193bc0abf6e8bca",
 		},
 	}
@@ -505,9 +505,9 @@ func Test_syncEventTypes(t *testing.T) {
 	}{
 		{
 			name: "A new Subscription must be updated with cleanEventTypes and backend jstypes and return true",
-			givenSub: controllertesting.NewSubscription(subscriptionName, namespaceName,
-				controllertesting.WithStatus(false),
-				controllertesting.WithEventType(controllertesting.OrderCreatedUncleanEvent),
+			givenSub: eventingtesting.NewSubscription(subscriptionName, namespaceName,
+				eventingtesting.WithStatus(false),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedUncleanEvent),
 			),
 			wantSubStatus: eventingv1alpha2.SubscriptionStatus{
 				Ready:   false,
@@ -517,11 +517,11 @@ func Test_syncEventTypes(t *testing.T) {
 		},
 		{
 			name: "A subscription with the same cleanEventTypes and jsTypes must return false",
-			givenSub: controllertesting.NewSubscription(subscriptionName, namespaceName,
-				controllertesting.WithStatus(true),
-				controllertesting.WithEventType(controllertesting.OrderCreatedUncleanEvent),
-				controllertesting.WithStatusTypes(eventTypes),
-				controllertesting.WithStatusJSBackendTypes(jsTypes),
+			givenSub: eventingtesting.NewSubscription(subscriptionName, namespaceName,
+				eventingtesting.WithStatus(true),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedUncleanEvent),
+				eventingtesting.WithStatusTypes(eventTypes),
+				eventingtesting.WithStatusJSBackendTypes(jsTypes),
 			),
 			wantSubStatus: eventingv1alpha2.SubscriptionStatus{
 				Ready:   true,
@@ -531,10 +531,10 @@ func Test_syncEventTypes(t *testing.T) {
 		},
 		{
 			name: "A subscription with the same eventTypes and new jsTypes must return true",
-			givenSub: controllertesting.NewSubscription(subscriptionName, namespaceName,
-				controllertesting.WithStatus(true),
-				controllertesting.WithEventType(controllertesting.OrderCreatedUncleanEvent),
-				controllertesting.WithStatusTypes(eventTypes),
+			givenSub: eventingtesting.NewSubscription(subscriptionName, namespaceName,
+				eventingtesting.WithStatus(true),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedUncleanEvent),
+				eventingtesting.WithStatusTypes(eventTypes),
 			),
 			wantSubStatus: eventingv1alpha2.SubscriptionStatus{
 				Ready:   true,
@@ -544,10 +544,10 @@ func Test_syncEventTypes(t *testing.T) {
 		},
 		{
 			name: "A subscription with changed eventTypes and the same jsTypes must return true",
-			givenSub: controllertesting.NewSubscription(subscriptionName, namespaceName,
-				controllertesting.WithStatus(true),
-				controllertesting.WithEventType(controllertesting.OrderCreatedUncleanEvent),
-				controllertesting.WithStatusJSBackendTypes(jsTypes),
+			givenSub: eventingtesting.NewSubscription(subscriptionName, namespaceName,
+				eventingtesting.WithStatus(true),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedUncleanEvent),
+				eventingtesting.WithStatusJSBackendTypes(jsTypes),
 			),
 			wantSubStatus: eventingv1alpha2.SubscriptionStatus{
 				Ready:   true,
@@ -574,7 +574,7 @@ func Test_syncEventTypes(t *testing.T) {
 }
 
 func Test_updateStatus(t *testing.T) {
-	sub := controllertesting.NewSubscription(subscriptionName, namespaceName, controllertesting.WithStatus(true))
+	sub := eventingtesting.NewSubscription(subscriptionName, namespaceName, eventingtesting.WithStatus(true))
 
 	ctx := context.Background()
 	testEnvironment := setupTestEnvironment(t, sub)
@@ -645,8 +645,8 @@ func Test_updateStatus(t *testing.T) {
 }
 
 func Test_updateSubscription(t *testing.T) {
-	sub := controllertesting.NewSubscription(subscriptionName, namespaceName,
-		controllertesting.WithStatusTypes([]eventingv1alpha2.EventType{
+	sub := eventingtesting.NewSubscription(subscriptionName, namespaceName,
+		eventingtesting.WithStatusTypes([]eventingv1alpha2.EventType{
 			{OriginalType: "order.created.v1", CleanType: "order.created.v1"},
 		}),
 	)
@@ -666,7 +666,7 @@ func Test_updateSubscription(t *testing.T) {
 			name:       "When Subscription cannot be fetched from the api server the function should return an error",
 			actualSub:  sub,
 			desiredSub: sub,
-			wantErrorMessage: apierr.NewNotFound(
+			wantErrorMessage: kerrors.NewNotFound(
 				eventingv1alpha2.SubscriptionGroupVersionResource().GroupResource(),
 				subscriptionName).Error(),
 		},
@@ -727,7 +727,7 @@ func Test_updateSubscription(t *testing.T) {
 type TestEnvironment struct {
 	Context    context.Context
 	Client     client.Client
-	Backend    *mocks.Backend
+	Backend    *backendjetstreammocks.Backend
 	Reconciler *Reconciler
 	Logger     *logger.Logger
 	Recorder   *record.FakeRecorder
@@ -736,7 +736,7 @@ type TestEnvironment struct {
 
 // setupTestEnvironment is a TestEnvironment constructor.
 func setupTestEnvironment(t *testing.T, objs ...client.Object) *TestEnvironment {
-	mockedBackend := &mocks.Backend{}
+	mockedBackend := &backendjetstreammocks.Backend{}
 	ctx := context.Background()
 	fakeClient := createFakeClientBuilder(t).WithObjects(objs...).WithStatusSubresource(objs...).Build()
 	recorder := &record.FakeRecorder{}

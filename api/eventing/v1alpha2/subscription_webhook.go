@@ -8,10 +8,10 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -25,8 +25,8 @@ const (
 	ValidSource                = "source"
 )
 
-func (s *Subscription) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
+func (s *Subscription) SetupWebhookWithManager(mgr kctrl.Manager) error {
+	return kctrl.NewWebhookManagedBy(mgr).
 		For(s).
 		Complete()
 }
@@ -88,7 +88,7 @@ func (s *Subscription) ValidateSubscription() (admission.Warnings, error) {
 		return nil, nil
 	}
 
-	return nil, apierrors.NewInvalid(GroupKind, s.Name, allErrs)
+	return nil, kerrors.NewInvalid(GroupKind, s.Name, allErrs)
 }
 
 func (s *Subscription) validateSubscriptionSource() *field.Error {

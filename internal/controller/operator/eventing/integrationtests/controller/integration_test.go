@@ -12,21 +12,22 @@ import (
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	eventinv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
-	testutils "github.com/kyma-project/eventing-manager/test/utils/integration"
+	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 
 const (
@@ -34,7 +35,7 @@ const (
 	eventTypePrefix = "test-prefix"
 )
 
-var testEnvironment *testutils.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
 
 // TestMain pre-hook and post-hook to run before and after all tests.
 func TestMain(m *testing.M) {
@@ -43,7 +44,7 @@ func TestMain(m *testing.M) {
 
 	// setup env test
 	var err error
-	testEnvironment, err = testutils.NewTestEnvironment(testutils.TestEnvironmentConfig{
+	testEnvironment, err = testutilsintegration.NewTestEnvironment(testutilsintegration.TestEnvironmentConfig{
 		ProjectRootDir:            projectRootDir,
 		CELValidationEnabled:      false,
 		APIRuleCRDEnabled:         true,
@@ -69,7 +70,7 @@ func TestMain(m *testing.M) {
 func Test_CreateEventingCR_NATS(t *testing.T) {
 	testCases := []struct {
 		name                 string
-		givenEventing        *eventingv1alpha1.Eventing
+		givenEventing        *operatorv1alpha1.Eventing
 		givenNATS            *natsv1alpha1.NATS
 		givenDeploymentReady bool
 		givenNATSReady       bool
@@ -162,7 +163,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return tc.givenDeploymentReady
 			}
 			// create unique namespace for this test run.
@@ -223,8 +224,8 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 func Test_UpdateEventingCR(t *testing.T) {
 	testCases := []struct {
 		name                      string
-		givenExistingEventing     *eventingv1alpha1.Eventing
-		givenNewEventingForUpdate *eventingv1alpha1.Eventing
+		givenExistingEventing     *operatorv1alpha1.Eventing
+		givenNewEventingForUpdate *operatorv1alpha1.Eventing
 	}{
 		{
 			name: "Updating Eventing CR should be reflected",
@@ -245,7 +246,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 			// create unique namespace for this test run.
@@ -299,7 +300,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 	////
 	// given
 	////
-	eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool { return true }
+	eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool { return true }
 
 	eventingCR := utils.NewEventingCR(
 		utils.WithEventingCRMinimal(),
@@ -378,37 +379,37 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 // Test_WatcherEventingCRK8sObjects tests that deleting the k8s objects deployed by Eventing CR
 // should trigger reconciliation.
 func Test_WatcherEventingCRK8sObjects(t *testing.T) {
-	type deletionFunc func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error
+	type deletionFunc func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error
 
-	deletePublishServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
+	deletePublishServiceFromK8s := func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
 		return env.DeleteServiceFromK8s(eventing.GetPublisherPublishServiceName(eventingCR), eventingCR.Namespace)
 	}
 
-	deleteMetricsServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
+	deleteMetricsServiceFromK8s := func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
 		return env.DeleteServiceFromK8s(eventing.GetPublisherMetricsServiceName(eventingCR), eventingCR.Namespace)
 	}
 
-	deleteHealthServiceFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
+	deleteHealthServiceFromK8s := func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
 		return env.DeleteServiceFromK8s(eventing.GetPublisherHealthServiceName(eventingCR), eventingCR.Namespace)
 	}
 
-	deleteServiceAccountFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
+	deleteServiceAccountFromK8s := func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
 		return env.DeleteServiceAccountFromK8s(eventing.GetPublisherServiceAccountName(eventingCR), eventingCR.Namespace)
 	}
 
-	deleteClusterRoleFromK8s := func(env *testutils.TestEnvironment, eventingCR eventingv1alpha1.Eventing) error {
+	deleteClusterRoleFromK8s := func(env *testutilsintegration.TestEnvironment, eventingCR operatorv1alpha1.Eventing) error {
 		return env.DeleteClusterRoleFromK8s(eventing.GetPublisherClusterRoleName(eventingCR), eventingCR.Namespace)
 	}
 
-	deleteClusterRoleBindingFromK8s := func(env *testutils.TestEnvironment,
-		eventingCR eventingv1alpha1.Eventing,
+	deleteClusterRoleBindingFromK8s := func(env *testutilsintegration.TestEnvironment,
+		eventingCR operatorv1alpha1.Eventing,
 	) error {
 		return env.DeleteClusterRoleBindingFromK8s(eventing.GetPublisherClusterRoleBindingName(eventingCR),
 			eventingCR.Namespace)
 	}
 
-	deleteHPAFromK8s := func(env *testutils.TestEnvironment,
-		eventingCR eventingv1alpha1.Eventing,
+	deleteHPAFromK8s := func(env *testutilsintegration.TestEnvironment,
+		eventingCR operatorv1alpha1.Eventing,
 	) error {
 		return env.DeleteHPAFromK8s(eventing.GetPublisherDeploymentName(eventingCR),
 			eventingCR.Namespace)
@@ -416,7 +417,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 
 	testCases := []struct {
 		name                 string
-		givenEventing        *eventingv1alpha1.Eventing
+		givenEventing        *operatorv1alpha1.Eventing
 		wantResourceDeletion []deletionFunc
 		runForRealCluster    bool
 	}{
@@ -528,7 +529,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 
 			// given
 			g := gomega.NewWithT(t)
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 
@@ -577,7 +578,7 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 func Test_CreateEventingCR_EventMesh(t *testing.T) {
 	testCases := []struct {
 		name                 string
-		givenEventing        *eventingv1alpha1.Eventing
+		givenEventing        *operatorv1alpha1.Eventing
 		givenDeploymentReady bool
 		shouldFailSubManager bool
 		wantMatches          gomegatypes.GomegaMatcher
@@ -638,7 +639,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return tc.givenDeploymentReady
 			}
 
@@ -689,8 +690,8 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 func Test_DeleteEventingCR(t *testing.T) {
 	testCases := []struct {
 		name              string
-		givenEventing     *eventingv1alpha1.Eventing
-		givenSubscription *eventinv1alpha2.Subscription
+		givenEventing     *operatorv1alpha1.Eventing
+		givenSubscription *eventingv1alpha2.Subscription
 		wantMatches       gomegatypes.GomegaMatcher
 	}{
 		{
@@ -748,7 +749,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 
@@ -759,7 +760,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 
 			// when
 			var nats *natsv1alpha1.NATS
-			if tc.givenEventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType {
+			if tc.givenEventing.Spec.Backend.Type == operatorv1alpha1.NatsBackendType {
 				nats = natstestutils.NewNATSCR(
 					natstestutils.WithNATSCRNamespace(tc.givenEventing.Namespace),
 					natstestutils.WithNATSCRDefaults(),
@@ -783,7 +784,7 @@ func Test_DeleteEventingCR(t *testing.T) {
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
 				}
-				if tc.givenEventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType {
+				if tc.givenEventing.Spec.Backend.Type == operatorv1alpha1.NatsBackendType {
 					testEnvironment.EnsureK8sResourceDeleted(t, nats)
 				}
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
@@ -925,7 +926,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
-			eventingcontroller.IsDeploymentReady = func(deployment *v1.Deployment) bool {
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 
@@ -949,7 +950,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 			}
 
 			// create Eventing CR.
-			var eventingResource *eventingv1alpha1.Eventing
+			var eventingResource *operatorv1alpha1.Eventing
 			if tc.isEventMesh {
 				eventingResource = utils.NewEventingCR(
 					utils.WithEventingCRNamespace(givenNamespace),
@@ -1020,7 +1021,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 	}
 }
 
-func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
 	testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
@@ -1029,7 +1030,7 @@ func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *eventingv1a
 	testEnvironment.EnsurePublisherDeploymentENVSet(t, givenEventing)
 }
 
-func ensureK8sResources(t *testing.T, givenEventing *eventingv1alpha1.Eventing, testEnvironment *testutils.TestEnvironment) {
+func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
 	testEnvironment.EnsureEPPK8sResourcesExists(t, *givenEventing)
 
 	// check if the owner reference is set.
@@ -1053,11 +1054,11 @@ type MockKubeClient struct {
 }
 
 // mock only GetCRD and leave the rest as is.
-func (mkc *MockKubeClient) GetCRD(ctx context.Context, name string) (*apiextensionsv1.CustomResourceDefinition, error) {
-	notFoundError := &errors.StatusError{
-		ErrStatus: metav1.Status{
+func (mkc *MockKubeClient) GetCRD(ctx context.Context, name string) (*kapiextensionsv1.CustomResourceDefinition, error) {
+	notFoundError := &kerrors.StatusError{
+		ErrStatus: kmetav1.Status{
 			Code:    http.StatusNotFound,
-			Reason:  metav1.StatusReasonNotFound,
+			Reason:  kmetav1.StatusReasonNotFound,
 			Message: fmt.Sprintf("customresourcedefinitions.apiextensions.k8s.io \"%s\" not found", name),
 		},
 	}

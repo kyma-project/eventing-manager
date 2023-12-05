@@ -5,12 +5,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kyma-incubator/api-gateway/api/v1beta1"
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
+
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
 func TestApplyExistingAPIRuleAttributes(t *testing.T) {
@@ -23,8 +24,8 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 
 	var (
 		host   = ptr.To("some.host")
-		status = v1beta1.APIRuleStatus{
-			LastProcessedTime:    ptr.To(metav1.Time{}),
+		status = apigatewayv1beta1.APIRuleStatus{
+			LastProcessedTime:    ptr.To(kmetav1.Time{}),
 			ObservedGeneration:   512,
 			APIRuleStatus:        nil,
 			VirtualServiceStatus: nil,
@@ -33,9 +34,9 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 	)
 
 	type args struct {
-		givenSrc *v1beta1.APIRule
-		givenDst *v1beta1.APIRule
-		wantDst  *v1beta1.APIRule
+		givenSrc *apigatewayv1beta1.APIRule
+		givenDst *apigatewayv1beta1.APIRule
+		wantDst  *apigatewayv1beta1.APIRule
 	}
 	tests := []struct {
 		name string
@@ -44,31 +45,31 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 		{
 			name: "ApiRule attributes are applied from src to dst",
 			args: args{
-				givenSrc: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
+				givenSrc: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name,
 						GenerateName:    generateName,
 						ResourceVersion: resourceVersion,
 					},
-					Spec:   v1beta1.APIRuleSpec{Host: host},
+					Spec:   apigatewayv1beta1.APIRuleSpec{Host: host},
 					Status: status,
 				},
-				givenDst: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
+				givenDst: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name,
 						GenerateName:    generateName,
 						ResourceVersion: resourceVersion,
 					},
-					Spec:   v1beta1.APIRuleSpec{Host: host},
+					Spec:   apigatewayv1beta1.APIRuleSpec{Host: host},
 					Status: status,
 				},
-				wantDst: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
+				wantDst: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Name:            name,
 						GenerateName:    "",
 						ResourceVersion: resourceVersion,
 					},
-					Spec:   v1beta1.APIRuleSpec{Host: host},
+					Spec:   apigatewayv1beta1.APIRuleSpec{Host: host},
 					Status: status,
 				},
 			},
@@ -104,7 +105,7 @@ func TestGetService(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want v1beta1.Service
+		want apigatewayv1beta1.Service
 	}{
 		{
 			name: "get service with the given properties",
@@ -112,7 +113,7 @@ func TestGetService(t *testing.T) {
 				svcName: name,
 				port:    port,
 			},
-			want: v1beta1.Service{
+			want: apigatewayv1beta1.Service{
 				Name:       ptr.To(name),
 				Port:       ptr.To(port),
 				IsExternal: ptr.To(isExternal),
@@ -145,7 +146,7 @@ func TestNewAPIRule(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *v1beta1.APIRule
+		want *apigatewayv1beta1.APIRule
 	}{
 		{
 			name: "get APIRule with the given properties",
@@ -154,9 +155,9 @@ func TestNewAPIRule(t *testing.T) {
 				namePrefix: namePrefix,
 				opts:       nil,
 			},
-			want: &v1beta1.APIRule{
-				TypeMeta: metav1.TypeMeta{},
-				ObjectMeta: metav1.ObjectMeta{
+			want: &apigatewayv1beta1.APIRule{
+				TypeMeta: kmetav1.TypeMeta{},
+				ObjectMeta: kmetav1.ObjectMeta{
 					Namespace:    namespace,
 					GenerateName: namePrefix,
 				},
@@ -241,21 +242,21 @@ func TestWithGateway(t *testing.T) {
 
 	type args struct {
 		givenGateway string
-		givenObject  *v1beta1.APIRule
+		givenObject  *apigatewayv1beta1.APIRule
 	}
 	tests := []struct {
 		name       string
 		args       args
-		wantObject *v1beta1.APIRule
+		wantObject *apigatewayv1beta1.APIRule
 	}{
 		{
 			name: "apply gateway to object",
 			args: args{
 				givenGateway: gateway,
-				givenObject:  &v1beta1.APIRule{},
+				givenObject:  &apigatewayv1beta1.APIRule{},
 			},
-			wantObject: &v1beta1.APIRule{
-				Spec: v1beta1.APIRuleSpec{
+			wantObject: &apigatewayv1beta1.APIRule{
+				Spec: apigatewayv1beta1.APIRuleSpec{
 					Gateway: ptr.To(gateway),
 				},
 			},
@@ -276,12 +277,12 @@ func TestWithLabels(t *testing.T) {
 	// given
 	type args struct {
 		givenLabels map[string]string
-		givenObject *v1beta1.APIRule
+		givenObject *apigatewayv1beta1.APIRule
 	}
 	tests := []struct {
 		name       string
 		args       args
-		wantObject *v1beta1.APIRule
+		wantObject *apigatewayv1beta1.APIRule
 	}{
 		{
 			name: "object with nil labels",
@@ -289,14 +290,14 @@ func TestWithLabels(t *testing.T) {
 				givenLabels: map[string]string{
 					"key-0": "val-0",
 				},
-				givenObject: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
+				givenObject: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Labels: nil,
 					},
 				},
 			},
-			wantObject: &v1beta1.APIRule{
-				ObjectMeta: metav1.ObjectMeta{
+			wantObject: &apigatewayv1beta1.APIRule{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Labels: map[string]string{
 						"key-0": "val-0",
 					},
@@ -309,14 +310,14 @@ func TestWithLabels(t *testing.T) {
 				givenLabels: map[string]string{
 					"key-0": "val-0",
 				},
-				givenObject: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
+				givenObject: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Labels: map[string]string{},
 					},
 				},
 			},
-			wantObject: &v1beta1.APIRule{
-				ObjectMeta: metav1.ObjectMeta{
+			wantObject: &apigatewayv1beta1.APIRule{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Labels: map[string]string{
 						"key-0": "val-0",
 					},
@@ -329,8 +330,8 @@ func TestWithLabels(t *testing.T) {
 				givenLabels: map[string]string{
 					"key-0": "val-0",
 				},
-				givenObject: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
+				givenObject: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
 						Labels: map[string]string{
 							"key-1": "val-1",
 							"key-2": "val-2",
@@ -338,8 +339,8 @@ func TestWithLabels(t *testing.T) {
 					},
 				},
 			},
-			wantObject: &v1beta1.APIRule{
-				ObjectMeta: metav1.ObjectMeta{
+			wantObject: &apigatewayv1beta1.APIRule{
+				ObjectMeta: kmetav1.ObjectMeta{
 					Labels: map[string]string{
 						"key-0": "val-0",
 					},
@@ -382,37 +383,37 @@ func TestWithOwnerReference(t *testing.T) {
 
 	var (
 		sub0 = eventingv1alpha2.Subscription{
-			TypeMeta:   metav1.TypeMeta{Kind: kind0, APIVersion: apiVersion0},
-			ObjectMeta: metav1.ObjectMeta{Name: name0, UID: uid0},
+			TypeMeta:   kmetav1.TypeMeta{Kind: kind0, APIVersion: apiVersion0},
+			ObjectMeta: kmetav1.ObjectMeta{Name: name0, UID: uid0},
 		}
 		sub1 = eventingv1alpha2.Subscription{
-			TypeMeta:   metav1.TypeMeta{Kind: kind1, APIVersion: apiVersion1},
-			ObjectMeta: metav1.ObjectMeta{Name: name1, UID: uid1},
+			TypeMeta:   kmetav1.TypeMeta{Kind: kind1, APIVersion: apiVersion1},
+			ObjectMeta: kmetav1.ObjectMeta{Name: name1, UID: uid1},
 		}
 	)
 
 	type args struct {
 		givenSubs   []eventingv1alpha2.Subscription
-		givenObject *v1beta1.APIRule
+		givenObject *apigatewayv1beta1.APIRule
 	}
 	tests := []struct {
 		name       string
 		args       args
-		wantObject *v1beta1.APIRule
+		wantObject *apigatewayv1beta1.APIRule
 	}{
 		{
 			name: "nil Subscriptions",
 			args: args{
 				givenSubs: nil,
-				givenObject: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
+				givenObject: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
 						OwnerReferences: nil,
 					},
 				},
 			},
-			wantObject: &v1beta1.APIRule{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{},
+			wantObject: &apigatewayv1beta1.APIRule{
+				ObjectMeta: kmetav1.ObjectMeta{
+					OwnerReferences: []kmetav1.OwnerReference{},
 				},
 			},
 		},
@@ -420,15 +421,15 @@ func TestWithOwnerReference(t *testing.T) {
 			name: "empty Subscriptions",
 			args: args{
 				givenSubs: []eventingv1alpha2.Subscription{},
-				givenObject: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
+				givenObject: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
 						OwnerReferences: nil,
 					},
 				},
 			},
-			wantObject: &v1beta1.APIRule{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{},
+			wantObject: &apigatewayv1beta1.APIRule{
+				ObjectMeta: kmetav1.ObjectMeta{
+					OwnerReferences: []kmetav1.OwnerReference{},
 				},
 			},
 		},
@@ -439,15 +440,15 @@ func TestWithOwnerReference(t *testing.T) {
 					sub0,
 					sub1,
 				},
-				givenObject: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
+				givenObject: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
 						OwnerReferences: nil,
 					},
 				},
 			},
-			wantObject: &v1beta1.APIRule{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{
+			wantObject: &apigatewayv1beta1.APIRule{
+				ObjectMeta: kmetav1.ObjectMeta{
+					OwnerReferences: []kmetav1.OwnerReference{
 						{
 							APIVersion:         apiVersion0,
 							Kind:               kind0,
@@ -473,15 +474,15 @@ func TestWithOwnerReference(t *testing.T) {
 					sub0,
 					sub1,
 				},
-				givenObject: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
-						OwnerReferences: []metav1.OwnerReference{},
+				givenObject: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
+						OwnerReferences: []kmetav1.OwnerReference{},
 					},
 				},
 			},
-			wantObject: &v1beta1.APIRule{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{
+			wantObject: &apigatewayv1beta1.APIRule{
+				ObjectMeta: kmetav1.ObjectMeta{
+					OwnerReferences: []kmetav1.OwnerReference{
 						{
 							APIVersion:         apiVersion0,
 							Kind:               kind0,
@@ -507,9 +508,9 @@ func TestWithOwnerReference(t *testing.T) {
 					sub0,
 					sub1,
 				},
-				givenObject: &v1beta1.APIRule{
-					ObjectMeta: metav1.ObjectMeta{
-						OwnerReferences: []metav1.OwnerReference{
+				givenObject: &apigatewayv1beta1.APIRule{
+					ObjectMeta: kmetav1.ObjectMeta{
+						OwnerReferences: []kmetav1.OwnerReference{
 							{
 								APIVersion:         apiVersion2,
 								Kind:               kind2,
@@ -521,9 +522,9 @@ func TestWithOwnerReference(t *testing.T) {
 					},
 				},
 			},
-			wantObject: &v1beta1.APIRule{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{
+			wantObject: &apigatewayv1beta1.APIRule{
+				ObjectMeta: kmetav1.ObjectMeta{
+					OwnerReferences: []kmetav1.OwnerReference{
 						{
 							APIVersion:         apiVersion0,
 							Kind:               kind0,
@@ -584,14 +585,14 @@ func TestWithRules(t *testing.T) {
 	type args struct {
 		givenCertsURL string
 		givenSubs     []eventingv1alpha2.Subscription
-		givenSvc      v1beta1.Service
+		givenSvc      apigatewayv1beta1.Service
 		givenMethods  []string
-		givenObject   *v1beta1.APIRule
+		givenObject   *apigatewayv1beta1.APIRule
 	}
 	tests := []struct {
 		name       string
 		args       args
-		wantObject *v1beta1.APIRule
+		wantObject *apigatewayv1beta1.APIRule
 	}{
 		{
 			name: "apply properties to object",
@@ -601,28 +602,28 @@ func TestWithRules(t *testing.T) {
 					sub0,
 					sub1,
 				},
-				givenSvc: v1beta1.Service{
+				givenSvc: apigatewayv1beta1.Service{
 					Name:       ptr.To(name),
 					Port:       ptr.To(port),
 					IsExternal: ptr.To(external),
 				},
 				givenMethods: methods,
-				givenObject:  &v1beta1.APIRule{},
+				givenObject:  &apigatewayv1beta1.APIRule{},
 			},
-			wantObject: &v1beta1.APIRule{
-				Spec: v1beta1.APIRuleSpec{
-					Rules: []v1beta1.Rule{
+			wantObject: &apigatewayv1beta1.APIRule{
+				Spec: apigatewayv1beta1.APIRuleSpec{
+					Rules: []apigatewayv1beta1.Rule{
 						{
 							Path: endpoint0,
-							Service: &v1beta1.Service{
+							Service: &apigatewayv1beta1.Service{
 								Name:       ptr.To(name),
 								Port:       ptr.To(port),
 								IsExternal: ptr.To(external),
 							},
 							Methods: methods,
-							AccessStrategies: []*v1beta1.Authenticator{
+							AccessStrategies: []*apigatewayv1beta1.Authenticator{
 								{
-									Handler: &v1beta1.Handler{
+									Handler: &apigatewayv1beta1.Handler{
 										Name: OAuthHandlerNameJWT,
 										Config: &runtime.RawExtension{
 											Raw: []byte(fmt.Sprintf(JWKSURLFormat, certsURL)),
@@ -633,15 +634,15 @@ func TestWithRules(t *testing.T) {
 						},
 						{
 							Path: endpoint1,
-							Service: &v1beta1.Service{
+							Service: &apigatewayv1beta1.Service{
 								Name:       ptr.To(name),
 								Port:       ptr.To(port),
 								IsExternal: ptr.To(external),
 							},
 							Methods: methods,
-							AccessStrategies: []*v1beta1.Authenticator{
+							AccessStrategies: []*apigatewayv1beta1.Authenticator{
 								{
-									Handler: &v1beta1.Handler{
+									Handler: &apigatewayv1beta1.Handler{
 										Name: OAuthHandlerNameJWT,
 										Config: &runtime.RawExtension{
 											Raw: []byte(fmt.Sprintf(JWKSURLFormat, certsURL)),
@@ -679,12 +680,12 @@ func TestWithService(t *testing.T) {
 		givenHost    string
 		givenSvcName string
 		givenPort    uint32
-		givenObject  *v1beta1.APIRule
+		givenObject  *apigatewayv1beta1.APIRule
 	}
 	tests := []struct {
 		name       string
 		args       args
-		wantObject *v1beta1.APIRule
+		wantObject *apigatewayv1beta1.APIRule
 	}{
 		{
 			name: "apply properties to object",
@@ -692,12 +693,12 @@ func TestWithService(t *testing.T) {
 				givenHost:    host,
 				givenSvcName: name,
 				givenPort:    port,
-				givenObject:  &v1beta1.APIRule{},
+				givenObject:  &apigatewayv1beta1.APIRule{},
 			},
-			wantObject: &v1beta1.APIRule{
-				Spec: v1beta1.APIRuleSpec{
+			wantObject: &apigatewayv1beta1.APIRule{
+				Spec: apigatewayv1beta1.APIRuleSpec{
 					Host: ptr.To(host),
-					Service: &v1beta1.Service{
+					Service: &apigatewayv1beta1.Service{
 						Name:       ptr.To(name),
 						Port:       ptr.To(port),
 						IsExternal: ptr.To(external),

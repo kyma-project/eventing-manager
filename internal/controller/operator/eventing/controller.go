@@ -23,17 +23,17 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
-	v1 "k8s.io/api/apps/v1"
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kautoscalingv2 "k8s.io/api/autoscaling/v2"
+	kcorev1 "k8s.io/api/core/v1"
+	krbacv1 "k8s.io/api/rbac/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -43,7 +43,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -78,7 +78,7 @@ const (
 type Reconciler struct {
 	client.Client
 	logger                        *logger.Logger
-	ctrlManager                   ctrl.Manager
+	ctrlManager                   kctrl.Manager
 	controller                    controller.Controller
 	eventingManager               eventing.Manager
 	kubeClient                    k8s.Client
@@ -93,7 +93,7 @@ type Reconciler struct {
 	natsConfigHandler             NatsConfigHandler
 	oauth2credentials             oauth2Credentials
 	backendConfig                 env.BackendConfig
-	allowedEventingCR             *eventingv1alpha1.Eventing
+	allowedEventingCR             *operatorv1alpha1.Eventing
 	clusterScopedResourcesWatched bool
 	natsCRWatchStarted            bool
 	natsWatchers                  map[string]watcher.Watcher
@@ -110,7 +110,7 @@ func NewReconciler(
 	backendConfig env.BackendConfig,
 	subManagerFactory subscriptionmanager.ManagerFactory,
 	opts *options.Options,
-	allowedEventingCR *eventingv1alpha1.Eventing,
+	allowedEventingCR *operatorv1alpha1.Eventing,
 ) *Reconciler {
 	return &Reconciler{
 		Client:                  client,
@@ -160,12 +160,12 @@ func NewReconciler(
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Result, error) {
 	r.namedLogger().Info("Reconciliation triggered")
 	// fetch latest subscription object
-	currentEventing := &eventingv1alpha1.Eventing{}
+	currentEventing := &operatorv1alpha1.Eventing{}
 	if err := r.Get(ctx, req.NamespacedName, currentEventing); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return kctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	// copy the object, so we don't modify the source object
@@ -173,11 +173,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// watch cluster-scoped resources, such as ClusterRole and ClusterRoleBinding.
 	if !r.clusterScopedResourcesWatched {
-		if err := r.watchResource(&rbacv1.ClusterRole{}, eventingCR); err != nil {
-			return ctrl.Result{}, err
+		if err := r.watchResource(&krbacv1.ClusterRole{}, eventingCR); err != nil {
+			return kctrl.Result{}, err
 		}
-		if err := r.watchResource(&rbacv1.ClusterRoleBinding{}, eventingCR); err != nil {
-			return ctrl.Result{}, err
+		if err := r.watchResource(&krbacv1.ClusterRoleBinding{}, eventingCR); err != nil {
+			return kctrl.Result{}, err
 		}
 		r.clusterScopedResourcesWatched = true
 	}
@@ -193,7 +193,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// check if the Eventing CR is allowed to be created.
 	if r.allowedEventingCR != nil {
 		if result, err := r.handleEventingCRAllowedCheck(ctx, eventingCR, log); !result || err != nil {
-			return ctrl.Result{}, err
+			return kctrl.Result{}, err
 		}
 	}
 
@@ -203,7 +203,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 // handleEventingCRAllowedCheck checks if Eventing CR is allowed to be created or not.
 // returns true if the Eventing CR is allowed.
-func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing *eventingv1alpha1.Eventing,
+func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing *operatorv1alpha1.Eventing,
 	log *zap.SugaredLogger) (bool, error) {
 	// if the name and namespace matches with allowed NATS CR then allow the CR to be reconciled.
 	if eventing.Name == r.allowedEventingCR.Name && eventing.Namespace == r.allowedEventingCR.Namespace {
@@ -215,8 +215,8 @@ func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing 
 	// update conditions in status.
 	errorMessage := fmt.Sprintf("Only a single Eventing CR with name: %s and namespace: %s "+
 		"is allowed to be created in a Kyma cluster.", r.allowedEventingCR.Name, r.allowedEventingCR.Namespace)
-	eventing.Status.UpdateConditionPublisherProxyReady(metav1.ConditionFalse,
-		eventingv1alpha1.ConditionReasonForbidden, errorMessage)
+	eventing.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse,
+		operatorv1alpha1.ConditionReasonForbidden, errorMessage)
 
 	return false, r.syncEventingStatus(ctx, eventing, log)
 }
@@ -253,13 +253,13 @@ func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(resourceType, nameF
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupWithManager(mgr kctrl.Manager) error {
 	r.ctrlManager = mgr
 
 	var err error
-	r.controller, err = ctrl.NewControllerManagedBy(mgr).
-		For(&eventingv1alpha1.Eventing{}).
-		Owns(&v1.Deployment{},
+	r.controller, err = kctrl.NewControllerManagedBy(mgr).
+		For(&operatorv1alpha1.Eventing{}).
+		Owns(&kappsv1.Deployment{},
 			builder.WithPredicates(
 				predicate.Funcs{
 					CreateFunc: r.SkipEnqueueOnCreate(),
@@ -267,7 +267,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			),
 		).
-		Owns(&corev1.Service{},
+		Owns(&kcorev1.Service{},
 			builder.WithPredicates(
 				predicate.Funcs{
 					CreateFunc: r.SkipEnqueueOnCreate(),
@@ -275,7 +275,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			),
 		).
-		Owns(&corev1.ServiceAccount{},
+		Owns(&kcorev1.ServiceAccount{},
 			builder.WithPredicates(
 				predicate.Funcs{
 					CreateFunc: r.SkipEnqueueOnCreate(),
@@ -283,7 +283,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 				},
 			),
 		).
-		Owns(&autoscalingv2.HorizontalPodAutoscaler{},
+		Owns(&kautoscalingv2.HorizontalPodAutoscaler{},
 			builder.WithPredicates(
 				predicate.Funcs{
 					CreateFunc: r.SkipEnqueueOnCreate(),
@@ -299,7 +299,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return err
 }
 
-func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha1.Eventing) error {
+func (r *Reconciler) watchResource(kind client.Object, eventing *operatorv1alpha1.Eventing) error {
 	err := r.controller.Watch(
 		source.Kind(r.ctrlManager.GetCache(), kind),
 		handler.EnqueueRequestsFromMapFunc(func(_ context.Context, obj client.Object) []reconcile.Request {
@@ -321,7 +321,7 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *eventingv1alpha
 	return err
 }
 
-func (r *Reconciler) startNATSCRWatch(eventing *eventingv1alpha1.Eventing) error {
+func (r *Reconciler) startNATSCRWatch(eventing *operatorv1alpha1.Eventing) error {
 	natsWatcher, found := r.natsWatchers[eventing.Namespace]
 	if found && natsWatcher.IsStarted() {
 		return nil
@@ -350,7 +350,7 @@ func (r *Reconciler) startNATSCRWatch(eventing *eventingv1alpha1.Eventing) error
 	return nil
 }
 
-func (r *Reconciler) stopNATSCRWatch(eventing *eventingv1alpha1.Eventing) {
+func (r *Reconciler) stopNATSCRWatch(eventing *operatorv1alpha1.Eventing) {
 	natsWatcher, found := r.natsWatchers[eventing.Namespace]
 	if found {
 		natsWatcher.Stop()
@@ -359,7 +359,7 @@ func (r *Reconciler) stopNATSCRWatch(eventing *eventingv1alpha1.Eventing) {
 }
 
 // loggerWithEventing returns a logger with the given Eventing CR details.
-func (r *Reconciler) loggerWithEventing(eventing *eventingv1alpha1.Eventing) *zap.SugaredLogger {
+func (r *Reconciler) loggerWithEventing(eventing *operatorv1alpha1.Eventing) *zap.SugaredLogger {
 	return r.namedLogger().With(
 		"kind", eventing.GetObjectKind().GroupVersionKind().Kind,
 		"resourceVersion", eventing.GetResourceVersion(),
@@ -369,50 +369,50 @@ func (r *Reconciler) loggerWithEventing(eventing *eventingv1alpha1.Eventing) *za
 	)
 }
 
-func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *eventingv1alpha1.Eventing,
-	log *zap.SugaredLogger) (ctrl.Result, error) {
+func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *operatorv1alpha1.Eventing,
+	log *zap.SugaredLogger) (kctrl.Result, error) {
 	// skip reconciliation for deletion if the finalizer is not set.
 	if !r.containsFinalizer(eventing) {
 		log.Debug("skipped reconciliation for deletion as finalizer is not set.")
-		return ctrl.Result{}, nil
+		return kctrl.Result{}, nil
 	}
 
 	// check if subscription resources exist
 	exists, err := r.eventingManager.SubscriptionExists(ctx)
 	if err != nil {
 		eventing.Status.SetStateError()
-		return ctrl.Result{}, r.syncStatusWithDeletionErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithDeletionErr(ctx, eventing, err, log)
 	}
 	if exists {
 		eventing.Status.SetStateWarning()
-		return ctrl.Result{Requeue: true}, r.syncStatusWithDeletionErr(ctx, eventing,
+		return kctrl.Result{Requeue: true}, r.syncStatusWithDeletionErr(ctx, eventing,
 			errors.New(SubscriptionExistsErrMessage), log)
 	}
 
 	log.Info("handling Eventing deletion...")
-	if eventing.Spec.Backend.Type == eventingv1alpha1.NatsBackendType {
+	if eventing.Spec.Backend.Type == operatorv1alpha1.NatsBackendType {
 		if err := r.stopNATSSubManager(true, log); err != nil {
-			return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+			return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 		}
 	} else {
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
-			return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErrWithReason(ctx,
-				eventingv1alpha1.ConditionReasonEventMeshSubManagerStopFailed,
+			return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErrWithReason(ctx,
+				operatorv1alpha1.ConditionReasonEventMeshSubManagerStopFailed,
 				eventing, err, log)
 		}
 	}
 	eventing.Status.SetSubscriptionManagerReadyConditionToFalse(
-		eventingv1alpha1.ConditionReasonStopped,
-		eventingv1alpha1.ConditionSubscriptionManagerStoppedMessage)
+		operatorv1alpha1.ConditionReasonStopped,
+		operatorv1alpha1.ConditionSubscriptionManagerStoppedMessage)
 
 	// delete cluster-scoped resources, such as clusterrole and clusterrolebinding.
 	if err := r.deleteClusterScopedResources(ctx, eventing); err != nil {
-		return ctrl.Result{}, r.syncStatusWithPublisherProxyErrWithReason(ctx,
-			eventingv1alpha1.ConditionReasonDeletionError, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithPublisherProxyErrWithReason(ctx,
+			operatorv1alpha1.ConditionReasonDeletionError, eventing, err, log)
 	}
 	eventing.Status.SetPublisherProxyConditionToFalse(
-		eventingv1alpha1.ConditionReasonDeleted,
-		eventingv1alpha1.ConditionPublisherProxyDeletedMessage)
+		operatorv1alpha1.ConditionReasonDeleted,
+		operatorv1alpha1.ConditionPublisherProxyDeletedMessage)
 
 	return r.removeFinalizer(ctx, eventing)
 }
@@ -420,7 +420,7 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *event
 // deleteClusterScopedResources deletes cluster-scoped resources, such as clusterrole and clusterrolebinding.
 // K8s doesn't support cleaning cluster-scoped resources owned by namespace-scoped resources:
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/#owner-references-in-object-specifications
-func (r *Reconciler) deleteClusterScopedResources(ctx context.Context, eventingCR *eventingv1alpha1.Eventing) error {
+func (r *Reconciler) deleteClusterScopedResources(ctx context.Context, eventingCR *operatorv1alpha1.Eventing) error {
 	if err := r.kubeClient.DeleteClusterRole(ctx, eventing.GetPublisherClusterRoleName(*eventingCR), eventingCR.Namespace); err != nil {
 		return err
 	}
@@ -428,7 +428,7 @@ func (r *Reconciler) deleteClusterScopedResources(ctx context.Context, eventingC
 }
 
 func (r *Reconciler) handleEventingReconcile(ctx context.Context,
-	eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (kctrl.Result, error) {
 	log.Info("handling Eventing reconciliation...")
 
 	// make sure the finalizer exists.
@@ -441,7 +441,7 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 
 	// sync webhooks CABundle.
 	if err := r.reconcileWebhooksWithCABundle(ctx); err != nil {
-		return ctrl.Result{}, r.syncStatusWithWebhookErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithWebhookErr(ctx, eventing, err, log)
 	}
 	// set webhook condition to true.
 	eventing.Status.SetWebhookReadyConditionToTrue()
@@ -449,7 +449,7 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// handle switching of backend.
 	if eventing.Status.ActiveBackend != "" {
 		if err := r.handleBackendSwitching(eventing, log); err != nil {
-			return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
+			return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 		}
 	}
 
@@ -459,37 +459,37 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// check if Application CRD is installed.
 	isApplicationCRDEnabled, err := r.kubeClient.ApplicationCRDExists(ctx)
 	if err != nil {
-		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}
 	r.backendConfig.PublisherConfig.ApplicationCRDEnabled = isApplicationCRDEnabled
 	r.eventingManager.SetBackendConfig(r.backendConfig)
 
 	// reconcile for specified backend.
 	switch eventing.Spec.Backend.Type {
-	case eventingv1alpha1.NatsBackendType:
+	case operatorv1alpha1.NatsBackendType:
 		return r.reconcileNATSBackend(ctx, eventing, log)
-	case eventingv1alpha1.EventMeshBackendType:
+	case operatorv1alpha1.EventMeshBackendType:
 		return r.reconcileEventMeshBackend(ctx, eventing, log)
 	default:
-		return ctrl.Result{Requeue: false}, fmt.Errorf("not supported backend type %s", eventing.Spec.Backend.Type)
+		return kctrl.Result{Requeue: false}, fmt.Errorf("not supported backend type %s", eventing.Spec.Backend.Type)
 	}
 }
 
 func (r *Reconciler) handleBackendSwitching(
-	eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) error {
 	// check if the backend was changed.
 	if !eventing.IsSpecBackendTypeChanged() {
 		return nil
 	}
 
 	// stop the previously active backend.
-	if eventing.Status.ActiveBackend == eventingv1alpha1.NatsBackendType {
+	if eventing.Status.ActiveBackend == operatorv1alpha1.NatsBackendType {
 		log.Info("Stopping the NATS subscription manager because backend is switched")
 		if err := r.stopNATSSubManager(true, log); err != nil {
 			return err
 		}
 		r.stopNATSCRWatch(eventing)
-	} else if eventing.Status.ActiveBackend == eventingv1alpha1.EventMeshBackendType {
+	} else if eventing.Status.ActiveBackend == operatorv1alpha1.EventMeshBackendType {
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
 			return err
 		}
@@ -501,30 +501,30 @@ func (r *Reconciler) handleBackendSwitching(
 	return nil
 }
 
-func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (kctrl.Result, error) {
 	// retrieves the NATS CRD
 	_, err := r.kubeClient.GetCRD(ctx, k8s.NatsGVK.GroupResource().String())
 	if err != nil {
-		if apierrors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			// delete the publisher proxy resources, because the publisher deployment will go
 			// into CrashLoopBackOff.
 			log.Infof("NATS module not enabled, deleting publisher proxy resources")
 			delErr := r.eventingManager.DeletePublisherProxyResources(ctx, eventing)
 			// update the Eventing CR status.
 			notFoundErr := fmt.Errorf("NATS module has to be installed: %v", err)
-			return ctrl.Result{}, errors.Join(r.syncStatusWithNATSErr(ctx, eventing, notFoundErr, log), delErr)
+			return kctrl.Result{}, errors.Join(r.syncStatusWithNATSErr(ctx, eventing, notFoundErr, log), delErr)
 		}
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	if err = r.startNATSCRWatch(eventing); err != nil {
-		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 
 	// check nats CR if it exists and is in natsAvailable state
 	err = r.checkNATSAvailability(ctx, eventing)
 	if err != nil {
-		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 
 	// set NATSAvailable condition to true and update status
@@ -532,18 +532,18 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *eventin
 
 	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.Spec.Backend.Type)
 	if err != nil {
-		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
 
 	// start NATS subscription manager
 	if err := r.reconcileNATSSubManager(ctx, eventing, log); err != nil {
-		return ctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 
 	return r.handleEventingState(ctx, deployment, eventing, log)
 }
 
-func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *eventingv1alpha1.Eventing) error {
+func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *operatorv1alpha1.Eventing) error {
 	natsAvailable, err := r.eventingManager.IsNATSAvailable(ctx, eventing.Namespace)
 	if err != nil {
 		return err
@@ -556,11 +556,11 @@ func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *eventi
 
 func (r *Reconciler) handlePublisherProxy(
 	ctx context.Context,
-	eventing *eventingv1alpha1.Eventing,
-	backendType eventingv1alpha1.BackendType) (*v1.Deployment, error) {
+	eventing *operatorv1alpha1.Eventing,
+	backendType operatorv1alpha1.BackendType) (*kappsv1.Deployment, error) {
 	// get nats config with NATS server url
 	var natsConfig *env.NATSConfig
-	if backendType == eventingv1alpha1.NatsBackendType {
+	if backendType == operatorv1alpha1.NatsBackendType {
 		var err error
 		natsConfig, err = r.natsConfigHandler.GetNatsConfig(ctx, *eventing)
 		if err != nil {
@@ -581,26 +581,26 @@ func (r *Reconciler) handlePublisherProxy(
 	return deployment, nil
 }
 
-func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *eventingv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (kctrl.Result, error) {
 	// check if APIRule CRD is installed.
 	isAPIRuleCRDEnabled, err := r.kubeClient.APIRuleCRDExists(ctx)
 	if err != nil {
-		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	} else if !isAPIRuleCRDEnabled {
 		apiRuleMissingErr := errors.New("API-Gateway module is needed for EventMesh backend. APIRules CRD is not installed")
-		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, apiRuleMissingErr, log)
+		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, apiRuleMissingErr, log)
 	}
 
 	// Start the EventMesh subscription controller
 	err = r.reconcileEventMeshSubManager(ctx, eventing)
 	if err != nil {
-		return ctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}
 	eventing.Status.SetSubscriptionManagerReadyConditionToTrue()
 
 	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.Spec.Backend.Type)
 	if err != nil {
-		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
 	return r.handleEventingState(ctx, deployment, eventing, log)
 }

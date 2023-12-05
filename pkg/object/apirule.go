@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"net/url"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
 )
@@ -26,7 +27,7 @@ const (
 // NewAPIRule creates a APIRule object.
 func NewAPIRule(ns, namePrefix string, opts ...Option) *apigatewayv1beta1.APIRule {
 	s := &apigatewayv1beta1.APIRule{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Namespace:    ns,
 			GenerateName: namePrefix,
 		},
@@ -103,10 +104,10 @@ func WithLabels(labels map[string]string) Option {
 // WithOwnerReference sets the OwnerReferences of an APIRule.
 func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
 	return func(r *apigatewayv1beta1.APIRule) {
-		ownerRefs := make([]metav1.OwnerReference, 0)
+		ownerRefs := make([]kmetav1.OwnerReference, 0)
 		for _, sub := range subs {
 			blockOwnerDeletion := true
-			ownerRef := metav1.OwnerReference{
+			ownerRef := kmetav1.OwnerReference{
 				APIVersion:         sub.APIVersion,
 				Kind:               sub.Kind,
 				Name:               sub.Name,

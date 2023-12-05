@@ -2,12 +2,14 @@ package eventing
 
 import (
 	"fmt"
-	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	kautoscalingv2 "k8s.io/api/autoscaling/v2"
+	kcorev1 "k8s.io/api/core/v1"
+	krbacv1 "k8s.io/api/rbac/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 )
 
 const publisherProxySuffix = "publisher-proxy"
@@ -41,42 +43,42 @@ func GetPublisherClusterRoleBindingName(eventing v1alpha1.Eventing) string {
 }
 
 func newHorizontalPodAutoscaler(name, namespace string, min, max, cpuUtilization, memoryUtilization int32,
-	labels map[string]string) *autoscalingv2.HorizontalPodAutoscaler {
-	return &autoscalingv2.HorizontalPodAutoscaler{
-		TypeMeta: metav1.TypeMeta{
+	labels map[string]string) *kautoscalingv2.HorizontalPodAutoscaler {
+	return &kautoscalingv2.HorizontalPodAutoscaler{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "HorizontalPodAutoscaler",
 			APIVersion: "autoscaling/v2",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
 		},
-		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
+		Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: kautoscalingv2.CrossVersionObjectReference{
 				Kind:       "Deployment",
 				Name:       name,
 				APIVersion: "apps/v1",
 			},
 			MinReplicas: &min,
 			MaxReplicas: max,
-			Metrics: []autoscalingv2.MetricSpec{
+			Metrics: []kautoscalingv2.MetricSpec{
 				{
-					Type: autoscalingv2.ResourceMetricSourceType,
-					Resource: &autoscalingv2.ResourceMetricSource{
+					Type: kautoscalingv2.ResourceMetricSourceType,
+					Resource: &kautoscalingv2.ResourceMetricSource{
 						Name: "cpu",
-						Target: autoscalingv2.MetricTarget{
-							Type:               autoscalingv2.UtilizationMetricType,
+						Target: kautoscalingv2.MetricTarget{
+							Type:               kautoscalingv2.UtilizationMetricType,
 							AverageUtilization: &cpuUtilization,
 						},
 					},
 				},
 				{
-					Type: autoscalingv2.ResourceMetricSourceType,
-					Resource: &autoscalingv2.ResourceMetricSource{
+					Type: kautoscalingv2.ResourceMetricSourceType,
+					Resource: &kautoscalingv2.ResourceMetricSource{
 						Name: "memory",
-						Target: autoscalingv2.MetricTarget{
-							Type:               autoscalingv2.UtilizationMetricType,
+						Target: kautoscalingv2.MetricTarget{
+							Type:               kautoscalingv2.UtilizationMetricType,
 							AverageUtilization: &memoryUtilization,
 						},
 					},
@@ -86,19 +88,19 @@ func newHorizontalPodAutoscaler(name, namespace string, min, max, cpuUtilization
 	}
 }
 
-func newPublisherProxyClusterRole(name, namespace string, labels map[string]string) *rbacv1.ClusterRole {
+func newPublisherProxyClusterRole(name, namespace string, labels map[string]string) *krbacv1.ClusterRole {
 	// setting `TypeMeta` is important for patch apply to work.
-	return &rbacv1.ClusterRole{
-		TypeMeta: metav1.TypeMeta{
+	return &krbacv1.ClusterRole{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "ClusterRole",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
 		},
-		Rules: []rbacv1.PolicyRule{
+		Rules: []krbacv1.PolicyRule{
 			{
 				APIGroups: []string{"eventing.kyma-project.io"},
 				Resources: []string{"subscriptions"},
@@ -113,14 +115,14 @@ func newPublisherProxyClusterRole(name, namespace string, labels map[string]stri
 	}
 }
 
-func newPublisherProxyServiceAccount(name, namespace string, labels map[string]string) *corev1.ServiceAccount {
+func newPublisherProxyServiceAccount(name, namespace string, labels map[string]string) *kcorev1.ServiceAccount {
 	// setting `TypeMeta` is important for patch apply to work.
-	return &corev1.ServiceAccount{
-		TypeMeta: metav1.TypeMeta{
+	return &kcorev1.ServiceAccount{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
@@ -128,24 +130,24 @@ func newPublisherProxyServiceAccount(name, namespace string, labels map[string]s
 	}
 }
 
-func newPublisherProxyClusterRoleBinding(name, namespace string, labels map[string]string) *rbacv1.ClusterRoleBinding {
+func newPublisherProxyClusterRoleBinding(name, namespace string, labels map[string]string) *krbacv1.ClusterRoleBinding {
 	// setting `TypeMeta` is important for patch apply to work.
-	return &rbacv1.ClusterRoleBinding{
-		TypeMeta: metav1.TypeMeta{
+	return &krbacv1.ClusterRoleBinding{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "ClusterRoleBinding",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
 		},
-		RoleRef: rbacv1.RoleRef{
+		RoleRef: krbacv1.RoleRef{
 			Kind:     "ClusterRole",
 			Name:     name,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
-		Subjects: []rbacv1.Subject{
+		Subjects: []krbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
 				Name:      name,
@@ -156,21 +158,21 @@ func newPublisherProxyClusterRoleBinding(name, namespace string, labels map[stri
 }
 
 func newPublisherProxyService(name, namespace string, labels map[string]string,
-	selectorLabels map[string]string) *corev1.Service {
+	selectorLabels map[string]string) *kcorev1.Service {
 	// setting `TypeMeta` is important for patch apply to work.
-	return &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	return &kcorev1.Service{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
 		},
-		Spec: corev1.ServiceSpec{
+		Spec: kcorev1.ServiceSpec{
 			Selector: selectorLabels,
-			Ports: []corev1.ServicePort{
+			Ports: []kcorev1.ServicePort{
 				{
 					Name:       "http-client",
 					Protocol:   "TCP",
@@ -183,14 +185,14 @@ func newPublisherProxyService(name, namespace string, labels map[string]string,
 }
 
 func newPublisherProxyMetricsService(name, namespace string, labels map[string]string,
-	selectorLabels map[string]string) *corev1.Service {
+	selectorLabels map[string]string) *kcorev1.Service {
 	// setting `TypeMeta` is important for patch apply to work.
-	return &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	return &kcorev1.Service{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
@@ -200,9 +202,9 @@ func newPublisherProxyMetricsService(name, namespace string, labels map[string]s
 				"prometheus.io/scheme": "http",
 			},
 		},
-		Spec: corev1.ServiceSpec{
+		Spec: kcorev1.ServiceSpec{
 			Selector: selectorLabels,
-			Ports: []corev1.ServicePort{
+			Ports: []kcorev1.ServicePort{
 				{
 					Name:       "http-metrics",
 					Protocol:   "TCP",
@@ -215,21 +217,21 @@ func newPublisherProxyMetricsService(name, namespace string, labels map[string]s
 }
 
 func newPublisherProxyHealthService(name, namespace string, labels map[string]string,
-	selectorLabels map[string]string) *corev1.Service {
+	selectorLabels map[string]string) *kcorev1.Service {
 	// setting `TypeMeta` is important for patch apply to work.
-	return &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	return &kcorev1.Service{
+		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
 		},
-		Spec: corev1.ServiceSpec{
+		Spec: kcorev1.ServiceSpec{
 			Selector: selectorLabels,
-			Ports: []corev1.ServicePort{
+			Ports: []kcorev1.ServicePort{
 				{
 					Name:       "http-status",
 					Protocol:   "TCP",

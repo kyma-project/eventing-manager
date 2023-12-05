@@ -5,14 +5,15 @@ import (
 	"testing"
 	"time"
 
-	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 	"github.com/pkg/errors"
+
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
@@ -31,8 +32,8 @@ func Test_InitializeSubscriptionConditions(t *testing.T) {
 			givenConditions: []v1alpha2.Condition{
 				{
 					Type:               v1alpha2.ConditionSubscribed,
-					LastTransitionTime: metav1.Now(),
-					Status:             corev1.ConditionUnknown,
+					LastTransitionTime: kmetav1.Now(),
+					Status:             kcorev1.ConditionUnknown,
 				},
 			},
 		},
@@ -58,7 +59,7 @@ func Test_InitializeSubscriptionConditions(t *testing.T) {
 			g.Expect(s.Conditions).To(HaveLen(len(wantConditionTypes)))
 			foundConditionTypes := make([]v1alpha2.ConditionType, 0)
 			for _, condition := range s.Conditions {
-				g.Expect(condition.Status).To(BeEquivalentTo(corev1.ConditionUnknown))
+				g.Expect(condition.Status).To(BeEquivalentTo(kcorev1.ConditionUnknown))
 				foundConditionTypes = append(foundConditionTypes, condition.Type)
 			}
 			g.Expect(wantConditionTypes).To(ConsistOf(foundConditionTypes))
@@ -86,7 +87,7 @@ func Test_IsReady(t *testing.T) {
 			name: "should not be ready if only ConditionSubscribed is available and true",
 			givenConditions: []v1alpha2.Condition{{
 				Type:   v1alpha2.ConditionSubscribed,
-				Status: corev1.ConditionTrue,
+				Status: kcorev1.ConditionTrue,
 			}},
 			wantReadyStatus: false,
 		},
@@ -94,7 +95,7 @@ func Test_IsReady(t *testing.T) {
 			name: "should not be ready if only ConditionSubscriptionActive is available and true",
 			givenConditions: []v1alpha2.Condition{{
 				Type:   v1alpha2.ConditionSubscriptionActive,
-				Status: corev1.ConditionTrue,
+				Status: kcorev1.ConditionTrue,
 			}},
 			wantReadyStatus: false,
 		},
@@ -102,35 +103,35 @@ func Test_IsReady(t *testing.T) {
 			name: "should not be ready if only ConditionAPIRuleStatus is available and true",
 			givenConditions: []v1alpha2.Condition{{
 				Type:   v1alpha2.ConditionAPIRuleStatus,
-				Status: corev1.ConditionTrue,
+				Status: kcorev1.ConditionTrue,
 			}},
 			wantReadyStatus: false,
 		},
 		{
 			name: "should not be ready if all conditions are unknown",
 			givenConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionUnknown},
-				{Type: v1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionUnknown},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionUnknown},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionUnknown},
+				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionUnknown},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionUnknown},
 			},
 			wantReadyStatus: false,
 		},
 		{
 			name: "should not be ready if all conditions are false",
 			givenConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionFalse},
-				{Type: v1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionFalse},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionFalse},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionFalse},
+				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionFalse},
 			},
 			wantReadyStatus: false,
 		},
 		{
 			name: "should be ready if all conditions are true",
 			givenConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue},
 			},
 			wantReadyStatus: true,
 		},
@@ -148,7 +149,7 @@ func Test_IsReady(t *testing.T) {
 }
 
 func Test_FindCondition(t *testing.T) {
-	currentTime := metav1.NewTime(time.Now())
+	currentTime := kmetav1.NewTime(time.Now())
 
 	testCases := []struct {
 		name              string
@@ -159,23 +160,23 @@ func Test_FindCondition(t *testing.T) {
 		{
 			name: "should be able to find the present condition",
 			givenConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue, LastTransitionTime: currentTime},
-				{Type: v1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionTrue, LastTransitionTime: currentTime},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue, LastTransitionTime: currentTime},
-				{Type: v1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionTrue, LastTransitionTime: currentTime},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue, LastTransitionTime: currentTime},
+				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue, LastTransitionTime: currentTime},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue, LastTransitionTime: currentTime},
+				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue, LastTransitionTime: currentTime},
 			},
 			findConditionType: v1alpha2.ConditionSubscriptionActive,
 			wantCondition: &v1alpha2.Condition{
 				Type:   v1alpha2.ConditionSubscriptionActive,
-				Status: corev1.ConditionTrue, LastTransitionTime: currentTime,
+				Status: kcorev1.ConditionTrue, LastTransitionTime: currentTime,
 			},
 		},
 		{
 			name: "should not be able to find the non-present condition",
 			givenConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue, LastTransitionTime: currentTime},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue, LastTransitionTime: currentTime},
-				{Type: v1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionTrue, LastTransitionTime: currentTime},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue, LastTransitionTime: currentTime},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue, LastTransitionTime: currentTime},
+				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue, LastTransitionTime: currentTime},
 			},
 			findConditionType: v1alpha2.ConditionSubscriptionActive,
 			wantCondition:     nil,
@@ -205,10 +206,10 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 			name:              "should not update if the subscription is ready and the conditions are ready",
 			subscriptionReady: true,
 			subscriptionConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue},
 			},
 			wantStatus: false,
 		},
@@ -216,10 +217,10 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 			name:              "should not update if the subscription is not ready and the conditions are not ready",
 			subscriptionReady: false,
 			subscriptionConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionFalse},
-				{Type: v1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionFalse},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionFalse},
-				{Type: v1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionFalse},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionFalse},
+				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionFalse},
+				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionFalse},
 			},
 			wantStatus: false,
 		},
@@ -227,10 +228,10 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 			name:              "should update if the subscription is not ready and the conditions are ready",
 			subscriptionReady: false,
 			subscriptionConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue},
 			},
 			wantStatus: true,
 		},
@@ -238,10 +239,10 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 			name:              "should update if the subscription is ready and the conditions are not ready",
 			subscriptionReady: true,
 			subscriptionConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionFalse},
-				{Type: v1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionFalse},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionFalse},
-				{Type: v1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionFalse},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionFalse},
+				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionFalse},
+				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionFalse},
 			},
 			wantStatus: true,
 		},
@@ -249,7 +250,7 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 			name:              "should update if the subscription is ready and some of the conditions are missing",
 			subscriptionReady: true,
 			subscriptionConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionUnknown},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionUnknown},
 			},
 			wantStatus: true,
 		},
@@ -257,7 +258,7 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 			name:              "should not update if the subscription is not ready and some of the conditions are missing",
 			subscriptionReady: false,
 			subscriptionConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionUnknown},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionUnknown},
 			},
 			wantStatus: false,
 		},
@@ -265,10 +266,10 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 			name:              "should update if the subscription is ready and the status of the conditions are unknown",
 			subscriptionReady: true,
 			subscriptionConditions: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionUnknown},
-				{Type: v1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionUnknown},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionUnknown},
-				{Type: v1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionUnknown},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionUnknown},
+				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionUnknown},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionUnknown},
+				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionUnknown},
 			},
 			wantStatus: true,
 		},
@@ -296,7 +297,7 @@ func Test_conditionsEquals(t *testing.T) {
 		{
 			name: "should not be equal if the number of conditions are not equal",
 			conditionsSet1: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
 			},
 			conditionsSet2:  []v1alpha2.Condition{},
 			wantEqualStatus: false,
@@ -304,58 +305,58 @@ func Test_conditionsEquals(t *testing.T) {
 		{
 			name: "should be equal if the conditions are the same",
 			conditionsSet1: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 			},
 			conditionsSet2: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 			},
 			wantEqualStatus: true,
 		},
 		{
 			name: "should not be equal if the condition types are different",
 			conditionsSet1: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 			},
 			conditionsSet2: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionWebhookCallStatus, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionSubscriptionActive, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue},
 			},
 			wantEqualStatus: false,
 		},
 		{
 			name: "should not be equal if the condition types are the same but the status is different",
 			conditionsSet1: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
 			},
 			conditionsSet2: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionFalse},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionFalse},
 			},
 			wantEqualStatus: false,
 		},
 		{
 			name: "should not be equal if the condition types are different but the status is the same",
 			conditionsSet1: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionFalse},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionFalse},
 			},
 			conditionsSet2: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 			},
 			wantEqualStatus: false,
 		},
 		{
 			name: "should not be equal if the condition types are different and an empty key is referenced",
 			conditionsSet1: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 			},
 			conditionsSet2: []v1alpha2.Condition{
-				{Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue},
-				{Type: v1alpha2.ConditionControllerReady, Status: corev1.ConditionTrue},
+				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionControllerReady, Status: kcorev1.ConditionTrue},
 			},
 			wantEqualStatus: false,
 		},
@@ -379,33 +380,33 @@ func Test_conditionEquals(t *testing.T) {
 		{
 			name: "should not be equal if the types are the same but the status is different",
 			condition1: v1alpha2.Condition{
-				Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue,
+				Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue,
 			},
 
 			condition2: v1alpha2.Condition{
-				Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionUnknown,
+				Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionUnknown,
 			},
 			wantEqualStatus: false,
 		},
 		{
 			name: "should not be equal if the types are different but the status is the same",
 			condition1: v1alpha2.Condition{
-				Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue,
+				Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue,
 			},
 
 			condition2: v1alpha2.Condition{
-				Type: v1alpha2.ConditionAPIRuleStatus, Status: corev1.ConditionTrue,
+				Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue,
 			},
 			wantEqualStatus: false,
 		},
 		{
 			name: "should not be equal if the message fields are different",
 			condition1: v1alpha2.Condition{
-				Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue, Message: "",
+				Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue, Message: "",
 			},
 
 			condition2: v1alpha2.Condition{
-				Type: v1alpha2.ConditionSubscribed, Status: corev1.ConditionTrue, Message: "some message",
+				Type: v1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue, Message: "some message",
 			},
 			wantEqualStatus: false,
 		},
@@ -413,13 +414,13 @@ func Test_conditionEquals(t *testing.T) {
 			name: "should not be equal if the reason fields are different",
 			condition1: v1alpha2.Condition{
 				Type:   v1alpha2.ConditionSubscribed,
-				Status: corev1.ConditionTrue,
+				Status: kcorev1.ConditionTrue,
 				Reason: v1alpha2.ConditionReasonSubscriptionDeleted,
 			},
 
 			condition2: v1alpha2.Condition{
 				Type:   v1alpha2.ConditionSubscribed,
-				Status: corev1.ConditionTrue,
+				Status: kcorev1.ConditionTrue,
 				Reason: v1alpha2.ConditionReasonSubscriptionActive,
 			},
 			wantEqualStatus: false,
@@ -428,13 +429,13 @@ func Test_conditionEquals(t *testing.T) {
 			name: "should be equal if all the fields are the same",
 			condition1: v1alpha2.Condition{
 				Type:    v1alpha2.ConditionAPIRuleStatus,
-				Status:  corev1.ConditionFalse,
+				Status:  kcorev1.ConditionFalse,
 				Reason:  v1alpha2.ConditionReasonAPIRuleStatusNotReady,
 				Message: "API Rule is not ready",
 			},
 			condition2: v1alpha2.Condition{
 				Type:    v1alpha2.ConditionAPIRuleStatus,
-				Status:  corev1.ConditionFalse,
+				Status:  kcorev1.ConditionFalse,
 				Reason:  v1alpha2.ConditionReasonAPIRuleStatusNotReady,
 				Message: "API Rule is not ready",
 			},
@@ -480,13 +481,13 @@ func Test_SetConditionSubscriptionActive(t *testing.T) {
 	conditionReady := v1alpha2.MakeCondition(
 		v1alpha2.ConditionSubscriptionActive,
 		v1alpha2.ConditionReasonNATSSubscriptionActive,
-		corev1.ConditionTrue, "")
-	conditionReady.LastTransitionTime = metav1.NewTime(time.Now().AddDate(0, 0, -1))
+		kcorev1.ConditionTrue, "")
+	conditionReady.LastTransitionTime = kmetav1.NewTime(time.Now().AddDate(0, 0, -1))
 	conditionNotReady := v1alpha2.MakeCondition(
 		v1alpha2.ConditionSubscriptionActive,
 		v1alpha2.ConditionReasonNATSSubscriptionNotActive,
-		corev1.ConditionFalse, err.Error())
-	conditionNotReady.LastTransitionTime = metav1.NewTime(time.Now().AddDate(0, 0, -2))
+		kcorev1.ConditionFalse, err.Error())
+	conditionNotReady.LastTransitionTime = kmetav1.NewTime(time.Now().AddDate(0, 0, -2))
 	sub := eventingtesting.NewSubscription("test", "test")
 
 	testCases := []struct {
@@ -494,7 +495,7 @@ func Test_SetConditionSubscriptionActive(t *testing.T) {
 		givenConditions        []v1alpha2.Condition
 		givenError             error
 		wantConditions         []v1alpha2.Condition
-		wantLastTransitionTime *metav1.Time
+		wantLastTransitionTime *kmetav1.Time
 	}{
 		{
 			name:            "no error should set the condition to ready",
@@ -515,8 +516,8 @@ func Test_SetConditionSubscriptionActive(t *testing.T) {
 			wantConditions: []v1alpha2.Condition{{
 				Type:               v1alpha2.ConditionSubscriptionActive,
 				Reason:             v1alpha2.ConditionReasonNATSSubscriptionActive,
-				Status:             corev1.ConditionTrue,
-				LastTransitionTime: metav1.Now(),
+				Status:             kcorev1.ConditionTrue,
+				LastTransitionTime: kmetav1.Now(),
 			}},
 			wantLastTransitionTime: &conditionReady.LastTransitionTime,
 		},
@@ -527,9 +528,9 @@ func Test_SetConditionSubscriptionActive(t *testing.T) {
 			wantConditions: []v1alpha2.Condition{{
 				Type:               v1alpha2.ConditionSubscriptionActive,
 				Reason:             v1alpha2.ConditionReasonNATSSubscriptionNotActive,
-				Status:             corev1.ConditionFalse,
+				Status:             kcorev1.ConditionFalse,
 				Message:            err.Error(),
-				LastTransitionTime: metav1.Now(),
+				LastTransitionTime: kmetav1.Now(),
 			}},
 			wantLastTransitionTime: &conditionNotReady.LastTransitionTime,
 		},

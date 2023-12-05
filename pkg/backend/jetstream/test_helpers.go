@@ -9,18 +9,20 @@ import (
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
 
-	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/nats-io/nats-server/v2/server"
+
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 
-	nats2 "github.com/cloudevents/sdk-go/protocol/nats/v2"
-	v2 "github.com/cloudevents/sdk-go/v2"
+	cenats "github.com/cloudevents/sdk-go/protocol/nats/v2"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
-	cev2http "github.com/cloudevents/sdk-go/v2/protocol/http"
+	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
+
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
-	evtesting "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 const (
@@ -41,13 +43,13 @@ type TestEnvironment struct {
 	natsPort   int
 }
 
-func StartNATSServer(serverOpts ...evtesting.NatsServerOpt) (*server.Server, int, error) {
-	natsPort, err := evtesting.GetFreePort()
+func StartNATSServer(serverOpts ...eventingtesting.NatsServerOpt) (*server.Server, int, error) {
+	natsPort, err := eventingtesting.GetFreePort()
 	if err != nil {
 		return nil, 0, err
 	}
-	serverOpts = append(serverOpts, evtesting.WithPort(natsPort))
-	natsServer := evtesting.RunNatsServerOnPort(serverOpts...)
+	serverOpts = append(serverOpts, eventingtesting.WithPort(natsPort))
+	natsServer := eventingtesting.RunNatsServerOnPort(serverOpts...)
 	return natsServer, natsPort, nil
 }
 
@@ -61,10 +63,10 @@ func NewNatsMessagePayload(data, id, source, eventTime, eventType string) string
 func SendEventToJetStream(jsClient *JetStream, data string) error {
 	// assumption: the event-type used for publishing is already cleaned from none-alphanumeric characters
 	// because the publisher-application should have cleaned it already before publishing
-	eventType := evtesting.OrderCreatedCleanEvent
+	eventType := eventingtesting.OrderCreatedCleanEvent
 	eventTime := time.Now().Format(time.RFC3339)
-	sampleEvent := NewNatsMessagePayload(data, "id", evtesting.EventSourceClean, eventTime, eventType)
-	return jsClient.Conn.Publish(jsClient.GetJetStreamSubject(evtesting.EventSourceClean,
+	sampleEvent := NewNatsMessagePayload(data, "id", eventingtesting.EventSourceClean, eventTime, eventType)
+	return jsClient.Conn.Publish(jsClient.GetJetStreamSubject(eventingtesting.EventSourceClean,
 		eventType,
 		v1alpha2.TypeMatchingStandard,
 	), []byte(sampleEvent))
@@ -74,9 +76,9 @@ func SendCloudEventToJetStream(jetStreamClient *JetStream, subject, eventData, c
 	// create a CE http request
 	var headers http.Header
 	if cetype == types.ContentModeBinary {
-		headers = evtesting.GetBinaryMessageHeaders()
+		headers = eventingtesting.GetBinaryMessageHeaders()
 	} else {
-		headers = evtesting.GetStructuredMessageHeaders()
+		headers = eventingtesting.GetStructuredMessageHeaders()
 	}
 	req, err := http.NewRequest(http.MethodPost, "dummy", bytes.NewBuffer([]byte(eventData)))
 	if err != nil {
@@ -88,7 +90,7 @@ func SendCloudEventToJetStream(jetStreamClient *JetStream, subject, eventData, c
 	// convert  to the CE Event
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	message := cev2http.NewMessageFromHttpRequest(req)
+	message := cehttp.NewMessageFromHttpRequest(req)
 	defer func() { _ = message.Finish(nil) }()
 	event, err := binding.ToEvent(ctx, message)
 	if err != nil {
@@ -98,13 +100,13 @@ func SendCloudEventToJetStream(jetStreamClient *JetStream, subject, eventData, c
 		return validateErr
 	}
 	// get a CE sender for the embedded NATS using CE-SDK
-	natsOpts := nats2.NatsOptions()
+	natsOpts := cenats.NatsOptions()
 	url := jetStreamClient.Config.URL
-	sender, err := nats2.NewSender(url, subject, natsOpts)
+	sender, err := cenats.NewSender(url, subject, natsOpts)
 	if err != nil {
 		return nil
 	}
-	client, err := v2.NewClient(sender)
+	client, err := cloudevents.NewClient(sender)
 	if err != nil {
 		return err
 	}

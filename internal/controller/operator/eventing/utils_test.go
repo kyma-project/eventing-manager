@@ -6,9 +6,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-	"github.com/kyma-project/eventing-manager/test/utils"
 	"github.com/stretchr/testify/require"
+
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	"github.com/kyma-project/eventing-manager/test/utils"
 )
 
 func Test_containsFinalizer(t *testing.T) {
@@ -17,7 +18,7 @@ func Test_containsFinalizer(t *testing.T) {
 	// define test cases
 	testCases := []struct {
 		name          string
-		givenEventing *eventingv1alpha1.Eventing
+		givenEventing *operatorv1alpha1.Eventing
 		wantResult    bool
 	}{
 		{

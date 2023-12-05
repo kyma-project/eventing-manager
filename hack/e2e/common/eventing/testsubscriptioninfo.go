@@ -1,9 +1,10 @@
 package eventing
 
 import (
-	ecv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
-	ecv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
 type TestSubscriptionInfo struct {
@@ -13,16 +14,16 @@ type TestSubscriptionInfo struct {
 	Types       []string
 }
 
-func (s TestSubscriptionInfo) V1Alpha1SpecFilters() []*ecv1alpha1.EventMeshFilter {
-	var filters []*ecv1alpha1.EventMeshFilter
+func (s TestSubscriptionInfo) V1Alpha1SpecFilters() []*eventingv1alpha1.EventMeshFilter {
+	var filters []*eventingv1alpha1.EventMeshFilter
 	for _, etype := range s.Types {
-		filter := &ecv1alpha1.EventMeshFilter{
-			EventSource: &ecv1alpha1.Filter{
+		filter := &eventingv1alpha1.EventMeshFilter{
+			EventSource: &eventingv1alpha1.Filter{
 				Type:     "exact",
 				Property: "source",
 				Value:    "",
 			},
-			EventType: &ecv1alpha1.Filter{
+			EventType: &eventingv1alpha1.Filter{
 				Type:     "exact",
 				Property: "type",
 				Value:    etype,
@@ -33,30 +34,30 @@ func (s TestSubscriptionInfo) V1Alpha1SpecFilters() []*ecv1alpha1.EventMeshFilte
 	return filters
 }
 
-func (s TestSubscriptionInfo) ToSubscriptionV1Alpha1(sink, namespace string) *ecv1alpha1.Subscription {
-	return &ecv1alpha1.Subscription{
-		ObjectMeta: metav1.ObjectMeta{
+func (s TestSubscriptionInfo) ToSubscriptionV1Alpha1(sink, namespace string) *eventingv1alpha1.Subscription {
+	return &eventingv1alpha1.Subscription{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      s.Name,
 			Namespace: namespace,
 		},
-		Spec: ecv1alpha1.SubscriptionSpec{
+		Spec: eventingv1alpha1.SubscriptionSpec{
 			Sink: sink,
-			Filter: &ecv1alpha1.BEBFilters{
+			Filter: &eventingv1alpha1.BEBFilters{
 				Filters: s.V1Alpha1SpecFilters(),
 			},
 		},
 	}
 }
 
-func (s TestSubscriptionInfo) ToSubscriptionV1Alpha2(sink, namespace string) *ecv1alpha2.Subscription {
-	return &ecv1alpha2.Subscription{
-		ObjectMeta: metav1.ObjectMeta{
+func (s TestSubscriptionInfo) ToSubscriptionV1Alpha2(sink, namespace string) *eventingv1alpha2.Subscription {
+	return &eventingv1alpha2.Subscription{
+		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      s.Name,
 			Namespace: namespace,
 		},
-		Spec: ecv1alpha2.SubscriptionSpec{
+		Spec: eventingv1alpha2.SubscriptionSpec{
 			Sink:         sink,
-			TypeMatching: ecv1alpha2.TypeMatchingStandard,
+			TypeMatching: eventingv1alpha2.TypeMatchingStandard,
 			Source:       s.Source,
 			Types:        s.Types,
 		},

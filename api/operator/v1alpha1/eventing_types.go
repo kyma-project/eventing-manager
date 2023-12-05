@@ -18,9 +18,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ConditionReason string
@@ -79,8 +79,8 @@ const (
 // +kubebuilder:printcolumn:name="Backend",type="string",JSONPath=".spec.backend.type",description="Type of Eventing backend, either NATS or EventMesh"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Age of the resource"
 type Eventing struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	kmetav1.TypeMeta   `json:",inline"`
+	kmetav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +kubebuilder:default:={backend:{type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}, logging:{logLevel:Info}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"40m",memory:"256Mi"}}}}
 	Spec   EventingSpec   `json:"spec,omitempty"`
@@ -89,10 +89,10 @@ type Eventing struct {
 
 // EventingStatus defines the observed state of Eventing
 type EventingStatus struct {
-	ActiveBackend     BackendType        `json:"activeBackend"`
-	BackendConfigHash int64              `json:"specHash"`
-	State             string             `json:"state"`
-	Conditions        []metav1.Condition `json:"conditions,omitempty"`
+	ActiveBackend     BackendType         `json:"activeBackend"`
+	BackendConfigHash int64               `json:"specHash"`
+	State             string              `json:"state"`
+	Conditions        []kmetav1.Condition `json:"conditions,omitempty"`
 }
 
 // EventingSpec defines the desired state of Eventing
@@ -121,9 +121,9 @@ type EventingSpec struct {
 
 // EventingList contains a list of Eventing
 type EventingList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Eventing `json:"items"`
+	kmetav1.TypeMeta `json:",inline"`
+	kmetav1.ListMeta `json:"metadata,omitempty"`
+	Items            []Eventing `json:"items"`
 }
 
 type BackendType string
@@ -187,7 +187,7 @@ type Publisher struct {
 
 	// Resources defines resources for eventing-publisher-proxy.
 	// +kubebuilder:default:={limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"40m",memory:"256Mi"}}
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources kcorev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // Replicas defines min/max replicas for a resource.

@@ -3,9 +3,10 @@ package jetstream
 import (
 	"testing"
 
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	evtesting "github.com/kyma-project/eventing-manager/testing"
 	"github.com/stretchr/testify/require"
+
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 // TestJetStream_isJsSubAssociatedWithKymaSub tests the isJsSubAssociatedWithKymaSub method.
@@ -21,12 +22,12 @@ func TestJetStream_isJsSubAssociatedWithKymaSub(t *testing.T) {
 
 	// create subscription 1 and its JetStream subscription
 	cleanSubject1 := "subOne"
-	sub1 := evtesting.NewSubscription(cleanSubject1, "foo", evtesting.WithNotCleanEventSourceAndType())
+	sub1 := eventingtesting.NewSubscription(cleanSubject1, "foo", eventingtesting.WithNotCleanEventSourceAndType())
 	jsSub1Key := NewSubscriptionSubjectIdentifier(sub1, cleanSubject1)
 
 	// create subscription 2 and its JetStream subscription
 	cleanSubject2 := "subOneTwo"
-	sub2 := evtesting.NewSubscription(cleanSubject2, "foo", evtesting.WithNotCleanEventSourceAndType())
+	sub2 := eventingtesting.NewSubscription(cleanSubject2, "foo", eventingtesting.WithNotCleanEventSourceAndType())
 	jsSub2Key := NewSubscriptionSubjectIdentifier(sub2, cleanSubject2)
 
 	testCases := []struct {

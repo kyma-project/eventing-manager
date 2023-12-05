@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8slabels "k8s.io/apimachinery/pkg/labels"
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	kcorev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	klabels "k8s.io/apimachinery/pkg/labels"
+	ktypes "k8s.io/apimachinery/pkg/types"
 
-	recerrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
+	controllererrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
@@ -36,7 +36,7 @@ import (
 	"go.uber.org/zap"
 
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
@@ -106,11 +106,11 @@ func NewReconciler(ctx context.Context, client client.Client, logger *logger.Log
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=gateway.kyma-project.io,resources=apirules,verbs=get;list;watch;create;update;patch;delete
 
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Result, error) {
 	// fetch current subscription object and ensure the object was not deleted in the meantime
 	currentSubscription := &eventingv1alpha2.Subscription{}
 	if err := r.Client.Get(ctx, req.NamespacedName, currentSubscription); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return kctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	// copy the subscription object, so we don't modify the source object
@@ -121,7 +121,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	log.Debugw("Received new reconcile request")
 
 	// instantiate a return object
-	result := ctrl.Result{}
+	result := kctrl.Result{}
 
 	// handle deletion of the subscription
 	if isInDeletion(sub) {
@@ -142,29 +142,29 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// sync Finalizers, ensure the finalizer is set
 	if err := r.syncFinalizer(sub, log); err != nil {
 		if updateErr := r.updateSubscription(ctx, sub, log); updateErr != nil {
-			return ctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
+			return kctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
 		}
-		return ctrl.Result{}, xerrors.Errorf("failed to sync finalizer: %v", err)
+		return kctrl.Result{}, xerrors.Errorf("failed to sync finalizer: %v", err)
 	}
 
 	// sync APIRule for the desired subscription
 	apiRule, err := r.syncAPIRule(ctx, sub, log)
 	// sync the condition: ConditionAPIRuleStatus
 	sub.Status.SetConditionAPIRuleStatus(err)
-	if !recerrors.IsSkippable(err) {
+	if !controllererrors.IsSkippable(err) {
 		if updateErr := r.updateSubscription(ctx, sub, log); updateErr != nil {
-			return ctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
+			return kctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
 		}
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	// sync the EventMesh Subscription with the Subscription CR
 	ready, err := r.syncEventMeshSubscription(sub, apiRule, log)
 	if err != nil {
 		if updateErr := r.updateSubscription(ctx, sub, log); updateErr != nil {
-			return ctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
+			return kctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
 		}
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 	// if eventMesh subscription is not ready, then requeue
 	if !ready {
@@ -174,7 +174,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// update the subscription if modified
 	if err := r.updateSubscription(ctx, sub, log); err != nil {
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	return result, nil
@@ -182,7 +182,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 // updateSubscription updates the subscription changes to k8s.
 func (r *Reconciler) updateSubscription(ctx context.Context, sub *eventingv1alpha2.Subscription, logger *zap.SugaredLogger) error {
-	namespacedName := &k8stypes.NamespacedName{
+	namespacedName := &ktypes.NamespacedName{
 		Name:      sub.Name,
 		Namespace: sub.Namespace,
 	}
@@ -257,16 +257,16 @@ func (r *Reconciler) syncFinalizer(subscription *eventingv1alpha2.Subscription, 
 }
 
 func (r *Reconciler) handleDeleteSubscription(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	logger *zap.SugaredLogger) (ctrl.Result, error) {
+	logger *zap.SugaredLogger) (kctrl.Result, error) {
 	// delete EventMesh subscriptions
 	logger.Debug("Deleting subscription on EventMesh")
 	if err := r.Backend.DeleteSubscription(subscription); err != nil {
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	// update condition in subscription status
 	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed,
-		eventingv1alpha2.ConditionReasonSubscriptionDeleted, corev1.ConditionFalse, "")
+		eventingv1alpha2.ConditionReasonSubscriptionDeleted, kcorev1.ConditionFalse, "")
 	replaceStatusCondition(subscription, condition)
 
 	// remove finalizers from subscription
@@ -274,11 +274,11 @@ func (r *Reconciler) handleDeleteSubscription(ctx context.Context, subscription 
 
 	// update subscription CR with changes
 	if err := r.updateSubscription(ctx, subscription, logger); err != nil {
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	r.collector.RemoveSubscriptionStatus(subscription.Name, subscription.Namespace, backendType, "", "")
-	return ctrl.Result{Requeue: false}, nil
+	return kctrl.Result{Requeue: false}, nil
 }
 
 // syncEventMeshSubscription delegates the subscription synchronization to the backend client. It returns true if the subscription is ready.
@@ -316,10 +316,10 @@ func (r *Reconciler) syncEventMeshSubscription(subscription *eventingv1alpha2.Su
 func (r *Reconciler) syncConditionSubscribed(subscription *eventingv1alpha2.Subscription, err error) {
 	// Include the EventMesh subscription ID in the Condition message
 	message := eventingv1alpha2.CreateMessageForConditionReasonSubscriptionCreated(r.nameMapper.MapSubscriptionName(subscription.Name, subscription.Namespace))
-	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, corev1.ConditionTrue, message)
+	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreated, kcorev1.ConditionTrue, message)
 	if err != nil {
 		message = err.Error()
-		condition = eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreationFailed, corev1.ConditionFalse, message)
+		condition = eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscribed, eventingv1alpha2.ConditionReasonSubscriptionCreationFailed, kcorev1.ConditionFalse, message)
 	}
 
 	replaceStatusCondition(subscription, condition)
@@ -329,7 +329,7 @@ func (r *Reconciler) syncConditionSubscribed(subscription *eventingv1alpha2.Subs
 func (r *Reconciler) syncConditionSubscriptionActive(subscription *eventingv1alpha2.Subscription, isActive bool, logger *zap.SugaredLogger) {
 	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonSubscriptionActive,
-		corev1.ConditionTrue,
+		kcorev1.ConditionTrue,
 		"")
 	if !isActive {
 		logger.Infow("Waiting for subscription to be active", "name", subscription.Name,
@@ -337,7 +337,7 @@ func (r *Reconciler) syncConditionSubscriptionActive(subscription *eventingv1alp
 		message := "Waiting for subscription to be active"
 		condition = eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 			eventingv1alpha2.ConditionReasonSubscriptionNotActive,
-			corev1.ConditionFalse,
+			kcorev1.ConditionFalse,
 			message)
 	}
 	replaceStatusCondition(subscription, condition)
@@ -347,13 +347,13 @@ func (r *Reconciler) syncConditionSubscriptionActive(subscription *eventingv1alp
 // checks if the last webhook call returned an error.
 func syncConditionWebhookCallStatus(subscription *eventingv1alpha2.Subscription) {
 	condition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionWebhookCallStatus,
-		eventingv1alpha2.ConditionReasonWebhookCallStatus, corev1.ConditionFalse, "")
+		eventingv1alpha2.ConditionReasonWebhookCallStatus, kcorev1.ConditionFalse, "")
 	if isWebhookCallError, err := checkLastFailedDelivery(subscription); err != nil {
 		condition.Message = err.Error()
 	} else if isWebhookCallError {
 		condition.Message = subscription.Status.Backend.EventMeshSubscriptionStatus.LastFailedDeliveryReason
 	} else {
-		condition.Status = corev1.ConditionTrue
+		condition.Status = kcorev1.ConditionTrue
 	}
 	replaceStatusCondition(subscription, condition)
 }
@@ -369,7 +369,7 @@ func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1al
 	if err != nil {
 		events.Warn(r.recorder, subscription, events.ReasonValidationFailed,
 			"Parse sink URI failed %s", subscription.Spec.Sink)
-		return nil, recerrors.NewSkippable(xerrors.Errorf("failed to parse sink URL: %v", err))
+		return nil, controllererrors.NewSkippable(xerrors.Errorf("failed to parse sink URL: %v", err))
 	}
 
 	apiRule, err := r.createOrUpdateAPIRule(ctx, subscription, *sURL, logger)
@@ -393,7 +393,7 @@ func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1al
 		return apiRule, nil
 	}
 
-	return apiRule, recerrors.NewSkippable(errors.Errorf("apiRule %s is not ready", apiRule.Name))
+	return apiRule, controllererrors.NewSkippable(errors.Errorf("apiRule %s is not ready", apiRule.Name))
 }
 
 // createOrUpdateAPIRule create new or update existing APIRule for the given subscription.
@@ -481,16 +481,16 @@ func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *ev
 
 	// get the previous APIRule
 	previousAPIRule := &apigatewayv1beta1.APIRule{}
-	key := k8stypes.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Status.Backend.APIRuleName}
+	key := ktypes.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Status.Backend.APIRuleName}
 	if err := r.Client.Get(ctx, key, previousAPIRule); err != nil {
-		if !k8serrors.IsNotFound(err) {
+		if !kerrors.IsNotFound(err) {
 			return err
 		}
 		return nil
 	}
 
 	// build a new OwnerReference list and exclude the current subscription from the list (if exists)
-	ownerReferences := make([]v1.OwnerReference, 0, len(previousAPIRule.OwnerReferences))
+	ownerReferences := make([]kmetav1.OwnerReference, 0, len(previousAPIRule.OwnerReferences))
 	for _, ownerReference := range previousAPIRule.OwnerReferences {
 		if ownerReference.UID != subscription.UID {
 			ownerReferences = append(ownerReferences, ownerReference)
@@ -622,7 +622,7 @@ func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string
 func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]string, svcNs string) ([]apigatewayv1beta1.APIRule, error) {
 	existingAPIRules := &apigatewayv1beta1.APIRuleList{}
 	err := r.Client.List(ctx, existingAPIRules, &client.ListOptions{
-		LabelSelector: k8slabels.SelectorFromSet(labels),
+		LabelSelector: klabels.SelectorFromSet(labels),
 		Namespace:     svcNs,
 	})
 	if err != nil {
@@ -712,7 +712,7 @@ func replaceStatusCondition(subscription *eventingv1alpha2.Subscription,
 			chosenCondition = c
 		}
 		desiredConditions = append(desiredConditions, chosenCondition)
-		if string(chosenCondition.Status) != string(v1.ConditionTrue) {
+		if string(chosenCondition.Status) != string(kmetav1.ConditionTrue) {
 			isReady = false
 		}
 	}
@@ -730,15 +730,15 @@ func replaceStatusCondition(subscription *eventingv1alpha2.Subscription,
 
 // emitConditionEvent emits a kubernetes event and sets the event type based on the Condition status.
 func (r *Reconciler) emitConditionEvent(subscription *eventingv1alpha2.Subscription, condition eventingv1alpha2.Condition) {
-	eventType := corev1.EventTypeNormal
-	if condition.Status == corev1.ConditionFalse {
-		eventType = corev1.EventTypeWarning
+	eventType := kcorev1.EventTypeNormal
+	if condition.Status == kcorev1.ConditionFalse {
+		eventType = kcorev1.EventTypeWarning
 	}
 	r.recorder.Event(subscription, eventType, string(condition.Reason), condition.Message)
 }
 
 // SetupUnmanaged creates a controller under the client control.
-func (r *Reconciler) SetupUnmanaged(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupUnmanaged(mgr kctrl.Manager) error {
 	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return fmt.Errorf("failed to create unmanaged controller: %w", err)

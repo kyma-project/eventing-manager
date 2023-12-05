@@ -6,10 +6,10 @@ import (
 
 	"k8s.io/client-go/dynamic"
 
-	ecv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
-	ecv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -52,19 +52,19 @@ func GetK8sClients() (*kubernetes.Clientset, client.Client, *dynamic.DynamicClie
 	}
 
 	// add Subscription v1alpha1 CRD to the scheme.
-	err = ecv1alpha1.AddToScheme(scheme.Scheme)
+	err = eventingv1alpha1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	// add Subscription v1alpha2 CRD to the scheme.
-	err = ecv1alpha2.AddToScheme(scheme.Scheme)
+	err = eventingv1alpha2.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	// We need to add the Eventing CRD to the scheme, so we can create a client that can access Eventing objects.
-	err = eventingv1alpha1.AddToScheme(scheme.Scheme)
+	err = operatorv1alpha1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, nil, nil, err
 	}

@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
-	evtesting "github.com/kyma-project/eventing-manager/testing"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 // TestJetStreamSubAfterSync_SinkChange tests the SyncSubscription method
@@ -35,19 +35,19 @@ func TestJetStreamSubAfterSync_SinkChange(t *testing.T) {
 	require.NoError(t, initErr)
 
 	// create New Subscribers
-	subscriber1 := evtesting.NewSubscriber()
+	subscriber1 := eventingtesting.NewSubscriber()
 	defer subscriber1.Shutdown()
 	require.True(t, subscriber1.IsRunning())
-	subscriber2 := evtesting.NewSubscriber()
+	subscriber2 := eventingtesting.NewSubscriber()
 	defer subscriber2.Shutdown()
 	require.True(t, subscriber2.IsRunning())
 
 	// create a new Subscription
-	sub := evtesting.NewSubscription("sub", "foo",
-		evtesting.WithNotCleanEventSourceAndType(),
-		evtesting.WithSinkURL(subscriber1.SinkURL),
-		evtesting.WithTypeMatchingStandard(),
-		evtesting.WithMaxInFlight(DefaultMaxInFlights),
+	sub := eventingtesting.NewSubscription("sub", "foo",
+		eventingtesting.WithNotCleanEventSourceAndType(),
+		eventingtesting.WithSinkURL(subscriber1.SinkURL),
+		eventingtesting.WithTypeMatchingStandard(),
+		eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
 	)
 	AddJSCleanEventTypesToStatus(sub, testEnvironment.cleaner)
 
@@ -67,10 +67,10 @@ func TestJetStreamSubAfterSync_SinkChange(t *testing.T) {
 	require.NoError(t,
 		SendCloudEventToJetStream(jsBackend,
 			jsBackend.GetJetStreamSubject(sub.Spec.Source, subject, sub.Spec.TypeMatching),
-			evtesting.CloudEventData,
+			eventingtesting.CloudEventData,
 			types.ContentModeBinary),
 	)
-	require.NoError(t, subscriber1.CheckEvent(evtesting.CloudEventData))
+	require.NoError(t, subscriber1.CheckEvent(eventingtesting.CloudEventData))
 
 	// set metadata on NATS subscriptions
 	msgLimit, bytesLimit := 2048, 2048
@@ -111,13 +111,13 @@ func TestJetStreamSubAfterSync_SinkChange(t *testing.T) {
 	require.NoError(t,
 		SendCloudEventToJetStream(jsBackend,
 			jsBackend.GetJetStreamSubject(sub.Spec.Source, subject, sub.Spec.TypeMatching),
-			evtesting.CloudEventData,
+			eventingtesting.CloudEventData,
 			types.ContentModeBinary),
 	)
 
 	// Old sink should not have received the event, the new sink should have
-	require.Error(t, subscriber1.CheckEvent(evtesting.CloudEventData))
-	require.NoError(t, subscriber2.CheckEvent(evtesting.CloudEventData))
+	require.Error(t, subscriber1.CheckEvent(eventingtesting.CloudEventData))
+	require.NoError(t, subscriber2.CheckEvent(eventingtesting.CloudEventData))
 }
 
 // TestMultipleJSSubscriptionsToSameEvent tests the behaviour of JS
@@ -131,18 +131,18 @@ func TestMultipleJSSubscriptionsToSameEvent(t *testing.T) {
 	initErr := jsBackend.Initialize(nil)
 	require.NoError(t, initErr)
 
-	subscriber := evtesting.NewSubscriber()
+	subscriber := eventingtesting.NewSubscriber()
 	defer subscriber.Shutdown()
 	require.True(t, subscriber.IsRunning())
 
 	// Create 3 subscriptions having the same sink and the same event type
 	var subs [3]*eventingv1alpha2.Subscription
 	for i := 0; i < len(subs); i++ {
-		subs[i] = evtesting.NewSubscription(fmt.Sprintf("sub-%d", i), "foo",
-			evtesting.WithSourceAndType(evtesting.EventSource, evtesting.OrderCreatedEventType),
-			evtesting.WithSinkURL(subscriber.SinkURL),
-			evtesting.WithTypeMatchingStandard(),
-			evtesting.WithMaxInFlight(DefaultMaxInFlights),
+		subs[i] = eventingtesting.NewSubscription(fmt.Sprintf("sub-%d", i), "foo",
+			eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+			eventingtesting.WithSinkURL(subscriber.SinkURL),
+			eventingtesting.WithTypeMatchingStandard(),
+			eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
 		)
 		AddJSCleanEventTypesToStatus(subs[i], testEnvironment.cleaner)
 		// when
@@ -154,15 +154,15 @@ func TestMultipleJSSubscriptionsToSameEvent(t *testing.T) {
 	// Send only one event. It should be multiplexed to 3 by NATS, cause 3 subscriptions exist
 	require.NoError(t,
 		SendCloudEventToJetStream(jsBackend,
-			jsBackend.GetJetStreamSubject(evtesting.EventSource,
-				evtesting.OrderCreatedEventType,
+			jsBackend.GetJetStreamSubject(eventingtesting.EventSource,
+				eventingtesting.OrderCreatedEventType,
 				eventingv1alpha2.TypeMatchingStandard),
-			evtesting.CloudEventData,
+			eventingtesting.CloudEventData,
 			types.ContentModeBinary),
 	)
 	// Check for the 3 events that should be received by the subscriber
 	for i := 0; i < len(subs); i++ {
-		require.NoError(t, subscriber.CheckEvent(evtesting.CloudEventData))
+		require.NoError(t, subscriber.CheckEvent(eventingtesting.CloudEventData))
 	}
 	// Delete all 3 subscription
 	for i := 0; i < len(subs); i++ {
@@ -172,15 +172,15 @@ func TestMultipleJSSubscriptionsToSameEvent(t *testing.T) {
 	// Send an event again which should not be delivered to subscriber
 	require.NoError(t,
 		SendCloudEventToJetStream(jsBackend,
-			jsBackend.GetJetStreamSubject(evtesting.EventSource,
-				evtesting.OrderCreatedEventType, eventingv1alpha2.TypeMatchingStandard),
-			evtesting.CloudEventData2,
+			jsBackend.GetJetStreamSubject(eventingtesting.EventSource,
+				eventingtesting.OrderCreatedEventType, eventingv1alpha2.TypeMatchingStandard),
+			eventingtesting.CloudEventData2,
 			types.ContentModeBinary),
 	)
 	// Check for the event that did not reach the subscriber
 	// Store should never return evtesting.CloudEventData2
 	// hence CheckEvent should fail to match evtesting.CloudEventData2
-	require.Error(t, subscriber.CheckEvent(evtesting.CloudEventData2))
+	require.Error(t, subscriber.CheckEvent(eventingtesting.CloudEventData2))
 }
 
 // TestJSSubscriptionRedeliverWithFailedDispatch tests the redelivering
@@ -195,16 +195,16 @@ func TestJSSubscriptionRedeliverWithFailedDispatch(t *testing.T) {
 	require.NoError(t, initErr)
 
 	// create New Subscriber
-	subscriber := evtesting.NewSubscriber()
+	subscriber := eventingtesting.NewSubscriber()
 	subscriber.Shutdown() // shutdown the subscriber intentionally
 	require.False(t, subscriber.IsRunning())
 
 	// create a new Subscription
-	sub := evtesting.NewSubscription("sub", "foo",
-		evtesting.WithSourceAndType(evtesting.EventSource, evtesting.OrderCreatedCleanEvent),
-		evtesting.WithSinkURL(subscriber.SinkURL),
-		evtesting.WithTypeMatchingExact(),
-		evtesting.WithMaxInFlight(DefaultMaxInFlights),
+	sub := eventingtesting.NewSubscription("sub", "foo",
+		eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedCleanEvent),
+		eventingtesting.WithSinkURL(subscriber.SinkURL),
+		eventingtesting.WithTypeMatchingExact(),
+		eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
 	)
 	AddJSCleanEventTypesToStatus(sub, testEnvironment.cleaner)
 
@@ -219,20 +219,20 @@ func TestJSSubscriptionRedeliverWithFailedDispatch(t *testing.T) {
 
 	require.NoError(t,
 		SendCloudEventToJetStream(jsBackend,
-			jsBackend.GetJetStreamSubject(evtesting.EventSource,
-				evtesting.OrderCreatedCleanEvent,
+			jsBackend.GetJetStreamSubject(eventingtesting.EventSource,
+				eventingtesting.OrderCreatedCleanEvent,
 				eventingv1alpha2.TypeMatchingExact),
-			evtesting.CloudEventData,
+			eventingtesting.CloudEventData,
 			types.ContentModeBinary),
 	)
 
 	// then
 	// it should have failed to dispatch
-	require.Error(t, subscriber.CheckEvent(evtesting.CloudEventData))
+	require.Error(t, subscriber.CheckEvent(eventingtesting.CloudEventData))
 
 	// when
 	// start a new subscriber
-	subscriber = evtesting.NewSubscriber()
+	subscriber = eventingtesting.NewSubscriber()
 	defer subscriber.Shutdown()
 	require.True(t, subscriber.IsRunning())
 	// and update sink in the subscription
@@ -242,7 +242,7 @@ func TestJSSubscriptionRedeliverWithFailedDispatch(t *testing.T) {
 	// then
 	// the same event should be redelivered
 	require.Eventually(t, func() bool {
-		return subscriber.CheckEvent(evtesting.CloudEventData) == nil
+		return subscriber.CheckEvent(eventingtesting.CloudEventData) == nil
 	}, 60*time.Second, 5*time.Second)
 }
 
@@ -254,7 +254,7 @@ func TestJetStreamSubAfterSync_DeleteOldFilterConsumerForTypeChangeWhileNatsDown
 	testEnv := prepareTestEnvironment(t)
 	defer cleanUpTestEnvironment(testEnv)
 	// create a subscriber
-	subscriber := evtesting.NewSubscriber()
+	subscriber := eventingtesting.NewSubscriber()
 	require.True(t, subscriber.IsRunning())
 	defer subscriber.Shutdown()
 	// create subscription and make sure it is functioning
@@ -302,13 +302,13 @@ func prepareTestEnvironment(t *testing.T) *TestEnvironment {
 
 func createSubscriptionAndAssert(t *testing.T,
 	testEnv *TestEnvironment,
-	subscriber *evtesting.Subscriber) (SubscriptionSubjectIdentifier, *eventingv1alpha2.Subscription) {
-	sub := evtesting.NewSubscription("sub", "foo",
-		evtesting.WithCleanEventSourceAndType(),
-		evtesting.WithNotCleanEventSourceAndType(),
-		evtesting.WithSinkURL(subscriber.SinkURL),
-		evtesting.WithTypeMatchingStandard(),
-		evtesting.WithMaxInFlight(DefaultMaxInFlights),
+	subscriber *eventingtesting.Subscriber) (SubscriptionSubjectIdentifier, *eventingv1alpha2.Subscription) {
+	sub := eventingtesting.NewSubscription("sub", "foo",
+		eventingtesting.WithCleanEventSourceAndType(),
+		eventingtesting.WithNotCleanEventSourceAndType(),
+		eventingtesting.WithSinkURL(subscriber.SinkURL),
+		eventingtesting.WithTypeMatchingStandard(),
+		eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
 	)
 	AddJSCleanEventTypesToStatus(sub, testEnv.cleaner)
 
@@ -339,9 +339,9 @@ func deleteSecondFilter(testEnv *TestEnvironment, sub *eventingv1alpha2.Subscrip
 }
 
 func startJetStream(t *testing.T, testEnv *TestEnvironment) {
-	_ = evtesting.RunNatsServerOnPort(
-		evtesting.WithPort(testEnv.natsPort),
-		evtesting.WithJetStreamEnabled())
+	_ = eventingtesting.RunNatsServerOnPort(
+		eventingtesting.WithPort(testEnv.natsPort),
+		eventingtesting.WithJetStreamEnabled())
 	require.Eventually(t, func() bool {
 		info, streamErr := testEnv.jsClient.StreamInfo(testEnv.natsConfig.JSStreamName)
 		require.NoError(t, streamErr)
@@ -384,13 +384,13 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 	require.NoError(t, initErr)
 
 	// create New Subscriber
-	subscriber := evtesting.NewSubscriber()
+	subscriber := eventingtesting.NewSubscriber()
 	defer subscriber.Shutdown()
 	require.True(t, subscriber.IsRunning())
 
 	testCases := []struct {
 		name                            string
-		subOpts                         []evtesting.SubscriptionOpt
+		subOpts                         []eventingtesting.SubscriptionOpt
 		givenManuallyDeleteSubscription bool
 		givenFilterToDelete             string
 		wantNatsSubsLen                 int
@@ -398,11 +398,11 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 	}{
 		{
 			name: "No error should happen, when there is only one type",
-			subOpts: []evtesting.SubscriptionOpt{
-				evtesting.WithSinkURL(subscriber.SinkURL),
-				evtesting.WithNotCleanEventSourceAndType(),
-				evtesting.WithTypeMatchingStandard(),
-				evtesting.WithMaxInFlight(DefaultMaxInFlights),
+			subOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithSinkURL(subscriber.SinkURL),
+				eventingtesting.WithNotCleanEventSourceAndType(),
+				eventingtesting.WithTypeMatchingStandard(),
+				eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
 			},
 			givenManuallyDeleteSubscription: false,
 			wantNatsSubsLen:                 1,
@@ -410,11 +410,11 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 		},
 		{
 			name: "No error expected when js.subscriptions map has entries for all the eventTypes",
-			subOpts: []evtesting.SubscriptionOpt{
-				evtesting.WithNotCleanEventSourceAndType(),
-				evtesting.WithCleanEventTypeOld(),
-				evtesting.WithTypeMatchingStandard(),
-				evtesting.WithMaxInFlight(DefaultMaxInFlights),
+			subOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithNotCleanEventSourceAndType(),
+				eventingtesting.WithCleanEventTypeOld(),
+				eventingtesting.WithTypeMatchingStandard(),
+				eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
 			},
 			givenManuallyDeleteSubscription: false,
 			wantNatsSubsLen:                 2,
@@ -422,14 +422,14 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 		},
 		{
 			name: "An error is expected, when we manually delete a subscription from js.subscriptions map",
-			subOpts: []evtesting.SubscriptionOpt{
-				evtesting.WithNotCleanEventSourceAndType(),
-				evtesting.WithCleanEventTypeOld(),
-				evtesting.WithTypeMatchingStandard(),
-				evtesting.WithMaxInFlight(DefaultMaxInFlights),
+			subOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithNotCleanEventSourceAndType(),
+				eventingtesting.WithCleanEventTypeOld(),
+				eventingtesting.WithTypeMatchingStandard(),
+				eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
 			},
 			givenManuallyDeleteSubscription: true,
-			givenFilterToDelete:             evtesting.OrderCreatedEventType,
+			givenFilterToDelete:             eventingtesting.OrderCreatedEventType,
 			wantNatsSubsLen:                 2,
 			wantErr:                         ErrMissingSubscription,
 		},
@@ -438,7 +438,7 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// create a new subscription with no filters
-			sub := evtesting.NewSubscription("sub"+fmt.Sprint(i), "foo",
+			sub := eventingtesting.NewSubscription("sub"+fmt.Sprint(i), "foo",
 				tc.subOpts...,
 			)
 			AddJSCleanEventTypesToStatus(sub, testEnvironment.cleaner)
@@ -476,7 +476,7 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 // for scenarios involving the stream storage type and when reconnect attempts are exhausted or not.
 func TestJetStream_ServerRestart(t *testing.T) {
 	// given
-	subscriber := evtesting.NewSubscriber()
+	subscriber := eventingtesting.NewSubscriber()
 	defer subscriber.Shutdown()
 	require.True(t, subscriber.IsRunning())
 
@@ -523,11 +523,11 @@ func TestJetStream_ServerRestart(t *testing.T) {
 
 			// Create a subscription
 			subName := fmt.Sprintf("%s%d", "sub", id)
-			subv2 := evtesting.NewSubscription(subName, "foo",
-				evtesting.WithNotCleanEventSourceAndType(),
-				evtesting.WithSinkURL(subscriber.SinkURL),
-				evtesting.WithTypeMatchingStandard(),
-				evtesting.WithMaxInFlight(DefaultMaxInFlights),
+			subv2 := eventingtesting.NewSubscription(subName, "foo",
+				eventingtesting.WithNotCleanEventSourceAndType(),
+				eventingtesting.WithSinkURL(subscriber.SinkURL),
+				eventingtesting.WithTypeMatchingStandard(),
+				eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
 			)
 			AddJSCleanEventTypesToStatus(subv2, testEnvironment.cleaner)
 
@@ -549,9 +549,9 @@ func TestJetStream_ServerRestart(t *testing.T) {
 			}, 30*time.Second, 2*time.Second)
 
 			// when
-			_ = evtesting.RunNatsServerOnPort(
-				evtesting.WithPort(testEnvironment.natsPort),
-				evtesting.WithJetStreamEnabled())
+			_ = eventingtesting.RunNatsServerOnPort(
+				eventingtesting.WithPort(testEnvironment.natsPort),
+				eventingtesting.WithJetStreamEnabled())
 
 			// then
 			if tc.givenMaxReconnects > 0 {
@@ -591,7 +591,7 @@ func TestJetStream_ServerRestart(t *testing.T) {
 // when the sink is down reach the subscriber even when the NATS server is restarted.
 func TestJetStream_ServerAndSinkRestart(t *testing.T) {
 	// given
-	subscriber := evtesting.NewSubscriber()
+	subscriber := eventingtesting.NewSubscriber()
 	defer subscriber.Shutdown()
 	require.True(t, subscriber.IsRunning())
 	listener := subscriber.GetSubscriberListener()
@@ -608,11 +608,11 @@ func TestJetStream_ServerAndSinkRestart(t *testing.T) {
 	err = testEnvironment.jsBackend.Initialize(nil)
 	require.NoError(t, err)
 
-	subv2 := evtesting.NewSubscription("sub", "foo",
-		evtesting.WithNotCleanEventSourceAndType(),
-		evtesting.WithSinkURL(subscriber.SinkURL),
-		evtesting.WithTypeMatchingStandard(),
-		evtesting.WithMaxInFlight(DefaultMaxInFlights),
+	subv2 := eventingtesting.NewSubscription("sub", "foo",
+		eventingtesting.WithNotCleanEventSourceAndType(),
+		eventingtesting.WithSinkURL(subscriber.SinkURL),
+		eventingtesting.WithTypeMatchingStandard(),
+		eventingtesting.WithMaxInFlight(DefaultMaxInFlights),
 	)
 	AddJSCleanEventTypesToStatus(subv2, testEnvironment.cleaner)
 
@@ -650,9 +650,9 @@ func TestJetStream_ServerAndSinkRestart(t *testing.T) {
 
 	// when
 	// restart the NATS server
-	_ = evtesting.RunNatsServerOnPort(
-		evtesting.WithPort(testEnvironment.natsPort),
-		evtesting.WithJetStreamEnabled())
+	_ = eventingtesting.RunNatsServerOnPort(
+		eventingtesting.WithPort(testEnvironment.natsPort),
+		eventingtesting.WithJetStreamEnabled())
 	// the unacknowledged message must still be present in the stream
 	require.Eventually(t, func() bool {
 		info, err = testEnvironment.jsClient.StreamInfo(testEnvironment.natsConfig.JSStreamName)
@@ -665,7 +665,7 @@ func TestJetStream_ServerAndSinkRestart(t *testing.T) {
 	// restart the subscriber
 	listener, err = net.Listen(listenerNetwork, listenerAddress)
 	require.NoError(t, err)
-	newSubscriber := evtesting.NewSubscriber(evtesting.WithListener(listener))
+	newSubscriber := eventingtesting.NewSubscriber(eventingtesting.WithListener(listener))
 	defer newSubscriber.Shutdown()
 	require.True(t, newSubscriber.IsRunning())
 
@@ -714,7 +714,7 @@ func getJetStreamClient(t *testing.T, serverURL string) *jetStreamClient {
 
 // setupTestEnvironment is a TestEnvironment constructor.
 func setupTestEnvironment(t *testing.T) *TestEnvironment {
-	natsServer, natsPort, err := StartNATSServer(evtesting.WithJetStreamEnabled())
+	natsServer, natsPort, err := StartNATSServer(eventingtesting.WithJetStreamEnabled())
 	require.NoError(t, err)
 	natsConfig := defaultNATSConfig(natsServer.ClientURL(), natsPort)
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))

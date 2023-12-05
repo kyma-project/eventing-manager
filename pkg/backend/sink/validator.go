@@ -3,14 +3,15 @@ package sink
 import (
 	"context"
 
-	corev1 "k8s.io/api/core/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
+	kcorev1 "k8s.io/api/core/v1"
+	ktypes "k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/eventing-manager/pkg/utils"
 	"golang.org/x/xerrors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
@@ -50,7 +51,7 @@ func (s defaultSinkValidator) Validate(subscription *v1alpha2.Subscription) erro
 
 	// Validate svc is a cluster-local one
 	if _, err := GetClusterLocalService(s.ctx, s.client, svcNs, svcName); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			events.Warn(s.recorder, subscription, events.ReasonValidationFailed, "Sink does not correspond to a valid cluster local svc")
 			return xerrors.Errorf("failed to validate subscription sink URL. It is not a valid cluster local svc: %v", err)
 		}
@@ -62,9 +63,9 @@ func (s defaultSinkValidator) Validate(subscription *v1alpha2.Subscription) erro
 	return nil
 }
 
-func GetClusterLocalService(ctx context.Context, client client.Client, svcNs, svcName string) (*corev1.Service, error) {
-	svcLookupKey := k8stypes.NamespacedName{Name: svcName, Namespace: svcNs}
-	svc := &corev1.Service{}
+func GetClusterLocalService(ctx context.Context, client client.Client, svcNs, svcName string) (*kcorev1.Service, error) {
+	svcLookupKey := ktypes.NamespacedName{Name: svcName, Namespace: svcNs}
+	svc := &kcorev1.Service{}
 	if err := client.Get(ctx, svcLookupKey, svc); err != nil {
 		return nil, err
 	}

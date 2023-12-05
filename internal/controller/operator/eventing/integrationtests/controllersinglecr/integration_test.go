@@ -7,20 +7,21 @@ import (
 
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 
-	integrationutils "github.com/kyma-project/eventing-manager/test/utils/integration"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
+
+	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 
 const (
 	projectRootDir = "../../../../../../"
 )
 
-var testEnvironment *integrationutils.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
 
 // define allowed Eventing CR.
 //
@@ -37,7 +38,7 @@ func TestMain(m *testing.M) {
 
 	// setup env test
 	var err error
-	testEnvironment, err = integrationutils.NewTestEnvironment(integrationutils.TestEnvironmentConfig{
+	testEnvironment, err = testutilsintegration.NewTestEnvironment(testutilsintegration.TestEnvironmentConfig{
 		ProjectRootDir:            projectRootDir,
 		CELValidationEnabled:      false,
 		APIRuleCRDEnabled:         true,
@@ -70,7 +71,7 @@ func Test_PreventMultipleEventingCRs(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		givenEventing *eventingv1alpha1.Eventing
+		givenEventing *operatorv1alpha1.Eventing
 		wantMatches   gomegatypes.GomegaMatcher
 	}{
 		{

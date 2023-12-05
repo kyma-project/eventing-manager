@@ -5,7 +5,7 @@
 package cloudevent
 
 import (
-	cev2 "github.com/cloudevents/sdk-go/v2"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/protocol/http"
 )
 
@@ -18,11 +18,11 @@ type ClientFactory struct{}
 
 // NewHTTP creates a cloudevent client at the HTTP protocol level.
 func (c ClientFactory) NewHTTP(opts ...http.Option) (Client, error) {
-	ceClient, err := cev2.NewClientHTTP(opts...)
+	ceClient, err := cloudevents.NewClientHTTP(opts...)
 	return Client{ceClient}, err
 }
 
 // Client is a wrapper over cev2.Client.
 type Client struct {
-	cev2.Client
+	cloudevents.Client
 }

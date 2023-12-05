@@ -3,14 +3,15 @@ package object
 import (
 	"reflect"
 
-	appsv1 "k8s.io/api/apps/v1"
-	v2 "k8s.io/api/autoscaling/v2"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kautoscalingv2 "k8s.io/api/autoscaling/v2"
+	kcorev1 "k8s.io/api/core/v1"
+	krbacv1 "k8s.io/api/rbac/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
@@ -26,7 +27,7 @@ var Semantic = conversion.EqualitiesOrDie(
 	hpaEqual,
 )
 
-func serviceAccountEqual(a, b *corev1.ServiceAccount) bool {
+func serviceAccountEqual(a, b *kcorev1.ServiceAccount) bool {
 	if a == b {
 		return true
 	}
@@ -49,7 +50,7 @@ func serviceAccountEqual(a, b *corev1.ServiceAccount) bool {
 	return true
 }
 
-func clusterRoleEqual(a, b *rbacv1.ClusterRole) bool {
+func clusterRoleEqual(a, b *krbacv1.ClusterRole) bool {
 	if a == b {
 		return true
 	}
@@ -75,7 +76,7 @@ func clusterRoleEqual(a, b *rbacv1.ClusterRole) bool {
 	return true
 }
 
-func serviceEqual(a, b *corev1.Service) bool {
+func serviceEqual(a, b *kcorev1.Service) bool {
 	if a == b {
 		return true
 	}
@@ -94,7 +95,7 @@ func serviceEqual(a, b *corev1.Service) bool {
 	return reflect.DeepEqual(a.Spec.Ports, b.Spec.Ports)
 }
 
-func hpaEqual(a, b *v2.HorizontalPodAutoscaler) bool {
+func hpaEqual(a, b *kautoscalingv2.HorizontalPodAutoscaler) bool {
 	if a == b {
 		return true
 	}
@@ -125,7 +126,7 @@ func hpaEqual(a, b *v2.HorizontalPodAutoscaler) bool {
 	return true
 }
 
-func clusterRoleBindingEqual(a, b *rbacv1.ClusterRoleBinding) bool {
+func clusterRoleBindingEqual(a, b *krbacv1.ClusterRoleBinding) bool {
 	if a == b {
 		return true
 	}
@@ -185,7 +186,7 @@ func apiRuleEqual(a1, a2 *apigatewayv1beta1.APIRule) bool {
 	return true
 }
 
-func ownerReferencesDeepEqual(ors1, ors2 []v1.OwnerReference) bool {
+func ownerReferencesDeepEqual(ors1, ors2 []kmetav1.OwnerReference) bool {
 	if len(ors1) != len(ors2) {
 		return false
 	}
@@ -209,7 +210,7 @@ func ownerReferencesDeepEqual(ors1, ors2 []v1.OwnerReference) bool {
 
 // publisherProxyDeploymentEqual asserts the equality of two Deployment objects
 // for event publisher proxy deployments.
-func publisherProxyDeploymentEqual(d1, d2 *appsv1.Deployment) bool {
+func publisherProxyDeploymentEqual(d1, d2 *kappsv1.Deployment) bool {
 	if d1 == nil || d2 == nil {
 		return false
 	}
@@ -245,7 +246,7 @@ func mapDeepEqual(m1, m2 map[string]string) bool {
 }
 
 // podSpecEqual asserts the equality of two PodSpec objects.
-func podSpecEqual(ps1, ps2 *corev1.PodSpec) bool {
+func podSpecEqual(ps1, ps2 *kcorev1.PodSpec) bool {
 	if ps1 == nil || ps2 == nil {
 		return false
 	}
@@ -267,7 +268,7 @@ func podSpecEqual(ps1, ps2 *corev1.PodSpec) bool {
 }
 
 // containerEqual asserts the equality of two Container objects.
-func containerEqual(c1, c2 *corev1.Container) bool {
+func containerEqual(c1, c2 *kcorev1.Container) bool {
 	if c1 == nil || c2 == nil {
 		return false
 	}
@@ -308,7 +309,7 @@ func containerEqual(c1, c2 *corev1.Container) bool {
 
 // envEqual asserts the equality of two core environment slices. It's used
 // by containerEqual.
-func envEqual(e1, e2 []corev1.EnvVar) bool {
+func envEqual(e1, e2 []kcorev1.EnvVar) bool {
 	if len(e1) != len(e2) {
 		return false
 	}
@@ -334,7 +335,7 @@ func envEqual(e1, e2 []corev1.EnvVar) bool {
 
 // probeEqual asserts the equality of two Probe objects. It's used by
 // containerEqual.
-func probeEqual(p1, p2 *corev1.Probe) bool {
+func probeEqual(p1, p2 *kcorev1.Probe) bool {
 	if p1 == p2 {
 		return true
 	}
@@ -358,7 +359,7 @@ func probeEqual(p1, p2 *corev1.Probe) bool {
 
 // handlerEqual asserts the equality of two Handler objects. It's used
 // by probeEqual.
-func handlerEqual(h1, h2 *corev1.ProbeHandler) bool {
+func handlerEqual(h1, h2 *kcorev1.ProbeHandler) bool {
 	if h1 == h2 {
 		return true
 	}
@@ -385,9 +386,9 @@ func handlerEqual(h1, h2 *corev1.ProbeHandler) bool {
 
 // realProto ensures the Protocol, which by default is TCP. We assume empty equals TCP.
 // https://godoc.org/k8s.io/api/core/v1#ServicePort
-func realProto(pr corev1.Protocol) corev1.Protocol {
+func realProto(pr kcorev1.Protocol) kcorev1.Protocol {
 	if pr == "" {
-		return corev1.ProtocolTCP
+		return kcorev1.ProtocolTCP
 	}
 	return pr
 }

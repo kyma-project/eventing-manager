@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"testing"
 
-	pkgerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/stretchr/testify/assert"
+
+	emerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 )
 
-var errInvalidStorageType = pkgerrors.NewArgumentError("invalid stream storage type: %q")
+var errInvalidStorageType = emerrors.NewArgumentError("invalid stream storage type: %q")
 
 func ExampleMakeError() {
 	actualError := errors.New("failed to connect to NATS")
 	underlyingError := errors.New("some error coming from the NATS package")
-	fmt.Println(pkgerrors.MakeError(actualError, underlyingError))
+	fmt.Println(emerrors.MakeError(actualError, underlyingError))
 	// Output: failed to connect to NATS: some error coming from the NATS package
 }
 

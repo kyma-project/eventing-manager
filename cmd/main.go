@@ -23,15 +23,16 @@ import (
 	"os"
 
 	"github.com/go-logr/zapr"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kapixclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	kutilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	subscriptionv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
-	subscriptionv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	controllercache "github.com/kyma-project/eventing-manager/internal/controller/cache"
 	controllerclient "github.com/kyma-project/eventing-manager/internal/controller/client"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
@@ -39,7 +40,7 @@ import (
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
-	istiopeerauthentication "github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
+	"github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
@@ -48,36 +49,36 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	"k8s.io/client-go/dynamic"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
 var (
 	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	setupLog = kctrl.Log.WithName("setup")
 )
 
 func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	kutilruntime.Must(kkubernetesscheme.AddToScheme(scheme))
 
-	utilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
+	kutilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 
-	utilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
+	kutilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
 
-	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
+	kutilruntime.Must(kapiextensionsv1.AddToScheme(scheme))
 
-	utilruntime.Must(jetstream.AddToScheme(scheme))
-	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
-	utilruntime.Must(subscriptionv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(subscriptionv1alpha2.AddToScheme(scheme))
+	kutilruntime.Must(jetstream.AddToScheme(scheme))
+	kutilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
+	kutilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
+	kutilruntime.Must(eventingv1alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -110,12 +111,12 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}()
 
 	// Set controller core logger.
-	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
+	kctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 
 	// setup ctrl manager
-	k8sRestCfg := ctrl.GetConfigOrDie()
+	k8sRestCfg := kctrl.GetConfigOrDie()
 
-	mgr, err := ctrl.NewManager(k8sRestCfg, ctrl.Options{
+	mgr, err := kctrl.NewManager(k8sRestCfg, kctrl.Options{
 		Scheme:                 scheme,
 		HealthProbeBindAddress: opts.ProbeAddr,
 		LeaderElection:         enableLeaderElection,
@@ -139,7 +140,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 
 	// init custom kube client wrapper
-	apiClientSet, err := apiclientset.NewForConfig(mgr.GetConfig())
+	apiClientSet, err := kapixclientset.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		setupLog.Error(err, "failed to create new k8s clientset")
 		os.Exit(1)
@@ -180,8 +181,8 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		backendConfig,
 		subManagerFactory,
 		opts,
-		&eventingv1alpha1.Eventing{
-			ObjectMeta: metav1.ObjectMeta{
+		&operatorv1alpha1.Eventing{
+			ObjectMeta: kmetav1.ObjectMeta{
 				Name:      backendConfig.EventingCRName,
 				Namespace: backendConfig.EventingCRNamespace,
 			},
@@ -195,18 +196,18 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	//+kubebuilder:scaffold:builder
 
 	// Setup webhooks.
-	if err = (&subscriptionv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&eventingv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
 		os.Exit(1)
 	}
 
-	if err = (&subscriptionv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
 		os.Exit(1)
 	}
 
 	// sync PeerAuthentications
-	err = istiopeerauthentication.SyncPeerAuthentications(ctx, kubeClient, ctrLogger.WithContext().Named("main"))
+	err = peerauthentication.SyncPeerAuthentications(ctx, kubeClient, ctrLogger.WithContext().Named("main"))
 	if err != nil {
 		setupLog.Error(err, "unable to sync PeerAuthentication")
 		os.Exit(1)
@@ -222,7 +223,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 
 	setupLog.Info("starting manager")
-	if err = mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err = mgr.Start(kctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
