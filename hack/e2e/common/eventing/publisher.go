@@ -113,6 +113,7 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 	ce := *event
 	newCtx := context.Background()
 	ctx := cloudevents.ContextWithTarget(newCtx, p.PublishEndpoint())
+	//nolint:exhaustive // we only support the two checked encodings. Every other encoding will result in an error.
 	switch encoding {
 	case binding.EncodingBinary:
 		{
