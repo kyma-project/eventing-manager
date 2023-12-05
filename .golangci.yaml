@@ -32,7 +32,6 @@ linters:
     - gocritic
     - godox
     - goerr113
-    - gofumpt
     - gomnd
     - gosec
     - inamedparam
