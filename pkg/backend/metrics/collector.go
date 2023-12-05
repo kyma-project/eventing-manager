@@ -141,7 +141,8 @@ func (c *Collector) RecordDeliveryPerSubscription(subscriptionName, subscription
 func (c *Collector) RecordLatencyPerSubscription(
 	duration time.Duration,
 	subscriptionName, subscriptionNamespace, eventType, consumerName, sink string,
-	statusCode int) {
+	statusCode int,
+) {
 	c.latencyPerSubscriber.WithLabelValues(
 		subscriptionName,
 		subscriptionNamespace,
@@ -158,7 +159,8 @@ func (c *Collector) RecordEventTypes(subscriptionName, subscriptionNamespace, ev
 
 // RecordSubscriptionStatus records an eventing_ec_subscription_status metric.
 func (c *Collector) RecordSubscriptionStatus(isActive bool, subscriptionName,
-	subscriptionNamespace, backendType, consumer, streamName string) {
+	subscriptionNamespace, backendType, consumer, streamName string,
+) {
 	var v float64
 	if isActive {
 		v = 1
@@ -174,7 +176,8 @@ func (c *Collector) RecordSubscriptionStatus(isActive bool, subscriptionName,
 
 // RemoveSubscriptionStatus removes an eventing_ec_subscription_status metric.
 func (c *Collector) RemoveSubscriptionStatus(subscriptionName, subscriptionNamespace,
-	backendType, consumer, streamName string) {
+	backendType, consumer, streamName string,
+) {
 	c.subscriptionStatus.Delete(prometheus.Labels{
 		subscriptionNameLabel:      subscriptionName,
 		subscriptionNamespaceLabel: subscriptionNamespace,

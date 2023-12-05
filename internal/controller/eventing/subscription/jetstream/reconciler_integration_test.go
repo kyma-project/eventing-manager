@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 
 func Test_ValidationWebhook(t *testing.T) {
 	t.Parallel()
-	var testCases = []struct {
+	testCases := []struct {
 		name                  string
 		givenSubscriptionOpts []eventingtesting.SubscriptionOpt
 		wantError             func(subName string) error
@@ -204,7 +204,7 @@ func Test_Idempotency(t *testing.T) {
 // TestCreateSubscription tests if subscriptions get created properly by the reconciler.
 func Test_CreateSubscription(t *testing.T) {
 	t.Parallel()
-	var testCases = []struct {
+	testCases := []struct {
 		name                  string
 		givenSubscriptionOpts []eventingtesting.SubscriptionOpt
 		want                  Want
@@ -266,7 +266,8 @@ func Test_CreateSubscription(t *testing.T) {
 						)),
 				},
 				K8sEvents: []kcorev1.Event{
-					EventInvalidSink("Sink does not correspond to a valid cluster local svc")},
+					EventInvalidSink("Sink does not correspond to a valid cluster local svc"),
+				},
 			},
 		},
 		{
@@ -332,7 +333,7 @@ func Test_CreateSubscription(t *testing.T) {
 // Test_ChangeSubscription tests if existing subscriptions are reconciled properly after getting changed.
 func Test_ChangeSubscription(t *testing.T) {
 	t.Parallel()
-	var testCases = []struct {
+	testCases := []struct {
 		name                  string
 		givenSubscriptionOpts []eventingtesting.SubscriptionOpt
 		wantBefore            Want

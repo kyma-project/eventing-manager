@@ -337,7 +337,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 
 	// Ensure reconciling the same Eventing CR multiple times does not update the EPP deployment.
 	const runs = 3
-	var resourceVersionBefore = eppDeployment.ObjectMeta.ResourceVersion
+	resourceVersionBefore := eppDeployment.ObjectMeta.ResourceVersion
 	for r := 0; r < runs; r++ {
 		////
 		// when

@@ -42,8 +42,8 @@ type Args struct {
 
 // Env represents the controller environment variables.
 type Env struct {
-	LogFormat string `envconfig:"APP_LOG_FORMAT" default:"json"`
-	LogLevel  string `envconfig:"APP_LOG_LEVEL" default:"warn"`
+	LogFormat string `default:"json" envconfig:"APP_LOG_FORMAT"`
+	LogLevel  string `default:"warn" envconfig:"APP_LOG_LEVEL"`
 }
 
 // New returns a new Options instance.

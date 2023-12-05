@@ -75,7 +75,8 @@ func GetExposedURLFromAPIRule(apiRule *apigatewayv1beta1.APIRule, targetURL stri
 
 // UpdateSubscriptionStatus updates the status of all Kyma subscriptions on k8s.
 func UpdateSubscriptionStatus(ctx context.Context, dClient dynamic.Interface,
-	sub *eventingv1alpha2.Subscription) error {
+	sub *eventingv1alpha2.Subscription,
+) error {
 	unstructuredObj, err := sub.ToUnstructuredSub()
 	if err != nil {
 		return errors.Wrap(err, "convert subscription to unstructured failed")
@@ -90,7 +91,8 @@ func UpdateSubscriptionStatus(ctx context.Context, dClient dynamic.Interface,
 
 // LoggerWithSubscription returns a logger with the given subscription (v1alpha2) details.
 func LoggerWithSubscription(log *zap.SugaredLogger,
-	subscription *eventingv1alpha2.Subscription) *zap.SugaredLogger {
+	subscription *eventingv1alpha2.Subscription,
+) *zap.SugaredLogger {
 	return log.With(
 		"kind", subscription.GetObjectKind().GroupVersionKind().Kind,
 		"version", subscription.GetGeneration(),

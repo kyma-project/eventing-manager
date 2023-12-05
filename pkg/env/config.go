@@ -35,31 +35,31 @@ func Backend() (string, error) {
 // Config represents the environment config for the Eventing Controller.
 type Config struct {
 	// Following details are for eventing-controller to communicate to BEB
-	BEBAPIURL     string `envconfig:"BEB_API_URL" default:"https://enterprise-messaging-pubsub.cfapps.sap.hana.ondemand.com/sap/ems/v1"`
-	ClientID      string `envconfig:"CLIENT_ID" default:"client-id"`
-	ClientSecret  string `envconfig:"CLIENT_SECRET" default:"client-secret"`
-	TokenEndpoint string `envconfig:"TOKEN_ENDPOINT" default:"token-endpoint"`
+	BEBAPIURL     string `default:"https://enterprise-messaging-pubsub.cfapps.sap.hana.ondemand.com/sap/ems/v1" envconfig:"BEB_API_URL"`
+	ClientID      string `default:"client-id"                                                                   envconfig:"CLIENT_ID"`
+	ClientSecret  string `default:"client-secret"                                                               envconfig:"CLIENT_SECRET"`
+	TokenEndpoint string `default:"token-endpoint"                                                              envconfig:"TOKEN_ENDPOINT"`
 
 	// Following details are for BEB to communicate to Kyma
-	WebhookActivationTimeout time.Duration `envconfig:"WEBHOOK_ACTIVATION_TIMEOUT" default:"60s"`
+	WebhookActivationTimeout time.Duration `default:"60s" envconfig:"WEBHOOK_ACTIVATION_TIMEOUT"`
 
 	// Default protocol setting for BEB
-	ExemptHandshake bool   `envconfig:"EXEMPT_HANDSHAKE" default:"true"`
-	Qos             string `envconfig:"QOS" default:"AT_LEAST_ONCE"`
-	ContentMode     string `envconfig:"CONTENT_MODE" default:""`
+	ExemptHandshake bool   `default:"true"          envconfig:"EXEMPT_HANDSHAKE"`
+	Qos             string `default:"AT_LEAST_ONCE" envconfig:"QOS"`
+	ContentMode     string `default:""              envconfig:"CONTENT_MODE"`
 
 	// Default namespace for BEB
-	BEBNamespace string `envconfig:"BEB_NAMESPACE" default:"ns"`
+	BEBNamespace string `default:"ns" envconfig:"BEB_NAMESPACE"`
 
 	// EventTypePrefix prefix for the EventType
 	// note: eventType format is <prefix>.<application>.<event>.<version>
 	EventTypePrefix string `envconfig:"EVENT_TYPE_PREFIX" required:"true"`
 
 	// EventingWebhookAuthEnabled enable/disable the Eventing webhook auth feature flag.
-	EventingWebhookAuthEnabled bool `envconfig:"EVENTING_WEBHOOK_AUTH_ENABLED" required:"false" default:"false"`
+	EventingWebhookAuthEnabled bool `default:"false" envconfig:"EVENTING_WEBHOOK_AUTH_ENABLED" required:"false"`
 
 	// NATSProvisioningEnabled enable/disable the NATS resources provisioning feature flag.
-	NATSProvisioningEnabled bool `envconfig:"NATS_PROVISIONING_ENABLED" required:"false" default:"true"`
+	NATSProvisioningEnabled bool `default:"true" envconfig:"NATS_PROVISIONING_ENABLED" required:"false"`
 }
 
 func GetConfig() Config {

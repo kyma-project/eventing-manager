@@ -66,7 +66,8 @@ type SubscriptionManager struct {
 
 // NewSubscriptionManager creates the subscription manager for JetStream.
 func NewSubscriptionManager(restCfg *rest.Config, natsConfig env.NATSConfig, metricsAddr string,
-	metricsCollector *backendmetrics.Collector, logger *logger.Logger) *SubscriptionManager {
+	metricsCollector *backendmetrics.Collector, logger *logger.Logger,
+) *SubscriptionManager {
 	return &SubscriptionManager{
 		envCfg:           natsConfig,
 		restCfg:          restCfg,

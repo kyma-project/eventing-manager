@@ -76,7 +76,7 @@ func SendCloudEventToJetStream(jetStreamClient *JetStream, subject, eventData, c
 	} else {
 		headers = eventingtesting.GetStructuredMessageHeaders()
 	}
-	req, err := http.NewRequest(http.MethodPost, "dummy", bytes.NewBuffer([]byte(eventData)))
+	req, err := http.NewRequest(http.MethodPost, "dummy", bytes.NewBufferString(eventData))
 	if err != nil {
 		return err
 	}

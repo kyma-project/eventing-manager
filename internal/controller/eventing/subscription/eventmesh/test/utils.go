@@ -395,7 +395,7 @@ func filterAPIRulesForASvc(apiRules *apigatewayv1beta1.APIRuleList, svc *kcorev1
 
 // countEventMeshRequests returns how many requests for a given subscription are sent for each HTTP method
 //
-//nolint:gocognit
+
 func countEventMeshRequests(subscriptionName, eventType string) (int, int, int) {
 	countGet, countPost, countDelete := 0, 0, 0
 	emTestEnsemble.eventMeshMock.Requests.ReadEach(

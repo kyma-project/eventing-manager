@@ -28,7 +28,8 @@ func BeNatsSubWithMaxPending(expectedMaxAckPending int) gomegatypes.GomegaMatche
 }
 
 func BeJetStreamSubscriptionWithSubject(source, subject string,
-	typeMatching eventingv1alpha2.TypeMatching, natsConfig env.NATSConfig) gomegatypes.GomegaMatcher {
+	typeMatching eventingv1alpha2.TypeMatching, natsConfig env.NATSConfig,
+) gomegatypes.GomegaMatcher {
 	return gomega.WithTransform(func(subscriber jetstream.Subscriber) (bool, error) {
 		info, err := subscriber.ConsumerInfo()
 		if err != nil {

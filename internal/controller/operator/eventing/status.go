@@ -16,7 +16,7 @@ import (
 
 const RequeueTimeForStatusCheck = 10
 
-// InitStateProcessing initializes the state of the EventingStatus if it is not set
+// InitStateProcessing initializes the state of the EventingStatus if it is not set.
 func (es *Reconciler) InitStateProcessing(eventing *operatorv1alpha1.Eventing) {
 	if eventing.Status.State == "" {
 		eventing.Status.SetStateProcessing()
@@ -26,7 +26,8 @@ func (es *Reconciler) InitStateProcessing(eventing *operatorv1alpha1.Eventing) {
 // syncStatusWithNATSErr syncs Eventing status and sets an error state.
 // Returns the relevant error.
 func (r *Reconciler) syncStatusWithNATSErr(ctx context.Context,
-	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
 	eventing.Status.UpdateConditionNATSAvailable(kmetav1.ConditionFalse, operatorv1alpha1.ConditionReasonNATSNotAvailable,
@@ -38,14 +39,16 @@ func (r *Reconciler) syncStatusWithNATSErr(ctx context.Context,
 // syncStatusWithPublisherProxyErr updates Publisher Proxy condition and sets an error state.
 // Returns the relevant error.
 func (r *Reconciler) syncStatusWithPublisherProxyErr(ctx context.Context,
-	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
 	return r.syncStatusWithPublisherProxyErrWithReason(ctx, operatorv1alpha1.ConditionReasonDeployedFailed,
 		eventing, err, log)
 }
 
 func (r *Reconciler) syncStatusWithPublisherProxyErrWithReason(ctx context.Context,
 	reason operatorv1alpha1.ConditionReason,
-	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
 	eventing.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse, reason,
@@ -57,7 +60,8 @@ func (r *Reconciler) syncStatusWithPublisherProxyErrWithReason(ctx context.Conte
 // syncStatusWithSubscriptionManagerErr updates subscription manager condition and sets an error state.
 // Returns the relevant error.
 func (r *Reconciler) syncStatusWithSubscriptionManagerErr(ctx context.Context,
-	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
 	return r.syncStatusWithSubscriptionManagerErrWithReason(ctx,
 		operatorv1alpha1.ConditionReasonEventMeshSubManagerFailed, eventing, err, log)
 }
@@ -65,7 +69,8 @@ func (r *Reconciler) syncStatusWithSubscriptionManagerErr(ctx context.Context,
 func (r *Reconciler) syncStatusWithSubscriptionManagerErrWithReason(ctx context.Context,
 	reason operatorv1alpha1.ConditionReason,
 	eventing *operatorv1alpha1.Eventing,
-	err error, log *zap.SugaredLogger) error {
+	err error, log *zap.SugaredLogger,
+) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
 	eventing.Status.UpdateConditionSubscriptionManagerReady(kmetav1.ConditionFalse, reason, err.Error())
@@ -76,7 +81,8 @@ func (r *Reconciler) syncStatusWithSubscriptionManagerErrWithReason(ctx context.
 // sets an error state. It doesn't return the incoming error.
 func (r *Reconciler) syncStatusWithSubscriptionManagerFailedCondition(ctx context.Context,
 	eventing *operatorv1alpha1.Eventing,
-	err error, log *zap.SugaredLogger) error {
+	err error, log *zap.SugaredLogger,
+) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
 	eventing.Status.UpdateConditionSubscriptionManagerReady(kmetav1.ConditionFalse,
@@ -85,7 +91,8 @@ func (r *Reconciler) syncStatusWithSubscriptionManagerFailedCondition(ctx contex
 }
 
 func (r *Reconciler) syncStatusWithWebhookErr(ctx context.Context,
-	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
 	// Set error state in status
 	eventing.Status.SetStateError()
 	eventing.Status.UpdateConditionWebhookReady(kmetav1.ConditionFalse, operatorv1alpha1.ConditionReasonWebhookFailed,
@@ -95,7 +102,8 @@ func (r *Reconciler) syncStatusWithWebhookErr(ctx context.Context,
 }
 
 func (r *Reconciler) syncStatusWithDeletionErr(ctx context.Context,
-	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
 	eventing.Status.UpdateConditionDeletion(kmetav1.ConditionFalse,
 		operatorv1alpha1.ConditionReasonDeletionError, err.Error())
 
@@ -104,7 +112,8 @@ func (r *Reconciler) syncStatusWithDeletionErr(ctx context.Context,
 
 // syncEventingStatus syncs Eventing status.
 func (r *Reconciler) syncEventingStatus(ctx context.Context,
-	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
+) error {
 	namespacedName := &ktypes.NamespacedName{
 		Name:      eventing.Name,
 		Namespace: eventing.Namespace,
@@ -126,7 +135,8 @@ func (r *Reconciler) syncEventingStatus(ctx context.Context,
 
 // updateStatus updates the status to k8s if modified.
 func (r *Reconciler) updateStatus(ctx context.Context, oldEventing, newEventing *operatorv1alpha1.Eventing,
-	logger *zap.SugaredLogger) error {
+	logger *zap.SugaredLogger,
+) error {
 	// Compare the status taking into consideration lastTransitionTime in conditions
 	if oldEventing.Status.IsEqual(newEventing.Status) {
 		return nil
@@ -168,7 +178,7 @@ func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kappsv
 	return kctrl.Result{}, r.syncEventingStatus(ctx, eventing, log)
 }
 
-// to be able to mock this function in tests
+// to be able to mock this function in tests.
 var IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 	return deployment.Status.AvailableReplicas == *deployment.Spec.Replicas
 }

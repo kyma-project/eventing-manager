@@ -313,7 +313,6 @@ func Test_IsNATSAvailable(t *testing.T) {
 			require.Equal(t, tc.wantErr, err)
 		})
 	}
-
 }
 
 func Test_ConvertECBackendType(t *testing.T) {

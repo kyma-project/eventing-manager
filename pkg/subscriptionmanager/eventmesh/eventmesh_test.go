@@ -64,7 +64,6 @@ func Test_cleanupEventMesh(t *testing.T) {
 	// start BEB Mock
 	bebMock := startBEBMock()
 	envConf := env.Config{
-
 		BEBAPIURL:                bebMock.MessagingURL,
 		ClientID:                 "client-id",
 		ClientSecret:             "client-secret",

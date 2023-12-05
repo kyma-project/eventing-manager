@@ -14,7 +14,8 @@ import (
 
 // getSubscriptionAssert fetches a subscription using the lookupKey and allows making assertions on it.
 func getSubscriptionAssert(ctx context.Context, g *gomega.GomegaWithT,
-	subscription *eventingv1alpha2.Subscription) gomega.AsyncAssertion {
+	subscription *eventingv1alpha2.Subscription,
+) gomega.AsyncAssertion {
 	return g.Eventually(func() *eventingv1alpha2.Subscription {
 		lookupKey := types.NamespacedName{
 			Namespace: subscription.Namespace,
@@ -39,7 +40,8 @@ func getAPIRuleForASvcAssert(ctx context.Context, g *gomega.GomegaWithT, svc *kc
 
 // getAPIRuleAssert fetches an apiRule and allows making assertions on it.
 func getAPIRuleAssert(ctx context.Context, g *gomega.GomegaWithT,
-	apiRule *apigatewayv1beta1.APIRule) gomega.AsyncAssertion {
+	apiRule *apigatewayv1beta1.APIRule,
+) gomega.AsyncAssertion {
 	return g.Eventually(func() apigatewayv1beta1.APIRule {
 		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
 		if err != nil {

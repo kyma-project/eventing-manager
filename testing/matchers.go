@@ -176,6 +176,7 @@ func HaveSubscriptionReady() gomegatypes.GomegaMatcher {
 		return s.Status.Ready
 	}, BeTrue())
 }
+
 func HaveTypes(types []string) gomegatypes.GomegaMatcher {
 	return WithTransform(
 		func(s *eventingv1alpha2.Subscription) []string {

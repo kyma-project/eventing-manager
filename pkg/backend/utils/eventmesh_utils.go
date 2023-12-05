@@ -83,7 +83,8 @@ func getDefaultSubscriptionV1Alpha2(protocolSettings *ProtocolSettings) (*types.
 }
 
 func getEventMeshEvents(typeInfos []EventTypeInfo, typeMatching eventingv1alpha2.TypeMatching,
-	defaultNamespace, source string) types.Events {
+	defaultNamespace, source string,
+) types.Events {
 	eventMeshNamespace := defaultNamespace
 	if typeMatching == eventingv1alpha2.TypeMatchingExact && source != "" {
 		eventMeshNamespace = source
@@ -106,7 +107,8 @@ func getEventMeshEvents(typeInfos []EventTypeInfo, typeMatching eventingv1alpha2
 func ConvertKymaSubToEventMeshSub(subscription *eventingv1alpha2.Subscription, typeInfos []EventTypeInfo,
 	apiRule *apigatewayv1beta1.APIRule, defaultWebhookAuth *types.WebhookAuth,
 	defaultProtocolSettings *ProtocolSettings,
-	defaultNamespace string, nameMapper NameMapper) (*types.Subscription, error) { //nolint:gocognit
+	defaultNamespace string, nameMapper NameMapper,
+) (*types.Subscription, error) { //nolint:gocognit
 	// get default EventMesh subscription object
 	eventMeshSubscription, err := getDefaultSubscriptionV1Alpha2(defaultProtocolSettings)
 	if err != nil {
@@ -165,7 +167,8 @@ func setEventMeshProtocolSettings(subscription *eventingv1alpha2.Subscription, e
 
 // getEventMeshWebhookAuth uses default webhook auth unless specified in Subscription CR.
 func getEventMeshWebhookAuth(subscription *eventingv1alpha2.Subscription,
-	defaultWebhookAuth *types.WebhookAuth) (*types.WebhookAuth, error) {
+	defaultWebhookAuth *types.WebhookAuth,
+) (*types.WebhookAuth, error) {
 	auth := &types.WebhookAuth{}
 	// extract auth info from subscription CR if any
 	if authType, ok := subscription.Spec.Config[eventingv1alpha2.WebhookAuthType]; ok {

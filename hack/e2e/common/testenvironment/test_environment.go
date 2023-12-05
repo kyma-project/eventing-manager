@@ -64,7 +64,6 @@ func NewTestEnvironment() *TestEnvironment {
 	if err != nil {
 		logger.Error(err.Error())
 		panic(err)
-
 	}
 	logger.Info(fmt.Sprintf("##### NOTE: Tests will run w.r.t. backend: %s", testConfigs.BackendType))
 

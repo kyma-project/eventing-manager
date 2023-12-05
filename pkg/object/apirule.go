@@ -121,7 +121,8 @@ func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
 
 // WithRules sets the rules of an APIRule for all Subscriptions for a subscriber.
 func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigatewayv1beta1.Service,
-	methods ...string) Option {
+	methods ...string,
+) Option {
 	return func(r *apigatewayv1beta1.APIRule) {
 		var handler apigatewayv1beta1.Handler
 		if featureflags.IsEventingWebhookAuthEnabled() {

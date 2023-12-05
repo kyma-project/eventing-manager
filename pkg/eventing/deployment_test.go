@@ -58,7 +58,7 @@ func TestNewDeployment(t *testing.T) {
 			var natsConfig env.NATSConfig
 
 			switch tc.givenBackendType {
-			case "NATS":
+			case v1alpha1.NatsBackendType:
 				natsConfig = env.NATSConfig{
 					JSStreamName: "kyma",
 					URL:          natsURL,
@@ -68,7 +68,7 @@ func TestNewDeployment(t *testing.T) {
 					testutils.WithEventingCRNamespace(publisherNamespace),
 					testutils.WithEventingEventTypePrefix(eventTypePrefix),
 				), natsConfig, publisherConfig)
-			case "EventMesh":
+			case v1alpha1.EventMeshBackendType:
 				deployment = newEventMeshPublisherDeployment(testutils.NewEventingCR(
 					testutils.WithEventingCRName(tc.givenPublisherName),
 					testutils.WithEventingCRNamespace(publisherNamespace),
@@ -175,6 +175,7 @@ func Test_GetNATSEnvVars(t *testing.T) {
 		})
 	}
 }
+
 func Test_GetLogEnvVars(t *testing.T) {
 	testCases := []struct {
 		name          string

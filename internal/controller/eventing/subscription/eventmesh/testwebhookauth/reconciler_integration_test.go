@@ -75,7 +75,7 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	g.Expect(eventMeshSubscription).ShouldNot(gomega.BeNil())
 
 	// counts EventMesh mock requests before changing the credentials
-	var uri = getEventMeshSubKeyForMock(kymaSubscription.Name, kymaSubscription.Namespace)
+	uri := getEventMeshSubKeyForMock(kymaSubscription.Name, kymaSubscription.Namespace)
 	deleteRequestsBefore := emTestEnsemble.eventMeshMock.CountRequests(http.MethodDelete, uri)
 	patchRequestsBefore := emTestEnsemble.eventMeshMock.CountRequests(http.MethodPatch, uri)
 

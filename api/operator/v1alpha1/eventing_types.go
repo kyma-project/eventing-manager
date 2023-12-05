@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// nolint:lll //this is annotation
+//nolint:lll //this is annotation
 package v1alpha1
 
 import (
@@ -39,12 +39,12 @@ const (
 	ConditionSubscriptionManagerReady ConditionType = "SubscriptionManagerReady"
 	ConditionDeleted                  ConditionType = "Deleted"
 
-	// common reasons
+	// common reasons.
 	ConditionReasonProcessing ConditionReason = "Processing"
 	ConditionReasonDeleted    ConditionReason = "Deleted"
 	ConditionReasonStopped    ConditionReason = "Stopped"
 
-	// publisher proxy reasons
+	// publisher proxy reasons.
 	ConditionReasonDeployed                   ConditionReason = "Deployed"
 	ConditionReasonDeployedFailed             ConditionReason = "DeployFailed"
 	ConditionReasonDeploymentStatusSyncFailed ConditionReason = "DeploymentStatusSyncFailed"
@@ -55,7 +55,7 @@ const (
 	ConditionReasonWebhookReady               ConditionReason = "Ready"
 	ConditionReasonDeletionError              ConditionReason = "DeletionError"
 
-	// message for conditions
+	// message for conditions.
 	ConditionPublisherProxyReadyMessage        = "Publisher proxy is deployed"
 	ConditionPublisherProxyDeletedMessage      = "Publisher proxy is deleted"
 	ConditionNATSAvailableMessage              = "NATS is available"
@@ -64,7 +64,7 @@ const (
 	ConditionSubscriptionManagerReadyMessage   = "Subscription manager is ready"
 	ConditionSubscriptionManagerStoppedMessage = "Subscription manager is stopped"
 
-	// subscription manager reasons
+	// subscription manager reasons.
 	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"
 	ConditionReasonEventMeshSubManagerFailed     ConditionReason = "EventMeshSubscriptionManagerFailed"
 	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
@@ -87,7 +87,7 @@ type Eventing struct {
 	Status EventingStatus `json:"status,omitempty"`
 }
 
-// EventingStatus defines the observed state of Eventing
+// EventingStatus defines the observed state of Eventing.
 type EventingStatus struct {
 	ActiveBackend     BackendType         `json:"activeBackend"`
 	BackendConfigHash int64               `json:"specHash"`
@@ -95,7 +95,7 @@ type EventingStatus struct {
 	Conditions        []kmetav1.Condition `json:"conditions,omitempty"`
 }
 
-// EventingSpec defines the desired state of Eventing
+// EventingSpec defines the desired state of Eventing.
 type EventingSpec struct {
 	// Backend defines the active backend used by Eventing.
 	// +kubebuilder:default:={type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}
@@ -119,7 +119,7 @@ type EventingSpec struct {
 
 // +kubebuilder:object:root=true
 
-// EventingList contains a list of Eventing
+// EventingList contains a list of Eventing.
 type EventingList struct {
 	kmetav1.TypeMeta `json:",inline"`
 	kmetav1.ListMeta `json:"metadata,omitempty"`

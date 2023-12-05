@@ -287,7 +287,8 @@ func SubscriptionControllerDefaultReadyCondition() eventingv1alpha1.Condition {
 }
 
 func SubscriptionControllerReadyConditionWith(ready kcorev1.ConditionStatus,
-	reason eventingv1alpha1.ConditionReason) eventingv1alpha1.Condition {
+	reason eventingv1alpha1.ConditionReason,
+) eventingv1alpha1.Condition {
 	return eventingv1alpha1.MakeCondition(eventingv1alpha1.ConditionControllerReady, reason, ready, "")
 }
 
@@ -410,7 +411,8 @@ func NewSubscription(name, namespace string, opts ...SubscriptionOpt) *eventingv
 }
 
 func NewEventMeshSubscription(name, contentMode string, webhookURL string, events types.Events,
-	webhookAuth *types.WebhookAuth) *types.Subscription {
+	webhookAuth *types.WebhookAuth,
+) *types.Subscription {
 	return &types.Subscription{
 		Name:            name,
 		ContentMode:     contentMode,
@@ -464,16 +466,19 @@ func WithSink(sink string) SubscriptionOpt {
 		sub.Spec.Sink = sink
 	}
 }
+
 func WithConditions(conditions []eventingv1alpha2.Condition) SubscriptionOpt {
 	return func(sub *eventingv1alpha2.Subscription) {
 		sub.Status.Conditions = conditions
 	}
 }
+
 func WithStatus(status bool) SubscriptionOpt {
 	return func(sub *eventingv1alpha2.Subscription) {
 		sub.Status.Ready = status
 	}
 }
+
 func WithFinalizers(finalizers []string) SubscriptionOpt {
 	return func(sub *eventingv1alpha2.Subscription) {
 		sub.ObjectMeta.Finalizers = finalizers

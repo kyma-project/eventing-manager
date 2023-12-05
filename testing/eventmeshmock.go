@@ -69,11 +69,13 @@ func NewEventMeshMockResponseOverride() *EventMeshMockResponseOverride {
 	}
 }
 
-type ResponseUpdateReq func(w http.ResponseWriter, key string, webhookAuth *emstypes.WebhookAuth)
-type ResponseUpdateStateReq func(w http.ResponseWriter, key string, state emstypes.State)
-type ResponseWithSub func(w http.ResponseWriter, subscription emstypes.Subscription)
-type ResponseWithName func(w http.ResponseWriter, subscriptionName string)
-type Response func(w http.ResponseWriter)
+type (
+	ResponseUpdateReq      func(w http.ResponseWriter, key string, webhookAuth *emstypes.WebhookAuth)
+	ResponseUpdateStateReq func(w http.ResponseWriter, key string, state emstypes.State)
+	ResponseWithSub        func(w http.ResponseWriter, subscription emstypes.Subscription)
+	ResponseWithName       func(w http.ResponseWriter, subscriptionName string)
+	Response               func(w http.ResponseWriter)
+)
 
 func (m *EventMeshMock) Reset() {
 	m.log.Info("Initializing requests")

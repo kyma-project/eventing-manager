@@ -9,7 +9,8 @@ import (
 )
 
 func (es *EventingStatus) UpdateConditionNATSAvailable(status kmetav1.ConditionStatus, reason ConditionReason,
-	message string) {
+	message string,
+) {
 	condition := kmetav1.Condition{
 		Type:               string(ConditionNATSAvailable),
 		Status:             status,
@@ -21,7 +22,8 @@ func (es *EventingStatus) UpdateConditionNATSAvailable(status kmetav1.ConditionS
 }
 
 func (es *EventingStatus) UpdateConditionPublisherProxyReady(status kmetav1.ConditionStatus, reason ConditionReason,
-	message string) {
+	message string,
+) {
 	condition := kmetav1.Condition{
 		Type:               string(ConditionPublisherProxyReady),
 		Status:             status,
@@ -33,7 +35,8 @@ func (es *EventingStatus) UpdateConditionPublisherProxyReady(status kmetav1.Cond
 }
 
 func (es *EventingStatus) UpdateConditionWebhookReady(status kmetav1.ConditionStatus, reason ConditionReason,
-	message string) {
+	message string,
+) {
 	condition := kmetav1.Condition{
 		Type:               string(ConditionWebhookReady),
 		Status:             status,
@@ -45,7 +48,8 @@ func (es *EventingStatus) UpdateConditionWebhookReady(status kmetav1.ConditionSt
 }
 
 func (sm *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1.ConditionStatus, reason ConditionReason,
-	message string) {
+	message string,
+) {
 	condition := kmetav1.Condition{
 		Type:               string(ConditionSubscriptionManagerReady),
 		Status:             status,
@@ -57,7 +61,8 @@ func (sm *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1
 }
 
 func (es *EventingStatus) UpdateConditionDeletion(status kmetav1.ConditionStatus, reason ConditionReason,
-	message string) {
+	message string,
+) {
 	condition := kmetav1.Condition{
 		Type:               string(ConditionDeleted),
 		Status:             status,

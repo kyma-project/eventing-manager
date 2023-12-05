@@ -21,14 +21,14 @@ type NATSConfig struct {
 	EventTypePrefix string
 
 	// HTTP Transport config for the message dispatcher
-	MaxIdleConns        int           `envconfig:"MAX_IDLE_CONNS" default:"50"`
-	MaxConnsPerHost     int           `envconfig:"MAX_CONNS_PER_HOST" default:"50"`
-	MaxIdleConnsPerHost int           `envconfig:"MAX_IDLE_CONNS_PER_HOST" default:"50"`
-	IdleConnTimeout     time.Duration `envconfig:"IDLE_CONN_TIMEOUT" default:"10s"`
+	MaxIdleConns        int           `default:"50"  envconfig:"MAX_IDLE_CONNS"`
+	MaxConnsPerHost     int           `default:"50"  envconfig:"MAX_CONNS_PER_HOST"`
+	MaxIdleConnsPerHost int           `default:"50"  envconfig:"MAX_IDLE_CONNS_PER_HOST"`
+	IdleConnTimeout     time.Duration `default:"10s" envconfig:"IDLE_CONN_TIMEOUT"`
 
 	// JetStream-specific configs
 	// Name of the JetStream stream where all events are stored.
-	JSStreamName string `envconfig:"JS_STREAM_NAME" default:"sap"`
+	JSStreamName string `default:"sap" envconfig:"JS_STREAM_NAME"`
 	// Prefix for the subjects in the stream.
 	JSSubjectPrefix string `envconfig:"JS_STREAM_SUBJECT_PREFIX"`
 	// Storage type of the stream, memory or file.
@@ -39,14 +39,14 @@ type NATSConfig struct {
 	//  interest: when all known observables have acknowledged a message, it can be removed.
 	//  limits: messages are retained until any given limit is reached.
 	//  configured via JSStreamMaxMessages and JSStreamMaxBytes.
-	JSStreamRetentionPolicy string `envconfig:"JS_STREAM_RETENTION_POLICY" default:"interest"`
-	JSStreamMaxMessages     int64  `envconfig:"JS_STREAM_MAX_MSGS" default:"-1"`
+	JSStreamRetentionPolicy string `default:"interest" envconfig:"JS_STREAM_RETENTION_POLICY"`
+	JSStreamMaxMessages     int64  `default:"-1"       envconfig:"JS_STREAM_MAX_MSGS"`
 	JSStreamMaxBytes        string
 	JSStreamMaxMsgsPerTopic int64
 	// JSStreamDiscardPolicy specifies which events to discard from the stream in case limits are reached
 	//  new: reject new messages for the stream
 	//  old: discard old messages from the stream to make room for new messages
-	JSStreamDiscardPolicy string `envconfig:"JS_STREAM_DISCARD_POLICY" default:"new"`
+	JSStreamDiscardPolicy string `default:"new" envconfig:"JS_STREAM_DISCARD_POLICY"`
 	// Deliver Policy determines for a consumer where in the stream it starts receiving messages
 	// (more info https://docs.nats.io/nats-concepts/jetstream/consumers#deliverpolicy-optstartseq-optstarttime):
 	// - all: The consumer starts receiving from the earliest available message.
@@ -55,7 +55,7 @@ type NATSConfig struct {
 	//   currently in the stream.
 	// - new: When first consuming messages, the consumer starts receiving messages that were created
 	//   after the consumer was created.
-	JSConsumerDeliverPolicy string `envconfig:"JS_CONSUMER_DELIVER_POLICY" default:"new"`
+	JSConsumerDeliverPolicy string `default:"new" envconfig:"JS_CONSUMER_DELIVER_POLICY"`
 }
 
 // GetNewNATSConfig returns NATSConfig with values based on Eventing CR.

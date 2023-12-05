@@ -80,7 +80,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	happyValidator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return nil })
 	unhappyValidator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return validatorErr })
 
-	var testCases = []struct {
+	testCases := []struct {
 		name                 string
 		givenSubscription    *eventingv1alpha2.Subscription
 		givenReconcilerSetup func() *Reconciler
@@ -263,7 +263,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 
 	col := metrics.NewCollector()
 
-	var testCases = []struct {
+	testCases := []struct {
 		name                            string
 		givenSubscription               *eventingv1alpha2.Subscription
 		givenReconcilerSetup            func() (*Reconciler, client.Client)
@@ -392,7 +392,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 	validator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return nil })
 	col := metrics.NewCollector()
 
-	var testCases = []struct {
+	testCases := []struct {
 		name                            string
 		givenSubscription               *eventingv1alpha2.Subscription
 		givenReconcilerSetup            func() (*Reconciler, client.Client)
@@ -584,7 +584,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 		eventMeshLocalHash = int64(883494500014499)
 	)
 
-	var testCases = []struct {
+	testCases := []struct {
 		name                   string
 		givenSubscription      *eventingv1alpha2.Subscription
 		givenReconcilerSetup   func(*eventingv1alpha2.Subscription) (*Reconciler, client.Client)
@@ -682,7 +682,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 }
 
 func Test_replaceStatusCondition(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		giveSubscription  *eventingv1alpha2.Subscription
 		giveCondition     eventingv1alpha2.Condition
@@ -820,7 +820,7 @@ func Test_getRequiredConditions(t *testing.T) {
 func Test_syncConditionSubscribed(t *testing.T) {
 	currentTime := kmetav1.Now()
 	errorMessage := "error message"
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
 		givenError        error
@@ -917,7 +917,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 func Test_syncConditionSubscriptionActive(t *testing.T) {
 	currentTime := kmetav1.Now()
 
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
 		givenIsSubscribed bool
@@ -1020,7 +1020,7 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 func Test_syncConditionWebhookCallStatus(t *testing.T) {
 	currentTime := kmetav1.Now()
 
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
 		givenIsSubscribed bool
@@ -1261,7 +1261,7 @@ func Test_checkStatusActive(t *testing.T) {
 }
 
 func Test_checkLastFailedDelivery(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
 		wantResult        bool

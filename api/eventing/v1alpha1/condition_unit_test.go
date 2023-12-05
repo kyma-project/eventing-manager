@@ -14,7 +14,7 @@ import (
 )
 
 func Test_InitializeSubscriptionConditions(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name            string
 		givenConditions []v1alpha1.Condition
 	}{

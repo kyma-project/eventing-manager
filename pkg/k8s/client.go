@@ -63,7 +63,8 @@ type KubeClient struct {
 }
 
 func NewKubeClient(client client.Client, clientset kapixclientset.Interface, fieldManager string,
-	dynamicClient dynamic.Interface) Client {
+	dynamicClient dynamic.Interface,
+) Client {
 	return &KubeClient{
 		client:        client,
 		clientset:     clientset,
@@ -236,7 +237,8 @@ func (c *KubeClient) APIRuleCRDExists(ctx context.Context) (bool, error) {
 
 // GetMutatingWebHookConfiguration returns the MutatingWebhookConfiguration k8s resource.
 func (c *KubeClient) GetMutatingWebHookConfiguration(ctx context.Context,
-	name string) (*kadmissionregistrationv1.MutatingWebhookConfiguration, error) {
+	name string,
+) (*kadmissionregistrationv1.MutatingWebhookConfiguration, error) {
 	var mutatingWH kadmissionregistrationv1.MutatingWebhookConfiguration
 	mutatingWHKey := client.ObjectKey{
 		Name: name,
@@ -250,7 +252,8 @@ func (c *KubeClient) GetMutatingWebHookConfiguration(ctx context.Context,
 
 // GetValidatingWebHookConfiguration returns the ValidatingWebhookConfiguration k8s resource.
 func (c *KubeClient) GetValidatingWebHookConfiguration(ctx context.Context,
-	name string) (*kadmissionregistrationv1.ValidatingWebhookConfiguration, error) {
+	name string,
+) (*kadmissionregistrationv1.ValidatingWebhookConfiguration, error) {
 	var validatingWH kadmissionregistrationv1.ValidatingWebhookConfiguration
 	validatingWHKey := client.ObjectKey{
 		Name: name,

@@ -372,7 +372,8 @@ func (env TestEnvironment) TearDown() error {
 
 // GetEventingAssert fetches Eventing from k8s and allows making assertions on it.
 func (env TestEnvironment) GetEventingAssert(g *gomega.GomegaWithT,
-	eventing *v1alpha1.Eventing) gomega.AsyncAssertion {
+	eventing *v1alpha1.Eventing,
+) gomega.AsyncAssertion {
 	return g.Eventually(func() *v1alpha1.Eventing {
 		gotEventing, err := env.GetEventingFromK8s(eventing.Name, eventing.Namespace)
 		if err != nil {
@@ -758,7 +759,8 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingOwnerReferenceSet(t *testi
 }
 
 func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeployment *kappsv1.Deployment,
-	eventingCR v1alpha1.Eventing) {
+	eventingCR v1alpha1.Eventing,
+) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetServiceFromK8s(eventing.GetPublisherPublishServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
@@ -770,7 +772,8 @@ func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeplo
 }
 
 func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeployment *kappsv1.Deployment,
-	eventingCR v1alpha1.Eventing) {
+	eventingCR v1alpha1.Eventing,
+) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetServiceFromK8s(eventing.GetPublisherMetricsServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
@@ -782,7 +785,8 @@ func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeplo
 }
 
 func (env TestEnvironment) EnsureEPPHealthServiceCorrect(t *testing.T, eppDeployment *kappsv1.Deployment,
-	eventingCR v1alpha1.Eventing) {
+	eventingCR v1alpha1.Eventing,
+) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetServiceFromK8s(eventing.GetPublisherHealthServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {

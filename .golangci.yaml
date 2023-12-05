@@ -23,7 +23,6 @@ linters:
     - dupl
     - dupword
     - errorlint
-    - exhaustive
     - forcetypeassert
     - funlen
     - ginkgolinter
@@ -58,7 +57,6 @@ linters:
     - wastedassign
     - wrapcheck
     - godot
-    - goimports
     - mirror
     - tagalign
     - whitespace

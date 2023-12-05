@@ -12,40 +12,40 @@ type BackendConfig struct {
 	PublisherConfig PublisherConfig
 
 	// namespace where eventing-manager is deployed.
-	Namespace           string `envconfig:"NAMESPACE" default:"kyma-system"`
-	EventingCRName      string `envconfig:"EVENTING_CR_NAME" default:"eventing"`
-	EventingCRNamespace string `envconfig:"EVENTING_CR_NAMESPACE" default:"kyma-system"`
+	Namespace           string `default:"kyma-system" envconfig:"NAMESPACE"`
+	EventingCRName      string `default:"eventing"    envconfig:"EVENTING_CR_NAME"`
+	EventingCRNamespace string `default:"kyma-system" envconfig:"EVENTING_CR_NAMESPACE"`
 
-	WebhookSecretName   string `envconfig:"WEBHOOK_SECRET_NAME" default:"eventing-manager-webhook-server-cert"`
-	MutatingWebhookName string `envconfig:"MUTATING_WEBHOOK_NAME" default:"subscription-mutating-webhook-configuration"`
+	WebhookSecretName   string `default:"eventing-manager-webhook-server-cert"        envconfig:"WEBHOOK_SECRET_NAME"`
+	MutatingWebhookName string `default:"subscription-mutating-webhook-configuration" envconfig:"MUTATING_WEBHOOK_NAME"`
 	//nolint:lll
-	ValidatingWebhookName string `envconfig:"VALIDATING_WEBHOOK_NAME" default:"subscription-validating-webhook-configuration"`
+	ValidatingWebhookName string `default:"subscription-validating-webhook-configuration" envconfig:"VALIDATING_WEBHOOK_NAME"`
 
 	DefaultSubscriptionConfig DefaultSubscriptionConfig
 
 	//nolint:lll
-	EventingWebhookAuthSecretName string `envconfig:"EVENTING_WEBHOOK_AUTH_SECRET_NAME" required:"true" default:"eventing-webhook-auth"`
+	EventingWebhookAuthSecretName string `default:"eventing-webhook-auth" envconfig:"EVENTING_WEBHOOK_AUTH_SECRET_NAME" required:"true"`
 	//nolint:lll
-	EventingWebhookAuthSecretNamespace string `envconfig:"EVENTING_WEBHOOK_AUTH_SECRET_NAMESPACE" required:"true" default:"kyma-system"`
+	EventingWebhookAuthSecretNamespace string `default:"kyma-system" envconfig:"EVENTING_WEBHOOK_AUTH_SECRET_NAMESPACE" required:"true"`
 }
 
 type PublisherConfig struct {
-	Image             string `envconfig:"PUBLISHER_IMAGE" default:"eu.gcr.io/kyma-project/event-publisher-proxy:c06eb4fc"`
-	ImagePullPolicy   string `envconfig:"PUBLISHER_IMAGE_PULL_POLICY" default:"IfNotPresent"`
-	PortNum           int    `envconfig:"PUBLISHER_PORT_NUM" default:"8080"`
-	MetricsPortNum    int    `envconfig:"PUBLISHER_METRICS_PORT_NUM" default:"8080"`
-	ServiceAccount    string `envconfig:"PUBLISHER_SERVICE_ACCOUNT" default:"eventing-publisher-proxy"`
-	RequestTimeout    string `envconfig:"PUBLISHER_REQUEST_TIMEOUT" default:"5s"`
-	PriorityClassName string `envconfig:"PUBLISHER_PRIORITY_CLASS_NAME" default:""`
+	Image             string `default:"eu.gcr.io/kyma-project/event-publisher-proxy:c06eb4fc" envconfig:"PUBLISHER_IMAGE"`
+	ImagePullPolicy   string `default:"IfNotPresent"                                          envconfig:"PUBLISHER_IMAGE_PULL_POLICY"`
+	PortNum           int    `default:"8080"                                                  envconfig:"PUBLISHER_PORT_NUM"`
+	MetricsPortNum    int    `default:"8080"                                                  envconfig:"PUBLISHER_METRICS_PORT_NUM"`
+	ServiceAccount    string `default:"eventing-publisher-proxy"                              envconfig:"PUBLISHER_SERVICE_ACCOUNT"`
+	RequestTimeout    string `default:"5s"                                                    envconfig:"PUBLISHER_REQUEST_TIMEOUT"`
+	PriorityClassName string `default:""                                                      envconfig:"PUBLISHER_PRIORITY_CLASS_NAME"`
 	// publisher takes the controller values
-	AppLogFormat          string `envconfig:"APP_LOG_FORMAT" default:"json"`
+	AppLogFormat          string `default:"json" envconfig:"APP_LOG_FORMAT"`
 	ApplicationCRDEnabled bool
 }
 
 type DefaultSubscriptionConfig struct {
-	MaxInFlightMessages   int           `envconfig:"DEFAULT_MAX_IN_FLIGHT_MESSAGES" default:"10"`
-	DispatcherRetryPeriod time.Duration `envconfig:"DEFAULT_DISPATCHER_RETRY_PERIOD" default:"5m"`
-	DispatcherMaxRetries  int           `envconfig:"DEFAULT_DISPATCHER_MAX_RETRIES" default:"10"`
+	MaxInFlightMessages   int           `default:"10" envconfig:"DEFAULT_MAX_IN_FLIGHT_MESSAGES"`
+	DispatcherRetryPeriod time.Duration `default:"5m" envconfig:"DEFAULT_DISPATCHER_RETRY_PERIOD"`
+	DispatcherMaxRetries  int           `default:"10" envconfig:"DEFAULT_DISPATCHER_MAX_RETRIES"`
 }
 
 func GetBackendConfig() BackendConfig {

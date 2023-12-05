@@ -253,7 +253,7 @@ func Test_isSubscriptionStatusEqual(t *testing.T) {
 	}
 }
 
-//func TestPublisherProxyDeploymentEqual(t *testing.T) {
+// func TestPublisherProxyDeploymentEqual(t *testing.T) {
 //	publisherCfg := env.PublisherConfig{
 //		Image:          "publisher",
 //		PortNum:        0,
@@ -2111,9 +2111,7 @@ func Test_envEqual(t *testing.T) {
 }
 
 func Test_probeEqual(t *testing.T) {
-	var (
-		probe = &kcorev1.Probe{}
-	)
+	probe := &kcorev1.Probe{}
 
 	type args struct {
 		p1 *kcorev1.Probe

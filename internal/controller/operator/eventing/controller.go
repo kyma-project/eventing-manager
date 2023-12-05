@@ -204,7 +204,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 // handleEventingCRAllowedCheck checks if Eventing CR is allowed to be created or not.
 // returns true if the Eventing CR is allowed.
 func (r *Reconciler) handleEventingCRAllowedCheck(ctx context.Context, eventing *operatorv1alpha1.Eventing,
-	log *zap.SugaredLogger) (bool, error) {
+	log *zap.SugaredLogger,
+) (bool, error) {
 	// if the name and namespace matches with allowed NATS CR then allow the CR to be reconciled.
 	if eventing.Name == r.allowedEventingCR.Name && eventing.Namespace == r.allowedEventingCR.Namespace {
 		return true, nil
@@ -370,7 +371,8 @@ func (r *Reconciler) loggerWithEventing(eventing *operatorv1alpha1.Eventing) *za
 }
 
 func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *operatorv1alpha1.Eventing,
-	log *zap.SugaredLogger) (kctrl.Result, error) {
+	log *zap.SugaredLogger,
+) (kctrl.Result, error) {
 	// skip reconciliation for deletion if the finalizer is not set.
 	if !r.containsFinalizer(eventing) {
 		log.Debug("skipped reconciliation for deletion as finalizer is not set.")
@@ -428,7 +430,8 @@ func (r *Reconciler) deleteClusterScopedResources(ctx context.Context, eventingC
 }
 
 func (r *Reconciler) handleEventingReconcile(ctx context.Context,
-	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (kctrl.Result, error) {
+	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
+) (kctrl.Result, error) {
 	log.Info("handling Eventing reconciliation...")
 
 	// make sure the finalizer exists.
@@ -476,7 +479,8 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 }
 
 func (r *Reconciler) handleBackendSwitching(
-	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
+) error {
 	// check if the backend was changed.
 	if !eventing.IsSpecBackendTypeChanged() {
 		return nil
@@ -557,7 +561,8 @@ func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *operat
 func (r *Reconciler) handlePublisherProxy(
 	ctx context.Context,
 	eventing *operatorv1alpha1.Eventing,
-	backendType operatorv1alpha1.BackendType) (*kappsv1.Deployment, error) {
+	backendType operatorv1alpha1.BackendType,
+) (*kappsv1.Deployment, error) {
 	// get nats config with NATS server url
 	var natsConfig *env.NATSConfig
 	if backendType == operatorv1alpha1.NatsBackendType {

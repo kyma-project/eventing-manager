@@ -29,8 +29,6 @@ import (
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kutilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
 	"k8s.io/client-go/dynamic"
 	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	kctrl "sigs.k8s.io/controller-runtime"
@@ -54,8 +52,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
-
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 var (

@@ -29,17 +29,16 @@ const (
 	defaultStatusReady = true
 )
 
-var (
-	v2DefaultConditions = []v1alpha2.Condition{
-		{
-			Type:   v1alpha2.ConditionSubscriptionActive,
-			Status: "true",
-		},
-		{
-			Type:   v1alpha2.ConditionSubscribed,
-			Status: "false",
-		}}
-)
+var v2DefaultConditions = []v1alpha2.Condition{
+	{
+		Type:   v1alpha2.ConditionSubscriptionActive,
+		Status: "true",
+	},
+	{
+		Type:   v1alpha2.ConditionSubscribed,
+		Status: "false",
+	},
+}
 
 func newDefaultSubscription(opts ...eventingtesting.SubscriptionV1alpha1Opt) *v1alpha1.Subscription {
 	var defaultConditions []v1alpha1.Condition

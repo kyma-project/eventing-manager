@@ -61,7 +61,7 @@ func V1ToV2(src *Subscription, dst *v1alpha2.Subscription) error {
 }
 
 // ConvertFrom converts this Subscription from the Hub version (v2) to v1.
-func (dst *Subscription) ConvertFrom(srcRaw conversion.Hub) error { //nolint:revive
+func (dst *Subscription) ConvertFrom(srcRaw conversion.Hub) error {
 	src, ok := srcRaw.(*v1alpha2.Subscription)
 	if !ok {
 		return errors.Errorf(ErrorHubVersionMsg)

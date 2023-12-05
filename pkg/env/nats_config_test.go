@@ -95,7 +95,8 @@ func Test_GetNATSConfig(t *testing.T) {
 		want    NATSConfig
 		wantErr bool
 	}{
-		{name: "Required values only gives valid config",
+		{
+			name: "Required values only gives valid config",
 			args: args{
 				envs: map[string]string{
 					"NATS_URL":                 "natsurl",
@@ -121,7 +122,8 @@ func Test_GetNATSConfig(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{name: "Envs are mapped correctly",
+		{
+			name: "Envs are mapped correctly",
 			args: args{
 				envs: map[string]string{
 					"JS_STREAM_NAME":             "jsn",

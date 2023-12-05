@@ -15,7 +15,7 @@ import (
 )
 
 func Test_isInDeletion(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription func() *eventingv1alpha2.Subscription
 		wantResult        bool
@@ -65,7 +65,7 @@ func Test_isInDeletion(t *testing.T) {
 }
 
 func Test_isFinalizerSet(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
 		wantResult        bool
@@ -99,7 +99,7 @@ func Test_addFinalizer(t *testing.T) {
 
 	namedLogger := defaultLogger.WithContext().Named(reconcilerName)
 
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
 		wantFinalizersLen int
@@ -133,7 +133,7 @@ func Test_addFinalizer(t *testing.T) {
 }
 
 func Test_getSvcNsAndName(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name          string
 		givenURL      string
 		wantName      string
@@ -168,7 +168,7 @@ func Test_getSvcNsAndName(t *testing.T) {
 }
 
 func Test_computeAPIRuleReadyStatus(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name         string
 		givenAPIRule *apigatewayv1beta1.APIRule
 		wantResult   bool
@@ -239,7 +239,7 @@ func Test_computeAPIRuleReadyStatus(t *testing.T) {
 func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 	host1 := "kyma-project.io"
 
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
 		givenAPIRule      *apigatewayv1beta1.APIRule

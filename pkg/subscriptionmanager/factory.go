@@ -36,7 +36,8 @@ func NewFactory(
 	metricsAddress string,
 	metricsCollector *metrics.Collector,
 	resyncPeriod time.Duration,
-	logger *logger.Logger) *Factory {
+	logger *logger.Logger,
+) *Factory {
 	return &Factory{
 		k8sRestCfg:       k8sRestCfg,
 		metricsAddress:   metricsAddress,

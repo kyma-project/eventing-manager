@@ -301,7 +301,8 @@ func prepareTestEnvironment(t *testing.T) *TestEnvironment {
 
 func createSubscriptionAndAssert(t *testing.T,
 	testEnv *TestEnvironment,
-	subscriber *eventingtesting.Subscriber) (SubscriptionSubjectIdentifier, *eventingv1alpha2.Subscription) {
+	subscriber *eventingtesting.Subscriber,
+) (SubscriptionSubjectIdentifier, *eventingv1alpha2.Subscription) {
 	sub := eventingtesting.NewSubscription("sub", "foo",
 		eventingtesting.WithCleanEventSourceAndType(),
 		eventingtesting.WithNotCleanEventSourceAndType(),
@@ -350,7 +351,8 @@ func startJetStream(t *testing.T, testEnv *TestEnvironment) {
 
 func assertNewSubscriptionReturnItsKey(t *testing.T,
 	testEnv *TestEnvironment,
-	sub *eventingv1alpha2.Subscription) SubscriptionSubjectIdentifier {
+	sub *eventingv1alpha2.Subscription,
+) SubscriptionSubjectIdentifier {
 	firstSubject, err := testEnv.cleaner.CleanEventType(sub.Spec.Types[0])
 	require.NoError(t, err)
 	require.NotEmpty(t, firstSubject)

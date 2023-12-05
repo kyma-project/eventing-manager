@@ -105,13 +105,15 @@ func (j jetStreamContextStub) ChanSubscribe(_ string, _ chan *nats.Msg, _ ...nat
 }
 
 func (j jetStreamContextStub) ChanQueueSubscribe(_, _ string,
-	_ chan *nats.Msg, _ ...nats.SubOpt) (*nats.Subscription, error) {
+	_ chan *nats.Msg, _ ...nats.SubOpt,
+) (*nats.Subscription, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
 func (j jetStreamContextStub) QueueSubscribe(_, _ string, _ nats.MsgHandler,
-	_ ...nats.SubOpt) (*nats.Subscription, error) {
+	_ ...nats.SubOpt,
+) (*nats.Subscription, error) {
 	// TODO implement me
 	panic("implement me")
 }
@@ -180,12 +182,14 @@ func (j jetStreamContextStub) SecureDeleteMsg(_ string, _ uint64, _ ...nats.JSOp
 }
 
 func (j jetStreamContextStub) AddConsumer(_ string, _ *nats.ConsumerConfig,
-	_ ...nats.JSOpt) (*nats.ConsumerInfo, error) {
+	_ ...nats.JSOpt,
+) (*nats.ConsumerInfo, error) {
 	return j.addConsumer, j.addConsumerError
 }
 
 func (j jetStreamContextStub) UpdateConsumer(_ string, _ *nats.ConsumerConfig,
-	_ ...nats.JSOpt) (*nats.ConsumerInfo, error) {
+	_ ...nats.JSOpt,
+) (*nats.ConsumerInfo, error) {
 	return j.update, j.updateError
 }
 

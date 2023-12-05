@@ -23,7 +23,7 @@ const (
 	CRName                      = "eventing"
 	ManagerContainerName        = "manager"
 	PublisherContainerName      = "eventing-publisher-proxy"
-	WebhookServerCertSecretName = "eventing-manager-webhook-server-cert" //nolint:gosec // This is used for test purposes only.
+	WebhookServerCertSecretName = "eventing-manager-webhook-server-cert"
 	WebhookServerCertJobName    = "eventing-manager-cert-handler"
 	EventMeshSecretNamespace    = "kyma-system"
 	EventMeshSecretName         = "eventing-backend"
