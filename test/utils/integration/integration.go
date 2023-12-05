@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"fmt"
 	"log"
 	"path/filepath"
 	"strings"
@@ -366,7 +365,7 @@ func (env TestEnvironment) TearDown() error {
 	// clean-up created resources
 	err := env.DeleteSecretFromK8s(getTestBackendConfig().WebhookSecretName, getTestBackendConfig().Namespace)
 	if err != nil {
-		fmt.Printf("couldn't clean the webhook secret: %s", err)
+		log.Printf("couldn't clean the webhook secret: %s", err)
 	}
 
 	// retry to stop the api-server
