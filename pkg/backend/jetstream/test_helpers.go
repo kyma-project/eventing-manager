@@ -104,7 +104,7 @@ func SendCloudEventToJetStream(jetStreamClient *JetStream, subject, eventData, c
 	url := jetStreamClient.Config.URL
 	sender, err := cenats.NewSender(url, subject, natsOpts)
 	if err != nil {
-		return nil
+		return err
 	}
 	client, err := cloudevents.NewClient(sender)
 	if err != nil {
