@@ -16,7 +16,7 @@ import (
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 
 	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	kapiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
+	kapixclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 
 	"github.com/stretchr/testify/require"
 	kappsv1 "k8s.io/api/apps/v1"
@@ -723,7 +723,7 @@ func Test_GetCRD(t *testing.T) {
 				objs = append(objs, sampleCRD)
 			}
 
-			fakeClientSet := kapiclientsetfake.NewSimpleClientset(objs...)
+			fakeClientSet := kapixclientsetfake.NewSimpleClientset(objs...)
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
@@ -772,7 +772,7 @@ func Test_ApplicationCRDExists(t *testing.T) {
 				objs = append(objs, sampleCRD)
 			}
 
-			fakeClientSet := kapiclientsetfake.NewSimpleClientset(objs...)
+			fakeClientSet := kapixclientsetfake.NewSimpleClientset(objs...)
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
@@ -817,7 +817,7 @@ func Test_PeerAuthenticationCRDExists(t *testing.T) {
 				objs = append(objs, sampleCRD)
 			}
 
-			fakeClientSet := kapiclientsetfake.NewSimpleClientset(objs...)
+			fakeClientSet := kapixclientsetfake.NewSimpleClientset(objs...)
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
@@ -980,7 +980,7 @@ func Test_APIRuleCRDExists(t *testing.T) {
 				objs = append(objs, sampleCRD)
 			}
 
-			fakeClientSet := kapiclientsetfake.NewSimpleClientset(objs...)
+			fakeClientSet := kapixclientsetfake.NewSimpleClientset(objs...)
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mitchellh/hashstructure/v2"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -16,21 +16,21 @@ func (r *Reconciler) containsFinalizer(eventing *operatorv1alpha1.Eventing) bool
 	return controllerutil.ContainsFinalizer(eventing, FinalizerName)
 }
 
-func (r *Reconciler) addFinalizer(ctx context.Context, eventing *operatorv1alpha1.Eventing) (ctrl.Result, error) {
+func (r *Reconciler) addFinalizer(ctx context.Context, eventing *operatorv1alpha1.Eventing) (kctrl.Result, error) {
 	controllerutil.AddFinalizer(eventing, FinalizerName)
 	if err := r.Update(ctx, eventing); err != nil {
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
-	return ctrl.Result{}, nil
+	return kctrl.Result{}, nil
 }
 
-func (r *Reconciler) removeFinalizer(ctx context.Context, eventing *operatorv1alpha1.Eventing) (ctrl.Result, error) {
+func (r *Reconciler) removeFinalizer(ctx context.Context, eventing *operatorv1alpha1.Eventing) (kctrl.Result, error) {
 	controllerutil.RemoveFinalizer(eventing, FinalizerName)
 	if err := r.Update(ctx, eventing); err != nil {
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	return kctrl.Result{}, nil
 }
 
 func (r *Reconciler) getNATSBackendConfigHash(defaultSubscriptionConfig env.DefaultSubscriptionConfig, natsConfig env.NATSConfig) (int64, error) {

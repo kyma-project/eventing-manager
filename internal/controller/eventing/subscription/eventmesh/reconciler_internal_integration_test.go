@@ -18,7 +18,7 @@ import (
 	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -84,7 +84,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		name                 string
 		givenSubscription    *eventingv1alpha2.Subscription
 		givenReconcilerSetup func() *Reconciler
-		wantReconcileResult  ctrl.Result
+		wantReconcileResult  kctrl.Result
 		wantReconcileError   error
 	}{
 		{
@@ -107,7 +107,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					col,
 					utils.Domain)
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
 		},
 		{
@@ -129,7 +129,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					col,
 					utils.Domain)
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
 		},
 		{
@@ -152,7 +152,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					col,
 					utils.Domain)
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  backendSyncErr,
 		},
 		{
@@ -175,7 +175,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					col,
 					utils.Domain)
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  backendDeleteErr,
 		},
 		{
@@ -197,7 +197,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					col,
 					utils.Domain)
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  validatorErr,
 		},
 		{
@@ -220,7 +220,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					col,
 					utils.Domain)
 			},
-			wantReconcileResult: ctrl.Result{
+			wantReconcileResult: kctrl.Result{
 				RequeueAfter: requeueAfterDuration,
 			},
 			wantReconcileError: nil,
@@ -230,7 +230,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
 			reconciler := tc.givenReconcilerSetup()
-			r := ctrl.Request{NamespacedName: ktypes.NamespacedName{
+			r := kctrl.Request{NamespacedName: ktypes.NamespacedName{
 				Namespace: tc.givenSubscription.Namespace,
 				Name:      tc.givenSubscription.Name,
 			}}
@@ -268,7 +268,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 		givenSubscription               *eventingv1alpha2.Subscription
 		givenReconcilerSetup            func() (*Reconciler, client.Client)
 		givenEventingWebhookAuthEnabled bool
-		wantReconcileResult             ctrl.Result
+		wantReconcileResult             kctrl.Result
 		wantReconcileError              error
 		wantHandler                     apigatewayv1beta1.Handler
 	}{
@@ -295,7 +295,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 					te.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: false,
-			wantReconcileResult:             ctrl.Result{},
+			wantReconcileResult:             kctrl.Result{},
 			wantReconcileError:              nil,
 			wantHandler: apigatewayv1beta1.Handler{
 				Name:   object.OAuthHandlerNameOAuth2Introspection,
@@ -325,7 +325,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 					te.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: true,
-			wantReconcileResult:             ctrl.Result{},
+			wantReconcileResult:             kctrl.Result{},
 			wantReconcileError:              nil,
 			wantHandler: apigatewayv1beta1.Handler{
 				Name: object.OAuthHandlerNameJWT,
@@ -347,7 +347,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			}
 
 			// when
-			res, err := reconciler.Reconcile(context.Background(), ctrl.Request{NamespacedName: namespacedName})
+			res, err := reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
 			require.Equal(t, tc.wantReconcileResult, res)
 			require.Equal(t, tc.wantReconcileError, err)
 
@@ -397,7 +397,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 		givenSubscription               *eventingv1alpha2.Subscription
 		givenReconcilerSetup            func() (*Reconciler, client.Client)
 		givenEventingWebhookAuthEnabled bool
-		wantReconcileResult             ctrl.Result
+		wantReconcileResult             kctrl.Result
 		wantReconcileError              error
 		wantHandlerBeforeUpgrade        apigatewayv1beta1.Handler
 		wantHandlerAfterUpgrade         apigatewayv1beta1.Handler
@@ -425,7 +425,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 					te.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: false,
-			wantReconcileResult:             ctrl.Result{},
+			wantReconcileResult:             kctrl.Result{},
 			wantReconcileError:              nil,
 			wantHandlerBeforeUpgrade: apigatewayv1beta1.Handler{
 				Name:   object.OAuthHandlerNameOAuth2Introspection,
@@ -461,7 +461,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 					te.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: true,
-			wantReconcileResult:             ctrl.Result{},
+			wantReconcileResult:             kctrl.Result{},
 			wantReconcileError:              nil,
 			wantHandlerBeforeUpgrade: apigatewayv1beta1.Handler{
 				Name: object.OAuthHandlerNameJWT,
@@ -491,7 +491,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			}
 
 			// when
-			res, err := reconciler.Reconcile(context.Background(), ctrl.Request{NamespacedName: namespacedName})
+			res, err := reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
 			require.Equal(t, tc.wantReconcileResult, res)
 			require.Equal(t, tc.wantReconcileError, err)
 
@@ -536,7 +536,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			////
 
 			// when
-			res, err = reconciler.Reconcile(context.Background(), ctrl.Request{NamespacedName: namespacedName})
+			res, err = reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
 			require.Equal(t, tc.wantReconcileResult, res)
 			require.Equal(t, tc.wantReconcileError, err)
 
@@ -665,7 +665,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				}
 
 				// when
-				_, err := reconciler.Reconcile(context.Background(), ctrl.Request{NamespacedName: namespacedName})
+				_, err := reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
 				require.Equal(t, tc.wantReconcileError, err)
 
 				// then

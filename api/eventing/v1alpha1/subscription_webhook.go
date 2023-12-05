@@ -1,11 +1,11 @@
 package v1alpha1
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *Subscription) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
+func (r *Subscription) SetupWebhookWithManager(mgr kctrl.Manager) error {
+	return kctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
 }

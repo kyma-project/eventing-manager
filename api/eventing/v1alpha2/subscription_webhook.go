@@ -11,7 +11,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -25,8 +25,8 @@ const (
 	ValidSource                = "source"
 )
 
-func (s *Subscription) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
+func (s *Subscription) SetupWebhookWithManager(mgr kctrl.Manager) error {
+	return kctrl.NewWebhookManagedBy(mgr).
 		For(s).
 		Complete()
 }

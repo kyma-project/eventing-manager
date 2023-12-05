@@ -36,7 +36,7 @@ import (
 	"go.uber.org/zap"
 
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
@@ -106,11 +106,11 @@ func NewReconciler(ctx context.Context, client client.Client, logger *logger.Log
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=gateway.kyma-project.io,resources=apirules,verbs=get;list;watch;create;update;patch;delete
 
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Result, error) {
 	// fetch current subscription object and ensure the object was not deleted in the meantime
 	currentSubscription := &eventingv1alpha2.Subscription{}
 	if err := r.Client.Get(ctx, req.NamespacedName, currentSubscription); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return kctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	// copy the subscription object, so we don't modify the source object
@@ -121,7 +121,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	log.Debugw("Received new reconcile request")
 
 	// instantiate a return object
-	result := ctrl.Result{}
+	result := kctrl.Result{}
 
 	// handle deletion of the subscription
 	if isInDeletion(sub) {
@@ -142,9 +142,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// sync Finalizers, ensure the finalizer is set
 	if err := r.syncFinalizer(sub, log); err != nil {
 		if updateErr := r.updateSubscription(ctx, sub, log); updateErr != nil {
-			return ctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
+			return kctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
 		}
-		return ctrl.Result{}, xerrors.Errorf("failed to sync finalizer: %v", err)
+		return kctrl.Result{}, xerrors.Errorf("failed to sync finalizer: %v", err)
 	}
 
 	// sync APIRule for the desired subscription
@@ -153,18 +153,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	sub.Status.SetConditionAPIRuleStatus(err)
 	if !controllererrors.IsSkippable(err) {
 		if updateErr := r.updateSubscription(ctx, sub, log); updateErr != nil {
-			return ctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
+			return kctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
 		}
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	// sync the EventMesh Subscription with the Subscription CR
 	ready, err := r.syncEventMeshSubscription(sub, apiRule, log)
 	if err != nil {
 		if updateErr := r.updateSubscription(ctx, sub, log); updateErr != nil {
-			return ctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
+			return kctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
 		}
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 	// if eventMesh subscription is not ready, then requeue
 	if !ready {
@@ -174,7 +174,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// update the subscription if modified
 	if err := r.updateSubscription(ctx, sub, log); err != nil {
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	return result, nil
@@ -257,11 +257,11 @@ func (r *Reconciler) syncFinalizer(subscription *eventingv1alpha2.Subscription, 
 }
 
 func (r *Reconciler) handleDeleteSubscription(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	logger *zap.SugaredLogger) (ctrl.Result, error) {
+	logger *zap.SugaredLogger) (kctrl.Result, error) {
 	// delete EventMesh subscriptions
 	logger.Debug("Deleting subscription on EventMesh")
 	if err := r.Backend.DeleteSubscription(subscription); err != nil {
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	// update condition in subscription status
@@ -274,11 +274,11 @@ func (r *Reconciler) handleDeleteSubscription(ctx context.Context, subscription 
 
 	// update subscription CR with changes
 	if err := r.updateSubscription(ctx, subscription, logger); err != nil {
-		return ctrl.Result{}, err
+		return kctrl.Result{}, err
 	}
 
 	r.collector.RemoveSubscriptionStatus(subscription.Name, subscription.Namespace, backendType, "", "")
-	return ctrl.Result{Requeue: false}, nil
+	return kctrl.Result{Requeue: false}, nil
 }
 
 // syncEventMeshSubscription delegates the subscription synchronization to the backend client. It returns true if the subscription is ready.
@@ -738,7 +738,7 @@ func (r *Reconciler) emitConditionEvent(subscription *eventingv1alpha2.Subscript
 }
 
 // SetupUnmanaged creates a controller under the client control.
-func (r *Reconciler) SetupUnmanaged(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupUnmanaged(mgr kctrl.Manager) error {
 	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return fmt.Errorf("failed to create unmanaged controller: %w", err)

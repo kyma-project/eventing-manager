@@ -6,7 +6,7 @@ import (
 
 	eventingcontrollermocks "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks"
 
-	kapiclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
+	kapixclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 
@@ -70,7 +70,7 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 
 	fakeClientBuilder := fake.NewClientBuilder().WithScheme(newScheme)
 	fakeClient := fakeClientBuilder.WithObjects(objs...).WithStatusSubresource(objs...).Build()
-	fakeClientSet := kapiclientsetfake.NewSimpleClientset()
+	fakeClientSet := kapixclientsetfake.NewSimpleClientset()
 	recorder := &record.FakeRecorder{}
 	kubeClient := k8s.NewKubeClient(fakeClient, fakeClientSet, "eventing-manager", fakeDynamicClient)
 

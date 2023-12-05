@@ -36,7 +36,7 @@ import (
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -152,7 +152,7 @@ func startReconciler() error {
 
 	syncPeriod := syncPeriod
 	webhookInstallOptions := &jsTestEnsemble.TestEnv.WebhookInstallOptions
-	k8sManager, err := ctrl.NewManager(jsTestEnsemble.Cfg, ctrl.Options{
+	k8sManager, err := kctrl.NewManager(jsTestEnsemble.Cfg, kctrl.Options{
 		Scheme:                 scheme.Scheme,
 		HealthProbeBindAddress: "0", // disable
 		Cache:                  cache.Options{SyncPeriod: &syncPeriod},

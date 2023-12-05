@@ -22,11 +22,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
+	kctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -97,7 +97,7 @@ func setupSuite() error {
 	if err != nil {
 		return err
 	}
-	ctrllog.SetLogger(zapr.NewLogger(defaultLogger.WithContext().Desugar()))
+	kctrllog.SetLogger(zapr.NewLogger(defaultLogger.WithContext().Desugar()))
 
 	// setup test Env
 	cfg, err := startTestEnv()
@@ -121,7 +121,7 @@ func setupSuite() error {
 	// start eventMesh manager instance
 	syncPeriod := syncPeriodSeconds * time.Second
 	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+	k8sManager, err := kctrl.NewManager(cfg, kctrl.Options{
 		Scheme:                 scheme.Scheme,
 		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
 		Metrics:                server.Options{BindAddress: "0"}, // disable
@@ -168,7 +168,7 @@ func setupSuite() error {
 	// start k8s client
 	go func() {
 		var ctx context.Context
-		ctx, k8sCancelFn = context.WithCancel(ctrl.SetupSignalHandler())
+		ctx, k8sCancelFn = context.WithCancel(kctrl.SetupSignalHandler())
 		err = k8sManager.Start(ctx)
 		if err != nil {
 			panic(err)

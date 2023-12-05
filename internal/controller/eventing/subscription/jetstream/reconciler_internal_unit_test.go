@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -70,7 +70,7 @@ func Test_Reconcile(t *testing.T) {
 		name                 string
 		givenSubscription    *eventingv1alpha2.Subscription
 		givenReconcilerSetup func() (*Reconciler, *backendjetstreammocks.Backend)
-		wantReconcileResult  ctrl.Result
+		wantReconcileResult  kctrl.Result
 		wantReconcileError   error
 	}{
 		{
@@ -92,7 +92,7 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
 		},
 		{
@@ -110,7 +110,7 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
 		},
 		{
@@ -128,7 +128,7 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
 		},
 		{
@@ -151,7 +151,7 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  backendSyncErr,
 		},
 		{
@@ -174,7 +174,7 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{RequeueAfter: requeueDuration},
+			wantReconcileResult: kctrl.Result{RequeueAfter: requeueDuration},
 			wantReconcileError:  nil,
 		},
 		{
@@ -193,7 +193,7 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  errFailedToDeleteSub,
 		},
 		{
@@ -215,7 +215,7 @@ func Test_Reconcile(t *testing.T) {
 						collector),
 					te.Backend
 			},
-			wantReconcileResult: ctrl.Result{},
+			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  validatorErr,
 		},
 	}
@@ -225,7 +225,7 @@ func Test_Reconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
 			reconciler, mockedBackend := tc.givenReconcilerSetup()
-			r := ctrl.Request{NamespacedName: types.NamespacedName{
+			r := kctrl.Request{NamespacedName: types.NamespacedName{
 				Namespace: tc.givenSubscription.Namespace,
 				Name:      tc.givenSubscription.Name,
 			}}

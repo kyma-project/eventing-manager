@@ -24,7 +24,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
@@ -116,7 +116,7 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subm
 	c.envCfg = env.GetConfig()
 	nameMapper := backendutils.NewBEBSubscriptionNameMapper(strings.TrimSpace(c.domain),
 		backendeventmesh.MaxSubscriptionNameLength)
-	ctrl.Log.WithName("BEB-subscription-manager").Info("using BEB name mapper",
+	kctrl.Log.WithName("BEB-subscription-manager").Info("using BEB name mapper",
 		"domainName", c.domain,
 		"maxNameLength", backendeventmesh.MaxSubscriptionNameLength)
 

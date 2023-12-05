@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	submgrmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
 
-	kapiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	kapixclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	"github.com/stretchr/testify/mock"
 
@@ -39,7 +39,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -117,7 +117,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 		return nil, err
 	}
 	// Set controller core logger.
-	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
+	kctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 
 	testEnv, envTestKubeCfg, err := StartEnvTest(config)
 	if err != nil {
@@ -159,7 +159,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 		return nil, err
 	}
 
-	ctrlMgr, err := ctrl.NewManager(envTestKubeCfg, ctrl.Options{
+	ctrlMgr, err := kctrl.NewManager(envTestKubeCfg, kctrl.Options{
 		Scheme:                 scheme.Scheme,
 		HealthProbeBindAddress: "0",                              // disable
 		Metrics:                server.Options{BindAddress: "0"}, // disable
@@ -171,7 +171,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	recorder := ctrlMgr.GetEventRecorderFor("eventing-manager-test")
 
 	// create k8s clients.
-	apiClientSet, err := kapiclientset.NewForConfig(ctrlMgr.GetConfig())
+	apiClientSet, err := kapixclientset.NewForConfig(ctrlMgr.GetConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	var cancelCtx context.CancelFunc
 	go func() {
 		var mgrCtx context.Context
-		mgrCtx, cancelCtx = context.WithCancel(ctrl.SetupSignalHandler())
+		mgrCtx, cancelCtx = context.WithCancel(kctrl.SetupSignalHandler())
 		err = ctrlMgr.Start(mgrCtx)
 		if err != nil {
 			panic(err)

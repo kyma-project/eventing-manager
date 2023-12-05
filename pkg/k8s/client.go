@@ -11,7 +11,7 @@ import (
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	kapiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	kapixclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -58,11 +58,11 @@ type Client interface {
 type KubeClient struct {
 	fieldManager  string
 	client        client.Client
-	clientset     kapiclientset.Interface
+	clientset     kapixclientset.Interface
 	dynamicClient dynamic.Interface
 }
 
-func NewKubeClient(client client.Client, clientset kapiclientset.Interface, fieldManager string,
+func NewKubeClient(client client.Client, clientset kapixclientset.Interface, fieldManager string,
 	dynamicClient dynamic.Interface) Client {
 	return &KubeClient{
 		client:        client,

@@ -9,7 +9,7 @@ import (
 	kappsv1 "k8s.io/api/apps/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
+	kctrl "sigs.k8s.io/controller-runtime"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 )
@@ -143,14 +143,14 @@ func (r *Reconciler) updateStatus(ctx context.Context, oldEventing, newEventing 
 	return nil
 }
 
-func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kappsv1.Deployment, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (ctrl.Result, error) {
+func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kappsv1.Deployment, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (kctrl.Result, error) {
 	// checking if publisher proxy is ready.
 	// get k8s deployment for publisher proxy
 	deployment, err := r.kubeClient.GetDeployment(ctx, deployment.Name, deployment.Namespace)
 	if err != nil {
 		eventing.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse,
 			operatorv1alpha1.ConditionReasonDeploymentStatusSyncFailed, err.Error())
-		return ctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
 	}
 
 	if !IsDeploymentReady(deployment) {
@@ -158,14 +158,14 @@ func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kappsv
 		eventing.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse,
 			operatorv1alpha1.ConditionReasonProcessing, operatorv1alpha1.ConditionPublisherProxyProcessingMessage)
 		log.Info("Reconciliation successful: waiting for publisher proxy to get ready...")
-		return ctrl.Result{RequeueAfter: RequeueTimeForStatusCheck * time.Second}, r.syncEventingStatus(ctx, eventing, log)
+		return kctrl.Result{RequeueAfter: RequeueTimeForStatusCheck * time.Second}, r.syncEventingStatus(ctx, eventing, log)
 	}
 	//
 	eventing.Status.SetPublisherProxyReadyToTrue()
 
 	// @TODO: emit events for any change in conditions
 	log.Info("Reconciliation successful")
-	return ctrl.Result{}, r.syncEventingStatus(ctx, eventing, log)
+	return kctrl.Result{}, r.syncEventingStatus(ctx, eventing, log)
 }
 
 // to be able to mock this function in tests
