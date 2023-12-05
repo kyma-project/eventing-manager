@@ -461,7 +461,7 @@ func createSubscriberSvcInK8s(ens *Ensemble) error {
 				return err
 			}
 			return nil
-		}, "Failed to to create the namespace for the subscriber")
+		}, "Failed to create the namespace for the subscriber")
 		if err != nil {
 			return err
 		}

@@ -1144,7 +1144,7 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 		wantEventMeshSubMatchers gomegatypes.GomegaMatcher
 	}{
 		{
-			name: "should not be ready when when EventMesh server is not able to create new EventMesh subscriptions",
+			name: "should not be ready when EventMesh server is not able to create new EventMesh subscriptions",
 			givenCreateResponseFunc: func(w http.ResponseWriter, _ emstypes.Subscription) {
 				// ups ... server returns 500
 				w.WriteHeader(http.StatusInternalServerError)
