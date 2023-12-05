@@ -6,25 +6,21 @@ import (
 	"net/http"
 	"testing"
 
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
-
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
-
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	submgrmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
-
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
-	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
+	"github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/client"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	submgrmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
@@ -68,7 +64,6 @@ func Test_cleanupEventMesh(t *testing.T) {
 	// start BEB Mock
 	bebMock := startBEBMock()
 	envConf := env.Config{
-
 		BEBAPIURL:                bebMock.MessagingURL,
 		ClientID:                 "client-id",
 		ClientSecret:             "client-secret",

@@ -4,16 +4,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
-
-	"github.com/kyma-project/eventing-manager/pkg/utils"
-
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 const (

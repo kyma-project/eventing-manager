@@ -3,19 +3,15 @@ package v1alpha1_test
 import (
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/pkg/logger"
-
-	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
-
-	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
-
-	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
+	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 func Test_Conversion(t *testing.T) {

@@ -5,22 +5,20 @@ import (
 	"net"
 	"net/http"
 
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/dynamic"
-	kdynamicfake "k8s.io/client-go/dynamic/fake"
-
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	"github.com/kyma-project/eventing-manager/pkg/object"
-
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kunstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kruntime "k8s.io/apimachinery/pkg/runtime"
 	kschema "k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/dynamic"
+	kdynamicfake "k8s.io/client-go/dynamic/fake"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	"github.com/kyma-project/eventing-manager/pkg/object"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
@@ -289,7 +287,8 @@ func SubscriptionControllerDefaultReadyCondition() eventingv1alpha1.Condition {
 }
 
 func SubscriptionControllerReadyConditionWith(ready kcorev1.ConditionStatus,
-	reason eventingv1alpha1.ConditionReason) eventingv1alpha1.Condition {
+	reason eventingv1alpha1.ConditionReason,
+) eventingv1alpha1.Condition {
 	return eventingv1alpha1.MakeCondition(eventingv1alpha1.ConditionControllerReady, reason, ready, "")
 }
 
@@ -412,7 +411,8 @@ func NewSubscription(name, namespace string, opts ...SubscriptionOpt) *eventingv
 }
 
 func NewEventMeshSubscription(name, contentMode string, webhookURL string, events types.Events,
-	webhookAuth *types.WebhookAuth) *types.Subscription {
+	webhookAuth *types.WebhookAuth,
+) *types.Subscription {
 	return &types.Subscription{
 		Name:            name,
 		ContentMode:     contentMode,
@@ -466,16 +466,19 @@ func WithSink(sink string) SubscriptionOpt {
 		sub.Spec.Sink = sink
 	}
 }
+
 func WithConditions(conditions []eventingv1alpha2.Condition) SubscriptionOpt {
 	return func(sub *eventingv1alpha2.Subscription) {
 		sub.Status.Conditions = conditions
 	}
 }
+
 func WithStatus(status bool) SubscriptionOpt {
 	return func(sub *eventingv1alpha2.Subscription) {
 		sub.Status.Ready = status
 	}
 }
+
 func WithFinalizers(finalizers []string) SubscriptionOpt {
 	return func(sub *eventingv1alpha2.Subscription) {
 		sub.ObjectMeta.Finalizers = finalizers

@@ -13,11 +13,9 @@ import (
 	"testing"
 	"time"
 
-	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
-
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
@@ -38,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
+	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
@@ -397,7 +395,7 @@ func filterAPIRulesForASvc(apiRules *apigatewayv1beta1.APIRuleList, svc *kcorev1
 
 // countEventMeshRequests returns how many requests for a given subscription are sent for each HTTP method
 //
-//nolint:gocognit
+
 func countEventMeshRequests(subscriptionName, eventType string) (int, int, int) {
 	countGet, countPost, countDelete := 0, 0, 0
 	emTestEnsemble.eventMeshMock.Requests.ReadEach(

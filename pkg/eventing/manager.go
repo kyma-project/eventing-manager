@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
-
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
@@ -24,13 +23,11 @@ const (
 	memoryUtilization = 60
 )
 
-var (
-	// allowedAnnotations are the publisher proxy deployment spec template annotations
-	// which should be preserved during reconciliation.
-	allowedAnnotations = map[string]string{
-		"kubectl.kubernetes.io/restartedAt": "",
-	}
-)
+// allowedAnnotations are the publisher proxy deployment spec template annotations
+// which should be preserved during reconciliation.
+var allowedAnnotations = map[string]string{
+	"kubectl.kubernetes.io/restartedAt": "",
+}
 
 //go:generate go run github.com/vektra/mockery/v2 --name=Manager --outpkg=mocks --case=underscore
 type Manager interface {
@@ -78,7 +75,8 @@ func (em EventingManager) DeployPublisherProxy(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
 	natsConfig *env.NATSConfig,
-	backendType v1alpha1.BackendType) (*kappsv1.Deployment, error) {
+	backendType v1alpha1.BackendType,
+) (*kappsv1.Deployment, error) {
 	// update EC reconciler NATS and public config from the data in the eventing CR
 	deployment, err := em.applyPublisherProxyDeployment(ctx, eventing, natsConfig, backendType)
 	if err != nil {
@@ -91,7 +89,8 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
 	natsConfig *env.NATSConfig,
-	backendType v1alpha1.BackendType) (*kappsv1.Deployment, error) {
+	backendType v1alpha1.BackendType,
+) (*kappsv1.Deployment, error) {
 	var desiredPublisher *kappsv1.Deployment
 
 	switch backendType {
@@ -144,7 +143,8 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 
 func (em *EventingManager) migratePublisherDeploymentFromEC(
 	ctx context.Context, eventing *v1alpha1.Eventing,
-	currentPublisher kappsv1.Deployment, desiredPublisher kappsv1.Deployment) error {
+	currentPublisher kappsv1.Deployment, desiredPublisher kappsv1.Deployment,
+) error {
 	// If Eventing CR is already owner of deployment, then it means that the publisher deployment
 	// was already migrated.
 	if len(currentPublisher.OwnerReferences) == 1 && currentPublisher.OwnerReferences[0].Name == eventing.Name {
@@ -190,7 +190,8 @@ func (em *EventingManager) SetBackendConfig(config env.BackendConfig) {
 func (em EventingManager) DeployPublisherProxyResources(
 	ctx context.Context,
 	eventing *v1alpha1.Eventing,
-	publisherDeployment *kappsv1.Deployment) error {
+	publisherDeployment *kappsv1.Deployment,
+) error {
 	// define list of resources to create for EPP.
 	resources := []client.Object{
 		// ServiceAccount
@@ -216,7 +217,6 @@ func (em EventingManager) DeployPublisherProxyResources(
 
 	// create the resources on k8s.
 	for _, obj := range resources {
-
 		// add owner reference.
 		if err := controllerutil.SetControllerReference(eventing, obj, em.Scheme()); err != nil {
 			return err

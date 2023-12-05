@@ -6,29 +6,23 @@ import (
 	"fmt"
 	"testing"
 
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
-
-	"github.com/kyma-project/eventing-manager/test"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"k8s.io/apimachinery/pkg/runtime"
-
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	kappsv1 "k8s.io/api/apps/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
+	"github.com/kyma-project/eventing-manager/test"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 )
 
@@ -319,7 +313,6 @@ func Test_IsNATSAvailable(t *testing.T) {
 			require.Equal(t, tc.wantErr, err)
 		})
 	}
-
 }
 
 func Test_ConvertECBackendType(t *testing.T) {

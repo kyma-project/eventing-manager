@@ -66,7 +66,7 @@ func Test_Reconcile(t *testing.T) {
 	unhappyValidator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return validatorErr })
 	collector := metrics.NewCollector()
 
-	var testCases = []struct {
+	testCases := []struct {
 		name                 string
 		givenSubscription    *eventingv1alpha2.Subscription
 		givenReconcilerSetup func() (*Reconciler, *backendjetstreammocks.Backend)
@@ -283,7 +283,6 @@ func Test_handleSubscriptionDeletion(t *testing.T) {
 	for _, tC := range testCases {
 		testCase := tC
 		t.Run(testCase.name, func(t *testing.T) {
-
 			// given
 			sub := eventingtesting.NewSubscription(subscriptionName, namespaceName,
 				eventingtesting.WithFinalizers(testCase.givenFinalizers),
@@ -381,7 +380,6 @@ func Test_addFinalizer(t *testing.T) {
 }
 
 func Test_syncSubscriptionStatus(t *testing.T) {
-
 	jetStreamError := errors.New("JetStream is not ready")
 	falseNatsSubActiveCondition := eventingv1alpha2.MakeCondition(eventingv1alpha2.ConditionSubscriptionActive,
 		eventingv1alpha2.ConditionReasonNATSSubscriptionNotActive,
@@ -793,7 +791,8 @@ func fetchTestSubscription(ctx context.Context, r *Reconciler) (eventingv1alpha2
 }
 
 func ensureSubscriptionMatchesConditionsAndStatus(t *testing.T,
-	subscription eventingv1alpha2.Subscription, wantConditions []eventingv1alpha2.Condition, wantStatus bool) {
+	subscription eventingv1alpha2.Subscription, wantConditions []eventingv1alpha2.Condition, wantStatus bool,
+) {
 	require.Equal(t, len(wantConditions), len(subscription.Status.Conditions))
 	comparisonResult := eventingv1alpha2.ConditionsEquals(wantConditions, subscription.Status.Conditions)
 	require.True(t, comparisonResult)

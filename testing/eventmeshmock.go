@@ -11,16 +11,17 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo" //nolint:revive,stylecheck // using . import for convenience
-	. "github.com/onsi/gomega" //nolint:revive,stylecheck // using . import for convenience
 	"golang.org/x/oauth2"
 	kctrllog "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/client"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 
 	// gcp auth etc.
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/client"
-	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	. "github.com/onsi/ginkgo" //nolint:revive,stylecheck // using . import for convenience
+	. "github.com/onsi/gomega" //nolint:revive,stylecheck // using . import for convenience
 )
 
 const (
@@ -68,11 +69,13 @@ func NewEventMeshMockResponseOverride() *EventMeshMockResponseOverride {
 	}
 }
 
-type ResponseUpdateReq func(w http.ResponseWriter, key string, webhookAuth *emstypes.WebhookAuth)
-type ResponseUpdateStateReq func(w http.ResponseWriter, key string, state emstypes.State)
-type ResponseWithSub func(w http.ResponseWriter, subscription emstypes.Subscription)
-type ResponseWithName func(w http.ResponseWriter, subscriptionName string)
-type Response func(w http.ResponseWriter)
+type (
+	ResponseUpdateReq      func(w http.ResponseWriter, key string, webhookAuth *emstypes.WebhookAuth)
+	ResponseUpdateStateReq func(w http.ResponseWriter, key string, state emstypes.State)
+	ResponseWithSub        func(w http.ResponseWriter, subscription emstypes.Subscription)
+	ResponseWithName       func(w http.ResponseWriter, subscriptionName string)
+	Response               func(w http.ResponseWriter)
+)
 
 func (m *EventMeshMock) Reset() {
 	m.log.Info("Initializing requests")

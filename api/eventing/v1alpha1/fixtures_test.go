@@ -3,13 +3,12 @@ package v1alpha1_test
 import (
 	"fmt"
 
-	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
-	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 const (
@@ -30,17 +29,16 @@ const (
 	defaultStatusReady = true
 )
 
-var (
-	v2DefaultConditions = []v1alpha2.Condition{
-		{
-			Type:   v1alpha2.ConditionSubscriptionActive,
-			Status: "true",
-		},
-		{
-			Type:   v1alpha2.ConditionSubscribed,
-			Status: "false",
-		}}
-)
+var v2DefaultConditions = []v1alpha2.Condition{
+	{
+		Type:   v1alpha2.ConditionSubscriptionActive,
+		Status: "true",
+	},
+	{
+		Type:   v1alpha2.ConditionSubscribed,
+		Status: "false",
+	},
+}
 
 func newDefaultSubscription(opts ...eventingtesting.SubscriptionV1alpha1Opt) *v1alpha1.Subscription {
 	var defaultConditions []v1alpha1.Condition

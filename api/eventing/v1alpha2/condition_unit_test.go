@@ -6,20 +6,18 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-
 	"github.com/stretchr/testify/require"
-
-	. "github.com/onsi/gomega"
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
+
+	. "github.com/onsi/gomega"
 )
 
 func Test_InitializeSubscriptionConditions(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name            string
 		givenConditions []v1alpha2.Condition
 	}{

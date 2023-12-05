@@ -3,15 +3,14 @@ package peerauthentication
 import (
 	"context"
 
-	"go.uber.org/zap"
-	"k8s.io/utils/ptr"
-
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	istiosecurityv1beta1 "istio.io/api/security/v1beta1"
 	istiotypev1beta1 "istio.io/api/type/v1beta1"
 	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 )

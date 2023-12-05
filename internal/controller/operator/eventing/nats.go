@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	"go.uber.org/zap"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
-	"go.uber.org/zap"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 )
 
 func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {

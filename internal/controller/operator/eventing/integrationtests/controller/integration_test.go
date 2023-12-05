@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
-
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/require"
@@ -17,12 +17,9 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	natstestutils "github.com/kyma-project/nats-manager/testutils"
-
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/test/matchers"
@@ -340,7 +337,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 
 	// Ensure reconciling the same Eventing CR multiple times does not update the EPP deployment.
 	const runs = 3
-	var resourceVersionBefore = eppDeployment.ObjectMeta.ResourceVersion
+	resourceVersionBefore := eppDeployment.ObjectMeta.ResourceVersion
 	for r := 0; r < runs; r++ {
 		////
 		// when

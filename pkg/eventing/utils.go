@@ -43,7 +43,8 @@ func GetPublisherClusterRoleBindingName(eventing v1alpha1.Eventing) string {
 }
 
 func newHorizontalPodAutoscaler(name, namespace string, min, max, cpuUtilization, memoryUtilization int32,
-	labels map[string]string) *kautoscalingv2.HorizontalPodAutoscaler {
+	labels map[string]string,
+) *kautoscalingv2.HorizontalPodAutoscaler {
 	return &kautoscalingv2.HorizontalPodAutoscaler{
 		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "HorizontalPodAutoscaler",
@@ -158,7 +159,8 @@ func newPublisherProxyClusterRoleBinding(name, namespace string, labels map[stri
 }
 
 func newPublisherProxyService(name, namespace string, labels map[string]string,
-	selectorLabels map[string]string) *kcorev1.Service {
+	selectorLabels map[string]string,
+) *kcorev1.Service {
 	// setting `TypeMeta` is important for patch apply to work.
 	return &kcorev1.Service{
 		TypeMeta: kmetav1.TypeMeta{
@@ -185,7 +187,8 @@ func newPublisherProxyService(name, namespace string, labels map[string]string,
 }
 
 func newPublisherProxyMetricsService(name, namespace string, labels map[string]string,
-	selectorLabels map[string]string) *kcorev1.Service {
+	selectorLabels map[string]string,
+) *kcorev1.Service {
 	// setting `TypeMeta` is important for patch apply to work.
 	return &kcorev1.Service{
 		TypeMeta: kmetav1.TypeMeta{
@@ -217,7 +220,8 @@ func newPublisherProxyMetricsService(name, namespace string, labels map[string]s
 }
 
 func newPublisherProxyHealthService(name, namespace string, labels map[string]string,
-	selectorLabels map[string]string) *kcorev1.Service {
+	selectorLabels map[string]string,
+) *kcorev1.Service {
 	// setting `TypeMeta` is important for patch apply to work.
 	return &kcorev1.Service{
 		TypeMeta: kmetav1.TypeMeta{

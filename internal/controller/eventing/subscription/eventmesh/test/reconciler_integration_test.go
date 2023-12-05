@@ -9,16 +9,14 @@ import (
 	"testing"
 	"time"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/assert"
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
 	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/object"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -54,7 +52,7 @@ func TestMain(m *testing.M) {
 
 func Test_ValidationWebhook(t *testing.T) {
 	t.Parallel()
-	var testCases = []struct {
+	testCases := []struct {
 		name                  string
 		givenSubscriptionFunc func(namespace string) *eventingv1alpha2.Subscription
 		wantError             error
@@ -134,7 +132,7 @@ func Test_ValidationWebhook(t *testing.T) {
 }
 
 func Test_CreateSubscription(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name                     string
 		givenSubscriptionFunc    func(namespace string) *eventingv1alpha2.Subscription
 		wantSubscriptionMatchers gomegatypes.GomegaMatcher
@@ -361,7 +359,7 @@ func Test_CreateSubscription(t *testing.T) {
 
 func Test_UpdateSubscription(t *testing.T) {
 	t.Parallel()
-	var testCases = []struct {
+	testCases := []struct {
 		name                           string
 		givenSubscriptionFunc          func(namespace string) *eventingv1alpha2.Subscription
 		givenUpdateSubscriptionFunc    func(namespace string) *eventingv1alpha2.Subscription
@@ -577,7 +575,8 @@ func Test_DeleteSubscription(t *testing.T) {
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
 	apiRule := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
-		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace}}
+		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
+	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
 
@@ -643,7 +642,7 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 	)
 
 	// test cases
-	var testCases = []struct {
+	testCases := []struct {
 		name            string
 		givenSinkFormat string
 	}{
@@ -762,7 +761,8 @@ func Test_SinkChangeAndAPIRule(t *testing.T) {
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
 	apiRule := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
-		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace}}
+		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
+	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
 
@@ -787,7 +787,8 @@ func Test_SinkChangeAndAPIRule(t *testing.T) {
 	// fetch the new APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
 	apiRule = &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
-		Name: updatedSubscription.Status.Backend.APIRuleName, Namespace: updatedSubscription.Namespace}}
+		Name: updatedSubscription.Status.Backend.APIRuleName, Namespace: updatedSubscription.Namespace,
+	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
 
@@ -830,7 +831,8 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
 	apiRule1 := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
-		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace}}
+		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace,
+	}}
 	getAPIRuleAssert(ctx, g, apiRule1).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule1)
 
@@ -860,7 +862,8 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
 	apiRule2 := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
-		Name: createdSubscription2.Status.Backend.APIRuleName, Namespace: createdSubscription2.Namespace}}
+		Name: createdSubscription2.Status.Backend.APIRuleName, Namespace: createdSubscription2.Namespace,
+	}}
 	getAPIRuleAssert(ctx, g, apiRule2).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule2)
 
@@ -955,7 +958,8 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
 	apiRule1 := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
-		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace}}
+		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace,
+	}}
 	getAPIRuleAssert(ctx, g, apiRule1).Should(gomega.And(
 		eventingtesting.HaveNotEmptyAPIRule(),
 		eventingtesting.HaveAPIRuleOwnersRefs(createdSubscription1.UID, createdSubscription2.UID),
@@ -981,7 +985,8 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 
 	// fetch the APIRule again and check
 	apiRule1 = &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
-		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace}}
+		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace,
+	}}
 	getAPIRuleAssert(ctx, g, apiRule1).Should(gomega.And(
 		eventingtesting.HaveNotEmptyAPIRule(),
 		eventingtesting.HaveNotEmptyHost(),
@@ -1040,7 +1045,8 @@ func Test_APIRuleRecreateAfterManualDelete(t *testing.T) {
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
 	apiRule := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
-		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace}}
+		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
+	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
 
@@ -1052,7 +1058,8 @@ func Test_APIRuleRecreateAfterManualDelete(t *testing.T) {
 	// phase 3: Check if APIRule is re-created by the reconciler
 	getSubscriptionAssert(ctx, g, createdSubscription).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
 	apiRule = &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
-		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace}}
+		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
+	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 }
 
@@ -1090,7 +1097,8 @@ func Test_EventMeshSubRecreateAfterManualDelete(t *testing.T) {
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
 	apiRule := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
-		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace}}
+		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
+	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
 
@@ -1129,14 +1137,14 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 		)
 	}
 
-	var testCases = []struct {
+	testCases := []struct {
 		name                     string
 		givenCreateResponseFunc  func(w http.ResponseWriter, _ emstypes.Subscription)
 		wantSubscriptionMatchers gomegatypes.GomegaMatcher
 		wantEventMeshSubMatchers gomegatypes.GomegaMatcher
 	}{
 		{
-			name: "should not be ready when when EventMesh server is not able to create new EventMesh subscriptions",
+			name: "should not be ready when EventMesh server is not able to create new EventMesh subscriptions",
 			givenCreateResponseFunc: func(w http.ResponseWriter, _ emstypes.Subscription) {
 				// ups ... server returns 500
 				w.WriteHeader(http.StatusInternalServerError)

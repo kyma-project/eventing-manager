@@ -5,17 +5,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
-	"github.com/kyma-project/eventing-manager/pkg/watcher"
-
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	submgrmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
+	"github.com/kyma-project/eventing-manager/pkg/watcher"
 	watchermocks "github.com/kyma-project/eventing-manager/pkg/watcher/mocks"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 )

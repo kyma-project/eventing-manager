@@ -3,10 +3,10 @@ package v1alpha2_test
 import (
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
-	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 )
 
 func TestGetMaxInFlightMessages(t *testing.T) {
@@ -30,7 +30,8 @@ func TestGetMaxInFlightMessages(t *testing.T) {
 			givenSubscription: &v1alpha2.Subscription{
 				Spec: v1alpha2.SubscriptionSpec{
 					Config: map[string]string{
-						"otherConfigKey": "20"},
+						"otherConfigKey": "20",
+					},
 				},
 			},
 			wantResult: defaultSubConfig.MaxInFlightMessages,
@@ -40,7 +41,8 @@ func TestGetMaxInFlightMessages(t *testing.T) {
 			givenSubscription: &v1alpha2.Subscription{
 				Spec: v1alpha2.SubscriptionSpec{
 					Config: map[string]string{
-						v1alpha2.MaxInFlightMessages: "20"},
+						v1alpha2.MaxInFlightMessages: "20",
+					},
 				},
 			},
 			wantResult: 20,
@@ -50,7 +52,8 @@ func TestGetMaxInFlightMessages(t *testing.T) {
 			givenSubscription: &v1alpha2.Subscription{
 				Spec: v1alpha2.SubscriptionSpec{
 					Config: map[string]string{
-						v1alpha2.MaxInFlightMessages: "nonInt"},
+						v1alpha2.MaxInFlightMessages: "nonInt",
+					},
 				},
 			},
 			wantResult: defaultSubConfig.MaxInFlightMessages,

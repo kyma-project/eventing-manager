@@ -10,12 +10,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/avast/retry-go/v3"
+	"github.com/pkg/errors"
 	"go.uber.org/atomic"
 
 	"github.com/kyma-project/eventing-manager/testing/event/cehelper"
-
-	"github.com/avast/retry-go/v3"
-	"github.com/pkg/errors"
 )
 
 const (

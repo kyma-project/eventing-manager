@@ -4,9 +4,9 @@ import (
 	"net/url"
 	"testing"
 
-	. "github.com/onsi/gomega"
-
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
+
+	. "github.com/onsi/gomega"
 )
 
 func Test_GetRestAPIObject(t *testing.T) {

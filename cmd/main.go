@@ -23,16 +23,23 @@ import (
 	"os"
 
 	"github.com/go-logr/zapr"
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kapixclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kutilruntime "k8s.io/apimachinery/pkg/util/runtime"
-
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	"k8s.io/client-go/dynamic"
+	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
+	kctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	controllercache "github.com/kyma-project/eventing-manager/internal/controller/cache"
 	controllerclient "github.com/kyma-project/eventing-manager/internal/controller/client"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
@@ -45,20 +52,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	"k8s.io/client-go/dynamic"
-	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	kctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-	//+kubebuilder:scaffold:imports
 )
 
 var (

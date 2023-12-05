@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -53,7 +52,6 @@ func Test_addFinalizer(t *testing.T) {
 	t.Parallel()
 
 	t.Run("should add finalizer", func(t *testing.T) {
-
 		// given
 		givenEventing := utils.NewEventingCR()
 
@@ -75,7 +73,6 @@ func Test_removeFinalizer(t *testing.T) {
 	t.Parallel()
 
 	t.Run("should remove finalizer", func(t *testing.T) {
-
 		// given
 		givenEventing := utils.NewEventingCR(utils.WithEventingCRFinalizer(FinalizerName))
 

@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	"go.uber.org/zap"
-
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
@@ -45,7 +44,8 @@ type Backend interface {
 }
 
 func NewEventMesh(credentials *OAuth2ClientCredentials, mapper backendutils.NameMapper,
-	logger *logger.Logger) *EventMesh {
+	logger *logger.Logger,
+) *EventMesh {
 	return &EventMesh{
 		oAuth2credentials: credentials,
 		logger:            logger,
@@ -99,7 +99,8 @@ func getWebHookAuth(credentials *OAuth2ClientCredentials) *types.WebhookAuth {
 // SyncSubscription synchronize the EV2 subscription with the EMS subscription.
 // It returns true, if the EV2 subscription status was changed.
 func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner,
-	apiRule *apigatewayv1beta1.APIRule) (bool, error) { //nolint:funlen,gocognit
+	apiRule *apigatewayv1beta1.APIRule,
+) (bool, error) { //nolint:funlen,gocognit
 	// Format logger
 	log := backendutils.LoggerWithSubscription(em.namedLogger(), subscription)
 
@@ -119,11 +120,10 @@ func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscriptio
 	}
 
 	// check and handle if Kyma subscription or EventMesh subscription is modified
-	isKymaSubModified := false
 	isEventMeshSubModified := false
 
 	// check if Kyma Subscription was modified.
-	isKymaSubModified, err = em.handleKymaSubModified(eventMeshSub, subscription)
+	isKymaSubModified, err := em.handleKymaSubModified(eventMeshSub, subscription)
 	if err != nil {
 		log.Errorw("Failed to handle kyma subscription modified", errorLogKey, err)
 		return false, err
@@ -188,7 +188,8 @@ func (em *EventMesh) DeleteSubscription(subscription *eventingv1alpha2.Subscript
 // getProcessedEventTypes returns the processed types after cleaning
 // and prefixing as required by EventMesh specifications.
 func (em *EventMesh) getProcessedEventTypes(kymaSubscription *eventingv1alpha2.Subscription,
-	cleaner cleaner.Cleaner) ([]backendutils.EventTypeInfo, error) {
+	cleaner cleaner.Cleaner,
+) ([]backendutils.EventTypeInfo, error) {
 	// deduplicate event types
 	uniqueTypes := kymaSubscription.GetUniqueTypes()
 
@@ -218,8 +219,10 @@ func (em *EventMesh) getProcessedEventTypes(kymaSubscription *eventingv1alpha2.S
 				"max number of segements allowed: %d", eventTypeSegmentsLimit)
 		}
 
-		result = append(result, backendutils.EventTypeInfo{OriginalType: t, CleanType: cleanedType,
-			ProcessedType: eventMeshSubject})
+		result = append(result, backendutils.EventTypeInfo{
+			OriginalType: t, CleanType: cleanedType,
+			ProcessedType: eventMeshSubject,
+		})
 	}
 
 	return result, nil
@@ -292,7 +295,8 @@ func (em *EventMesh) handleCreateEventMeshSub(eventMeshSub *types.Subscription, 
 // handleWebhookAuthChange handles the EventMesh subscription WebhookAuth changes.
 // It uses the PATCH request API provided by EventMesh to update the subscription WebhookAuth.
 func (em *EventMesh) handleWebhookAuthChange(eventMeshSub *types.Subscription,
-	kymaSub *eventingv1alpha2.Subscription) error {
+	kymaSub *eventingv1alpha2.Subscription,
+) error {
 	hash, err := backendutils.GetWebhookAuthHash(eventMeshSub.WebhookAuth)
 	if err != nil {
 		return fmt.Errorf("failed to get the EventMesh WebhookAuth hash: %w", err)
@@ -357,7 +361,8 @@ func (em *EventMesh) handleWebhookAuthChange(eventMeshSub *types.Subscription,
 // Returns true if status is updated.
 func (em *EventMesh) handleKymaSubStatusUpdate(eventMeshServerSub *types.Subscription,
 	eventMeshSub *types.Subscription, kymaSub *eventingv1alpha2.Subscription,
-	typesInfo []backendutils.EventTypeInfo) (bool, error) {
+	typesInfo []backendutils.EventTypeInfo,
+) (bool, error) {
 	// Update status.types
 	kymaSub.Status.Types = statusCleanEventTypes(typesInfo)
 

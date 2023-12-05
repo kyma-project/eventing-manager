@@ -4,12 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
-	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
+	"github.com/stretchr/testify/require"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
@@ -17,7 +15,7 @@ import (
 )
 
 func Test_isInDeletion(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription func() *eventingv1alpha2.Subscription
 		wantResult        bool
@@ -67,7 +65,7 @@ func Test_isInDeletion(t *testing.T) {
 }
 
 func Test_isFinalizerSet(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
 		wantResult        bool
@@ -101,7 +99,7 @@ func Test_addFinalizer(t *testing.T) {
 
 	namedLogger := defaultLogger.WithContext().Named(reconcilerName)
 
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
 		wantFinalizersLen int
@@ -135,7 +133,7 @@ func Test_addFinalizer(t *testing.T) {
 }
 
 func Test_getSvcNsAndName(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name          string
 		givenURL      string
 		wantName      string
@@ -170,7 +168,7 @@ func Test_getSvcNsAndName(t *testing.T) {
 }
 
 func Test_computeAPIRuleReadyStatus(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		name         string
 		givenAPIRule *apigatewayv1beta1.APIRule
 		wantResult   bool
@@ -241,7 +239,7 @@ func Test_computeAPIRuleReadyStatus(t *testing.T) {
 func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 	host1 := "kyma-project.io"
 
-	var testCases = []struct {
+	testCases := []struct {
 		name              string
 		givenSubscription *eventingv1alpha2.Subscription
 		givenAPIRule      *apigatewayv1beta1.APIRule

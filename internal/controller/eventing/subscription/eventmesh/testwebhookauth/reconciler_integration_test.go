@@ -6,11 +6,10 @@ import (
 	"net/http"
 	"testing"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -76,7 +75,7 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	g.Expect(eventMeshSubscription).ShouldNot(gomega.BeNil())
 
 	// counts EventMesh mock requests before changing the credentials
-	var uri = getEventMeshSubKeyForMock(kymaSubscription.Name, kymaSubscription.Namespace)
+	uri := getEventMeshSubKeyForMock(kymaSubscription.Name, kymaSubscription.Namespace)
 	deleteRequestsBefore := emTestEnsemble.eventMeshMock.CountRequests(http.MethodDelete, uri)
 	patchRequestsBefore := emTestEnsemble.eventMeshMock.CountRequests(http.MethodPatch, uri)
 

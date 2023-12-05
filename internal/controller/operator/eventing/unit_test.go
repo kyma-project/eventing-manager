@@ -4,34 +4,25 @@ import (
 	"context"
 	"testing"
 
-	eventingcontrollermocks "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks"
-
-	kapixclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
-
-	"github.com/kyma-project/eventing-manager/pkg/k8s"
-
-	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	kcorev1 "k8s.io/api/core/v1"
-
-	"github.com/kyma-project/eventing-manager/pkg/env"
-
-	"github.com/kyma-project/eventing-manager/options"
-
-	"github.com/kyma-project/eventing-manager/pkg/logger"
-
-	"k8s.io/apimachinery/pkg/runtime"
-
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"github.com/stretchr/testify/require"
+	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	kapixclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kdynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	eventingcontrollermocks "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks"
+	"github.com/kyma-project/eventing-manager/options"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	eventingmocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
-
-	kdynamicfake "k8s.io/client-go/dynamic/fake"
+	"github.com/kyma-project/eventing-manager/pkg/k8s"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 )
 
 // MockedUnitTestEnvironment provides mocked resources for unit tests.

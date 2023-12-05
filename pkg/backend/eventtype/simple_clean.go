@@ -13,10 +13,8 @@ const (
 	simpleCleanerName = "event-type-simple-cleaner"
 )
 
-var (
-	// invalidApplicationNameSegment used to match and replace none-alphanumeric characters in the application name.
-	invalidApplicationNameSegment = regexp.MustCompile(`\W|_`)
-)
+// invalidApplicationNameSegment used to match and replace none-alphanumeric characters in the application name.
+var invalidApplicationNameSegment = regexp.MustCompile(`\W|_`)
 
 type simpleCleaner struct {
 	eventTypePrefix string
@@ -42,7 +40,7 @@ func (sc *simpleCleaner) Clean(eventType string) (string, error) {
 	}
 
 	// clean the application name
-	var eventTypeClean = build(sc.eventTypePrefix, getCleanName(appName), event, version)
+	eventTypeClean := build(sc.eventTypePrefix, getCleanName(appName), event, version)
 
 	// clean the event-type segments
 	eventTypeClean = cleanEventType(eventTypeClean)

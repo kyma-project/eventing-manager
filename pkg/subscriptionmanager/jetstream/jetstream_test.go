@@ -6,14 +6,13 @@ import (
 	"testing"
 	"time"
 
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/dynamic"
 
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
@@ -81,7 +80,8 @@ func getNATSConf(natsURL string, natsPort int) env.NATSConfig {
 }
 
 func createAndSyncSubscription(t *testing.T, sinkURL string,
-	jsBackend *jetstream.JetStream) *eventingv1alpha2.Subscription {
+	jsBackend *jetstream.JetStream,
+) *eventingv1alpha2.Subscription {
 	// create test subscription
 	testSub := eventingtesting.NewSubscription(
 		subscriptionName, subscriptionNamespace,

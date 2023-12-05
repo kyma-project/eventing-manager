@@ -10,12 +10,11 @@ import (
 	"testing"
 	"time"
 
-	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
-
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
-
 	"github.com/avast/retry-go/v3"
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	natsioserver "github.com/nats-io/nats-server/v2/server"
+	"github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
@@ -23,26 +22,23 @@ import (
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/kyma-project/eventing-manager/internal/controller/events"
-
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
-	"github.com/onsi/gomega"
-	gomegatypes "github.com/onsi/gomega/types"
-	"k8s.io/client-go/kubernetes/scheme"
-	kctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
-
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
+	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	backendcleaner "github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -258,7 +254,8 @@ func cleanupResources() error {
 }
 
 func testSubscriptionOnNATS(g *gomega.GomegaWithT, subscription *eventingv1alpha2.Subscription,
-	subject string, expectations ...gomegatypes.GomegaMatcher) {
+	subject string, expectations ...gomegatypes.GomegaMatcher,
+) {
 	description := "Failed to match nats subscriptions"
 	getSubscriptionFromJetStream(g, subscription,
 		jsTestEnsemble.jetStreamBackend.GetJetStreamSubject(
@@ -280,7 +277,8 @@ func testSubscriptionDeletion(g *gomega.GomegaWithT, subscription *eventingv1alp
 // ensureNATSSubscriptionIsDeleted ensures that the NATS subscription is not found anymore.
 // This ensures the controller did delete it correctly then the Subscription was deleted.
 func ensureNATSSubscriptionIsDeleted(g *gomega.GomegaWithT,
-	subscription *eventingv1alpha2.Subscription, subject string) {
+	subscription *eventingv1alpha2.Subscription, subject string,
+) {
 	getSubscriptionFromJetStream(g, subscription, subject).
 		ShouldNot(BeExistingSubscription(), "Failed to delete NATS subscription")
 }
@@ -290,7 +288,8 @@ func ensureNATSSubscriptionIsDeleted(g *gomega.GomegaWithT,
 // Otherwise, the returned NATS subscription could have the wrong state.
 // For this reason Eventually is used here.
 func getSubscriptionFromJetStream(g *gomega.GomegaWithT,
-	subscription *eventingv1alpha2.Subscription, subject string) gomega.AsyncAssertion {
+	subscription *eventingv1alpha2.Subscription, subject string,
+) gomega.AsyncAssertion {
 	return g.Eventually(func() jetstream.Subscriber {
 		subscriptions := jsTestEnsemble.jetStreamBackend.GetNATSSubscriptions()
 		subscriptionSubject := jetstream.NewSubscriptionSubjectIdentifier(subscription, subject)
@@ -308,7 +307,8 @@ func getSubscriptionFromJetStream(g *gomega.GomegaWithT,
 // To avoid a 409 conflict, the subscription CR data is read from the apiserver before a new update is performed.
 // This conflict can happen if another entity such as the eventing-controller changed the sub in the meantime.
 func EventuallyUpdateSubscriptionOnK8s(ctx context.Context, ens *Ensemble,
-	sub *eventingv1alpha2.Subscription, updateFunc func(*eventingv1alpha2.Subscription) error) error {
+	sub *eventingv1alpha2.Subscription, updateFunc func(*eventingv1alpha2.Subscription) error,
+) error {
 	return doRetry(func() error {
 		// get a fresh version of the Subscription
 		lookupKey := types.NamespacedName{
@@ -326,7 +326,8 @@ func EventuallyUpdateSubscriptionOnK8s(ctx context.Context, ens *Ensemble,
 }
 
 func NewSubscription(ens *Ensemble,
-	subscriptionOpts ...eventingtesting.SubscriptionOpt) *eventingv1alpha2.Subscription {
+	subscriptionOpts ...eventingtesting.SubscriptionOpt,
+) *eventingv1alpha2.Subscription {
 	subscriptionName := fmt.Sprintf(subscriptionNameFormat, ens.testID)
 	ens.testID++
 	subscription := eventingtesting.NewSubscription(subscriptionName, ens.SubscriberSvc.Namespace, subscriptionOpts...)
@@ -334,7 +335,8 @@ func NewSubscription(ens *Ensemble,
 }
 
 func CreateSubscription(t *testing.T, ens *Ensemble,
-	subscriptionOpts ...eventingtesting.SubscriptionOpt) *eventingv1alpha2.Subscription {
+	subscriptionOpts ...eventingtesting.SubscriptionOpt,
+) *eventingv1alpha2.Subscription {
 	subscription := NewSubscription(ens, subscriptionOpts...)
 	EnsureNamespaceCreatedForSub(t, ens, subscription)
 	require.NoError(t, ensureSubscriptionCreated(ens, subscription))
@@ -342,7 +344,8 @@ func CreateSubscription(t *testing.T, ens *Ensemble,
 }
 
 func CheckSubscriptionOnK8s(g *gomega.WithT, ens *Ensemble, subscription *eventingv1alpha2.Subscription,
-	expectations ...gomegatypes.GomegaMatcher) {
+	expectations ...gomegatypes.GomegaMatcher,
+) {
 	description := "Failed to match the eventing subscription"
 	expectations = append(expectations, eventingtesting.HaveSubscriptionName(subscription.Name))
 	getSubscriptionOnK8S(g, ens, subscription).Should(gomega.And(expectations...), description)
@@ -364,7 +367,8 @@ func ValidSinkURL(ens *Ensemble, additions ...string) string {
 
 // IsSubscriptionDeletedOnK8s checks a subscription is deleted and allows making assertions on it.
 func IsSubscriptionDeletedOnK8s(g *gomega.WithT, ens *Ensemble,
-	subscription *eventingv1alpha2.Subscription) gomega.AsyncAssertion {
+	subscription *eventingv1alpha2.Subscription,
+) gomega.AsyncAssertion {
 	return g.Eventually(func() bool {
 		lookupKey := types.NamespacedName{
 			Namespace: subscription.Namespace,
@@ -457,7 +461,7 @@ func createSubscriberSvcInK8s(ens *Ensemble) error {
 				return err
 			}
 			return nil
-		}, "Failed to to create the namespace for the subscriber")
+		}, "Failed to create the namespace for the subscriber")
 		if err != nil {
 			return err
 		}
@@ -510,7 +514,8 @@ func fixtureNamespace(name string) *kcorev1.Namespace {
 
 // getSubscriptionOnK8S fetches a subscription using the lookupKey and allows making assertions on it.
 func getSubscriptionOnK8S(g *gomega.WithT, ens *Ensemble,
-	subscription *eventingv1alpha2.Subscription) gomega.AsyncAssertion {
+	subscription *eventingv1alpha2.Subscription,
+) gomega.AsyncAssertion {
 	return g.Eventually(func() *eventingv1alpha2.Subscription {
 		lookupKey := types.NamespacedName{
 			Namespace: subscription.Namespace,

@@ -10,11 +10,11 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
-
 	"github.com/cloudevents/sdk-go/v2/client"
-	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 )
 
 const (
@@ -63,7 +63,7 @@ func (p *Publisher) SendCloudEventWithRetries(event *cloudevents.Event, encoding
 func (p *Publisher) SendLegacyEvent(source, eventType, payload string) error {
 	url := p.LegacyPublishEndpoint(source)
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer([]byte(payload)))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBufferString(payload))
 	if err != nil {
 		err = errors.Wrap(err, "Failed to create HTTP request for sending legacy event")
 		p.logger.Debug(err.Error())
@@ -113,6 +113,7 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 	ce := *event
 	newCtx := context.Background()
 	ctx := cloudevents.ContextWithTarget(newCtx, p.PublishEndpoint())
+	//nolint:exhaustive // we only support the two checked encodings. Every other encoding will result in an error.
 	switch encoding {
 	case binding.EncodingBinary:
 		{

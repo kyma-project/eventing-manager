@@ -15,7 +15,7 @@ func NewAuthenticatedClient(cfg env.Config) *http.Client {
 	// create and configure oauth2 client
 	client := config.Client(ctx)
 
-	var base = http.DefaultTransport.(*http.Transport).Clone()
+	base := http.DefaultTransport.(*http.Transport).Clone()
 	client.Transport.(*oauth2.Transport).Base = base
 
 	// TODO: Support tracing in eventing-controller #9767: https://github.com/kyma-project/kyma/issues/9767

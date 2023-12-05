@@ -140,7 +140,8 @@ func (r *Reconciler) getEventMeshSubManagerParams() submgrmanager.Params {
 }
 
 func (r *Reconciler) startEventMeshSubManager(defaultSubsConfig env.DefaultSubscriptionConfig,
-	eventMeshSubMgrParams submgrmanager.Params) error {
+	eventMeshSubMgrParams submgrmanager.Params,
+) error {
 	if err := r.eventMeshSubManager.Start(defaultSubsConfig, eventMeshSubMgrParams); err != nil {
 		return err
 	}
@@ -209,7 +210,6 @@ func (r *Reconciler) syncOauth2ClientIDAndSecret(ctx context.Context, eventing *
 			errors.New(message), r.namedLogger()); updateErr != nil {
 			return updateErr
 		}
-
 	}
 	if oauth2CredentialsNotFound {
 		return err

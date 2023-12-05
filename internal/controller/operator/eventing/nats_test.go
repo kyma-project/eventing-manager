@@ -7,20 +7,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks"
-
-	submgrmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
-
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	"github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	eventingmocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
+	submgrmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
 	submgrmocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
 	"github.com/kyma-project/eventing-manager/test/utils"
 )

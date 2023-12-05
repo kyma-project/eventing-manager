@@ -4,37 +4,30 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"fmt"
 	"log"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
-
-	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
-	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
-	submgrmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
-
-	kapixclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-
-	"github.com/stretchr/testify/mock"
-
-	submgrmocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
-
-	kcorev1 "k8s.io/api/core/v1"
-	krbacv1 "k8s.io/api/rbac/v1"
-
-	"github.com/kyma-project/eventing-manager/test"
-
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	kappsv1 "k8s.io/api/apps/v1"
+	kautoscalingv1 "k8s.io/api/autoscaling/v1"
+	kcorev1 "k8s.io/api/core/v1"
+	krbacv1 "k8s.io/api/rbac/v1"
+	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	kapixclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/api/errors"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -45,23 +38,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	natstestutils "github.com/kyma-project/nats-manager/testutils"
-	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	kappsv1 "k8s.io/api/apps/v1"
-	kautoscalingv1 "k8s.io/api/autoscaling/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
+	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
+	submgrmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
+	submgrmocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
+	"github.com/kyma-project/eventing-manager/test"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 )
 
@@ -366,7 +355,7 @@ func (env TestEnvironment) TearDown() error {
 	// clean-up created resources
 	err := env.DeleteSecretFromK8s(getTestBackendConfig().WebhookSecretName, getTestBackendConfig().Namespace)
 	if err != nil {
-		fmt.Printf("couldn't clean the webhook secret: %s", err)
+		log.Printf("couldn't clean the webhook secret: %s", err)
 	}
 
 	// retry to stop the api-server
@@ -383,7 +372,8 @@ func (env TestEnvironment) TearDown() error {
 
 // GetEventingAssert fetches Eventing from k8s and allows making assertions on it.
 func (env TestEnvironment) GetEventingAssert(g *gomega.GomegaWithT,
-	eventing *v1alpha1.Eventing) gomega.AsyncAssertion {
+	eventing *v1alpha1.Eventing,
+) gomega.AsyncAssertion {
 	return g.Eventually(func() *v1alpha1.Eventing {
 		gotEventing, err := env.GetEventingFromK8s(eventing.Name, eventing.Namespace)
 		if err != nil {
@@ -769,7 +759,8 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingOwnerReferenceSet(t *testi
 }
 
 func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeployment *kappsv1.Deployment,
-	eventingCR v1alpha1.Eventing) {
+	eventingCR v1alpha1.Eventing,
+) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetServiceFromK8s(eventing.GetPublisherPublishServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
@@ -781,7 +772,8 @@ func (env TestEnvironment) EnsureEPPPublishServiceCorrect(t *testing.T, eppDeplo
 }
 
 func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeployment *kappsv1.Deployment,
-	eventingCR v1alpha1.Eventing) {
+	eventingCR v1alpha1.Eventing,
+) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetServiceFromK8s(eventing.GetPublisherMetricsServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
@@ -793,7 +785,8 @@ func (env TestEnvironment) EnsureEPPMetricsServiceCorrect(t *testing.T, eppDeplo
 }
 
 func (env TestEnvironment) EnsureEPPHealthServiceCorrect(t *testing.T, eppDeployment *kappsv1.Deployment,
-	eventingCR v1alpha1.Eventing) {
+	eventingCR v1alpha1.Eventing,
+) {
 	require.Eventually(t, func() bool {
 		result, err := env.GetServiceFromK8s(eventing.GetPublisherHealthServiceName(eventingCR), eventingCR.Namespace)
 		if err != nil {
@@ -955,7 +948,7 @@ func (env TestEnvironment) makeNATSCrReady(t *testing.T, nats *natsv1alpha1.NATS
 
 		err := env.UpdateNATSStatus(nats)
 		if err != nil {
-			env.Logger.WithContext().Errorw("failed to update NATS CR status", err)
+			env.Logger.WithContext().Errorw("failed to update NATS CR status", "error", err)
 			return false
 		}
 		return true
@@ -968,7 +961,7 @@ func (env TestEnvironment) makeNatsCrError(t *testing.T, nats *natsv1alpha1.NATS
 
 		err := env.UpdateNATSStatus(nats)
 		if err != nil {
-			env.Logger.WithContext().Errorw("failed to update NATS CR status", err)
+			env.Logger.WithContext().Errorw("failed to update NATS CR status", "error", err)
 			return false
 		}
 		return true

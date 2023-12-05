@@ -5,20 +5,10 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-
-	ktypes "k8s.io/apimachinery/pkg/types"
-
-	"github.com/kyma-project/eventing-manager/internal/controller/events"
-
 	"github.com/nats-io/nats.go"
-
-	"github.com/kyma-project/eventing-manager/pkg/errors"
-	"github.com/kyma-project/eventing-manager/pkg/object"
-
 	pkgerrors "github.com/pkg/errors"
-
 	"go.uber.org/zap"
+	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,14 +17,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
-
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/object"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 const (
@@ -57,7 +50,8 @@ type Reconciler struct {
 
 func NewReconciler(ctx context.Context, client client.Client, jsBackend jetstream.Backend,
 	logger *logger.Logger, recorder record.EventRecorder, cleaner cleaner.Cleaner,
-	defaultSinkValidator sink.Validator, collector *metrics.Collector) *Reconciler {
+	defaultSinkValidator sink.Validator, collector *metrics.Collector,
+) *Reconciler {
 	reconciler := &Reconciler{
 		Client:              client,
 		ctx:                 ctx,
@@ -239,8 +233,8 @@ func (r *Reconciler) enqueueReconciliationForSubscriptions(subs []eventingv1alph
 
 // handleSubscriptionDeletion deletes the JetStream subscription and removes its finalizer if it is set.
 func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
-	subscription *eventingv1alpha2.Subscription, log *zap.SugaredLogger) (kctrl.Result, error) {
-
+	subscription *eventingv1alpha2.Subscription, log *zap.SugaredLogger,
+) (kctrl.Result, error) {
 	// delete the JetStream subscription/consumer
 	if !utils.ContainsString(subscription.ObjectMeta.Finalizers, eventingv1alpha2.Finalizer) {
 		return kctrl.Result{}, nil
@@ -281,7 +275,8 @@ func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
 
 // syncSubscriptionStatus syncs Subscription status and updates the k8s subscription.
 func (r *Reconciler) syncSubscriptionStatus(ctx context.Context,
-	desiredSubscription *eventingv1alpha2.Subscription, err error, log *zap.SugaredLogger) error {
+	desiredSubscription *eventingv1alpha2.Subscription, err error, log *zap.SugaredLogger,
+) error {
 	// set ready state
 	desiredSubscription.Status.Ready = err == nil
 
@@ -294,7 +289,8 @@ func (r *Reconciler) syncSubscriptionStatus(ctx context.Context,
 
 // updateSubscriptionStatus updates the subscription's status changes to k8s.
 func (r *Reconciler) updateSubscriptionStatus(ctx context.Context,
-	sub *eventingv1alpha2.Subscription, logger *zap.SugaredLogger) error {
+	sub *eventingv1alpha2.Subscription, logger *zap.SugaredLogger,
+) error {
 	namespacedName := &ktypes.NamespacedName{
 		Name:      sub.Name,
 		Namespace: sub.Namespace,
@@ -320,7 +316,8 @@ func (r *Reconciler) updateSubscriptionStatus(ctx context.Context,
 
 // updateStatus updates the status to k8s if modified.
 func (r *Reconciler) updateStatus(ctx context.Context, oldSubscription,
-	newSubscription *eventingv1alpha2.Subscription, logger *zap.SugaredLogger) error {
+	newSubscription *eventingv1alpha2.Subscription, logger *zap.SugaredLogger,
+) error {
 	// compare the status taking into consideration lastTransitionTime in conditions
 	if object.IsSubscriptionStatusEqual(oldSubscription.Status, newSubscription.Status) {
 		return nil

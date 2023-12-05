@@ -3,18 +3,16 @@ package sink
 import (
 	"context"
 
-	kcorev1 "k8s.io/api/core/v1"
-	ktypes "k8s.io/apimachinery/pkg/types"
-
 	"golang.org/x/xerrors"
+	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/eventing-manager/pkg/utils"
-
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 type Validator interface {

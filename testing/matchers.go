@@ -5,18 +5,18 @@ import (
 	"reflect"
 	"strconv"
 
-	. "github.com/onsi/gomega"         //nolint:revive,stylecheck // using . import for convenience
-	. "github.com/onsi/gomega/gstruct" //nolint:revive,stylecheck // using . import for convenience
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	gomegatypes "github.com/onsi/gomega/types"
 	kcorev1 "k8s.io/api/core/v1"
 	kruntime "k8s.io/apimachinery/pkg/runtime"
 	ktypes "k8s.io/apimachinery/pkg/types"
 
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/constants"
 	"github.com/kyma-project/eventing-manager/pkg/object"
+
+	. "github.com/onsi/gomega"         //nolint:revive,stylecheck // using . import for convenience
+	. "github.com/onsi/gomega/gstruct" //nolint:revive,stylecheck // using . import for convenience
 )
 
 //
@@ -176,6 +176,7 @@ func HaveSubscriptionReady() gomegatypes.GomegaMatcher {
 		return s.Status.Ready
 	}, BeTrue())
 }
+
 func HaveTypes(types []string) gomegatypes.GomegaMatcher {
 	return WithTransform(
 		func(s *eventingv1alpha2.Subscription) []string {

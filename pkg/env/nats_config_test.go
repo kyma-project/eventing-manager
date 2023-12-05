@@ -7,12 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-
-	"github.com/stretchr/testify/require"
 )
 
 func Test_GetNewNATSConfig(t *testing.T) {
@@ -96,7 +95,8 @@ func Test_GetNATSConfig(t *testing.T) {
 		want    NATSConfig
 		wantErr bool
 	}{
-		{name: "Required values only gives valid config",
+		{
+			name: "Required values only gives valid config",
 			args: args{
 				envs: map[string]string{
 					"NATS_URL":                 "natsurl",
@@ -122,7 +122,8 @@ func Test_GetNATSConfig(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{name: "Envs are mapped correctly",
+		{
+			name: "Envs are mapped correctly",
 			args: args{
 				envs: map[string]string{
 					"JS_STREAM_NAME":             "jsn",

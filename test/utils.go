@@ -6,12 +6,12 @@ import (
 	"net"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/pkg/logger"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/eventing-manager/pkg/logger"
 )
 
 const (

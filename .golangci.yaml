@@ -21,13 +21,9 @@ linters:
     ### disabled for now... will be enabled 1 by 1
     - containedctx
     - dupl
-    - dupword
     - errorlint
-    - exhaustive
-    - forbidigo
     - forcetypeassert
     - funlen
-    - gci
     - ginkgolinter
     - gochecknoglobals
     - gochecknoinits
@@ -36,18 +32,11 @@ linters:
     - gocritic
     - godox
     - goerr113
-    - gofumpt
-    - gofmt
     - gomnd
-    - gomoddirectives
     - gosec
     - inamedparam
-    - interfacebloat
     - ireturn
-    - loggercheck
     - maintidx
-    - nestif
-    - nilerr
     - noctx
     - nolintlint
     - nonamedreturns
@@ -62,11 +51,8 @@ linters:
     - unconvert
     - unparam
     - varnamelen
-    - wastedassign
     - wrapcheck
     - godot
-    - goimports
-    - mirror
     - tagalign
     - whitespace
 
@@ -133,7 +119,7 @@ linters-settings:
         alias: eventingv1alpha2
       - pkg: github.com/kyma-project/eventing-manager/api/operator/v1alpha1
         alias: operatorv1alpha1
-      - pkg: github.com/kyma-incubator/api-gateway/api/v1beta1
+      - pkg: github.com/kyma-project/api-gateway/apis/gateway/v1beta1
         alias: apigatewayv1beta1
       - pkg: k8s.io/client-go/dynamic/fake
         alias: kdynamicfake

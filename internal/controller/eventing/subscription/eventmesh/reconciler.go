@@ -8,41 +8,36 @@ import (
 	"reflect"
 	"time"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"golang.org/x/xerrors"
 	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	klabels "k8s.io/apimachinery/pkg/labels"
 	ktypes "k8s.io/apimachinery/pkg/types"
-
-	controllererrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
-	"github.com/kyma-project/eventing-manager/internal/controller/events"
-	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
-	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/constants"
-	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
-	"github.com/kyma-project/eventing-manager/pkg/object"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
-
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	"golang.org/x/xerrors"
+	"k8s.io/client-go/tools/record"
+	kctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	controllererrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
+	"github.com/kyma-project/eventing-manager/internal/controller/events"
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
-
-	"go.uber.org/zap"
-
-	"k8s.io/client-go/tools/record"
-	kctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
+	"github.com/kyma-project/eventing-manager/pkg/constants"
+	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/object"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 type syncConditionWebhookCallStatusFunc func(subscription *eventingv1alpha2.Subscription)
@@ -78,7 +73,8 @@ const (
 func NewReconciler(ctx context.Context, client client.Client, logger *logger.Logger, recorder record.EventRecorder,
 	cfg env.Config, cleaner cleaner.Cleaner, eventMeshBackend eventmesh.Backend,
 	credential *eventmesh.OAuth2ClientCredentials, mapper backendutils.NameMapper, validator sink.Validator,
-	collector *metrics.Collector, domain string) *Reconciler {
+	collector *metrics.Collector, domain string,
+) *Reconciler {
 	if err := eventMeshBackend.Initialize(cfg); err != nil {
 		logger.WithContext().Errorw("Failed to start reconciler", "name",
 			reconcilerName, "error", err)
@@ -257,7 +253,8 @@ func (r *Reconciler) syncFinalizer(subscription *eventingv1alpha2.Subscription, 
 }
 
 func (r *Reconciler) handleDeleteSubscription(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	logger *zap.SugaredLogger) (kctrl.Result, error) {
+	logger *zap.SugaredLogger,
+) (kctrl.Result, error) {
 	// delete EventMesh subscriptions
 	logger.Debug("Deleting subscription on EventMesh")
 	if err := r.Backend.DeleteSubscription(subscription); err != nil {
@@ -360,7 +357,8 @@ func syncConditionWebhookCallStatus(subscription *eventingv1alpha2.Subscription)
 
 // syncAPIRule validate the given subscription sink URL and sync its APIRule.
 func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	logger *zap.SugaredLogger) (*apigatewayv1beta1.APIRule, error) {
+	logger *zap.SugaredLogger,
+) (*apigatewayv1beta1.APIRule, error) {
 	if err := r.sinkValidator.Validate(subscription); err != nil {
 		return nil, err
 	}
@@ -398,7 +396,8 @@ func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1al
 
 // createOrUpdateAPIRule create new or update existing APIRule for the given subscription.
 func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	sink url.URL, logger *zap.SugaredLogger) (*apigatewayv1beta1.APIRule, error) {
+	sink url.URL, logger *zap.SugaredLogger,
+) (*apigatewayv1beta1.APIRule, error) {
 	svcNs, svcName, err := getSvcNsAndName(sink.Host)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to parse svc name and ns in create or update APIRule: %v", err)
@@ -468,7 +467,8 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 // if the OwnerReferences list is empty, then the APIRule will be deleted
 // else if the OwnerReferences list length was decreased, then the APIRule will be updated.
 func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	reusableAPIRule *apigatewayv1beta1.APIRule) error {
+	reusableAPIRule *apigatewayv1beta1.APIRule,
+) error {
 	// subscription does not have a previous APIRule
 	if len(subscription.Status.Backend.APIRuleName) == 0 {
 		return nil
@@ -696,7 +696,8 @@ func getRequiredConditions(subscriptionConditions, expectedConditions []eventing
 // replaceStatusCondition replaces the given condition on the subscription. Also it sets the readiness in the status.
 // So make sure you always use this method then changing a condition.
 func replaceStatusCondition(subscription *eventingv1alpha2.Subscription,
-	condition eventingv1alpha2.Condition) bool {
+	condition eventingv1alpha2.Condition,
+) bool {
 	// the subscription is ready if all conditions are fulfilled
 	isReady := true
 

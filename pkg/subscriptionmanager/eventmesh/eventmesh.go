@@ -6,15 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
-
-	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
-	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
@@ -28,8 +20,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -80,7 +76,8 @@ type SubscriptionManager struct {
 // NewSubscriptionManager creates the SubscriptionManager for BEB and initializes it as far as it
 // does not depend on non-common options.
 func NewSubscriptionManager(restCfg *rest.Config, metricsAddr string, resyncPeriod time.Duration, logger *logger.Logger,
-	collector *metrics.Collector, domain string) *SubscriptionManager {
+	collector *metrics.Collector, domain string,
+) *SubscriptionManager {
 	return &SubscriptionManager{
 		envCfg:       env.GetConfig(),
 		restCfg:      restCfg,

@@ -22,7 +22,8 @@ func isEventTypeSegmentsOverLimit(eventType string) bool {
 }
 
 func updateHashesInStatus(kymaSubscription *eventingv1alpha2.Subscription,
-	eventMeshLocalSubscription *types.Subscription, eventMeshServerSubscription *types.Subscription) error {
+	eventMeshLocalSubscription *types.Subscription, eventMeshServerSubscription *types.Subscription,
+) error {
 	if err := setEventMeshLocalSubHashInStatus(kymaSubscription, eventMeshLocalSubscription); err != nil {
 		return err
 	}
@@ -34,7 +35,8 @@ func updateHashesInStatus(kymaSubscription *eventingv1alpha2.Subscription,
 
 // setEventMeshLocalSubHashInStatus sets the hash for EventMesh local sub in Kyma Sub status.
 func setEventMeshLocalSubHashInStatus(kymaSubscription *eventingv1alpha2.Subscription,
-	eventMeshSubscription *types.Subscription) error {
+	eventMeshSubscription *types.Subscription,
+) error {
 	// generate hash
 	newHash, err := backendutils.GetHash(eventMeshSubscription)
 	if err != nil {
@@ -66,7 +68,8 @@ func setWebhookAuthHashInStatus(kymaSubscription *eventingv1alpha2.Subscription,
 
 // setEventMeshServerSubHashInStatus sets the hash for EventMesh local sub in Kyma Sub status.
 func setEventMeshServerSubHashInStatus(kymaSubscription *eventingv1alpha2.Subscription,
-	eventMeshSubscription *types.Subscription) error {
+	eventMeshSubscription *types.Subscription,
+) error {
 	// clean up the server sub object from extra info
 	cleanedEventMeshSub := backendutils.GetCleanedEventMeshSubscription(eventMeshSubscription)
 	// generate hash
@@ -83,8 +86,10 @@ func setEventMeshServerSubHashInStatus(kymaSubscription *eventingv1alpha2.Subscr
 func statusCleanEventTypes(typeInfos []backendutils.EventTypeInfo) []eventingv1alpha2.EventType {
 	var cleanEventTypes []eventingv1alpha2.EventType
 	for _, i := range typeInfos {
-		cleanEventTypes = append(cleanEventTypes, eventingv1alpha2.EventType{OriginalType: i.OriginalType,
-			CleanType: i.CleanType})
+		cleanEventTypes = append(cleanEventTypes, eventingv1alpha2.EventType{
+			OriginalType: i.OriginalType,
+			CleanType:    i.CleanType,
+		})
 	}
 	return cleanEventTypes
 }
@@ -102,8 +107,9 @@ func statusFinalEventTypes(typeInfos []backendutils.EventTypeInfo) []eventingv1a
 
 // setEmsSubscriptionStatus sets the status of EventMesh Subscription in ev2Subscription.
 func setEmsSubscriptionStatus(subscription *eventingv1alpha2.Subscription,
-	eventMeshSubscription *types.Subscription) bool {
-	var statusChanged = false
+	eventMeshSubscription *types.Subscription,
+) bool {
+	statusChanged := false
 	if subscription.Status.Backend.EventMeshSubscriptionStatus == nil {
 		subscription.Status.Backend.EventMeshSubscriptionStatus = &eventingv1alpha2.EventMeshSubscriptionStatus{}
 	}
@@ -113,26 +119,22 @@ func setEmsSubscriptionStatus(subscription *eventingv1alpha2.Subscription,
 	}
 	if subscription.Status.Backend.EventMeshSubscriptionStatus.StatusReason !=
 		eventMeshSubscription.SubscriptionStatusReason {
-		subscription.Status.Backend.EventMeshSubscriptionStatus.StatusReason =
-			eventMeshSubscription.SubscriptionStatusReason
+		subscription.Status.Backend.EventMeshSubscriptionStatus.StatusReason = eventMeshSubscription.SubscriptionStatusReason
 		statusChanged = true
 	}
 	if subscription.Status.Backend.EventMeshSubscriptionStatus.LastSuccessfulDelivery !=
 		eventMeshSubscription.LastSuccessfulDelivery {
-		subscription.Status.Backend.EventMeshSubscriptionStatus.LastSuccessfulDelivery =
-			eventMeshSubscription.LastSuccessfulDelivery
+		subscription.Status.Backend.EventMeshSubscriptionStatus.LastSuccessfulDelivery = eventMeshSubscription.LastSuccessfulDelivery
 		statusChanged = true
 	}
 	if subscription.Status.Backend.EventMeshSubscriptionStatus.LastFailedDelivery !=
 		eventMeshSubscription.LastFailedDelivery {
-		subscription.Status.Backend.EventMeshSubscriptionStatus.LastFailedDelivery =
-			eventMeshSubscription.LastFailedDelivery
+		subscription.Status.Backend.EventMeshSubscriptionStatus.LastFailedDelivery = eventMeshSubscription.LastFailedDelivery
 		statusChanged = true
 	}
 	if subscription.Status.Backend.EventMeshSubscriptionStatus.LastFailedDeliveryReason !=
 		eventMeshSubscription.LastFailedDeliveryReason {
-		subscription.Status.Backend.EventMeshSubscriptionStatus.LastFailedDeliveryReason =
-			eventMeshSubscription.LastFailedDeliveryReason
+		subscription.Status.Backend.EventMeshSubscriptionStatus.LastFailedDeliveryReason = eventMeshSubscription.LastFailedDeliveryReason
 		statusChanged = true
 	}
 	return statusChanged

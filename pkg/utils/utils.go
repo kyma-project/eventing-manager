@@ -7,12 +7,10 @@ import (
 	"strings"
 	"time"
 
-	kcorev1 "k8s.io/api/core/v1"
-
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/event"
-
 	"github.com/pkg/errors"
+	kcorev1 "k8s.io/api/core/v1"
 
 	emerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 )
@@ -78,6 +76,7 @@ func Int64Ptr(i int64) *int64 {
 func StringPtr(s string) *string {
 	return &s
 }
+
 func ProcMountTypePtr(p kcorev1.ProcMountType) *kcorev1.ProcMountType {
 	return &p
 }

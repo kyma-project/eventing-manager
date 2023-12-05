@@ -7,7 +7,6 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
-
 	"github.com/google/uuid"
 )
 
@@ -24,6 +23,7 @@ func Is2XX(statusCode int) bool {
 func LegacyEventData(source, eventType string) string {
 	return `{\"` + keyApp + `\":\"` + source + `\",\"` + keyMode + `\":\"legacy\",\"` + keyType + `\":\"` + eventType + `\"}`
 }
+
 func LegacyEventPayload(eventId, eventVersion, eventType, data string) string {
 	return `{"data":"` + data + `","event-id":"` + eventId + `","event-type":"` + eventType + `","event-time":"2020-04-02T21:37:00Z","event-type-version":"` + eventVersion + `"}`
 }

@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
-
 	ceevent "github.com/cloudevents/sdk-go/v2/event"
+	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 )
 
 const (

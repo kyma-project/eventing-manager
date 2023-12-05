@@ -179,8 +179,10 @@ func Test_validateSubscription(t *testing.T) {
 			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
-				eventingtesting.WithTypes([]string{eventingtesting.OrderCreatedV1Event,
-					eventingtesting.OrderCreatedV1Event}),
+				eventingtesting.WithTypes([]string{
+					eventingtesting.OrderCreatedV1Event,
+					eventingtesting.OrderCreatedV1Event,
+				}),
 				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
@@ -409,10 +411,12 @@ func Test_validateSubscription(t *testing.T) {
 			),
 			wantErr: kerrors.NewInvalid(
 				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SourcePath,
-					subName, v1alpha2.EmptyErrDetail),
+				field.ErrorList{
+					v1alpha2.MakeInvalidFieldError(v1alpha2.SourcePath,
+						subName, v1alpha2.EmptyErrDetail),
 					v1alpha2.MakeInvalidFieldError(v1alpha2.ConfigPath,
-						subName, v1alpha2.StringIntErrDetail)}),
+						subName, v1alpha2.StringIntErrDetail),
+				}),
 		},
 	}
 

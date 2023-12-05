@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kappsv1 "k8s.io/api/apps/v1"
@@ -20,8 +21,6 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
@@ -31,6 +30,7 @@ var NatsGVK = schema.GroupVersionResource{
 	Resource: "nats",
 }
 
+//nolint:interfacebloat // FIXME
 //go:generate go run github.com/vektra/mockery/v2 --name=Client --outpkg=mocks --case=underscore
 type Client interface {
 	GetDeployment(ctx context.Context, name, namespace string) (*kappsv1.Deployment, error)
@@ -63,7 +63,8 @@ type KubeClient struct {
 }
 
 func NewKubeClient(client client.Client, clientset kapixclientset.Interface, fieldManager string,
-	dynamicClient dynamic.Interface) Client {
+	dynamicClient dynamic.Interface,
+) Client {
 	return &KubeClient{
 		client:        client,
 		clientset:     clientset,
@@ -236,7 +237,8 @@ func (c *KubeClient) APIRuleCRDExists(ctx context.Context) (bool, error) {
 
 // GetMutatingWebHookConfiguration returns the MutatingWebhookConfiguration k8s resource.
 func (c *KubeClient) GetMutatingWebHookConfiguration(ctx context.Context,
-	name string) (*kadmissionregistrationv1.MutatingWebhookConfiguration, error) {
+	name string,
+) (*kadmissionregistrationv1.MutatingWebhookConfiguration, error) {
 	var mutatingWH kadmissionregistrationv1.MutatingWebhookConfiguration
 	mutatingWHKey := client.ObjectKey{
 		Name: name,
@@ -250,7 +252,8 @@ func (c *KubeClient) GetMutatingWebHookConfiguration(ctx context.Context,
 
 // GetValidatingWebHookConfiguration returns the ValidatingWebhookConfiguration k8s resource.
 func (c *KubeClient) GetValidatingWebHookConfiguration(ctx context.Context,
-	name string) (*kadmissionregistrationv1.ValidatingWebhookConfiguration, error) {
+	name string,
+) (*kadmissionregistrationv1.ValidatingWebhookConfiguration, error) {
 	var validatingWH kadmissionregistrationv1.ValidatingWebhookConfiguration
 	validatingWHKey := client.ObjectKey{
 		Name: name,

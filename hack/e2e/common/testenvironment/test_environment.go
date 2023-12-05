@@ -8,27 +8,23 @@ import (
 	"strings"
 	"time"
 
-	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
-
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
-
-	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-
 	"go.uber.org/zap"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ktypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
@@ -68,7 +64,6 @@ func NewTestEnvironment() *TestEnvironment {
 	if err != nil {
 		logger.Error(err.Error())
 		panic(err)
-
 	}
 	logger.Info(fmt.Sprintf("##### NOTE: Tests will run w.r.t. backend: %s", testConfigs.BackendType))
 

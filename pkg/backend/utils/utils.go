@@ -6,18 +6,16 @@ import (
 	"fmt"
 	"net/url"
 
+	ceevent "github.com/cloudevents/sdk-go/v2/event"
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
-	ceevent "github.com/cloudevents/sdk-go/v2/event"
-	"github.com/nats-io/nats.go"
-
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type EventTypeInfo struct {
@@ -77,7 +75,8 @@ func GetExposedURLFromAPIRule(apiRule *apigatewayv1beta1.APIRule, targetURL stri
 
 // UpdateSubscriptionStatus updates the status of all Kyma subscriptions on k8s.
 func UpdateSubscriptionStatus(ctx context.Context, dClient dynamic.Interface,
-	sub *eventingv1alpha2.Subscription) error {
+	sub *eventingv1alpha2.Subscription,
+) error {
 	unstructuredObj, err := sub.ToUnstructuredSub()
 	if err != nil {
 		return errors.Wrap(err, "convert subscription to unstructured failed")
@@ -92,7 +91,8 @@ func UpdateSubscriptionStatus(ctx context.Context, dClient dynamic.Interface,
 
 // LoggerWithSubscription returns a logger with the given subscription (v1alpha2) details.
 func LoggerWithSubscription(log *zap.SugaredLogger,
-	subscription *eventingv1alpha2.Subscription) *zap.SugaredLogger {
+	subscription *eventingv1alpha2.Subscription,
+) *zap.SugaredLogger {
 	return log.With(
 		"kind", subscription.GetObjectKind().GroupVersionKind().Kind,
 		"version", subscription.GetGeneration(),

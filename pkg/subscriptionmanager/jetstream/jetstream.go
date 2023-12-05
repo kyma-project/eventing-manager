@@ -4,36 +4,30 @@ import (
 	"context"
 	"fmt"
 
-	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
-
-	submgrmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
-
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
-	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-
-	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
-
-	"golang.org/x/xerrors"
-
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"golang.org/x/xerrors"
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
-
 	kkubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
 	backendjetstream "github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
+	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	submgrmanager "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 )
 
 const (
@@ -72,7 +66,8 @@ type SubscriptionManager struct {
 
 // NewSubscriptionManager creates the subscription manager for JetStream.
 func NewSubscriptionManager(restCfg *rest.Config, natsConfig env.NATSConfig, metricsAddr string,
-	metricsCollector *backendmetrics.Collector, logger *logger.Logger) *SubscriptionManager {
+	metricsCollector *backendmetrics.Collector, logger *logger.Logger,
+) *SubscriptionManager {
 	return &SubscriptionManager{
 		envCfg:           natsConfig,
 		restCfg:          restCfg,

@@ -5,12 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	kappsv1 "k8s.io/api/apps/v1"
 	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/internal/label"
@@ -59,7 +58,7 @@ func TestNewDeployment(t *testing.T) {
 			var natsConfig env.NATSConfig
 
 			switch tc.givenBackendType {
-			case "NATS":
+			case v1alpha1.NatsBackendType:
 				natsConfig = env.NATSConfig{
 					JSStreamName: "kyma",
 					URL:          natsURL,
@@ -69,7 +68,7 @@ func TestNewDeployment(t *testing.T) {
 					testutils.WithEventingCRNamespace(publisherNamespace),
 					testutils.WithEventingEventTypePrefix(eventTypePrefix),
 				), natsConfig, publisherConfig)
-			case "EventMesh":
+			case v1alpha1.EventMeshBackendType:
 				deployment = newEventMeshPublisherDeployment(testutils.NewEventingCR(
 					testutils.WithEventingCRName(tc.givenPublisherName),
 					testutils.WithEventingCRNamespace(publisherNamespace),
@@ -176,6 +175,7 @@ func Test_GetNATSEnvVars(t *testing.T) {
 		})
 	}
 }
+
 func Test_GetLogEnvVars(t *testing.T) {
 	testCases := []struct {
 		name          string

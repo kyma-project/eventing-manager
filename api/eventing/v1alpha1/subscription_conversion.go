@@ -5,12 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
-
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
 )
 
 const (
@@ -62,7 +61,7 @@ func V1ToV2(src *Subscription, dst *v1alpha2.Subscription) error {
 }
 
 // ConvertFrom converts this Subscription from the Hub version (v2) to v1.
-func (dst *Subscription) ConvertFrom(srcRaw conversion.Hub) error { //nolint:revive
+func (dst *Subscription) ConvertFrom(srcRaw conversion.Hub) error {
 	src, ok := srcRaw.(*v1alpha2.Subscription)
 	if !ok {
 		return errors.Errorf(ErrorHubVersionMsg)
@@ -133,27 +132,31 @@ func (src *Subscription) setV2ProtocolFields(dst *v1alpha2.Subscription) {
 	}
 	// protocol settings
 	if src.Spec.ProtocolSettings != nil {
-		if src.Spec.ProtocolSettings.ContentMode != nil {
-			dst.Spec.Config[v1alpha2.ProtocolSettingsContentMode] = *src.Spec.ProtocolSettings.ContentMode
+		src.setProtocolSettings(dst)
+	}
+}
+
+func (src *Subscription) setProtocolSettings(dst *v1alpha2.Subscription) {
+	if src.Spec.ProtocolSettings.ContentMode != nil {
+		dst.Spec.Config[v1alpha2.ProtocolSettingsContentMode] = *src.Spec.ProtocolSettings.ContentMode
+	}
+	if src.Spec.ProtocolSettings.ExemptHandshake != nil {
+		dst.Spec.Config[v1alpha2.ProtocolSettingsExemptHandshake] = fmt.Sprint(*src.Spec.ProtocolSettings.ExemptHandshake)
+	}
+	if src.Spec.ProtocolSettings.Qos != nil {
+		dst.Spec.Config[v1alpha2.ProtocolSettingsQos] = *src.Spec.ProtocolSettings.Qos
+	}
+	// webhookAuth fields
+	if src.Spec.ProtocolSettings.WebhookAuth != nil {
+		if src.Spec.ProtocolSettings.WebhookAuth.Type != "" {
+			dst.Spec.Config[v1alpha2.WebhookAuthType] = src.Spec.ProtocolSettings.WebhookAuth.Type
 		}
-		if src.Spec.ProtocolSettings.ExemptHandshake != nil {
-			dst.Spec.Config[v1alpha2.ProtocolSettingsExemptHandshake] = fmt.Sprint(*src.Spec.ProtocolSettings.ExemptHandshake)
-		}
-		if src.Spec.ProtocolSettings.Qos != nil {
-			dst.Spec.Config[v1alpha2.ProtocolSettingsQos] = *src.Spec.ProtocolSettings.Qos
-		}
-		// webhookAuth fields
-		if src.Spec.ProtocolSettings.WebhookAuth != nil {
-			if src.Spec.ProtocolSettings.WebhookAuth.Type != "" {
-				dst.Spec.Config[v1alpha2.WebhookAuthType] = src.Spec.ProtocolSettings.WebhookAuth.Type
-			}
-			dst.Spec.Config[v1alpha2.WebhookAuthGrantType] = src.Spec.ProtocolSettings.WebhookAuth.GrantType
-			dst.Spec.Config[v1alpha2.WebhookAuthClientID] = src.Spec.ProtocolSettings.WebhookAuth.ClientID
-			dst.Spec.Config[v1alpha2.WebhookAuthClientSecret] = src.Spec.ProtocolSettings.WebhookAuth.ClientSecret
-			dst.Spec.Config[v1alpha2.WebhookAuthTokenURL] = src.Spec.ProtocolSettings.WebhookAuth.TokenURL
-			if src.Spec.ProtocolSettings.WebhookAuth.Scope != nil {
-				dst.Spec.Config[v1alpha2.WebhookAuthScope] = strings.Join(src.Spec.ProtocolSettings.WebhookAuth.Scope, ",")
-			}
+		dst.Spec.Config[v1alpha2.WebhookAuthGrantType] = src.Spec.ProtocolSettings.WebhookAuth.GrantType
+		dst.Spec.Config[v1alpha2.WebhookAuthClientID] = src.Spec.ProtocolSettings.WebhookAuth.ClientID
+		dst.Spec.Config[v1alpha2.WebhookAuthClientSecret] = src.Spec.ProtocolSettings.WebhookAuth.ClientSecret
+		dst.Spec.Config[v1alpha2.WebhookAuthTokenURL] = src.Spec.ProtocolSettings.WebhookAuth.TokenURL
+		if src.Spec.ProtocolSettings.WebhookAuth.Scope != nil {
+			dst.Spec.Config[v1alpha2.WebhookAuthScope] = strings.Join(src.Spec.ProtocolSettings.WebhookAuth.Scope, ",")
 		}
 	}
 }

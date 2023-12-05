@@ -38,9 +38,7 @@ const (
 	PriorityClassName = "eventing-manager-priority-class"
 )
 
-var (
-	TerminationGracePeriodSeconds = int64(30)
-)
+var TerminationGracePeriodSeconds = int64(30)
 
 func newNATSPublisherDeployment(
 	eventing *v1alpha1.Eventing,
@@ -184,6 +182,7 @@ func WithAffinity(publisherName string) DeployOpt {
 		}
 	}
 }
+
 func WithContainers(publisherConfig env.PublisherConfig, eventing *v1alpha1.Eventing) DeployOpt {
 	return func(d *kappsv1.Deployment) {
 		d.Spec.Template.Spec.Containers = []kcorev1.Container{
@@ -215,7 +214,8 @@ func WithLogEnvVars(publisherConfig env.PublisherConfig, eventing *v1alpha1.Even
 }
 
 func WithNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig,
-	eventing *v1alpha1.Eventing) DeployOpt {
+	eventing *v1alpha1.Eventing,
+) DeployOpt {
 	return func(d *kappsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
 			if strings.EqualFold(container.Name, GetPublisherDeploymentName(*eventing)) {
@@ -226,7 +226,8 @@ func WithNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherCon
 }
 
 func getNATSEnvVars(natsConfig env.NATSConfig, publisherConfig env.PublisherConfig,
-	eventing *v1alpha1.Eventing) []kcorev1.EnvVar {
+	eventing *v1alpha1.Eventing,
+) []kcorev1.EnvVar {
 	return []kcorev1.EnvVar{
 		{Name: "BACKEND", Value: "nats"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
@@ -328,7 +329,8 @@ func getResources(requestsCPU, requestsMemory, limitsCPU, limitsMemory string) k
 }
 
 func WithBEBEnvVars(publisherName string, publisherConfig env.PublisherConfig,
-	eventing *v1alpha1.Eventing) DeployOpt {
+	eventing *v1alpha1.Eventing,
+) DeployOpt {
 	return func(d *kappsv1.Deployment) {
 		for i, container := range d.Spec.Template.Spec.Containers {
 			if strings.EqualFold(container.Name, publisherName) {
@@ -339,7 +341,8 @@ func WithBEBEnvVars(publisherName string, publisherConfig env.PublisherConfig,
 }
 
 func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConfig,
-	eventing *v1alpha1.Eventing) []kcorev1.EnvVar {
+	eventing *v1alpha1.Eventing,
+) []kcorev1.EnvVar {
 	return []kcorev1.EnvVar{
 		{Name: "BACKEND", Value: "beb"},
 		{Name: "PORT", Value: strconv.Itoa(int(publisherPortNum))},
@@ -352,7 +355,8 @@ func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConf
 				SecretKeyRef: &kcorev1.SecretKeySelector{
 					LocalObjectReference: kcorev1.LocalObjectReference{Name: publisherName},
 					Key:                  PublisherSecretClientIDKey,
-				}},
+				},
+			},
 		},
 		{
 			Name: "CLIENT_SECRET",
@@ -360,7 +364,8 @@ func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConf
 				SecretKeyRef: &kcorev1.SecretKeySelector{
 					LocalObjectReference: kcorev1.LocalObjectReference{Name: publisherName},
 					Key:                  PublisherSecretClientSecretKey,
-				}},
+				},
+			},
 		},
 		{
 			Name: "TOKEN_ENDPOINT",
@@ -368,7 +373,8 @@ func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConf
 				SecretKeyRef: &kcorev1.SecretKeySelector{
 					LocalObjectReference: kcorev1.LocalObjectReference{Name: publisherName},
 					Key:                  PublisherSecretTokenEndpointKey,
-				}},
+				},
+			},
 		},
 		{
 			Name: "EMS_PUBLISH_URL",
@@ -376,7 +382,8 @@ func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConf
 				SecretKeyRef: &kcorev1.SecretKeySelector{
 					LocalObjectReference: kcorev1.LocalObjectReference{Name: publisherName},
 					Key:                  PublisherSecretEMSURLKey,
-				}},
+				},
+			},
 		},
 		{
 			Name: "BEB_NAMESPACE_VALUE",
@@ -384,7 +391,8 @@ func getEventMeshEnvVars(publisherName string, publisherConfig env.PublisherConf
 				SecretKeyRef: &kcorev1.SecretKeySelector{
 					LocalObjectReference: kcorev1.LocalObjectReference{Name: publisherName},
 					Key:                  PublisherSecretBEBNamespaceKey,
-				}},
+				},
+			},
 		},
 		{
 			Name:  "BEB_NAMESPACE",

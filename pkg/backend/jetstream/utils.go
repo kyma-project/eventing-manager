@@ -6,18 +6,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
-
-	pkgerrors "github.com/pkg/errors"
-
 	"github.com/nats-io/nats.go"
+	pkgerrors "github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/eventing-manager/pkg/errors"
-
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/errors"
 )
 
 const (
@@ -38,7 +35,8 @@ const (
 
 // getDefaultSubscriptionOptions builds the default nats.SubOpts by using the subscription/consumer configuration.
 func (js *JetStream) getDefaultSubscriptionOptions(consumer SubscriptionSubjectIdentifier,
-	maxInFlightMessages int) DefaultSubOpts {
+	maxInFlightMessages int,
+) DefaultSubOpts {
 	return DefaultSubOpts{
 		nats.Durable(consumer.consumerName),
 		nats.Description(consumer.namespacedSubjectName),
@@ -54,9 +52,11 @@ func (js *JetStream) getDefaultSubscriptionOptions(consumer SubscriptionSubjectI
 	}
 }
 
-var ErrInvalidStorageType = errors.NewArgumentError("invalid stream storage type: %q")
-var ErrInvalidRetentionPolicy = errors.NewArgumentError("invalid stream retention policy: %q")
-var ErrInvalidDiscardPolicy = errors.NewArgumentError("invalid stream discard policy: %q")
+var (
+	ErrInvalidStorageType     = errors.NewArgumentError("invalid stream storage type: %q")
+	ErrInvalidRetentionPolicy = errors.NewArgumentError("invalid stream retention policy: %q")
+	ErrInvalidDiscardPolicy   = errors.NewArgumentError("invalid stream discard policy: %q")
+)
 
 // toJetStreamStorageType converts a string to a nats.StorageType.
 func toJetStreamStorageType(s string) (nats.StorageType, error) {
@@ -169,7 +169,8 @@ func getStreamConfig(natsConfig env.NATSConfig) (*nats.StreamConfig, error) {
 
 // getConsumerConfig return the consumerConfig according to the default configuration.
 func (js *JetStream) getConsumerConfig(jsSubKey SubscriptionSubjectIdentifier,
-	jsSubject string, maxInFlight int) *nats.ConsumerConfig {
+	jsSubject string, maxInFlight int,
+) *nats.ConsumerConfig {
 	return &nats.ConsumerConfig{
 		Durable:        jsSubKey.ConsumerName(),
 		Description:    jsSubKey.namespacedSubjectName,
@@ -202,7 +203,7 @@ func GetCleanEventTypesFromEventTypes(eventTypes []eventingv1alpha2.EventType) [
 	return cleantypes
 }
 
-// TODO: to be moved to subscription types
+// TODO: to be moved to subscription types.
 func getUniqueEventTypes(eventTypes []string) []string {
 	unique := make([]string, 0, len(eventTypes))
 	mapper := make(map[string]bool)
@@ -238,15 +239,18 @@ func GetCleanEventTypes(sub *eventingv1alpha2.Subscription, cleaner cleaner.Clea
 // GetBackendJetStreamTypes gets the original event type and the consumer name for all the subscriptions
 // and this slice is set as the backend specific status for JetStream.
 func GetBackendJetStreamTypes(subscription *eventingv1alpha2.Subscription,
-	jsSubjects []string) ([]eventingv1alpha2.JetStreamTypes, error) {
+	jsSubjects []string,
+) ([]eventingv1alpha2.JetStreamTypes, error) {
 	if len(jsSubjects) != len(subscription.Spec.Types) {
 		return nil, pkgerrors.New("length of JetStream subjects do not match with eventTypes from spec")
 	}
 
 	var jsTypes []eventingv1alpha2.JetStreamTypes
 	for i, ot := range subscription.Spec.Types {
-		jt := eventingv1alpha2.JetStreamTypes{OriginalType: ot,
-			ConsumerName: computeConsumerName(subscription, jsSubjects[i])}
+		jt := eventingv1alpha2.JetStreamTypes{
+			OriginalType: ot,
+			ConsumerName: computeConsumerName(subscription, jsSubjects[i]),
+		}
 		jsTypes = append(jsTypes, jt)
 	}
 	return jsTypes, nil
@@ -255,7 +259,8 @@ func GetBackendJetStreamTypes(subscription *eventingv1alpha2.Subscription,
 // isJsSubAssociatedWithKymaSub returns true if the given SubscriptionSubjectIdentifier and Kyma subscription
 // have the same namespaced name, otherwise returns false.
 func isJsSubAssociatedWithKymaSub(jsSubKey SubscriptionSubjectIdentifier,
-	subscription *eventingv1alpha2.Subscription) bool {
+	subscription *eventingv1alpha2.Subscription,
+) bool {
 	return createKeyPrefix(subscription) == jsSubKey.NamespacedName()
 }
 
@@ -275,7 +280,8 @@ func (s SubscriptionSubjectIdentifier) ConsumerName() string {
 
 // NewSubscriptionSubjectIdentifier returns a new SubscriptionSubjectIdentifier instance.
 func NewSubscriptionSubjectIdentifier(subscription *eventingv1alpha2.Subscription,
-	subject string) SubscriptionSubjectIdentifier {
+	subject string,
+) SubscriptionSubjectIdentifier {
 	cn := computeConsumerName(subscription, subject)          // compute the consumer name once
 	nn := computeNamespacedSubjectName(subscription, subject) // compute the namespaced name with the subject once
 	return SubscriptionSubjectIdentifier{consumerName: cn, namespacedSubjectName: nn}

@@ -19,7 +19,7 @@ const (
 var Finalizer = GroupVersion.Group
 
 // WebhookAuth defines the Webhook called by an active subscription in BEB.
-// TODO: Remove it when depreciating code of v1alpha1
+// TODO: Remove it when depreciating code of v1alpha1.
 type WebhookAuth struct {
 	// Defines the authentication type.
 	// +optional
@@ -42,7 +42,7 @@ type WebhookAuth struct {
 }
 
 // ProtocolSettings defines the CE protocol setting specification implementation.
-// TODO: Remove it when depreciating code of v1alpha1
+// TODO: Remove it when depreciating code of v1alpha1.
 type ProtocolSettings struct {
 	// Defines the content mode for eventing based on BEB.
 	//  The value is either `BINARY`, or `STRUCTURED`.
@@ -62,7 +62,7 @@ type ProtocolSettings struct {
 	WebhookAuth *WebhookAuth `json:"webhookAuth,omitempty"`
 }
 
-// TODO: Remove it when depreciating code of v1alpha1
+// TODO: Remove it when depreciating code of v1alpha1.
 const (
 	ProtocolSettingsContentModeBinary     string = "BINARY"
 	ProtocolSettingsContentModeStructured string = "STRUCTURED"
@@ -267,7 +267,7 @@ func (s Subscription) MarshalJSON() ([]byte, error) {
 type SubscriptionList struct {
 	kmetav1.TypeMeta `json:",inline"`
 	kmetav1.ListMeta `json:"metadata,omitempty"`
-	Items          []Subscription `json:"items"`
+	Items            []Subscription `json:"items"`
 }
 
 // InitializeCleanEventTypes initializes the SubscriptionStatus.CleanEventTypes with an empty slice of strings.

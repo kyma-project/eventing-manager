@@ -7,10 +7,9 @@ import (
 	"testing"
 	"time"
 
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
-
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -302,7 +301,8 @@ func prepareTestEnvironment(t *testing.T) *TestEnvironment {
 
 func createSubscriptionAndAssert(t *testing.T,
 	testEnv *TestEnvironment,
-	subscriber *eventingtesting.Subscriber) (SubscriptionSubjectIdentifier, *eventingv1alpha2.Subscription) {
+	subscriber *eventingtesting.Subscriber,
+) (SubscriptionSubjectIdentifier, *eventingv1alpha2.Subscription) {
 	sub := eventingtesting.NewSubscription("sub", "foo",
 		eventingtesting.WithCleanEventSourceAndType(),
 		eventingtesting.WithNotCleanEventSourceAndType(),
@@ -351,7 +351,8 @@ func startJetStream(t *testing.T, testEnv *TestEnvironment) {
 
 func assertNewSubscriptionReturnItsKey(t *testing.T,
 	testEnv *TestEnvironment,
-	sub *eventingv1alpha2.Subscription) SubscriptionSubjectIdentifier {
+	sub *eventingv1alpha2.Subscription,
+) SubscriptionSubjectIdentifier {
 	firstSubject, err := testEnv.cleaner.CleanEventType(sub.Spec.Types[0])
 	require.NoError(t, err)
 	require.NotEmpty(t, firstSubject)

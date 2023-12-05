@@ -4,14 +4,12 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
-
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kunstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kruntime "k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
-
-	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type TypeMatching string
@@ -135,7 +133,7 @@ func (s *Subscription) ToUnstructuredSub() (*kunstructured.Unstructured, error) 
 type SubscriptionList struct {
 	kmetav1.TypeMeta `json:",inline"`
 	kmetav1.ListMeta `json:"metadata,omitempty"`
-	Items          []Subscription `json:"items"`
+	Items            []Subscription `json:"items"`
 }
 
 func init() { //nolint:gochecknoinits

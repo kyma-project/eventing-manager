@@ -5,15 +5,13 @@ package jetstream
 import (
 	"sync"
 
-	"github.com/nats-io/nats.go"
-
-	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/nats-io/nats.go"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 )
