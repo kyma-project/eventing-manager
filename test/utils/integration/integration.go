@@ -948,7 +948,7 @@ func (env TestEnvironment) makeNATSCrReady(t *testing.T, nats *natsv1alpha1.NATS
 
 		err := env.UpdateNATSStatus(nats)
 		if err != nil {
-			env.Logger.WithContext().Errorw("failed to update NATS CR status", err)
+			env.Logger.WithContext().Errorw("failed to update NATS CR status", "error", err)
 			return false
 		}
 		return true
@@ -961,7 +961,7 @@ func (env TestEnvironment) makeNatsCrError(t *testing.T, nats *natsv1alpha1.NATS
 
 		err := env.UpdateNATSStatus(nats)
 		if err != nil {
-			env.Logger.WithContext().Errorw("failed to update NATS CR status", err)
+			env.Logger.WithContext().Errorw("failed to update NATS CR status", "error", err)
 			return false
 		}
 		return true

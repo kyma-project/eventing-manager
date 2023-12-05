@@ -38,7 +38,6 @@ linters:
     - gosec
     - inamedparam
     - ireturn
-    - loggercheck
     - maintidx
     - noctx
     - nolintlint
