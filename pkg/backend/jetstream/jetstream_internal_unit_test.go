@@ -842,7 +842,7 @@ func NewConsumers(subs []v1alpha2.Subscription, jsBackend *JetStream) []*nats.Co
 	// existing subscription type with existing consumers
 	// namespace: test1, sub: test1, type: v1
 	return []*nats.ConsumerInfo{
-		&nats.ConsumerInfo{
+		{
 			Name: computeConsumerName(
 				&sub1,
 				jsBackend.getJetStreamSubject(sub1.Spec.Source,
@@ -852,7 +852,7 @@ func NewConsumers(subs []v1alpha2.Subscription, jsBackend *JetStream) []*nats.Co
 			Config:    nats.ConsumerConfig{MaxAckPending: DefaultMaxInFlights},
 			PushBound: false,
 		},
-		&nats.ConsumerInfo{
+		{
 			Name: computeConsumerName(
 				&sub2,
 				jsBackend.getJetStreamSubject(sub2.Spec.Source,
@@ -862,7 +862,7 @@ func NewConsumers(subs []v1alpha2.Subscription, jsBackend *JetStream) []*nats.Co
 			Config:    nats.ConsumerConfig{MaxAckPending: DefaultMaxInFlights},
 			PushBound: false,
 		},
-		&nats.ConsumerInfo{
+		{
 			Name: computeConsumerName(
 				&sub2,
 				jsBackend.getJetStreamSubject(sub2.Spec.Source,

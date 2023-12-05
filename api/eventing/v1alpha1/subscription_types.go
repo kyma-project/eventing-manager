@@ -267,7 +267,7 @@ func (s Subscription) MarshalJSON() ([]byte, error) {
 type SubscriptionList struct {
 	kmetav1.TypeMeta `json:",inline"`
 	kmetav1.ListMeta `json:"metadata,omitempty"`
-	Items          []Subscription `json:"items"`
+	Items            []Subscription `json:"items"`
 }
 
 // InitializeCleanEventTypes initializes the SubscriptionStatus.CleanEventTypes with an empty slice of strings.

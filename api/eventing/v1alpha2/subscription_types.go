@@ -135,7 +135,7 @@ func (s *Subscription) ToUnstructuredSub() (*kunstructured.Unstructured, error) 
 type SubscriptionList struct {
 	kmetav1.TypeMeta `json:",inline"`
 	kmetav1.ListMeta `json:"metadata,omitempty"`
-	Items          []Subscription `json:"items"`
+	Items            []Subscription `json:"items"`
 }
 
 func init() { //nolint:gochecknoinits
