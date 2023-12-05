@@ -5,12 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
-
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
 )
 
 const (

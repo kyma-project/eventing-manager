@@ -4,11 +4,10 @@ import (
 	"context"
 	"log"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	"github.com/onsi/gomega"
 	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )

@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/gomega"
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+
+	. "github.com/onsi/gomega"
 )
 
 func Test_InitializeSubscriptionConditions(t *testing.T) {

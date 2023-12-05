@@ -5,20 +5,10 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-
-	ktypes "k8s.io/apimachinery/pkg/types"
-
-	"github.com/kyma-project/eventing-manager/internal/controller/events"
-
 	"github.com/nats-io/nats.go"
-
-	"github.com/kyma-project/eventing-manager/pkg/errors"
-	"github.com/kyma-project/eventing-manager/pkg/object"
-
 	pkgerrors "github.com/pkg/errors"
-
 	"go.uber.org/zap"
+	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,14 +17,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
-
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/object"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 const (

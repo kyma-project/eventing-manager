@@ -6,18 +6,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
-
-	pkgerrors "github.com/pkg/errors"
-
 	"github.com/nats-io/nats.go"
+	pkgerrors "github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/eventing-manager/pkg/errors"
-
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/errors"
 )
 
 const (

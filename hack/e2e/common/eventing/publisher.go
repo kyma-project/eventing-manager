@@ -10,11 +10,11 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
-
 	"github.com/cloudevents/sdk-go/v2/client"
-	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 )
 
 const (

@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
-	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
-	"github.com/kyma-project/eventing-manager/test"
-	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	k8smocks "github.com/kyma-project/eventing-manager/pkg/k8s/mocks"
+	"github.com/kyma-project/eventing-manager/test"
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
 )
 
 func Test_SyncPeerAuthentications(t *testing.T) {

@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-
 	"github.com/kelseyhightower/envconfig"
+
+	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 )
 
 // NATSConfig represents the environment config for the Eventing Controller with Nats.

@@ -6,11 +6,10 @@ import (
 	"net/http"
 	"testing"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"

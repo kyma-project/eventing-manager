@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
-
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
@@ -15,6 +13,7 @@ import (
 	kappsv1 "k8s.io/api/apps/v1"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"

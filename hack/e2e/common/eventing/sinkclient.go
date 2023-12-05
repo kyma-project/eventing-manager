@@ -11,9 +11,10 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	ceevent "github.com/cloudevents/sdk-go/v2/event"
-	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/kyma-project/eventing-manager/hack/e2e/common"
 )
 
 const (

@@ -6,9 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
-
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 )
 
 func TestBEBFilters_Deduplicate(t *testing.T) {

@@ -6,27 +6,23 @@ import (
 	"errors"
 	"testing"
 
-	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
-	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
-
-	"k8s.io/apimachinery/pkg/runtime"
-
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
-	testutils "github.com/kyma-project/eventing-manager/test/utils"
-
-	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	kapixclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
-
 	"github.com/stretchr/testify/require"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
+	kapixclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
+	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
 )
 
 const testFieldManager = "eventing-manager"

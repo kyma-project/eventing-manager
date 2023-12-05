@@ -3,13 +3,12 @@ package v1alpha1_test
 import (
 	"fmt"
 
-	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
-	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 const (

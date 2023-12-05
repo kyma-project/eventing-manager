@@ -7,12 +7,10 @@ import (
 	"strings"
 	"time"
 
-	kcorev1 "k8s.io/api/core/v1"
-
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/event"
-
 	"github.com/pkg/errors"
+	kcorev1 "k8s.io/api/core/v1"
 
 	emerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 )

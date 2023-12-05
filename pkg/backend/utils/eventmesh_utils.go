@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
-
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"

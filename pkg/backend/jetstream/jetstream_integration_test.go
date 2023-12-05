@@ -7,10 +7,9 @@ import (
 	"testing"
 	"time"
 
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
-
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"

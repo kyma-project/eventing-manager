@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
-
 	"golang.org/x/oauth2"
+
+	"github.com/kyma-project/eventing-manager/pkg/env"
 )
 
 const (

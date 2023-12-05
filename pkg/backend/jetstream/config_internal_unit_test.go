@@ -4,8 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kyma-project/eventing-manager/pkg/env"
 )
 
 func TestUnitValidate_For_Errors(t *testing.T) {

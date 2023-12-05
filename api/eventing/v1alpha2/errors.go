@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
-
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 )
 
 //nolint:gochecknoglobals // these are required for testing

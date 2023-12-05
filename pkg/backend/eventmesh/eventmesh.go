@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.uber.org/zap"
-
 	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	"go.uber.org/zap"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"

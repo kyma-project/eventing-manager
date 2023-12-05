@@ -11,16 +11,17 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo" //nolint:revive,stylecheck // using . import for convenience
-	. "github.com/onsi/gomega" //nolint:revive,stylecheck // using . import for convenience
 	"golang.org/x/oauth2"
 	kctrllog "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/client"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 
 	// gcp auth etc.
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/client"
-	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	. "github.com/onsi/ginkgo" //nolint:revive,stylecheck // using . import for convenience
+	. "github.com/onsi/gomega" //nolint:revive,stylecheck // using . import for convenience
 )
 
 const (

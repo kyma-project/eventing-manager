@@ -6,18 +6,16 @@ import (
 	"fmt"
 	"net/url"
 
+	ceevent "github.com/cloudevents/sdk-go/v2/event"
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
-	ceevent "github.com/cloudevents/sdk-go/v2/event"
-	"github.com/nats-io/nats.go"
-
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type EventTypeInfo struct {

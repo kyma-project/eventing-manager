@@ -8,6 +8,7 @@ import (
 
 	ceevent "github.com/cloudevents/sdk-go/v2/event"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
+
 	. "github.com/onsi/gomega"
 )
 

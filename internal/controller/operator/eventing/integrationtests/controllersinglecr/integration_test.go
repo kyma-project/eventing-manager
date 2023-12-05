@@ -6,14 +6,12 @@ import (
 	"testing"
 
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
+	"github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
-
-	"github.com/onsi/gomega"
-	gomegatypes "github.com/onsi/gomega/types"
-
 	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 

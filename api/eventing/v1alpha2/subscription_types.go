@@ -4,14 +4,12 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
-
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kunstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kruntime "k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
-
-	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type TypeMatching string

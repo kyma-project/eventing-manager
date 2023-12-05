@@ -8,22 +8,19 @@ import (
 	"strings"
 	"time"
 
-	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
-
-	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	"github.com/kyma-project/eventing-manager/pkg/errors"
-
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	ceprotocol "github.com/cloudevents/sdk-go/v2/protocol"
+	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 	"github.com/nats-io/nats.go"
 	pkgerrors "github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/tracing"
 	"github.com/kyma-project/eventing-manager/pkg/utils"

@@ -8,41 +8,36 @@ import (
 	"reflect"
 	"time"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"golang.org/x/xerrors"
 	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	klabels "k8s.io/apimachinery/pkg/labels"
 	ktypes "k8s.io/apimachinery/pkg/types"
-
-	controllererrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
-	"github.com/kyma-project/eventing-manager/internal/controller/events"
-	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
-	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/constants"
-	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
-	"github.com/kyma-project/eventing-manager/pkg/object"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
-
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
-	"golang.org/x/xerrors"
+	"k8s.io/client-go/tools/record"
+	kctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	controllererrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
+	"github.com/kyma-project/eventing-manager/internal/controller/events"
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
-
-	"go.uber.org/zap"
-
-	"k8s.io/client-go/tools/record"
-	kctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
+	"github.com/kyma-project/eventing-manager/pkg/constants"
+	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/object"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 type syncConditionWebhookCallStatusFunc func(subscription *eventingv1alpha2.Subscription)

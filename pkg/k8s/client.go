@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kappsv1 "k8s.io/api/apps/v1"
@@ -20,8 +21,6 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
@@ -31,6 +30,7 @@ var NatsGVK = schema.GroupVersionResource{
 	Resource: "nats",
 }
 
+//nolint:interfacebloat // FIXME
 //go:generate go run github.com/vektra/mockery/v2 --name=Client --outpkg=mocks --case=underscore
 type Client interface {
 	GetDeployment(ctx context.Context, name, namespace string) (*kappsv1.Deployment, error)

@@ -12,9 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
 
-	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 // TestMain pre-hook and post-hook to run before and after all tests.

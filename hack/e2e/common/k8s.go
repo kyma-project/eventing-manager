@@ -4,20 +4,17 @@ import (
 	"os"
 	"path/filepath"
 
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	"k8s.io/client-go/dynamic"
-
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
-	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 )
 
 func GetK8sClients() (*kubernetes.Clientset, client.Client, *dynamic.DynamicClient, error) {

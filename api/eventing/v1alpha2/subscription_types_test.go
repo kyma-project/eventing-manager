@@ -3,10 +3,10 @@ package v1alpha2_test
 import (
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-
-	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 )
 
 func TestGetMaxInFlightMessages(t *testing.T) {

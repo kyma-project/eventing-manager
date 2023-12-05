@@ -7,12 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-
-	"github.com/stretchr/testify/require"
 )
 
 func Test_GetNewNATSConfig(t *testing.T) {

@@ -3,9 +3,10 @@ package cloudevent_test
 import (
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/pkg/cloudevent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-project/eventing-manager/pkg/cloudevent"
 )
 
 func Test_NewHTTP(t *testing.T) {

@@ -5,14 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/pkg/env"
-
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
+	"github.com/kyma-project/eventing-manager/pkg/env"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
