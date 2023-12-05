@@ -10,7 +10,6 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-incubator/api-gateway v0.0.0-20220819093753-296e6704d413
 	github.com/kyma-project/api-gateway v0.0.0-20231205091251-e217d20481f1
 	github.com/kyma-project/kyma/common/logging v0.0.0-20231113125307-562a57ab5198
 	github.com/kyma-project/nats-manager v1.0.3-0.20231124103356-1904d89ab2b2
