@@ -11,6 +11,7 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-incubator/api-gateway v0.0.0-20220819093753-296e6704d413
+	github.com/kyma-project/api-gateway v0.0.0-20231205091251-e217d20481f1
 	github.com/kyma-project/kyma/common/logging v0.0.0-20231113125307-562a57ab5198
 	github.com/kyma-project/nats-manager v1.0.3-0.20231124103356-1904d89ab2b2
 	github.com/mitchellh/hashstructure/v2 v2.0.2
@@ -101,7 +102,7 @@ require (
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/term v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/time v0.4.0 // indirect
+	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
@@ -120,5 +121,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-replace github.com/kyma-incubator/api-gateway => github.com/kyma-project/api-gateway v0.0.0-20220819093753-296e6704d413

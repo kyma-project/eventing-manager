@@ -17,7 +17,7 @@ import (
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
