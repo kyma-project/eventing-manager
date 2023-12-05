@@ -18,7 +18,7 @@ import (
 )
 
 func GetK8sClients() (*kubernetes.Clientset, client.Client, *dynamic.DynamicClient, error) {
-	kubeConfigPath := ""
+	var kubeConfigPath string
 	if _, ok := os.LookupEnv("KUBECONFIG"); ok {
 		kubeConfigPath = os.Getenv("KUBECONFIG")
 	} else {

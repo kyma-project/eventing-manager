@@ -120,11 +120,10 @@ func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscriptio
 	}
 
 	// check and handle if Kyma subscription or EventMesh subscription is modified
-	isKymaSubModified := false
 	isEventMeshSubModified := false
 
 	// check if Kyma Subscription was modified.
-	isKymaSubModified, err = em.handleKymaSubModified(eventMeshSub, subscription)
+	isKymaSubModified, err := em.handleKymaSubModified(eventMeshSub, subscription)
 	if err != nil {
 		log.Errorw("Failed to handle kyma subscription modified", errorLogKey, err)
 		return false, err

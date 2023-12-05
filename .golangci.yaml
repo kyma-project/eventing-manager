@@ -53,10 +53,8 @@ linters:
     - unconvert
     - unparam
     - varnamelen
-    - wastedassign
     - wrapcheck
     - godot
-    - mirror
     - tagalign
     - whitespace
 
