@@ -7,6 +7,12 @@
     - EventMesh
   description: Choose a backend type from the dropdown.
 
+- simple: true
+  widget: Alert
+  severity: info
+  alert: "'If you choose the NATS backend, you must enable the NATS module.'"
+  visibility: "spec.backend.type = 'NATS'"
+
 - path: spec.backend.config.eventMeshSecret
   visibility: "spec.backend.type = 'EventMesh'"
   widget: ResourceRef
