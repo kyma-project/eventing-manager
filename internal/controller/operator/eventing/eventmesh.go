@@ -39,7 +39,8 @@ type oauth2Credentials struct {
 const EventMeshSecretMissingMessage = "the specified EventMesh secret is missing. Please provide the secret"
 
 func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing,
-	log *zap.SugaredLogger) error {
+	log *zap.SugaredLogger,
+) error {
 	// gets oauth2ClientID and secret and stops the EventMesh subscription manager if changed
 	err := r.syncOauth2ClientIDAndSecret(ctx, eventing)
 	if err != nil {

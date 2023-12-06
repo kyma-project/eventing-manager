@@ -47,13 +47,6 @@ spec:
             type: object
           spec:
             default:
-              backend:
-                config:
-                  natsMaxMsgsPerTopic: 1000000
-                  natsStreamMaxSize: 700Mi
-                  natsStreamReplicas: 3
-                  natsStreamStorageType: File
-                type: NATS
               logging:
                 logLevel: Info
               publisher:
@@ -67,7 +60,7 @@ spec:
                   requests:
                     cpu: 40m
                     memory: 256Mi
-            description: EventingSpec defines the desired state of Eventing
+            description: EventingSpec defines the desired state of Eventing.
             properties:
               annotations:
                 additionalProperties:
@@ -255,8 +248,11 @@ spec:
                     type: object
                 type: object
             type: object
+            x-kubernetes-validations:
+            - message: backend config cannot be deleted
+              rule: '!(oldSelf!=null && has(oldSelf.backend)) || has(self.backend)'
           status:
-            description: EventingStatus defines the observed state of Eventing
+            description: EventingStatus defines the observed state of Eventing.
             properties:
               activeBackend:
                 type: string

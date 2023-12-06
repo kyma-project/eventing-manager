@@ -26,12 +26,14 @@ func (es *Reconciler) InitStateProcessing(eventing *operatorv1alpha1.Eventing) {
 // syncStatusWithNATSErr syncs Eventing status and sets an error state.
 // Returns the relevant error.
 func (r *Reconciler) syncStatusWithNATSErr(ctx context.Context,
-	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
 	return r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateError, eventing, err, log)
 }
 
 func (r *Reconciler) syncStatusWithNATSState(ctx context.Context, state string,
-	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger) error {
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
 	// Set error state in status
 	eventing.Status.State = state
 	eventing.Status.UpdateConditionBackendAvailable(kmetav1.ConditionFalse,
@@ -42,7 +44,8 @@ func (r *Reconciler) syncStatusWithNATSState(ctx context.Context, state string,
 }
 
 func (r *Reconciler) syncStatusForEmptyBackend(ctx context.Context, reason operatorv1alpha1.ConditionReason,
-	message string, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) error {
+	message string, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
+) error {
 	// Set error state in status
 	eventing.Status.SetStateWarning()
 	eventing.Status.UpdateConditionBackendAvailable(

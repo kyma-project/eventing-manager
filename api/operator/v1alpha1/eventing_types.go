@@ -84,7 +84,8 @@ type Eventing struct {
 	kmetav1.TypeMeta   `json:",inline"`
 	kmetav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// +kubebuilder:default:={backend:{type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}, logging:{logLevel:Info}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"40m",memory:"256Mi"}}}}
+	// +kubebuilder:default:={logging:{logLevel:Info}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"40m",memory:"256Mi"}}}}
+	// +kubebuilder:validation:XValidation:rule="!(oldSelf!=null && has(oldSelf.backend)) || has(self.backend)", message="backend config cannot be deleted"
 	Spec   EventingSpec   `json:"spec,omitempty"`
 	Status EventingStatus `json:"status,omitempty"`
 }
