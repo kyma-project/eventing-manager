@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"fmt"
 	"reflect"
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
@@ -133,4 +134,14 @@ func (es *EventingStatus) IsEqual(status EventingStatus) bool {
 
 	return reflect.DeepEqual(thisWithoutCond, statusWithoutCond) &&
 		natsv1alpha1.ConditionsEquals(es.Conditions, status.Conditions)
+}
+
+// ClearPublisherService clears the PublisherService.
+func (es *EventingStatus) ClearPublisherService() {
+	es.PublisherService = ""
+}
+
+// SetPublisherService sets the PublisherService from the given service name and namespace.
+func (es *EventingStatus) SetPublisherService(name, namespace string) {
+	es.PublisherService = fmt.Sprintf("%s.%s", name, namespace)
 }

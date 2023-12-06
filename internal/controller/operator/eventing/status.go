@@ -12,6 +12,7 @@ import (
 	kctrl "sigs.k8s.io/controller-runtime"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
 )
 
 const RequeueTimeForStatusCheck = 10
@@ -153,29 +154,37 @@ func (r *Reconciler) updateStatus(ctx context.Context, oldEventing, newEventing 
 	return nil
 }
 
-func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kappsv1.Deployment, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (kctrl.Result, error) {
+func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kappsv1.Deployment,
+	eventingCR *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
+) (kctrl.Result, error) {
+	// Clear the publisher service until the publisher proxy is ready.
+	eventingCR.Status.ClearPublisherService()
+
 	// checking if publisher proxy is ready.
 	// get k8s deployment for publisher proxy
 	deployment, err := r.kubeClient.GetDeployment(ctx, deployment.Name, deployment.Namespace)
 	if err != nil {
-		eventing.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse,
+		eventingCR.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse,
 			operatorv1alpha1.ConditionReasonDeploymentStatusSyncFailed, err.Error())
-		return kctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventingCR, err, log)
 	}
 
 	if !IsDeploymentReady(deployment) {
-		eventing.Status.SetStateProcessing()
-		eventing.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse,
+		eventingCR.Status.SetStateProcessing()
+		eventingCR.Status.UpdateConditionPublisherProxyReady(kmetav1.ConditionFalse,
 			operatorv1alpha1.ConditionReasonProcessing, operatorv1alpha1.ConditionPublisherProxyProcessingMessage)
 		log.Info("Reconciliation successful: waiting for publisher proxy to get ready...")
-		return kctrl.Result{RequeueAfter: RequeueTimeForStatusCheck * time.Second}, r.syncEventingStatus(ctx, eventing, log)
+		return kctrl.Result{RequeueAfter: RequeueTimeForStatusCheck * time.Second}, r.syncEventingStatus(ctx, eventingCR, log)
 	}
-	//
-	eventing.Status.SetPublisherProxyReadyToTrue()
+
+	eventingCR.Status.SetPublisherProxyReadyToTrue()
+
+	// Set the publisher service after the publisher proxy is ready.
+	eventingCR.Status.SetPublisherService(eventing.GetPublisherPublishServiceName(*eventingCR), eventingCR.Namespace)
 
 	// @TODO: emit events for any change in conditions
 	log.Info("Reconciliation successful")
-	return kctrl.Result{}, r.syncEventingStatus(ctx, eventing, log)
+	return kctrl.Result{}, r.syncEventingStatus(ctx, eventingCR, log)
 }
 
 // to be able to mock this function in tests.

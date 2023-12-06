@@ -67,7 +67,7 @@ spec:
                   requests:
                     cpu: 40m
                     memory: 256Mi
-            description: EventingSpec defines the desired state of Eventing
+            description: EventingSpec defines the desired state of Eventing.
             properties:
               annotations:
                 additionalProperties:
@@ -265,7 +265,7 @@ spec:
             - backend
             type: object
           status:
-            description: EventingStatus defines the observed state of Eventing
+            description: EventingStatus defines the observed state of Eventing.
             properties:
               activeBackend:
                 type: string
@@ -337,6 +337,8 @@ spec:
                   - type
                   type: object
                 type: array
+              publisherService:
+                type: string
               specHash:
                 format: int64
                 type: integer

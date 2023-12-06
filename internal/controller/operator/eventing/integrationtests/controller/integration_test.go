@@ -28,8 +28,7 @@ import (
 )
 
 const (
-	projectRootDir  = "../../../../../../"
-	eventTypePrefix = "test-prefix"
+	projectRootDir = "../../../../../../"
 )
 
 var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
@@ -214,6 +213,24 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				// check if webhook configurations are updated with correct CABundle.
 				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
+
+			// check PublisherService in the EventingCR status
+			eventingCR, err := testEnvironment.GetEventingFromK8s(tc.givenEventing.Name, givenNamespace)
+			require.NoError(t, err)
+			require.NotNil(t, eventingCR)
+			switch eventingCR.Status.State {
+			case operatorv1alpha1.StateReady:
+				{
+					serviceName := eventing.GetPublisherPublishServiceName(*eventingCR)
+					wantPublisherService := fmt.Sprintf("%s.%s", serviceName, eventingCR.Namespace)
+					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
+				}
+			default:
+				{
+					const wantPublisherService = ""
+					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
+				}
+			}
 		})
 	}
 }
@@ -274,12 +291,12 @@ func Test_UpdateEventingCR(t *testing.T) {
 			}()
 
 			// get Eventing CR.
-			eventing, err := testEnvironment.GetEventingFromK8s(tc.givenExistingEventing.Name, givenNamespace)
+			eventingCR, err := testEnvironment.GetEventingFromK8s(tc.givenExistingEventing.Name, givenNamespace)
 			require.NoError(t, err)
 
 			// when
 			// update NATS CR.
-			newEventing := eventing.DeepCopy()
+			newEventing := eventingCR.DeepCopy()
 			newEventing.Spec = tc.givenNewEventingForUpdate.Spec
 			testEnvironment.EnsureK8sResourceUpdated(t, newEventing)
 
@@ -287,6 +304,21 @@ func Test_UpdateEventingCR(t *testing.T) {
 			testEnvironment.EnsureEventingSpecPublisherReflected(t, newEventing)
 			testEnvironment.EnsureEventingReplicasReflected(t, newEventing)
 			testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenExistingEventing)
+
+			// check PublisherService in the EventingCR status
+			switch eventingCR.Status.State {
+			case operatorv1alpha1.StateReady:
+				{
+					serviceName := eventing.GetPublisherPublishServiceName(*eventingCR)
+					wantPublisherService := fmt.Sprintf("%s.%s", serviceName, eventingCR.Namespace)
+					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
+				}
+			default:
+				{
+					const wantPublisherService = ""
+					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
+				}
+			}
 		})
 	}
 }
@@ -679,6 +711,24 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 				ensureK8sResources(t, tc.givenEventing, testEnvironment)
 				// check if webhook configurations are updated with correct CABundle.
 				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
+			}
+
+			// check PublisherService in the EventingCR status
+			eventingCR, err := testEnvironment.GetEventingFromK8s(tc.givenEventing.Name, givenNamespace)
+			require.NoError(t, err)
+			require.NotNil(t, eventingCR)
+			switch eventingCR.Status.State {
+			case operatorv1alpha1.StateReady:
+				{
+					serviceName := eventing.GetPublisherPublishServiceName(*eventingCR)
+					wantPublisherService := fmt.Sprintf("%s.%s", serviceName, eventingCR.Namespace)
+					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
+				}
+			default:
+				{
+					const wantPublisherService = ""
+					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
+				}
 			}
 		})
 	}
