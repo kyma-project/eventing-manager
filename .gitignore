@@ -39,4 +39,5 @@ module-template.yaml
 eventing-manager.yaml
 module-config.yaml
 
-.env.dev
+**/.env
+**/.env.dev
