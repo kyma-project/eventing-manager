@@ -34,14 +34,17 @@ linters:
     - goerr113
     - gomnd
     - gosec
+    - inamedparam
     - ireturn
     - maintidx
     - noctx
     - nolintlint
     - nonamedreturns
     - paralleltest
+    - perfsprint
     - prealloc
     - stylecheck
+    - testifylint
     - testpackage
     - thelper
     - tparallel
@@ -50,6 +53,7 @@ linters:
     - varnamelen
     - wrapcheck
     - godot
+    - tagalign
     - whitespace
 
 linters-settings:
