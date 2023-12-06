@@ -2,7 +2,6 @@ package eventing
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -22,7 +21,6 @@ const (
 )
 
 type SinkClient struct {
-	ctx        context.Context
 	clientHTTP *http.Client
 	sinkURL    string
 	logger     *zap.Logger
@@ -34,9 +32,8 @@ type SinkEvent struct {
 	ceevent.Event
 }
 
-func NewSinkClient(ctx context.Context, clientHTTP *http.Client, sinkURL string, logger *zap.Logger) *SinkClient {
+func NewSinkClient(clientHTTP *http.Client, sinkURL string, logger *zap.Logger) *SinkClient {
 	return &SinkClient{
-		ctx:        ctx,
 		clientHTTP: clientHTTP,
 		sinkURL:    sinkURL,
 		logger:     logger,

@@ -23,16 +23,14 @@ const (
 )
 
 type Publisher struct {
-	ctx          context.Context
 	clientCE     client.Client
 	clientHTTP   *http.Client
 	publisherURL string
 	logger       *zap.Logger
 }
 
-func NewPublisher(ctx context.Context, clientCE client.Client, clientHTTP *http.Client, publisherURL string, logger *zap.Logger) *Publisher {
+func NewPublisher(clientCE client.Client, clientHTTP *http.Client, publisherURL string, logger *zap.Logger) *Publisher {
 	return &Publisher{
-		ctx:          ctx,
 		clientCE:     clientCE,
 		clientHTTP:   clientHTTP,
 		publisherURL: publisherURL,

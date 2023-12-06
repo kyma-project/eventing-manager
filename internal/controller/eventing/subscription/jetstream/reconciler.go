@@ -38,7 +38,6 @@ const (
 
 type Reconciler struct {
 	client.Client
-	ctx                 context.Context
 	Backend             jetstream.Backend
 	recorder            record.EventRecorder
 	logger              *logger.Logger
@@ -48,13 +47,12 @@ type Reconciler struct {
 	collector           *metrics.Collector
 }
 
-func NewReconciler(ctx context.Context, client client.Client, jsBackend jetstream.Backend,
+func NewReconciler(client client.Client, jsBackend jetstream.Backend,
 	logger *logger.Logger, recorder record.EventRecorder, cleaner cleaner.Cleaner,
 	defaultSinkValidator sink.Validator, collector *metrics.Collector,
 ) *Reconciler {
 	reconciler := &Reconciler{
 		Client:              client,
-		ctx:                 ctx,
 		Backend:             jsBackend,
 		recorder:            recorder,
 		logger:              logger,
@@ -67,7 +65,7 @@ func NewReconciler(ctx context.Context, client client.Client, jsBackend jetstrea
 }
 
 // SetupUnmanaged creates a controller under the client control.
-func (r *Reconciler) SetupUnmanaged(mgr kctrl.Manager) error {
+func (r *Reconciler) SetupUnmanaged(ctx context.Context, mgr kctrl.Manager) error {
 	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		r.namedLogger().Errorw("Failed to create unmanaged controller", "error", err)
@@ -87,7 +85,7 @@ func (r *Reconciler) SetupUnmanaged(mgr kctrl.Manager) error {
 	}
 
 	go func(r *Reconciler, c controller.Controller) {
-		if err := c.Start(r.ctx); err != nil {
+		if err := c.Start(ctx); err != nil {
 			r.namedLogger().Fatalw("Failed to start controller", "error", err)
 		}
 	}(r, ctru)
@@ -140,7 +138,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	}
 
 	// Check for valid sink
-	if err := r.sinkValidator.Validate(desiredSubscription); err != nil {
+	if err := r.sinkValidator.Validate(ctx, desiredSubscription); err != nil {
 		if deleteErr := r.Backend.DeleteSubscriptionsOnly(desiredSubscription); deleteErr != nil {
 			r.namedLogger().Errorw(
 				"Failed to delete JetStream subscriptions",

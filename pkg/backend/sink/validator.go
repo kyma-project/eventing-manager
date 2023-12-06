@@ -16,18 +16,17 @@ import (
 )
 
 type Validator interface {
-	Validate(subscription *v1alpha2.Subscription) error
+	Validate(ctx context.Context, subscription *v1alpha2.Subscription) error
 }
 
 // ValidatorFunc implements the Validator interface.
-type ValidatorFunc func(*v1alpha2.Subscription) error
+type ValidatorFunc func(context.Context, *v1alpha2.Subscription) error
 
-func (vf ValidatorFunc) Validate(sub *v1alpha2.Subscription) error {
-	return vf(sub)
+func (vf ValidatorFunc) Validate(ctx context.Context, sub *v1alpha2.Subscription) error {
+	return vf(ctx, sub)
 }
 
 type defaultSinkValidator struct {
-	ctx      context.Context
 	client   client.Client
 	recorder record.EventRecorder
 }
@@ -35,11 +34,11 @@ type defaultSinkValidator struct {
 // Perform a compile-time check.
 var _ Validator = &defaultSinkValidator{}
 
-func NewValidator(ctx context.Context, client client.Client, recorder record.EventRecorder) Validator {
-	return &defaultSinkValidator{ctx: ctx, client: client, recorder: recorder}
+func NewValidator(client client.Client, recorder record.EventRecorder) Validator {
+	return &defaultSinkValidator{client: client, recorder: recorder}
 }
 
-func (s defaultSinkValidator) Validate(subscription *v1alpha2.Subscription) error {
+func (s defaultSinkValidator) Validate(ctx context.Context, subscription *v1alpha2.Subscription) error {
 	_, subDomains, err := utils.GetSinkData(subscription.Spec.Sink)
 	if err != nil {
 		return err
@@ -48,7 +47,7 @@ func (s defaultSinkValidator) Validate(subscription *v1alpha2.Subscription) erro
 	svcName := subDomains[0]
 
 	// Validate svc is a cluster-local one
-	if _, err := GetClusterLocalService(s.ctx, s.client, svcNs, svcName); err != nil {
+	if _, err := GetClusterLocalService(ctx, s.client, svcNs, svcName); err != nil {
 		if kerrors.IsNotFound(err) {
 			events.Warn(s.recorder, subscription, events.ReasonValidationFailed, "Sink does not correspond to a valid cluster local svc")
 			return xerrors.Errorf("failed to validate subscription sink URL. It is not a valid cluster local svc: %v", err)

@@ -42,7 +42,6 @@ const (
 
 // TestEnvironment provides mocked resources for integration tests.
 type TestEnvironment struct {
-	Context          context.Context
 	Logger           *zap.Logger
 	K8sClientset     *kubernetes.Clientset
 	K8sClient        client.Client
@@ -74,7 +73,6 @@ func NewTestEnvironment() *TestEnvironment {
 	}
 
 	return &TestEnvironment{
-		Context:          context.TODO(),
 		Logger:           logger,
 		K8sClientset:     clientSet,
 		K8sClient:        k8sClient,
@@ -86,14 +84,14 @@ func NewTestEnvironment() *TestEnvironment {
 func (te *TestEnvironment) CreateTestNamespace() error {
 	return common.Retry(Attempts, Interval, func() error {
 		// It's fine if the Namespace already exists.
-		return client.IgnoreAlreadyExists(te.K8sClient.Create(te.Context, fixtures.Namespace(te.TestConfigs.TestNamespace)))
+		return client.IgnoreAlreadyExists(te.K8sClient.Create(context.TODO(), fixtures.Namespace(te.TestConfigs.TestNamespace)))
 	})
 }
 
 func (te *TestEnvironment) DeleteTestNamespace() error {
 	return common.Retry(FewAttempts, Interval, func() error {
 		// It's fine if the Namespace does not exist.
-		return client.IgnoreNotFound(te.K8sClient.Delete(te.Context, fixtures.Namespace(te.TestConfigs.TestNamespace)))
+		return client.IgnoreNotFound(te.K8sClient.Delete(context.TODO(), fixtures.Namespace(te.TestConfigs.TestNamespace)))
 	})
 }
 
@@ -108,7 +106,7 @@ func (te *TestEnvironment) InitEventPublisherClient() error {
 	if err != nil {
 		return err
 	}
-	te.EventPublisher = eventing.NewPublisher(context.Background(), *clientCE, clientHTTP, te.TestConfigs.PublisherURL, te.Logger)
+	te.EventPublisher = eventing.NewPublisher(*clientCE, clientHTTP, te.TestConfigs.PublisherURL, te.Logger)
 	return nil
 }
 
@@ -119,7 +117,7 @@ func (te *TestEnvironment) InitSinkClient() {
 	idleConnTimeout := 1 * time.Minute
 	t := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
 	clientHTTP := http.NewHttpClient(t.Clone())
-	te.SinkClient = eventing.NewSinkClient(context.Background(), clientHTTP, te.TestConfigs.SinkPortForwardedURL, te.Logger)
+	te.SinkClient = eventing.NewSinkClient(clientHTTP, te.TestConfigs.SinkPortForwardedURL, te.Logger)
 }
 
 func (te *TestEnvironment) CreateAllSubscriptions() error {
@@ -263,7 +261,7 @@ func (te *TestEnvironment) DeleteSinkResources() error {
 
 func (te *TestEnvironment) CreateSinkDeployment(name, namespace, image string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Patch(te.Context, fixtures.NewSinkDeployment(name, namespace, image),
+		return te.K8sClient.Patch(context.TODO(), fixtures.NewSinkDeployment(name, namespace, image),
 			client.Apply,
 			&client.PatchOptions{
 				Force:        ptr.To(true),
@@ -274,7 +272,7 @@ func (te *TestEnvironment) CreateSinkDeployment(name, namespace, image string) e
 
 func (te *TestEnvironment) CreateSinkService(name, namespace string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Patch(te.Context, fixtures.NewSinkService(name, namespace),
+		return te.K8sClient.Patch(context.TODO(), fixtures.NewSinkService(name, namespace),
 			client.Apply,
 			&client.PatchOptions{
 				Force:        ptr.To(true),
@@ -285,7 +283,7 @@ func (te *TestEnvironment) CreateSinkService(name, namespace string) error {
 
 func (te *TestEnvironment) DeleteDeployment(name, namespace string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Delete(te.Context, &kappsv1.Deployment{
+		return te.K8sClient.Delete(context.TODO(), &kappsv1.Deployment{
 			ObjectMeta: kmetav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
@@ -296,7 +294,7 @@ func (te *TestEnvironment) DeleteDeployment(name, namespace string) error {
 
 func (te *TestEnvironment) DeleteService(name, namespace string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Delete(te.Context, &kcorev1.Service{
+		return te.K8sClient.Delete(context.TODO(), &kcorev1.Service{
 			ObjectMeta: kmetav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
@@ -306,7 +304,7 @@ func (te *TestEnvironment) DeleteService(name, namespace string) error {
 }
 
 func (te *TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*kappsv1.Deployment, error) {
-	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, kmetav1.GetOptions{})
+	return te.K8sClientset.AppsV1().Deployments(namespace).Get(context.TODO(), name, kmetav1.GetOptions{})
 }
 
 func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string) error {
@@ -357,7 +355,7 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 	// delete with retries.
 	return common.Retry(FewAttempts, Interval, func() error {
 		// delete subscription from cluster.
-		err := te.K8sClient.Delete(te.Context, sub)
+		err := te.K8sClient.Delete(context.TODO(), sub)
 		if err != nil && !kerrors.IsNotFound(err) {
 			te.Logger.Debug(fmt.Sprintf("failed to delete subscription: %s "+
 				"in namespace: %s", name, te.TestConfigs.TestNamespace))
@@ -518,14 +516,14 @@ func (te *TestEnvironment) SetupEventingCR() error {
 
 func (te *TestEnvironment) DeleteEventingCR() error {
 	return common.Retry(Attempts, Interval, func() error {
-		return client.IgnoreNotFound(te.K8sClient.Delete(te.Context,
+		return client.IgnoreNotFound(te.K8sClient.Delete(context.TODO(),
 			fixtures.EventingCR(operatorv1alpha1.BackendType(te.TestConfigs.BackendType))))
 	})
 }
 
 func (te *TestEnvironment) GetEventingCRFromK8s(name, namespace string) (*operatorv1alpha1.Eventing, error) {
 	var eventingCR operatorv1alpha1.Eventing
-	err := te.K8sClient.Get(te.Context, ktypes.NamespacedName{
+	err := te.K8sClient.Get(context.TODO(), ktypes.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}, &eventingCR)
@@ -533,7 +531,7 @@ func (te *TestEnvironment) GetEventingCRFromK8s(name, namespace string) (*operat
 }
 
 func (te *TestEnvironment) GetDeployment(name, namespace string) (*kappsv1.Deployment, error) {
-	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, kmetav1.GetOptions{})
+	return te.K8sClientset.AppsV1().Deployments(namespace).Get(context.TODO(), name, kmetav1.GetOptions{})
 }
 
 func (te *TestEnvironment) WaitForEventingCRReady() error {
@@ -569,9 +567,9 @@ func (te *TestEnvironment) WaitForEventingCRReady() error {
 	})
 }
 
-func (env *TestEnvironment) GetPeerAuthenticationFromK8s(name, namespace string) (*istiopkgsecurityv1beta1.PeerAuthentication, error) {
-	result, err := env.K8sDynamicClient.Resource(fixtures.PeerAuthenticationGVR()).Namespace(
-		namespace).Get(env.Context, name, kmetav1.GetOptions{})
+func (te *TestEnvironment) GetPeerAuthenticationFromK8s(name, namespace string) (*istiopkgsecurityv1beta1.PeerAuthentication, error) {
+	result, err := te.K8sDynamicClient.Resource(fixtures.PeerAuthenticationGVR()).Namespace(
+		namespace).Get(context.TODO(), name, kmetav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

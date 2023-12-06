@@ -248,15 +248,15 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			givenEventing.Status.BackendConfigHash = tc.givenHashBefore
 
 			// when
-			err := testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
+			err := testEnv.Reconciler.reconcileNATSSubManager(context.Background(), givenEventing, logger)
 			if err != nil && tc.givenShouldRetry {
 				// This is to test the scenario where initialization of natsSubManager was successful but
 				// starting the natsSubManager failed. So on next try it should again try to start the natsSubManager.
-				err = testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
+				err = testEnv.Reconciler.reconcileNATSSubManager(context.Background(), givenEventing, logger)
 			}
 			if tc.givenUpdateTest {
 				// Run reconcile again with newBackendConfig:
-				err = testEnv.Reconciler.reconcileNATSSubManager(testEnv.Context, givenEventing, logger)
+				err = testEnv.Reconciler.reconcileNATSSubManager(context.Background(), givenEventing, logger)
 				require.NoError(t, err)
 			}
 

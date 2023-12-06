@@ -43,7 +43,6 @@ import (
 // and if so with how much initial delay. Returning error or a `Result{Requeue: true}` would cause the reconciliation to be requeued.
 // Everything else is mocked since we are only interested in the logic of the Reconcile method and not the reconciler dependencies.
 func TestReconciler_Reconcile(t *testing.T) {
-	ctx := context.Background()
 	req := require.New(t)
 	col := metrics.NewCollector()
 
@@ -77,8 +76,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	backendSyncErr := errors.New("backend sync error")
 	backendDeleteErr := errors.New("backend delete error")
 	validatorErr := errors.New("invalid sink")
-	happyValidator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return nil })
-	unhappyValidator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return validatorErr })
+	happyValidator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
+	unhappyValidator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return validatorErr })
 
 	testCases := []struct {
 		name                 string
@@ -94,7 +93,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				te := setupTestEnvironment(t, testSub)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-				return NewReconciler(ctx,
+				return NewReconciler(
 					te.fakeClient,
 					te.logger,
 					te.recorder,
@@ -116,7 +115,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			givenReconcilerSetup: func() *Reconciler {
 				te := setupTestEnvironment(t)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
-				return NewReconciler(ctx,
+				return NewReconciler(
 					te.fakeClient,
 					te.logger,
 					te.recorder,
@@ -139,7 +138,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				te := setupTestEnvironment(t, testSub)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(false, backendSyncErr)
-				return NewReconciler(ctx,
+				return NewReconciler(
 					te.fakeClient,
 					te.logger,
 					te.recorder,
@@ -162,7 +161,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				te := setupTestEnvironment(t, testSubUnderDeletion)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("DeleteSubscription", mock.Anything).Return(backendDeleteErr)
-				return NewReconciler(ctx,
+				return NewReconciler(
 					te.fakeClient,
 					te.logger,
 					te.recorder,
@@ -184,7 +183,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			givenReconcilerSetup: func() *Reconciler {
 				te := setupTestEnvironment(t, testSub)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
-				return NewReconciler(ctx,
+				return NewReconciler(
 					te.fakeClient,
 					te.logger,
 					te.recorder,
@@ -207,7 +206,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				te := setupTestEnvironment(t, testSubPaused)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-				return NewReconciler(ctx,
+				return NewReconciler(
 					te.fakeClient,
 					te.logger,
 					te.recorder,
@@ -259,7 +258,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
 	)
 
-	validator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return nil })
+	validator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
 
 	col := metrics.NewCollector()
 
@@ -280,7 +279,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 				te.credentials = credentials
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-				return NewReconciler(ctx,
+				return NewReconciler(
 						te.fakeClient,
 						te.logger,
 						te.recorder,
@@ -310,7 +309,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 				te.credentials = credentials
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-				return NewReconciler(ctx,
+				return NewReconciler(
 						te.fakeClient,
 						te.logger,
 						te.recorder,
@@ -389,7 +388,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
 	)
 
-	validator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return nil })
+	validator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
 	col := metrics.NewCollector()
 
 	testCases := []struct {
@@ -410,7 +409,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 				te.credentials = credentials
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-				return NewReconciler(ctx,
+				return NewReconciler(
 						te.fakeClient,
 						te.logger,
 						te.recorder,
@@ -446,7 +445,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 				te.credentials = credentials
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-				return NewReconciler(ctx,
+				return NewReconciler(
 						te.fakeClient,
 						te.logger,
 						te.recorder,
@@ -575,7 +574,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 func TestReconciler_PreserveBackendHashes(t *testing.T) {
 	ctx := context.Background()
 	collector := metrics.NewCollector()
-	validator := sink.ValidatorFunc(func(s *eventingv1alpha2.Subscription) error { return nil })
+	validator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
 
 	const (
 		ev2hash            = int64(118518533334734)
@@ -612,7 +611,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				te := setupTestEnvironment(t, s)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-				return NewReconciler(ctx, te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
+				return NewReconciler(te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
 					te.backend, te.credentials, te.mapper, validator, collector, utils.Domain), te.fakeClient
 			},
 			wantEv2Hash:            ev2hash,
@@ -639,7 +638,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				te := setupTestEnvironment(t, s)
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-				return NewReconciler(ctx, te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
+				return NewReconciler(te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
 					te.backend, te.credentials, te.mapper, validator, collector, utils.Domain), te.fakeClient
 			},
 			wantEv2Hash:            ev2hash,

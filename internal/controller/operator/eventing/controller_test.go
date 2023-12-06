@@ -1,6 +1,7 @@
 package eventing
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -78,7 +79,7 @@ func Test_handleEventingCRAllowedCheck(t *testing.T) {
 			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
 			// when
-			result, err := testEnv.Reconciler.handleEventingCRAllowedCheck(testEnv.Context, tc.givenEventing, logger)
+			result, err := testEnv.Reconciler.handleEventingCRAllowedCheck(context.Background(), tc.givenEventing, logger)
 
 			// then
 			require.NoError(t, err)

@@ -45,7 +45,6 @@ type Manager interface {
 }
 
 type EventingManager struct {
-	ctx context.Context
 	client.Client
 	backendConfig env.BackendConfig
 	kubeClient    k8s.Client
@@ -62,7 +61,6 @@ func NewEventingManager(
 	recorder record.EventRecorder,
 ) Manager {
 	return &EventingManager{
-		ctx:           ctx,
 		Client:        client,
 		backendConfig: backendConfig,
 		kubeClient:    kubeClient,

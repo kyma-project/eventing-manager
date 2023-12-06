@@ -1,7 +1,6 @@
 package jetstream
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -46,7 +45,6 @@ func TestCleanup(t *testing.T) {
 // utilities and helper functions
 
 type TestEnvironment struct {
-	ctx           context.Context
 	dynamicClient dynamic.Interface
 	jsBackend     *jetstream.JetStream
 	jsCtx         nats.JetStreamContext
@@ -110,7 +108,6 @@ func (te *TestEnvironment) consumersEquals(t *testing.T, length int) {
 }
 
 func setUpTestEnvironment(t *testing.T) *TestEnvironment {
-	ctx := context.Background()
 	// create a test subscriber and natsServer
 	subscriber := eventingtesting.NewSubscriber()
 	// create NATS Server with JetStream enabled
@@ -143,7 +140,6 @@ func setUpTestEnvironment(t *testing.T) *TestEnvironment {
 	require.NoError(t, err)
 
 	return &TestEnvironment{
-		ctx:           ctx,
 		dynamicClient: fakeClient,
 		jsBackend:     jsBackend,
 		jsCtx:         jsClient,

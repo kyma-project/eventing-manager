@@ -1,6 +1,7 @@
 package jetstream_test
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -189,7 +190,7 @@ func Test_Idempotency(t *testing.T) {
 		"newLabel": "label",
 	}
 	sub.ObjectMeta.Labels = newLabels
-	require.NoError(t, jsTestEnsemble.K8sClient.Update(jsTestEnsemble.Ctx, sub))
+	require.NoError(t, jsTestEnsemble.K8sClient.Update(context.Background(), sub))
 
 	// check the labels got updated
 	assert.Equal(t, sub.Labels, newLabels)
@@ -532,10 +533,10 @@ func Test_ChangeSubscription(t *testing.T) {
 
 			// when
 			t.Log("change and update the subscription")
-			require.NoError(t, EventuallyUpdateSubscriptionOnK8s(jsTestEnsemble.Ctx, jsTestEnsemble.Ensemble,
+			require.NoError(t, EventuallyUpdateSubscriptionOnK8s(context.Background(), jsTestEnsemble.Ensemble,
 				sub, func(sub *eventingv1alpha2.Subscription) error {
 					tc.changeSubscription(sub)
-					return jsTestEnsemble.K8sClient.Update(jsTestEnsemble.Ctx, sub)
+					return jsTestEnsemble.K8sClient.Update(context.Background(), sub)
 				}))
 
 			// then

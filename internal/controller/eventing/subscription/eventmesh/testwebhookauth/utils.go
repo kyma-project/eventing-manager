@@ -140,12 +140,11 @@ func setupSuite() error {
 
 	// setup eventMesh reconciler
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller")
-	sinkValidator := sink.NewValidator(context.Background(), k8sManager.GetClient(), recorder)
+	sinkValidator := sink.NewValidator(k8sManager.GetClient(), recorder)
 	emTestEnsemble.envConfig = getEnvConfig()
 	eventMeshBackend = backendeventmesh.NewEventMesh(credentials, emTestEnsemble.nameMapper, defaultLogger)
 	col := metrics.NewCollector()
 	testReconciler = subscriptioncontrollereventmesh.NewReconciler(
-		context.Background(),
 		k8sManager.GetClient(),
 		defaultLogger,
 		recorder,
@@ -159,7 +158,7 @@ func setupSuite() error {
 		testutils.Domain,
 	)
 
-	if err = testReconciler.SetupUnmanaged(k8sManager); err != nil {
+	if err = testReconciler.SetupUnmanaged(context.Background(), k8sManager); err != nil {
 		return err
 	}
 

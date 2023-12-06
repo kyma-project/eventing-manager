@@ -27,7 +27,6 @@ import (
 
 // MockedUnitTestEnvironment provides mocked resources for unit tests.
 type MockedUnitTestEnvironment struct {
-	Context         context.Context
 	Client          client.Client
 	kubeClient      *k8s.Client
 	eventingManager *eventingmocks.Manager
@@ -38,9 +37,6 @@ type MockedUnitTestEnvironment struct {
 }
 
 func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUnitTestEnvironment {
-	// setup context
-	ctx := context.Background()
-
 	// setup logger
 	ctrLogger, err := logger.New("json", "info")
 	require.NoError(t, err)
@@ -91,7 +87,6 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 	reconciler.ctrlManager = mockManager
 
 	return &MockedUnitTestEnvironment{
-		Context:         ctx,
 		Client:          fakeClient,
 		kubeClient:      &kubeClient,
 		Reconciler:      reconciler,
@@ -104,7 +99,7 @@ func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUn
 
 func (testEnv *MockedUnitTestEnvironment) GetEventing(name, namespace string) (operatorv1alpha1.Eventing, error) {
 	var evnt operatorv1alpha1.Eventing
-	err := testEnv.Client.Get(testEnv.Context, types.NamespacedName{
+	err := testEnv.Client.Get(context.Background(), types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}, &evnt)

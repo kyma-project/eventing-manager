@@ -128,7 +128,6 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subm
 	eventMeshHandler := backendeventmesh.NewEventMesh(oauth2credential, nameMapper, c.logger)
 	eventMeshcleaner := cleaner.NewEventMeshCleaner(c.logger)
 	eventMeshReconciler := eventmesh.NewReconciler(
-		ctx,
 		client,
 		c.logger,
 		recorder,
@@ -137,12 +136,12 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subm
 		eventMeshHandler,
 		oauth2credential,
 		nameMapper,
-		sink.NewValidator(ctx, client, recorder),
+		sink.NewValidator(client, recorder),
 		c.collector,
 		c.domain,
 	)
 	c.eventMeshBackend = eventMeshReconciler.Backend
-	if err := eventMeshReconciler.SetupUnmanaged(c.mgr); err != nil {
+	if err := eventMeshReconciler.SetupUnmanaged(ctx, c.mgr); err != nil {
 		return xerrors.Errorf("setup EventMesh subscription controller failed: %v", err)
 	}
 	c.namedLogger().Info("Started v1alpha2 EventMesh subscription manager")
