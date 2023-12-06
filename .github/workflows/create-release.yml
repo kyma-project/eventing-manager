@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: "Release name (e. g. '1.0.0')"
+        description: "Release name (e.g. '1.0.0')"
         default: ""
         required: true
 
@@ -56,6 +56,13 @@ jobs:
         run: |
           git tag ${{ github.event.inputs.name }}
           git push origin ${{ github.event.inputs.name }}
+
+      - name: Create release assets
+        id: create-assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PULL_BASE_REF: ${{ github.event.inputs.name }}
+        run: ./scripts/release.sh
 
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
