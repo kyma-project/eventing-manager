@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: 'Release name'
+        description: "Release name (e. g. '1.0.0')"
         default: ""
         required: true
 
@@ -27,11 +27,6 @@ jobs:
 
       - name: Verify
         run: ./scripts/verify-status.sh ${{ github.ref_name }}
-
-          #  run-unit-tests:
-          #    name: Unit tests
-          #    needs: verify-head-status
-        #    uses: "./.github/workflows/run-unit-tests.yaml"
 
   create-draft:
     name: Create draft release
@@ -65,11 +60,6 @@ jobs:
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
 
-  # devOps-Insights:
-  #   name: DevOps Insights
-  #   needs: [verify-head-status, create-draft, run-unit-tests]
-  #   uses: "./.github/workflows/metrics.yaml"
-
   publish-release:
     name: Publish release
     needs: [verify-head-status, create-draft]
@@ -85,3 +75,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./scripts/publish_release.sh ${{ needs.create-draft.outputs.release_id }}
+
