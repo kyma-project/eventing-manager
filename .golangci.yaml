@@ -34,17 +34,14 @@ linters:
     - goerr113
     - gomnd
     - gosec
-    - inamedparam
     - ireturn
     - maintidx
     - noctx
     - nolintlint
     - nonamedreturns
     - paralleltest
-    - perfsprint
     - prealloc
     - stylecheck
-    - testifylint
     - testpackage
     - thelper
     - tparallel
@@ -53,7 +50,6 @@ linters:
     - varnamelen
     - wrapcheck
     - godot
-    - tagalign
     - whitespace
 
 linters-settings:
@@ -137,6 +133,8 @@ linters-settings:
         alias: kctrl
       - pkg: sigs.k8s.io/controller-runtime/pkg/log
         alias: kctrllog
+      - pkg: sigs.k8s.io/controller-runtime/pkg/client
+        alias: kclient
       - pkg: k8s.io/api/autoscaling/v1
         alias: kautoscalingv1
       - pkg: k8s.io/api/autoscaling/v2

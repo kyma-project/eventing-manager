@@ -9,7 +9,8 @@ import (
 )
 
 func (es *EventingStatus) UpdateConditionBackendAvailable(status kmetav1.ConditionStatus, reason ConditionReason,
-	message string) {
+	message string,
+) {
 	condition := kmetav1.Condition{
 		Type:               string(ConditionBackendAvailable),
 		Status:             status,
