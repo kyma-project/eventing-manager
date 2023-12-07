@@ -28,11 +28,11 @@ body:
   - source: "'NATS unavailable: If you chose the NATS backend, you must enable the NATS module.'"
     widget: Alert
     severity: warning
-    visibility: "$status.conditions[reason = 'NATSUnavailable'] and $status.state = 'Warning'"
+    visibility: "$exists(status.conditions[reason = 'NATSUnavailable'])"
   - source: "'No backend: If you enable the Eventing module, you must configure a backend.'"
     widget: Alert
     severity: warning
-    visibility: "$status.conditions[reason = 'BackendNotSpecified'] and $status.state = 'Warning'"
+    visibility: "$exists(status.conditions[reason = 'BackendNotSpecified'])"
   - name: Events
     widget: EventList
     filter: '$matchEvents($$, $root.kind, $root.metadata.name)'
