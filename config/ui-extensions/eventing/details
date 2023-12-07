@@ -4,10 +4,6 @@ header:
     widget: Badge
 
 body:
-  - source: "'If you chose the NATS backend, you must enable the NATS module.'"
-    widget: Alert
-    severity: info
-    visibility: "status.state = 'Warning'"
   - name: Conditions
     source: status.conditions
     widget: Table
@@ -29,10 +25,10 @@ body:
       - source: '$readableTimestamp(lastTransitionTime)'
         name: Last transition
         sort: true
-  - source: "'If you choose the NATS backend, you must enable the NATS module.'"
+  - source: "'NATS unavailable: If you choose the NATS backend, you must enable the NATS module.'"
     widget: Alert
-    severity: info
-    visibility: "status.conditions.reason = 'NATSUnavailable'"
+    severity: warning
+    visibility: "$status.conditions[reason = 'NATSUnavailable']"
   - name: Events
     widget: EventList
     filter: '$matchEvents($$, $root.kind, $root.metadata.name)'
