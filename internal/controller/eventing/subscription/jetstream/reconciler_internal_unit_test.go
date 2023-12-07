@@ -232,7 +232,7 @@ func Test_Reconcile(t *testing.T) {
 			res, err := reconciler.Reconcile(context.Background(), r)
 
 			// then
-			req.Equal(res, tc.wantReconcileResult)
+			req.Equal(tc.wantReconcileResult, res)
 			req.ErrorIs(err, tc.wantReconcileError)
 			mockedBackend.AssertExpectations(t)
 		})

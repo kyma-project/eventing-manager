@@ -114,7 +114,7 @@ func Test_cleanupEventMesh(t *testing.T) {
 	resp, err := http.Get(getSubscriptionURL)
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusOK)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// check that the Kyma subscription exists
 	unstructuredSub, err := bebSubMgr.Client.Resource(eventingtesting.SubscriptionGroupVersionResource()).Namespace(
@@ -138,7 +138,7 @@ func Test_cleanupEventMesh(t *testing.T) {
 	resp, err = http.Get(getSubscriptionURL)
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusNotFound)
+	require.Equal(t, http.StatusNotFound, resp.StatusCode)
 
 	// the Kyma subscription status should be empty
 	unstructuredSub, err = bebSubMgr.Client.Resource(eventingtesting.SubscriptionGroupVersionResource()).Namespace(
@@ -194,7 +194,7 @@ func Test_markAllV1Alpha2SubscriptionsAsNotReady(t *testing.T) {
 	require.NoError(t, err)
 	gotSub, err := eventingtesting.ToSubscription(unstructuredSub)
 	require.NoError(t, err)
-	require.Equal(t, true, gotSub.Status.Ready)
+	require.True(t, gotSub.Status.Ready)
 
 	// when
 	err = markAllV1Alpha2SubscriptionsAsNotReady(fakeClient, defaultLogger.WithContext())
@@ -206,7 +206,7 @@ func Test_markAllV1Alpha2SubscriptionsAsNotReady(t *testing.T) {
 	require.NoError(t, err)
 	gotSub, err = eventingtesting.ToSubscription(unstructuredSub)
 	require.NoError(t, err)
-	require.Equal(t, false, gotSub.Status.Ready)
+	require.False(t, gotSub.Status.Ready)
 
 	// ensure hashes are preserved
 	require.Equal(t, ev2Hash, gotSub.Status.Backend.Ev2hash)

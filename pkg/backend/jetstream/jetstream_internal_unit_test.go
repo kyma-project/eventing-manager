@@ -30,7 +30,7 @@ func Test_SyncConsumersAndSubscriptions_ForEmptyTypes(t *testing.T) {
 	err := js.syncConsumerAndSubscription(subWithOneType, callback)
 
 	// then
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func Test_streamIsConfiguredCorrectly(t *testing.T) {
@@ -168,7 +168,7 @@ func Test_GetOrCreateConsumer(t *testing.T) {
 
 			// then
 			assert.Equal(t, tc.wantConsumerInfo, consumerInfo)
-			assert.ErrorIs(t, tc.wantError, err)
+			require.ErrorIs(t, tc.wantError, err)
 		})
 	}
 }
@@ -248,7 +248,7 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 			tc.mocks(subWithOneType, js, jsCtxMock, jsSubKey)
 
 			// when
-			assert.NoError(t, js.syncConsumerAndSubscription(subWithOneType, callback))
+			require.NoError(t, js.syncConsumerAndSubscription(subWithOneType, callback))
 
 			// then
 			jsCtxMock.AssertExpectations(t)
@@ -319,7 +319,7 @@ func Test_SyncConsumersAndSubscriptions_ForSyncConsumerMaxInFlight(t *testing.T)
 			err := js.syncConsumerMaxInFlight(sub, consumer)
 
 			// then
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			jsCtxMock.AssertExpectations(t)
 		})
 	}
@@ -431,7 +431,7 @@ func Test_SyncConsumersAndSubscriptions_ForErrors(t *testing.T) {
 			err := js.syncConsumerAndSubscription(subWithOneType, callback)
 
 			// then
-			assert.ErrorIs(t, err, testCase.wantError)
+			require.ErrorIs(t, err, testCase.wantError)
 		})
 	}
 }
@@ -542,7 +542,7 @@ func Test_DeleteSubscriptionFromJetStream(t *testing.T) {
 			resultErr := jsBackend.deleteSubscriptionFromJetStream(jsBackend.subscriptions[jsSubKey], jsSubKey)
 
 			// then
-			assert.ErrorIs(t, resultErr, testCase.wantError)
+			require.ErrorIs(t, resultErr, testCase.wantError)
 			if testCase.wantError == nil {
 				assert.Equal(t, testCase.wantSubscriptionMap, jsBackend.subscriptions)
 			}
@@ -626,7 +626,7 @@ func Test_DeleteInvalidConsumers(t *testing.T) {
 
 			// then
 			if tc.wantError != nil {
-				assert.ErrorIs(t, err, tc.wantError)
+				require.ErrorIs(t, err, tc.wantError)
 			} else {
 				cons := jsBackend.jsCtx.Consumers("")
 				actualConsumers := []*nats.ConsumerInfo{}

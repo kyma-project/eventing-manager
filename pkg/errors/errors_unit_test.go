@@ -76,7 +76,7 @@ func Test_ArgumentError_Is(t *testing.T) {
 			ok := errors.Is(tc.givenError(), errInvalidStorageType)
 
 			// then
-			assert.Equal(t, ok, tc.wantIsTrue)
+			assert.Equal(t, tc.wantIsTrue, ok)
 		})
 	}
 }

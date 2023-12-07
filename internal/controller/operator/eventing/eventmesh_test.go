@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
@@ -565,7 +564,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 		name           string
 		messagingData  []byte
 		namespaceData  []byte
-		expectedSecret kcorev1.Secret
+		expectedSecret *kcorev1.Secret
 		expectedError  error
 	}{
 		{
@@ -618,7 +617,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 									  }
 									] `),
 			namespaceData: []byte("valid/namespace"),
-			expectedSecret: kcorev1.Secret{
+			expectedSecret: &kcorev1.Secret{
 				TypeMeta: kmetav1.TypeMeta{
 					Kind:       "Secret",
 					APIVersion: kcorev1.SchemeGroupVersion.String(),
@@ -704,12 +703,12 @@ func Test_GetSecretForPublisher(t *testing.T) {
 
 			gotPublisherSecret, err := getSecretForPublisher(publisherSecret)
 			if tc.expectedError != nil {
-				assert.NotNil(t, err)
-				assert.Equal(t, tc.expectedError.Error(), err.Error(), "invalid error")
+				require.Error(t, err)
+				require.ErrorContains(t, err, tc.expectedError.Error())
 				return
 			}
-			assert.Nil(t, err)
-			assert.Equal(t, tc.expectedSecret, *gotPublisherSecret, "invalid publisher secret")
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedSecret, gotPublisherSecret, "invalid publisher secret")
 		})
 	}
 }

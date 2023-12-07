@@ -237,7 +237,7 @@ func TestGetCleanEventTypesFromStatus(t *testing.T) {
 	// when
 	cleanTypes := GetCleanEventTypesFromEventTypes(sub.Status.Types)
 	// then
-	require.Equal(t, cleanTypes, []string{eventingtesting.OrderCreatedCleanEvent, eventingtesting.OrderCreatedEventType})
+	require.Equal(t, []string{eventingtesting.OrderCreatedCleanEvent, eventingtesting.OrderCreatedEventType}, cleanTypes)
 }
 
 func TestGetCleanEventTypes(t *testing.T) {
@@ -536,7 +536,7 @@ func TestSubscriptionSubjectIdentifierConsumerNameLength(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			require.Equal(t, tc.wantConsumerNameLength, len(tc.givenIdentifier.ConsumerName()))
+			require.Len(t, tc.givenIdentifier.ConsumerName(), tc.wantConsumerNameLength)
 		})
 	}
 }

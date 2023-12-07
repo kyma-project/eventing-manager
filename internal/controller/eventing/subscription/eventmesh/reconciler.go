@@ -789,7 +789,7 @@ func (r *Reconciler) checkStatusActive(subscription *eventingv1alpha2.Subscripti
 	if t0, er := time.Parse(time.RFC3339, subscription.Status.Backend.FailedActivation); er != nil {
 		err = er
 	} else if t1.Sub(t0) > timeoutRetryActiveEmsStatus {
-		err = xerrors.Errorf("timeout waiting for the subscription to be active: %s", subscription.Name)
+		err = errors.Errorf("timeout waiting for the subscription to be active: %s", subscription.Name)
 	}
 
 	return false, err
@@ -807,7 +807,7 @@ func checkLastFailedDelivery(subscription *eventingv1alpha2.Subscription) (bool,
 	var err error
 	var lastFailedDeliveryTime time.Time
 	if lastFailedDeliveryTime, err = time.Parse(time.RFC3339, lastFailed); err != nil {
-		return true, xerrors.Errorf("failed to parse LastFailedDelivery: %v", err)
+		return true, errors.Errorf("failed to parse LastFailedDelivery: %v", err)
 	}
 
 	// Check if LastSuccessfulDelivery exists. If not, LastFailedDelivery happened last.
@@ -819,7 +819,7 @@ func checkLastFailedDelivery(subscription *eventingv1alpha2.Subscription) (bool,
 	// Try to parse LastSuccessfulDelivery.
 	var lastSuccessfulDeliveryTime time.Time
 	if lastSuccessfulDeliveryTime, err = time.Parse(time.RFC3339, lastSuccessful); err != nil {
-		return true, xerrors.Errorf("failed to parse LastSuccessfulDelivery: %v", err)
+		return true, errors.Errorf("failed to parse LastSuccessfulDelivery: %v", err)
 	}
 
 	return lastFailedDeliveryTime.After(lastSuccessfulDeliveryTime), nil

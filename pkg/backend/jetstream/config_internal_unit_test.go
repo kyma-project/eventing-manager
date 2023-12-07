@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/eventing-manager/pkg/env"
 )
@@ -57,7 +57,7 @@ func TestUnitValidate_For_Errors(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			err := Validate(tc.givenConfig)
-			assert.ErrorIs(t, err, tc.wantError)
+			require.ErrorIs(t, err, tc.wantError)
 		})
 	}
 }

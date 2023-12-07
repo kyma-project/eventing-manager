@@ -234,8 +234,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      tc.givenSubscription.Name,
 			}}
 			res, err := reconciler.Reconcile(context.Background(), r)
-			req.Equal(res, tc.wantReconcileResult)
-			req.Equal(err, tc.wantReconcileError)
+			req.Equal(tc.wantReconcileResult, res)
+			req.Equal(tc.wantReconcileError, err)
 		})
 	}
 }
@@ -1248,11 +1248,11 @@ func Test_checkStatusActive(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			gotStatus, err := r.checkStatusActive(tc.subscription)
-			assert.Equal(t, tc.wantStatus, gotStatus)
+			require.Equal(t, tc.wantStatus, gotStatus)
 			if tc.wantError == nil {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
-				assert.Error(t, tc.wantError, err)
+				require.ErrorContains(t, err, tc.wantError.Error())
 			}
 		})
 	}
@@ -1345,11 +1345,11 @@ func Test_checkLastFailedDelivery(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result, err := checkLastFailedDelivery(tc.givenSubscription)
-			assert.Equal(t, tc.wantResult, result)
+			require.Equal(t, tc.wantResult, result)
 			if tc.wantError == nil {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
-				assert.Error(t, tc.wantError, err)
+				require.ErrorContains(t, err, tc.wantError.Error())
 			}
 		})
 	}

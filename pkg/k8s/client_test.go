@@ -301,7 +301,7 @@ func Test_DeleteResource(t *testing.T) {
 			err := kubeClient.DeleteDeployment(ctx, tc.givenDeployment.Name, tc.givenDeployment.Namespace)
 
 			// then
-			require.Nil(t, err)
+			require.NoError(t, err)
 			// Check that the deployment must not exist.
 			err = fakeClient.Get(ctx, types.NamespacedName{
 				Name:      tc.givenDeployment.Name,
@@ -359,7 +359,7 @@ func Test_DeleteDeployment(t *testing.T) {
 			err := kubeClient.DeleteDeployment(ctx, deployment.Name, deployment.Namespace)
 
 			// then
-			require.Nil(t, err)
+			require.NoError(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
 				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &kappsv1.Deployment{})
@@ -412,7 +412,7 @@ func Test_DeleteClusterRole(t *testing.T) {
 			err := kubeClient.DeleteClusterRole(ctx, clusterRole.Name, clusterRole.Namespace)
 
 			// then
-			require.Nil(t, err)
+			require.NoError(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
 				types.NamespacedName{Name: clusterRole.Name, Namespace: clusterRole.Namespace}, &krbacv1.ClusterRole{})
@@ -465,7 +465,7 @@ func Test_DeleteClusterRoleBinding(t *testing.T) {
 			err := kubeClient.DeleteClusterRoleBinding(ctx, clusterRoleBinding.Name, clusterRoleBinding.Namespace)
 
 			// then
-			require.Nil(t, err)
+			require.NoError(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
 				types.NamespacedName{Name: clusterRoleBinding.Name, Namespace: clusterRoleBinding.Namespace}, &krbacv1.ClusterRoleBinding{})
@@ -886,9 +886,9 @@ func TestGetSubscriptions(t *testing.T) {
 
 			// Assert the result of the method
 			if tc.wantSubscriptionList != nil && len(tc.wantSubscriptionList.Items) > 0 {
-				require.True(t, len(result.Items) > 0)
+				require.NotEmpty(t, result.Items)
 			} else {
-				require.Equal(t, 0, len(result.Items))
+				require.Empty(t, result.Items)
 			}
 		})
 	}

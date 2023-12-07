@@ -174,7 +174,7 @@ func TestIsValidScheme(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			gotValid := IsValidScheme(tc.givenSink)
-			require.Equal(t, gotValid, tc.wantValid)
+			require.Equal(t, tc.wantValid, gotValid)
 		})
 	}
 }
@@ -207,8 +207,8 @@ func TestGetSinkData(t *testing.T) {
 			t.Parallel()
 			gotTrimmedHost, gotSubDomain, gotErr := GetSinkData(tc.givenSink)
 			require.ErrorIs(t, gotErr, tc.wantError)
-			require.Equal(t, gotTrimmedHost, tc.wantTrimmedHost)
-			require.Equal(t, gotSubDomain, tc.wantSubDomains)
+			require.Equal(t, tc.wantTrimmedHost, gotTrimmedHost)
+			require.Equal(t, tc.wantSubDomains, gotSubDomain)
 		})
 	}
 }

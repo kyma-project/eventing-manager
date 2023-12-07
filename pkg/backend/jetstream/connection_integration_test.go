@@ -39,10 +39,10 @@ func Test_ConnectionBuilder_Build(t *testing.T) {
 	require.True(t, ok)
 
 	// ensure the options are set
-	assert.Equal(t, natsConn.Opts.Name, "Kyma Controller")
+	assert.Equal(t, "Kyma Controller", natsConn.Opts.Name)
 	assert.Equal(t, natsConn.Opts.MaxReconnect, config.MaxReconnects)
 	assert.Equal(t, natsConn.Opts.ReconnectWait, config.ReconnectWait)
-	assert.Equal(t, natsConn.Opts.RetryOnFailedConnect, true)
+	assert.True(t, natsConn.Opts.RetryOnFailedConnect)
 }
 
 func Test_ConnectionBuilder_Build_ForErrConnect(t *testing.T) {
@@ -62,7 +62,7 @@ func Test_ConnectionBuilder_Build_ForErrConnect(t *testing.T) {
 	_, err := cb.Build()
 
 	// then
-	assert.ErrorIs(t, err, jetstream.ErrConnect)
+	require.ErrorIs(t, err, jetstream.ErrConnect)
 }
 
 // Test_ConnectionBuilder_IsConnected ensures that the IsConnected method always returns the correct value.
@@ -81,8 +81,8 @@ func Test_ConnectionBuilder_IsConnected(t *testing.T) {
 	connection, err := cb.Build()
 
 	// then
+	require.NoError(t, err)
 	assert.True(t, connection.IsConnected())
-	assert.NoError(t, err)
 	assert.NotNil(t, connection)
 
 	// when: NATS server is offline

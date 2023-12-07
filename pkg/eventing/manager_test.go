@@ -430,7 +430,7 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			require.Equal(t, tc.wantCreatedResourcesCount, len(createdObjects))
+			require.Len(t, createdObjects, tc.wantCreatedResourcesCount)
 
 			// check ServiceAccount.
 			sa, err := testutils.FindObjectByKind("ServiceAccount", createdObjects)
