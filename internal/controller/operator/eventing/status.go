@@ -85,6 +85,18 @@ func (r *Reconciler) syncStatusWithSubscriptionManagerErr(ctx context.Context,
 		operatorv1alpha1.ConditionReasonEventMeshSubManagerFailed, eventing, err, log)
 }
 
+func (r *Reconciler) syncSubManagerStatusWithNATSState(ctx context.Context, state string,
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
+	// Set error state in status
+	eventing.Status.State = state
+	eventing.Status.UpdateConditionSubscriptionManagerReady(kmetav1.ConditionFalse,
+		operatorv1alpha1.ConditionReasonEventMeshSubManagerFailed,
+		err.Error())
+
+	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
+}
+
 func (r *Reconciler) syncStatusWithSubscriptionManagerErrWithReason(ctx context.Context,
 	reason operatorv1alpha1.ConditionReason,
 	eventing *operatorv1alpha1.Eventing,

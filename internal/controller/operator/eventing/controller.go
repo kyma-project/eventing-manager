@@ -612,8 +612,19 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, apiRuleMissingErr, log)
 	}
 
+	// retrieve secret used to authenticate with EventMesh
+	eventMeshSecret, err := r.kubeClient.GetSecret(ctx, eventing.Spec.Backend.Config.EventMeshSecret)
+	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return kctrl.Result{}, r.syncSubManagerStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
+				fmt.Errorf(EventMeshSecretMissingMessage), log)
+		}
+		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing,
+			fmt.Errorf("failed to get EventMesh secret: %v", err), log)
+	}
+
 	// Start the EventMesh subscription controller
-	err = r.reconcileEventMeshSubManager(ctx, eventing, log)
+	err = r.reconcileEventMeshSubManager(ctx, eventing, eventMeshSecret, log)
 	if err != nil {
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}
