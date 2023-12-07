@@ -93,30 +93,6 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			wantHashAfter: int64(0),
 		},
 		{
-			name:                              "it should do nothing because failed syncing EventMesh secret",
-			givenIsEventMeshSubManagerStarted: true,
-			givenHashBefore:                   int64(0),
-			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
-				eventMeshSubManagerMock := new(submgrmanagermocks.Manager)
-				eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
-				return eventMeshSubManagerMock
-			},
-			givenEventingManagerMock: func() *eventingmocks.Manager {
-				return nil
-			},
-			givenManagerFactoryMock: func(_ *submgrmanagermocks.Manager) *submgrmocks.ManagerFactory {
-				return nil
-			},
-			givenKubeClientMock: func() k8s.Client {
-				mockKubeClient := new(k8smocks.Client)
-				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(nil,
-					errors.New("failed getting secret")).Once()
-				return mockKubeClient
-			},
-			wantError:     errors.New("failed to get EventMesh secret"),
-			wantHashAfter: int64(0),
-		},
-		{
 			name:                              "it should do nothing because failed sync Publisher Proxy secret",
 			givenIsEventMeshSubManagerStarted: true,
 			givenHashBefore:                   int64(0),
@@ -274,6 +250,8 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			testEnv := NewMockedUnitTestEnvironment(t, givenEventing, givenOauthSecret)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig
 
+			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
+
 			// get mocks from test-case.
 			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
 			givenManagerFactoryMock := tc.givenManagerFactoryMock(givenEventMeshSubManagerMock)
@@ -296,15 +274,18 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenEventing.Status.BackendConfigHash = tc.givenHashBefore
 
 			// when
-			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing)
+
+			eventMeshSecret := utils.NewEventMeshSecret("eventing-backend", givenEventing.Namespace)
+
+			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret, logger)
 			if err != nil && tc.givenShouldRetry {
 				// This is to test the scenario where initialization of eventMeshSubManager was successful but
 				// starting the eventMeshSubManager failed. So on next try it should again try to start the eventMeshSubManager.
-				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing)
+				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret, logger)
 			}
 			if tc.givenUpdateTest {
 				// Run reconcile again with newBackendConfig:
-				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing)
+				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret, logger)
 				require.NoError(t, err)
 			}
 
@@ -386,8 +367,6 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 			givenKubeClientMock: func() (k8s.Client, *k8smocks.Client) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
-				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", namespace), nil).Once()
 				return mockKubeClient, mockKubeClient
 			},
 		},
@@ -419,8 +398,6 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
-				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", namespace), nil).Once()
 				return mockKubeClient, mockKubeClient
 			},
 		},
@@ -432,6 +409,8 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t, tc.givenEventing, givenOauthSecret)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig
+
+			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
 			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
 			givenManagerFactoryMock := tc.givenManagerFactoryMock(givenEventMeshSubManagerMock)
@@ -448,7 +427,8 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 			testEnv.Reconciler.eventMeshSubManager = nil
 
 			// when
-			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, tc.givenEventing)
+			eventMeshSecret := utils.NewEventMeshSecret("test-secret", tc.givenEventing.Namespace)
+			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, tc.givenEventing, eventMeshSecret, logger)
 
 			// then
 			require.NoError(t, err)

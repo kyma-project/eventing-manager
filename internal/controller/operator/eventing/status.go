@@ -28,12 +28,31 @@ func (es *Reconciler) InitStateProcessing(eventing *operatorv1alpha1.Eventing) {
 func (r *Reconciler) syncStatusWithNATSErr(ctx context.Context,
 	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
 ) error {
+	return r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateError, eventing, err, log)
+}
+
+func (r *Reconciler) syncStatusWithNATSState(ctx context.Context, state string,
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
 	// Set error state in status
-	eventing.Status.SetStateError()
-	eventing.Status.UpdateConditionNATSAvailable(kmetav1.ConditionFalse, operatorv1alpha1.ConditionReasonNATSNotAvailable,
+	eventing.Status.State = state
+	eventing.Status.UpdateConditionBackendAvailable(kmetav1.ConditionFalse,
+		operatorv1alpha1.ConditionReasonNATSNotAvailable,
 		err.Error())
 
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
+}
+
+func (r *Reconciler) syncStatusForEmptyBackend(ctx context.Context, reason operatorv1alpha1.ConditionReason,
+	message string, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
+) error {
+	// Set error state in status
+	eventing.Status.SetStateWarning()
+	eventing.Status.UpdateConditionBackendAvailable(
+		kmetav1.ConditionFalse,
+		operatorv1alpha1.ConditionReasonBackendNotSpecified,
+		message)
+	return r.syncEventingStatus(ctx, eventing, log)
 }
 
 // syncStatusWithPublisherProxyErr updates Publisher Proxy condition and sets an error state.
@@ -64,6 +83,18 @@ func (r *Reconciler) syncStatusWithSubscriptionManagerErr(ctx context.Context,
 ) error {
 	return r.syncStatusWithSubscriptionManagerErrWithReason(ctx,
 		operatorv1alpha1.ConditionReasonEventMeshSubManagerFailed, eventing, err, log)
+}
+
+func (r *Reconciler) syncSubManagerStatusWithNATSState(ctx context.Context, state string,
+	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
+) error {
+	// Set error state in status
+	eventing.Status.State = state
+	eventing.Status.UpdateConditionSubscriptionManagerReady(kmetav1.ConditionFalse,
+		operatorv1alpha1.ConditionReasonEventMeshSubManagerFailed,
+		err.Error())
+
+	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
 func (r *Reconciler) syncStatusWithSubscriptionManagerErrWithReason(ctx context.Context,

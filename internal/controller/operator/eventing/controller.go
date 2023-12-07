@@ -379,6 +379,12 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *opera
 		return kctrl.Result{}, nil
 	}
 
+	if eventing.Spec.Backend == nil {
+		// backend config can only be empty during creation and nothing is created if it is missing.
+		// Hence, eventing can be safely removed.
+		return r.removeFinalizer(ctx, eventing)
+	}
+
 	// check if subscription resources exist
 	exists, err := r.eventingManager.SubscriptionExists(ctx)
 	if err != nil {
@@ -441,6 +447,12 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 
 	// set state processing if not set yet
 	r.InitStateProcessing(eventing)
+	if eventing.Spec.Backend == nil {
+		return kctrl.Result{Requeue: true}, r.syncStatusForEmptyBackend(ctx,
+			operatorv1alpha1.ConditionReasonBackendNotSpecified,
+			operatorv1alpha1.ConditionBackendNotSpecifiedMessage,
+			eventing, log)
+	}
 
 	// sync webhooks CABundle.
 	if err := r.reconcileWebhooksWithCABundle(ctx); err != nil {
@@ -514,9 +526,13 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *operato
 			// into CrashLoopBackOff.
 			log.Infof("NATS module not enabled, deleting publisher proxy resources")
 			delErr := r.eventingManager.DeletePublisherProxyResources(ctx, eventing)
+			if delErr != nil {
+				return kctrl.Result{}, delErr
+			}
 			// update the Eventing CR status.
 			notFoundErr := fmt.Errorf("NATS module has to be installed: %v", err)
-			return kctrl.Result{}, errors.Join(r.syncStatusWithNATSErr(ctx, eventing, notFoundErr, log), delErr)
+			return kctrl.Result{}, r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
+				notFoundErr, log)
 		}
 		return kctrl.Result{}, err
 	}
@@ -596,8 +612,19 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, apiRuleMissingErr, log)
 	}
 
+	// retrieve secret used to authenticate with EventMesh
+	eventMeshSecret, err := r.kubeClient.GetSecret(ctx, eventing.Spec.Backend.Config.EventMeshSecret)
+	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return kctrl.Result{}, r.syncSubManagerStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
+				fmt.Errorf(EventMeshSecretMissingMessage), log)
+		}
+		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing,
+			fmt.Errorf("failed to get EventMesh secret: %v", err), log)
+	}
+
 	// Start the EventMesh subscription controller
-	err = r.reconcileEventMeshSubManager(ctx, eventing)
+	err = r.reconcileEventMeshSubManager(ctx, eventing, eventMeshSecret, log)
 	if err != nil {
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}
