@@ -223,6 +223,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.0
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
+GOLANG_CI_LINT_VERSION ?= v1.55.2
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -245,8 +246,15 @@ envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
-lint:
-	golangci-lint run --fix --timeout 5m
+golangci_lint:
+	test -s $(LOCALBIN)/golangci-lint && $(LOCALBIN)/golangci-lint version | grep -q $(GOLANG_CI_LINT_VERSION) || \
+		GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANG_CI_LINT_VERSION)
+
+lint: golangci_lint
+	$(LOCALBIN)/golangci-lint run
+
+lint-fix: golangci_lint
+	$(LOCALBIN)/golangci-lint run --fix
 
 go-gen:
 	go generate ./...
