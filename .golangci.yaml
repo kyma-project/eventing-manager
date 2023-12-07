@@ -38,7 +38,6 @@ linters:
     - maintidx
     - noctx
     - nolintlint
-    - nonamedreturns
     - paralleltest
     - perfsprint
     - prealloc

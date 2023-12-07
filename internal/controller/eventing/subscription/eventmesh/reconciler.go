@@ -765,7 +765,7 @@ func (r *Reconciler) SetupUnmanaged(ctx context.Context, mgr kctrl.Manager) erro
 }
 
 // checkStatusActive checks if the subscription is active and if not, sets a timer for retry.
-func (r *Reconciler) checkStatusActive(subscription *eventingv1alpha2.Subscription) (active bool, err error) {
+func (r *Reconciler) checkStatusActive(subscription *eventingv1alpha2.Subscription) (bool, error) {
 	if subscription.Status.Backend.EventMeshSubscriptionStatus == nil {
 		return false, nil
 	}
@@ -786,13 +786,13 @@ func (r *Reconciler) checkStatusActive(subscription *eventingv1alpha2.Subscripti
 	}
 
 	// check the timeout
-	if t0, er := time.Parse(time.RFC3339, subscription.Status.Backend.FailedActivation); er != nil {
-		err = er
+	if t0, err := time.Parse(time.RFC3339, subscription.Status.Backend.FailedActivation); err != nil {
+		return false, err
 	} else if t1.Sub(t0) > timeoutRetryActiveEmsStatus {
-		err = errors.Errorf("timeout waiting for the subscription to be active: %s", subscription.Name)
+		return false, errors.Errorf("timeout waiting for the subscription to be active: %s", subscription.Name)
 	}
 
-	return false, err
+	return false, nil
 }
 
 // checkLastFailedDelivery checks if LastFailedDelivery exists and if it happened after LastSuccessfulDelivery.

@@ -74,17 +74,19 @@ type APIRuleOption func(r *apigatewayv1beta1.APIRule)
 
 // GetFreePort determines a free port on the host. It does so by delegating the job to net.ListenTCP.
 // Then providing a port of 0 to net.ListenTCP, it will automatically choose a port for us.
-func GetFreePort() (port int, err error) {
+func GetFreePort() (int, error) {
 	var a *net.TCPAddr
-	if a, err = net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
-		var l *net.TCPListener
-		if l, err = net.ListenTCP("tcp", a); err == nil {
-			port := l.Addr().(*net.TCPAddr).Port
-			err = l.Close()
-			return port, err
-		}
+	a, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
 	}
-	return
+	l, err := net.ListenTCP("tcp", a)
+	if err != nil {
+		return 0, err
+	}
+	port := l.Addr().(*net.TCPAddr).Port
+	l.Close()
+	return port, err
 }
 
 type ProtoOpt func(p *eventingv1alpha1.ProtocolSettings)
