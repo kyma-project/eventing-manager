@@ -39,7 +39,6 @@ linters:
     - noctx
     - nolintlint
     - paralleltest
-    - perfsprint
     - prealloc
     - stylecheck
     - testpackage

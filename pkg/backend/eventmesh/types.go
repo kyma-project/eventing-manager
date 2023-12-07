@@ -1,13 +1,15 @@
 package eventmesh
 
-import "fmt"
+import (
+	"strconv"
+)
 
 type HTTPStatusError struct {
 	StatusCode int
 }
 
 func (e HTTPStatusError) Error() string {
-	return fmt.Sprintf("%v", e.StatusCode)
+	return strconv.Itoa(e.StatusCode)
 }
 
 func (e *HTTPStatusError) Is(target error) bool {

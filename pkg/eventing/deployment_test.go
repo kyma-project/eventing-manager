@@ -86,8 +86,8 @@ func TestNewDeployment(t *testing.T) {
 			container := findPublisherContainer(publisherName, *deployment)
 			assert.NotNil(t, container)
 
-			assert.Equal(t, fmt.Sprint(container.Name), publisherName)
-			assert.Equal(t, fmt.Sprint(container.Image), publisherConfig.Image)
+			assert.Equal(t, container.Name, publisherName)
+			assert.Equal(t, container.Image, publisherConfig.Image)
 			assert.Equal(t, fmt.Sprint(container.ImagePullPolicy), publisherConfig.ImagePullPolicy)
 
 			tc.wantBackendAssertions(t, publisherName, *deployment)

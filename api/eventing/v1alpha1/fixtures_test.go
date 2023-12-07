@@ -1,7 +1,7 @@
 package v1alpha1_test
 
 import (
-	"fmt"
+	"strconv"
 
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -136,7 +136,7 @@ func newV2DefaultSubscription(opts ...eventingtesting.SubscriptionOpt) *v1alpha2
 			Sink:         defaultSink,
 			ID:           defaultID,
 			Config: map[string]string{
-				v1alpha2.MaxInFlightMessages: fmt.Sprint(defaultMaxInFlight),
+				v1alpha2.MaxInFlightMessages: strconv.Itoa(defaultMaxInFlight),
 			},
 		},
 		Status: v1alpha2.SubscriptionStatus{

@@ -120,7 +120,7 @@ func getCloudEventServeMux() *http.ServeMux {
 	})
 	// this Endpoint returns the number of attempted retries.
 	mux.HandleFunc(checkRetriesEndpoint, func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte(fmt.Sprintf("%d", retries.Load())))
+		_, err := w.Write([]byte(strconv.Itoa(int(retries.Load()))))
 		if err != nil {
 			log.Printf("check_retries failed: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -176,7 +176,7 @@ func getDataServeMux() *http.ServeMux {
 	})
 	// this Endpoint returns the number of attempted retries.
 	mux.HandleFunc(checkRetriesEndpoint, func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte(fmt.Sprintf("%d", retries.Load())))
+		_, err := w.Write([]byte(strconv.Itoa(int(retries.Load()))))
 		if err != nil {
 			log.Printf("check_retries failed: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)

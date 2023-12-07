@@ -437,7 +437,7 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// create a new subscription with no filters
-			sub := eventingtesting.NewSubscription("sub"+fmt.Sprint(i), "foo",
+			sub := eventingtesting.NewSubscription(fmt.Sprintf("sub%v", i), "foo",
 				tc.subOpts...,
 			)
 			AddJSCleanEventTypesToStatus(sub, testEnvironment.cleaner)

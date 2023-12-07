@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 
 	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	kcorev1 "k8s.io/api/core/v1"
@@ -806,7 +807,7 @@ func WithTypeMatchingExact() SubscriptionOpt {
 func WithMaxInFlight(maxInFlight int) SubscriptionOpt {
 	return func(subscription *eventingv1alpha2.Subscription) {
 		subscription.Spec.Config = map[string]string{
-			eventingv1alpha2.MaxInFlightMessages: fmt.Sprint(maxInFlight),
+			eventingv1alpha2.MaxInFlightMessages: strconv.Itoa(maxInFlight),
 		}
 	}
 }
