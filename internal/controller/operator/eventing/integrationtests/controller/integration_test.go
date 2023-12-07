@@ -214,23 +214,8 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
 
-			// check PublisherService in the EventingCR status
-			eventingCR, err := testEnvironment.GetEventingFromK8s(tc.givenEventing.Name, givenNamespace)
-			require.NoError(t, err)
-			require.NotNil(t, eventingCR)
-			switch eventingCR.Status.State {
-			case operatorv1alpha1.StateReady:
-				{
-					serviceName := eventing.GetPublisherPublishServiceName(*eventingCR)
-					wantPublisherService := fmt.Sprintf("%s.%s", serviceName, eventingCR.Namespace)
-					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
-				}
-			default:
-				{
-					const wantPublisherService = ""
-					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
-				}
-			}
+			// check the publisher service in the Eventing CR status
+			testEnvironment.EnsurePublishServiceInEventingStatus(t, tc.givenEventing.Name, tc.givenEventing.Namespace)
 		})
 	}
 }
@@ -305,20 +290,8 @@ func Test_UpdateEventingCR(t *testing.T) {
 			testEnvironment.EnsureEventingReplicasReflected(t, newEventing)
 			testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenExistingEventing)
 
-			// check PublisherService in the EventingCR status
-			switch eventingCR.Status.State {
-			case operatorv1alpha1.StateReady:
-				{
-					serviceName := eventing.GetPublisherPublishServiceName(*eventingCR)
-					wantPublisherService := fmt.Sprintf("%s.%s", serviceName, eventingCR.Namespace)
-					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
-				}
-			default:
-				{
-					const wantPublisherService = ""
-					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
-				}
-			}
+			// check the publisher service in the Eventing CR status
+			testEnvironment.EnsurePublishServiceInEventingStatus(t, eventingCR.Name, eventingCR.Namespace)
 		})
 	}
 }
@@ -326,9 +299,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 func Test_ReconcileSameEventingCR(t *testing.T) {
 	t.Parallel()
 
-	////
 	// given
-	////
 	eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool { return true }
 
 	eventingCR := utils.NewEventingCR(
@@ -371,9 +342,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 	const runs = 3
 	resourceVersionBefore := eppDeployment.ObjectMeta.ResourceVersion
 	for r := 0; r < runs; r++ {
-		////
 		// when
-		////
 		runId := fmt.Sprintf("run-%d", r)
 
 		eventingCR, err = testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
@@ -389,9 +358,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 		require.NotNil(t, eventingCR)
 		require.Equal(t, eventingCR.ObjectMeta.Labels["reconcile"], runId)
 
-		////
 		// then
-		////
 		testEnvironment.EnsureEventingSpecPublisherReflected(t, eventingCR)
 		testEnvironment.EnsureEventingReplicasReflected(t, eventingCR)
 		testEnvironment.EnsureDeploymentOwnerReferenceSet(t, eventingCR)
@@ -402,6 +369,9 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 
 		resourceVersionAfter := eppDeployment.ObjectMeta.ResourceVersion
 		require.Equal(t, resourceVersionBefore, resourceVersionAfter)
+
+		// check the publisher service in the Eventing CR status
+		testEnvironment.EnsurePublishServiceInEventingStatus(t, eventingCR.Name, eventingCR.Namespace)
 	}
 }
 
@@ -713,23 +683,8 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
 
-			// check PublisherService in the EventingCR status
-			eventingCR, err := testEnvironment.GetEventingFromK8s(tc.givenEventing.Name, givenNamespace)
-			require.NoError(t, err)
-			require.NotNil(t, eventingCR)
-			switch eventingCR.Status.State {
-			case operatorv1alpha1.StateReady:
-				{
-					serviceName := eventing.GetPublisherPublishServiceName(*eventingCR)
-					wantPublisherService := fmt.Sprintf("%s.%s", serviceName, eventingCR.Namespace)
-					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
-				}
-			default:
-				{
-					const wantPublisherService = ""
-					require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
-				}
-			}
+			// check the publisher service in the Eventing CR status
+			testEnvironment.EnsurePublishServiceInEventingStatus(t, tc.givenEventing.Name, givenNamespace)
 		})
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"fmt"
 	"log"
 	"path/filepath"
 	"strings"
@@ -878,6 +879,26 @@ func (env TestEnvironment) EnsureEventMeshSecretDeleted(t *testing.T, eventing *
 func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
 	secret := testutils.NewOAuthSecret("eventing-webhook-auth", eventing.Namespace)
 	env.EnsureK8sResourceCreated(t, secret)
+}
+
+func (env TestEnvironment) EnsurePublishServiceInEventingStatus(t *testing.T, name, namespace string) {
+	eventingCR, err := env.GetEventingFromK8s(name, namespace)
+	require.NoError(t, err)
+	require.NotNil(t, eventingCR)
+
+	switch eventingCR.Status.State {
+	case v1alpha1.StateReady:
+		{
+			serviceName := eventing.GetPublisherPublishServiceName(*eventingCR)
+			wantPublisherService := fmt.Sprintf("%s.%s", serviceName, namespace)
+			require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
+		}
+	default:
+		{
+			const wantPublisherService = ""
+			require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
+		}
+	}
 }
 
 func (env TestEnvironment) DeleteServiceFromK8s(name, namespace string) error {
