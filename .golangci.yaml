@@ -52,7 +52,6 @@ linters:
     - wrapcheck
     - godot
     - tagalign
-    - whitespace
 
 linters-settings:
   stylecheck:
