@@ -138,7 +138,7 @@ linters-settings:
       - pkg: sigs.k8s.io/controller-runtime/pkg/log
         alias: kctrllog
       - pkg: sigs.k8s.io/controller-runtime/pkg/client
-        alias: kclient
+        alias: kctrlclient
       - pkg: k8s.io/api/autoscaling/v1
         alias: kautoscalingv1
       - pkg: k8s.io/api/autoscaling/v2

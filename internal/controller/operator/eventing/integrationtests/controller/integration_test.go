@@ -16,7 +16,7 @@ import (
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kclient "sigs.k8s.io/controller-runtime/pkg/client"
+	kctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -1107,6 +1107,6 @@ func (mkc *MockKubeClient) GetCRD(ctx context.Context, name string) (*kapiextens
 	return nil, notFoundError
 }
 
-func (mkc *MockKubeClient) PatchApply(ctx context.Context, object kclient.Object) error {
+func (mkc *MockKubeClient) PatchApply(ctx context.Context, object kctrlclient.Object) error {
 	return fmt.Errorf("unexpected error")
 }

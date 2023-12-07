@@ -36,7 +36,7 @@ type oauth2Credentials struct {
 	certsURL     []byte
 }
 
-const EventMeshSecretMissingMessage = "the specified EventMesh secret is missing. Please provide the secret"
+const EventMeshSecretMissingMessage = "The specified EventMesh secret is not found. Please provide an existing secret."
 
 func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing,
 	eventMeshSecret *kcorev1.Secret, log *zap.SugaredLogger,
