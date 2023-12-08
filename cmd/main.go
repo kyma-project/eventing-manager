@@ -58,7 +58,6 @@ var (
 	setupLog = kctrl.Log.WithName("setup")
 )
 
-// init
 func init() {
 	kutilruntime.Must(kkubernetesscheme.AddToScheme(scheme))
 
