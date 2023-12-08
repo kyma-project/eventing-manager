@@ -95,6 +95,7 @@ type EventingStatus struct {
 	ActiveBackend     BackendType         `json:"activeBackend"`
 	BackendConfigHash int64               `json:"specHash"`
 	State             string              `json:"state"`
+	PublisherService  string              `json:"publisherService,omitempty"`
 	Conditions        []kmetav1.Condition `json:"conditions,omitempty"`
 }
 

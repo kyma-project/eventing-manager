@@ -29,8 +29,7 @@ import (
 )
 
 const (
-	projectRootDir  = "../../../../../../"
-	eventTypePrefix = "test-prefix"
+	projectRootDir = "../../../../../../"
 )
 
 var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
@@ -231,6 +230,9 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				// check if webhook configurations are updated with correct CABundle.
 				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
+
+			// check the publisher service in the Eventing CR status
+			testEnvironment.EnsurePublishServiceInEventingStatus(t, tc.givenEventing.Name, tc.givenEventing.Namespace)
 		})
 	}
 }
@@ -291,12 +293,12 @@ func Test_UpdateEventingCR(t *testing.T) {
 			}()
 
 			// get Eventing CR.
-			eventing, err := testEnvironment.GetEventingFromK8s(tc.givenExistingEventing.Name, givenNamespace)
+			eventingCR, err := testEnvironment.GetEventingFromK8s(tc.givenExistingEventing.Name, givenNamespace)
 			require.NoError(t, err)
 
 			// when
 			// update NATS CR.
-			newEventing := eventing.DeepCopy()
+			newEventing := eventingCR.DeepCopy()
 			newEventing.Spec = tc.givenNewEventingForUpdate.Spec
 			testEnvironment.EnsureK8sResourceUpdated(t, newEventing)
 
@@ -304,6 +306,9 @@ func Test_UpdateEventingCR(t *testing.T) {
 			testEnvironment.EnsureEventingSpecPublisherReflected(t, newEventing)
 			testEnvironment.EnsureEventingReplicasReflected(t, newEventing)
 			testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenExistingEventing)
+
+			// check the publisher service in the Eventing CR status
+			testEnvironment.EnsurePublishServiceInEventingStatus(t, eventingCR.Name, eventingCR.Namespace)
 		})
 	}
 }
@@ -311,9 +316,7 @@ func Test_UpdateEventingCR(t *testing.T) {
 func Test_ReconcileSameEventingCR(t *testing.T) {
 	t.Parallel()
 
-	////
 	// given
-	////
 	eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool { return true }
 
 	eventingCR := utils.NewEventingCR(
@@ -356,9 +359,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 	const runs = 3
 	resourceVersionBefore := eppDeployment.ObjectMeta.ResourceVersion
 	for r := 0; r < runs; r++ {
-		////
 		// when
-		////
 		runId := fmt.Sprintf("run-%d", r)
 
 		eventingCR, err = testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
@@ -374,9 +375,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 		require.NotNil(t, eventingCR)
 		require.Equal(t, eventingCR.ObjectMeta.Labels["reconcile"], runId)
 
-		////
 		// then
-		////
 		testEnvironment.EnsureEventingSpecPublisherReflected(t, eventingCR)
 		testEnvironment.EnsureEventingReplicasReflected(t, eventingCR)
 		testEnvironment.EnsureDeploymentOwnerReferenceSet(t, eventingCR)
@@ -387,6 +386,9 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 
 		resourceVersionAfter := eppDeployment.ObjectMeta.ResourceVersion
 		require.Equal(t, resourceVersionBefore, resourceVersionAfter)
+
+		// check the publisher service in the Eventing CR status
+		testEnvironment.EnsurePublishServiceInEventingStatus(t, eventingCR.Name, eventingCR.Namespace)
 	}
 }
 
@@ -725,6 +727,9 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 				// check if webhook configurations are updated with correct CABundle.
 				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
+
+			// check the publisher service in the Eventing CR status
+			testEnvironment.EnsurePublishServiceInEventingStatus(t, tc.givenEventing.Name, givenNamespace)
 		})
 	}
 }
