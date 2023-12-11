@@ -131,7 +131,7 @@ Next, publish 15 events at once and see how Kyma Eventing triggers the workload.
 
 1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
    ```bash
-   kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
+   kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
    ```
 2. Now publish 15 events to the Event Publisher Proxy Service. In another terminal window, run:
 
