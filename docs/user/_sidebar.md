@@ -1,4 +1,4 @@
-* [Home](/README.md)
+* [Back to Kyma Home](/README.md)
 * [Eventing module](README.md)
 * [Module lifecycle](01-manager.md)
 * [Configuration](02-configuration.md)

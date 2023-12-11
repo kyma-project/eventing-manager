@@ -3,7 +3,7 @@
 Some quality aspects are covered by automated verification, so you must execute tooling locally before a commit.
 This document guides you through the development flow.
 
-## Modifying the API definitions
+## Modifying the API Definitions
 
 This project uses the [controller-gen](https://book.kubebuilder.io/reference/controller-gen.html) tool provided by [Kubebuilder](https://book.kubebuilder.io/).
 To modify the API definitions, you must adapt the ["marker comments"](https://book.kubebuilder.io/reference/markers.html) in the Go code.
@@ -13,17 +13,19 @@ The rules are written using the [Common Expression Language](https://github.com/
 For further information and examples, look to the [Kubernetes documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#validation) of validation rules and the CEL [language definition](https://github.com/google/cel-spec/blob/v0.10.0/doc/langdef.md).
 
 After the modifications, run the following command to generate the new manifests, such as custom resources (CRs) and CustomResourceDefinitions (CRDs):
+
 ```sh
 make manifests
 ```
 
 If changes to the `runtime.Object` interface were made, the `DeepCopy` functions must be updated as well.
 The generation is controlled by [Kubebuilder markers](https://book.kubebuilder.io/reference/markers/object.html?highlight=deep#objectdeepcopy).
+
 ```sh
 make generate
 ```
 
-## Source code linting
+## Source Code Linting
 
 The quality of this project is ensured by source code linting using [golangci-lint](https://golangci-lint.run/).
 

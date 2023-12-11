@@ -12,7 +12,7 @@ This document provides an overview of the testing activities used in this projec
 
 > **NOTE:** The validation and defaulting rules are tested within the integration tests.
 
-### Unit tests and env-tests
+### Unit Tests and Env-Tests
 
 To run the unit and integration tests, the following command must be executed. If necessary, the needed binaries for the integration tests are downloaded to `./bin`.
 Further information about integration tests can be found in the [Kubebuilder book](https://book.kubebuilder.io/reference/envtest.html).
@@ -27,7 +27,7 @@ If changes to the source code were made, or if this is your first time to execut
    make test
    ``` 
 
-### E2E tests
+### E2E Tests
 
 Because E2E tests need a Kubernetes cluster to run on, they are separate from the remaining tests.
 

@@ -1,14 +1,15 @@
-# Installation and uninstallation
+# Installation and Uninstallation
 
 There are several ways to install Eventing Manager.
 For development, you must run some make targets beforehand.
 For information about the prerequisites, refer to [Development](./development.md) and for a detailed guide to the development flow, visit [Governance](./governance.md).
 
-## Run the manager on a (k3d) cluster using a Docker image
+## Run the Manager on a (k3d) Cluster Using a Docker Image
 
 ### Installation
 
 1. Ensure you have a k3d cluster ready.
+
    ```sh
    k3d create cluster <clusterName>
    ```
@@ -57,9 +58,9 @@ This step depends on your desired backend: NATS or EventMesh.
       ```sh
       kubectl apply -f config/samples/default.yaml
       ```
-    
+
       The `spec.backend.type` needs to be set to `NATS`. You can configure the backend using the `NATS` related field in `spec.backend.config`.
-    
+
       ```sh
       spec:
         backend:
@@ -78,12 +79,12 @@ This step depends on your desired backend: NATS or EventMesh.
       ```sh
       kubectl apply -f config/samples/default_eventmesh.yaml
       ```
-   
+
       - `spec.backend.type`: set to `EventMesh`
       - `spec.backend.config.eventMeshSecret`: set it to the `<namespace>/<name>` where you applied the secret
       - `spec.backend.config.eventTypePrefix`: change to your desired value or leave as is
       - `spec.backend.config.domain`: set to the cluster public domain
-    
+
       If the Kyma Kubernetes cluster is managed by Gardener, Eventing Manager reads the cluster public domain automatically from the ConfigMap `kube-system/shoot-info`.
       Otherwise, you need to additionally set `spec.backend.config.domain` in the configuration. 
 
@@ -123,7 +124,7 @@ This step depends on your desired backend: NATS or EventMesh.
    make uninstall
    ```
 
-## Run Eventing Manager on a cluster using the Go runtime environment
+## Run Eventing Manager on a Cluster Using the Go Runtime Environment
 
 ### Installation
 
@@ -157,7 +158,7 @@ Remove the resources.
    make uninstall
    ```
 
-## Run Eventing Manager using Kyma's Lifecycle Manager
+## Run Eventing Manager Using Kyma’s Lifecycle Manager
 
 [Kyma's Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager) helps manage the lifecycle of each module in the cluster and can be used to install Eventing Manager.
 

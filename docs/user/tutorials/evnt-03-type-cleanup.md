@@ -1,4 +1,4 @@
-# Event name cleanup in Subscriptions
+# Event Name Cleanup in Subscriptions
 
 To conform to Cloud Event specifications, sometimes Eventing must modify the event names to filter out prohibited characters. This tutorial presents one example of event name cleanup.
 You learn how Eventing behaves when you create a [Subscription](../resources/evnt-cr-subscription.md) having prohibited characters in the event names. Read more about [Event name format and cleanup](../evnt-event-names.md).
@@ -25,13 +25,13 @@ You learn how Eventing behaves when you create a [Subscription](../resources/evn
      } 
    }
    ```
-       
+
      </details>
      <details>
      <summary label="kubectl">
      kubectl
      </summary>
-   
+
    ```bash
    cat <<EOF | kubectl apply -f -
    apiVersion: serverless.kyma-project.io/v1alpha2
@@ -62,7 +62,7 @@ You learn how Eventing behaves when you create a [Subscription](../resources/evn
      </details>
    </div>
 
-## Create a Subscription with Event type consisting of alphanumeric characters
+## Create a Subscription With Event Type Consisting of Alphanumeric Characters
 
 Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR) and subscribe for events of the type: `order.payment*success.v1`. Note that `order.payment*success.v1` contains a prohibited character, the asterisk `*`.
 
@@ -72,7 +72,7 @@ Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (C
   Kyma Dashboard
   </summary>
 
-1. Go to **Namespaces** and select the default Namespace.
+1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
 3. Provide the following parameters:
    - **Subscription name**: `lastorder-payment-sub`
@@ -91,6 +91,7 @@ Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (C
   </summary>
 
 Run:
+
 ```bash
 cat <<EOF | kubectl apply -f -
    apiVersion: eventing.kyma-project.io/v1alpha2
@@ -107,6 +108,7 @@ EOF
 ```
 
 To check that the Subscription was created and is ready, run:
+
 ```bash
 kubectl get subscriptions lastorder-payment-sub -o=jsonpath="{.status.ready}"
 ```
@@ -115,24 +117,27 @@ The operation was successful if the returned status says `true`.
   </details>
 </div>
 
-## Check the Subscription cleaned Event type
+## Check the Subscription Cleaned Event Type
 
 To check the Subscription cleaned Event type, run:
+
 ```bash
 kubectl get subscriptions lastorder-payment-sub -o=jsonpath="{.status.types}"
 ```
 
 Note that the returned event type `["order.paymentsuccess.v1"]` does not contain the asterisk `*` in the `payment*success` part. That's because Kyma Eventing cleans out the prohibited characters from the event name and uses the cleaned event name in the underlying Eventing backend.
 
-## Trigger the workload with an event
+## Trigger the Workload With an Event
 
 You created the `lastorder` Function, and subscribed to the `order.payment*success.v1` events by creating a Subscription CR. 
 Next, you see that you can still publish events with the original Event name (i.e. `order.payment*success.v1`) even though it contains the prohibited character, and it triggers the Function.
 
 1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
    ```
+
 2. Publish an event to trigger your Function. In another terminal window, run:
 
    <div tabs name="Publish an event" group="trigger-workload">
@@ -140,7 +145,7 @@ Next, you see that you can still publish events with the original Event name (i.
      <summary label="CloudEvents Conformance Tool">
      CloudEvents Conformance Tool
      </summary>
-   
+
       ```bash
       cloudevents send http://localhost:3000/publish \
          --type "order.payment*success.v1" \
@@ -150,13 +155,13 @@ Next, you see that you can still publish events with the original Event name (i.
          --data "{\"orderCode\":\"3211213\", \"orderAmount\":\"1250\"}" \
          --yaml
       ```
-   
+
      </details>
      <details>
      <summary label="curl">
      curl
      </summary>
-   
+
       ```bash
       curl -v -X POST \
            -H "ce-specversion: 1.0" \
@@ -171,14 +176,16 @@ Next, you see that you can still publish events with the original Event name (i.
      </details>
    </div>
 
-## Verify the event delivery
+## Verify the Event Delivery
 
 To verify that the event was properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
 
 You see the received event in the logs:
-```
+
+```sh
 Received event:  { orderCode: '3211213', orderAmount: '1250' } , Event Type:  order.paymentsuccess.v1
 ```
+
 Note that the `Event Type` of the received event is not the same as defined in the Subscription.
 
 ## Conclusion

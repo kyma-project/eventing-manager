@@ -1,4 +1,4 @@
-# Create Subscription subscribing to multiple event types
+# Create Subscription Subscribing to Multiple Event Types
 
 The [Subscription](../resources/evnt-cr-subscription.md) CustomResourceDefinition (CRD) is used to subscribe to events. In this tutorial, you learn how to subscribe to one or more event types using the Kyma Subscription.
 
@@ -9,7 +9,7 @@ The [Subscription](../resources/evnt-cr-subscription.md) CustomResourceDefinitio
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
 2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event#create-a-function).
 
-## Create a Subscription with multiple event types
+## Create a Subscription With Multiple Event Types
 
 To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). In the following example, you learn how to subscribe to events of two types: `order.received.v1` and `order.changed.v1`.
 
@@ -19,7 +19,7 @@ To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-
   Kyma Dashboard
   </summary>
 
-1. Go to **Namespaces** and select the default Namespace.
+1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
 3. Provide the following parameters:
    - **Subscription name**: `lastorder-sub`
@@ -40,6 +40,7 @@ To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-
   </summary>
 
 Run:
+
 ```bash
 cat <<EOF | kubectl apply -f -
     apiVersion: eventing.kyma-project.io/v1alpha2
@@ -57,6 +58,7 @@ EOF
 ```
 
 To check that the Subscription was created and is ready, run:
+
 ```bash
 kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"
 ```
@@ -72,9 +74,11 @@ You created the `lastorder` Function, and subscribed to the `order.received.v1` 
 In the following example, you port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost.
 
 1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
    ```
+
 2. Publish an event of type `order.received.v1` to trigger your Function. In another terminal window, run:
 
     <div tabs name="Publish an event" group="trigger-workload">
@@ -92,13 +96,13 @@ In the following example, you port-forward the [Event Publisher Proxy](../evnt-a
           --data "{\"orderCode\":\"3211213\", \"orderStatus\":\"received\"}" \
           --yaml
        ```
-    
+
       </details>
       <details>
       <summary label="curl">
       curl
       </summary>
-    
+
        ```bash
        curl -v -X POST \
             -H "ce-specversion: 1.0" \
@@ -120,7 +124,7 @@ In the following example, you port-forward the [Event Publisher Proxy](../evnt-a
       <summary label="CloudEvents Conformance Tool">
       CloudEvents Conformance Tool
       </summary>
-    
+
        ```bash
        cloudevents send http://localhost:3000/publish \
           --type order.changed.v1 \
@@ -130,13 +134,13 @@ In the following example, you port-forward the [Event Publisher Proxy](../evnt-a
           --data "{\"orderCode\":\"3211213\", \"orderStatus\":\"changed\"}" \
           --yaml
        ```
-    
+
       </details>
       <details>
       <summary label="curl">
       curl
       </summary>
-    
+
        ```bash
        curl -v -X POST \
             -H "ce-specversion: 1.0" \
@@ -151,12 +155,13 @@ In the following example, you port-forward the [Event Publisher Proxy](../evnt-a
       </details>
     </div>
 
-## Verify the event delivery
+## Verify the Event Delivery
 
 To verify that the events were properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
 
-You will see the received event in the logs:
-```
+You see the received event in the logs:
+
+```sh
 Received event: { orderCode: '3211213', orderStatus: 'received' }
 Received event: { orderCode: '3211213', orderStatus: 'changed' }
 ```
