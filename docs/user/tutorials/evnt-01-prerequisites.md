@@ -4,7 +4,7 @@ Browse the tutorials for Eventing to learn how to use it step-by-step in differe
 
 ## Prerequisites
 
-To perform the following Eventing tutorials, you need the following setup:
+To perform the Eventing tutorials, you need the following setup:
 
 1. [Kyma cluster provisioned](https://kyma-project.io/#/02-get-started/01-quick-install).
 
