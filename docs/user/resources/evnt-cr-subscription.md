@@ -10,7 +10,7 @@ This sample Subscription custom resource (CR) subscribes to an event called `ord
 
 > **WARNING:** Prohibited characters in event names under the **spec.types** property, are not supported in some backends. If any are detected, Eventing will remove them. Read [Event names](../evnt-event-names.md#event-name-cleanup) for more information.
 
-> **NOTE:** Both the subscriber and the Subscription should exist in the same Namespace.
+> **NOTE:** Both the subscriber and the Subscription should exist in the same namespace.
 
 ```yaml
 apiVersion: eventing.kyma-project.io/v1alpha2

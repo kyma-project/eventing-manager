@@ -1,4 +1,4 @@
-# Eventing backend stopped receiving events due to full storage
+# Eventing Backend Stopped Receiving Events Due To Full Storage
 
 ## Symptom
 
@@ -26,12 +26,9 @@ There are several ways to free the space on NATS JetStream backend:
 - If the published events are too large, the consumer cannot deliver them fast enough before the storage is full.
   In that case, either slow down the events' publish rate until the events are delivered, or scale the NATS backend with additional replicas.
 
-
 - Check the [NATS JetStream backend status](evnt-01-eventing-troubleshooting.md#step-6-check-nats-jetstream-status) and if [the sink is reachable and can accept the events](evnt-01-eventing-troubleshooting.md#step-5-check-if-the-subscription-sink-is-healthy).
-
 
 - The `Interest` retention policy specifies that events published to the subject are not kept in the stream if they don't match any consumer filter.
   You can delete a Kyma Subscription, which automatically removes all the pending messages in the stream that were published to that Subscription's subject.
 
-
-- In case the events' publish rate is very high (more than 1.5k events per second), speed up the event dispatching by increasing the `maxInFlightMessages` configuration of the Subscription (default is set to 10) accordingly. Due to low `maxInFlightMessages`, the dispatcher will not be able to keep up with the publisher, and as a result, the stream size will keep growing.  
+- If the events' publish rate is very high (more than 1.5k events per second), speed up the event dispatching by increasing the `maxInFlightMessages` configuration of the Subscription (default is set to 10) accordingly. Due to low `maxInFlightMessages`, the dispatcher will not be able to keep up with the publisher, and as a result, the stream size will keep growing.  
