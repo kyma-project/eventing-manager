@@ -102,7 +102,7 @@ Follow these steps to detect the source of the problem:
 
     If the returned HTTP status code is not 2xx, check the logs of the subscriber instance.
 
-### Step 6: Check Nats Jetstream Status
+### Step 6: Check NATS JetStream Status
 
 1. Check the health of NATS Pods. Run the command:
 
