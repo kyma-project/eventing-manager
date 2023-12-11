@@ -78,7 +78,7 @@ Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (C
   Kyma Dashboard
   </summary>
 
-1. Go to **Namespaces** and select the default Namespace.
+1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
 3. Switch to the **Advanced** tab, and provide the following parameters:
    - **Subscription name**: `lastorder-sub`

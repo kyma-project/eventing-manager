@@ -16,7 +16,7 @@ To perform the following Eventing tutorials, you need the following setup:
 
    Alternatively, you can just use the `kubectl` CLI instead.
 
-3. (Optional) [CloudEvents Conformance Tool](https://github.com/cloudevents/conformance) for publishing events. 
+3. (Optional) [CloudEvents Conformance Tool](https://github.com/cloudevents/conformance) for publishing events.
 
    ```bash
    go install github.com/cloudevents/conformance/cmd/cloudevents@latest
