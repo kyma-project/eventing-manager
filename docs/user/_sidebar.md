@@ -1,3 +1,4 @@
+<!-- markdown-link-check-disable -->
 * [Back to Kyma Home](/)
 * [Eventing module](/eventing-manager/user/README.md)
 * [Module lifecycle](/eventing-manager/user/01-manager.md)
@@ -19,3 +20,4 @@
   * [Subscriber Receives Irrelevant Events](/eventing-manager/user/troubleshooting/evnt-03-type-collision.md)
   * [Eventing Backend Stopped Receiving Events Due To Full Storage](/eventing-manager/user/troubleshooting/evnt-04-free-jetstream-storage.md)
   * [Published Events Are Pending in the Stream](/eventing-manager/user/troubleshooting/evnt-05-fix-pending-messages.md)
+<!-- markdown-link-check-enable -->
