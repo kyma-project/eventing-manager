@@ -9,6 +9,7 @@ INTERVAL_TIME="${3:-3}"
 # Generate job Status URL
 STATUS_URL="https://api.github.com/repos/kyma-project/eventing-manager/commits/${REF_NAME}/status"
 
+# Retry function
 function retry {
 	local start_time=$(date +%s)
 	# Get status result
@@ -42,3 +43,6 @@ function retry {
 		exit 1
 	fi
 }
+
+# Call retry function
+retry
