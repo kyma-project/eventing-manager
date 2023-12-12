@@ -10,7 +10,7 @@ on:
 
 jobs:
   verify-head-status:
-    name: Verify head
+    name: Verify head (image version and prow job)
     runs-on: ubuntu-latest
 
     steps:
