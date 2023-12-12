@@ -8,7 +8,7 @@ To perform the Eventing tutorials, you need the following setup:
 
 1. [Kyma cluster provisioned](https://kyma-project.io/#/02-get-started/01-quick-install).
 
-2. (Optional) [Kyma Dashboard](https://kyma-project.io/#/01-overview/ui/README?id=kyma-dashboard) deployed on the Kyma cluster. To access the Dashboard, run:
+2. (Optional) [Kyma dashboard](https://kyma-project.io/#/01-overview/ui/README?id=kyma-dashboard) deployed on the Kyma cluster. To access the Dashboard, run:
 
    ```bash
    kyma dashboard
