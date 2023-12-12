@@ -8,7 +8,11 @@ The CustomResourceDefinition (CRD) `eventings.operator.kyma-project.io` describe
 
 View the complete [Eventing CRD](https://github.com/kyma-project/eventing-manager/blob/main/config/crd/bases/operator.kyma-project.io_eventings.yaml) including detailed descriptions for each field.
 
-The CRD is equipped with validation rules and defaulting, so the CR is automatically filled with sensible defaults. You can override the defaults. The validation rules provide guidance when you edit the CR.
+The CRD is equipped with validation rules and defaulting, so the CR is automatically filled with default values.
+
+You can override the defaults. However, you must make sure that a backend is set; otherwise the Eventing Manager does not create any resources and goes into warning state.
+
+The validation rules provide guidance when you edit the CR. For example, you are not allowed to delete an existing backend.
 
 ## Examples
 
@@ -69,6 +73,6 @@ Use the following sample CRs as guidance. Each can be applied immediately when y
 | **conditions.&#x200b;type** (required)               | string     | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)                                                                                                                                                                                                                                                            |
 | **publisherService**                                 | string     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **specHash** (required)                              | integer    |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| **state** (required)                                 | string     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **state** (required)                                 | string     | Can have one of the following values: Ready, Error, Processing, Warning. Ready state is set when all the resources are deployed successfully and backend is connected. It gets Warning state in case backend is not specified and NATS module is not installed or EventMesh secret is missing in the cluster. Error state is set when there is an error. Processing state is set if recources are being created or changed. |
 
 <!-- TABLE-END -->

@@ -92,11 +92,15 @@ type Eventing struct {
 
 // EventingStatus defines the observed state of Eventing.
 type EventingStatus struct {
-	ActiveBackend     BackendType         `json:"activeBackend"`
-	BackendConfigHash int64               `json:"specHash"`
-	State             string              `json:"state"`
-	PublisherService  string              `json:"publisherService,omitempty"`
-	Conditions        []kmetav1.Condition `json:"conditions,omitempty"`
+	ActiveBackend     BackendType `json:"activeBackend"`
+	BackendConfigHash int64       `json:"specHash"`
+	// Can have one of the following values: Ready, Error, Processing, Warning. Ready state is set
+	// when all the resources are deployed successfully and backend is connected.
+	// It gets Warning state in case backend is not specified and NATS module is not installed or EventMesh secret is missing in the cluster.
+	// Error state is set when there is an error. Processing state is set if recources are being created or changed.
+	State            string              `json:"state"`
+	PublisherService string              `json:"publisherService,omitempty"`
+	Conditions       []kmetav1.Condition `json:"conditions,omitempty"`
 }
 
 // EventingSpec defines the desired state of Eventing.
