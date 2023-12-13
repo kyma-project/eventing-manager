@@ -49,6 +49,8 @@ function retry {
 
 }
 
+# Initial wait
+sleep 10
 # Call retry function
 retry
 while [ "$fullstatus" == "pending" ]; do
