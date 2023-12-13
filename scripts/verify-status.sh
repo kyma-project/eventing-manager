@@ -5,6 +5,7 @@ echo "Checking status of POST Jobs for Eventing-Manager"
 REF_NAME="${1:-"main"}"
 TIMEOUT_TIME="${2:-600}"
 INTERVAL_TIME="${3:-3}"
+INITIAL_WAIT_TIME="${4:-30}"
 
 # Generate job Status URL
 STATUS_URL="https://api.github.com/repos/kyma-project/eventing-manager/commits/${REF_NAME}/status"
@@ -66,7 +67,7 @@ function retry {
 }
 
 # Initial wait
-sleep 0
+sleep $INITIAL_WAIT_TIME
 # Call retry function
 retry
 while [ "$fullstatus" == "pending" ]; do
