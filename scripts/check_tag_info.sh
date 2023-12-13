@@ -21,9 +21,9 @@ RC_TAG=$(cat sec-scanners-config.yaml | grep "${RC_TAG_TO_CHECK}" | cut -d : -f 
 if [[ "$IMAGE_TAG" != "$DESIRED_TAG" ]] || [[ "$RC_TAG" != "$DESIRED_TAG" ]]; then
   # ERROR: Tag issue
   echo "Tags are not correct:
-  - wanted '$DESIRED_TAG'
-  - security-scanner image tag: '$IMAGE_TAG'
-  - rc-tag: '$RC_TAG'"
+  - wanted: $DESIRED_TAG
+  - security-scanner image tag: $IMAGE_TAG
+  - rc-tag: $RC_TAG"
   exit 1
 fi
 
