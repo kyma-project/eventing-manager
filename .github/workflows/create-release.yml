@@ -30,7 +30,7 @@ jobs:
           fi
 
       - name: Check image Tag
-        run: ./scripts/check_tag_info.sh ${{ github.ref_name }}
+        run: ./scripts/check_tag_info.sh ${{ github.event.inputs.name }}
 
       - name: Verify prow post jobs
         run: ./scripts/verify-status.sh ${{ github.ref_name }}
