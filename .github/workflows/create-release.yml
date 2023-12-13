@@ -32,8 +32,7 @@ jobs:
 
       - name: Verify prow post jobs
         run: ./scripts/verify-status.sh ${{ github.ref_name }}
-
-          #  run-unit-tests:
+        #  run-unit-tests:
           #    name: Unit tests
           #    needs: verify-head-status
         #    uses: "./.github/workflows/run-unit-tests.yaml"
@@ -66,6 +65,9 @@ jobs:
         run: |
           git tag ${{ github.event.inputs.name }}
           git push origin ${{ github.event.inputs.name }}
+
+      - name: Verify prow post jobs
+        run: ./scripts/verify-status.sh ${{ github.ref_name }}
 
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
