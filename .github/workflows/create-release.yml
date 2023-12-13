@@ -23,10 +23,12 @@ jobs:
             echo "Branch name does not start with 'release-'."
             exit 1
           fi  
+          
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          
       - name: Check image Tag
         run: ./scripts/check_tag_info.sh ${{ github.ref_name }}
 
