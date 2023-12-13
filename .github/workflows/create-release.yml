@@ -4,31 +4,37 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: 'Release name'
+        description: 'Release name ( e.g. "2.1.3" )'
         default: ""
         required: true
 
 jobs:
   verify-head-status:
-    name: Verify head
+    name: Verify head (image version and prow job)
     runs-on: ubuntu-latest
 
     steps:
+      - name: Verify that the current branch has a name that starts with 'release-'
+        run: |
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if [[ "$CURRENT_BRANCH" == release-* ]]; then
+            echo "Branch name starts with 'release-'."
+          else
+            echo "Branch name does not start with 'release-'."
+            exit 1
+          fi  
+          
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          
+      - name: Check image Tag
+        run: ./scripts/check_tag_info.sh ${{ github.ref_name }}
 
-      - name: Check tag
-        run: ./scripts/check_release_tag.sh ${{ github.event.inputs.name }}
-
-      - name: Check image
-        run: ./scripts/check_image.sh ${{ github.ref_name }}
-
-      - name: Verify
+      - name: Verify prow post jobs
         run: ./scripts/verify-status.sh ${{ github.ref_name }}
-
-          #  run-unit-tests:
+        #  run-unit-tests:
           #    name: Unit tests
           #    needs: verify-head-status
         #    uses: "./.github/workflows/run-unit-tests.yaml"
@@ -61,6 +67,9 @@ jobs:
         run: |
           git tag ${{ github.event.inputs.name }}
           git push origin ${{ github.event.inputs.name }}
+
+      - name: Verify prow post jobs
+        run: ./scripts/verify-status.sh ${{ github.ref_name }}
 
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
