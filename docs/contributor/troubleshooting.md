@@ -4,23 +4,23 @@ This document contains tips and tricks for common problems with Eventing Manager
 
 If you cannot find your issue described here, take a look at the [Eventing Troubleshooting](https://github.com/kyma-project/eventing-manager/blob/main/docs/user/troubleshooting/README.md)
 
-## Troubleshooting: Installing Eventing Manager using a Docker image
+## Troubleshooting: Installing Eventing Manager Using a Docker Image
 
-### Error while deploying Eventing Manager
+### Error While Deploying Eventing Manager
 
 **Symptom:** The `make deploy` step fails with the following error message:
 
 `Error from server (NotFound): error when creating "STDIN": namespaces kyma-system not found`
 
-**Cause:** The Namespace of the Deployment does not exist yet.
+**Cause:** The namespace of the Deployment does not exist yet.
 
-**Remedy:** Create the Namespace.
+**Remedy:** Create the namespace.
 
    ```sh
    kubectl create ns kyma-system
    ```
 
-## Reach out to us
+## Reach Out to Us
 
 If you encounter an issue or want to report a bug, please create a [GitHub issue](https://github.com/kyma-project/nats-manager/issues) with background information and
 steps on how to reproduce.

@@ -12,7 +12,7 @@ Eventing Manager is a standard Kubernetes [operator](https://kubernetes.io/docs/
 
 This project is scaffolded using [Kubebuilder](https://book.kubebuilder.io), and all the Kubebuilder `makefile` helpers mentioned [here](https://book.kubebuilder.io/reference/makefile-helpers.html) can be used.
 
-## Get started
+## Get Started
 
 You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
 > **Note:** Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
@@ -42,7 +42,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 - [kustomize](https://kustomize.io/)
 - Access to Kubernetes cluster ([k3d](https://k3d.io/) / k8s)
 
-### Run Eventing Manager locally
+### Run Eventing Manager Locally
 
 1. Install the CRDs into the cluster:
 
@@ -58,7 +58,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 
 > **NOTE:** You can also run this in one step with the command: `make install run`.
 
-### Run tests
+### Run Tests
 
 Run the unit and integration tests:
 
@@ -76,7 +76,7 @@ make generate-and-test
    make lint
    ```
 
-### Modify the API definitions
+### Modify the API Definitions
 
 If you are editing the API definitions, generate the manifests such as CRs or CRDs:
 
@@ -88,7 +88,7 @@ make manifests
 
 For more information, see the [Kubebuilder documentation](https://book.kubebuilder.io/introduction.html).
 
-### Build container images
+### Build Container Images
 
 Build and push your image to the location specified by `IMG`:
 
@@ -107,7 +107,7 @@ make docker-buildx IMG=<container-registry>/eventing-manager:<tag>
 You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
 > **Note:** Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
 
-### Deploy on the cluster
+### Deploy on the Cluster
 
 1. Download Go packages:
 
@@ -133,14 +133,15 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    make deploy IMG=<container-registry>/eventing-manager:<tag>
    ```
 
-4. [Optional] Install `Eventing` Custom Resource:
+5. [Optional] Install `Eventing` Custom Resource:
 
    ```sh
    kubectl apply -f config/samples/default.yaml
    ```
 
-5. For EventMesh backend, if the Kyma Kubernetes cluster is managed by Gardener, then the Eventing Manager reads the cluster public domain from the ConfigMap **kube-system/shoot-info**.
+6. For EventMesh backend, if the Kyma Kubernetes cluster is managed by Gardener, then the Eventing Manager reads the cluster public domain from the ConfigMap **kube-system/shoot-info**.
    Otherwise, set the **spec.backend.config.domain** to the cluster public domain in the `eventing` custom resource; for example:
+
    ```yaml
    spec:
      backend:
@@ -167,7 +168,7 @@ To delete the CRDs from the cluster:
    make uninstall
    ```
 
-### Deploy Eventing Manager module with [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
+### Deploy Eventing Manager Module With [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
 
 1. Deploy the Lifecycle Manager to the Kubernetes cluster:
 
@@ -203,7 +204,7 @@ To delete the CRDs from the cluster:
      kubectl get -n kyma-system kyma
      ```
 
-### Uninstall Eventing Manager module with [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
+### Uninstall Eventing Manager Module With [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
 
 1. Delete Eventing custom resource (CR) from the Kubernetes cluster (if exists):
 
