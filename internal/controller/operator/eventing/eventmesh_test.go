@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -94,7 +95,13 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenManagerFactoryMock: func(_ *submgrmanagermocks.Manager) *submgrmocks.ManagerFactory {
 				return nil
 			},
-			wantError:     errors.New("failed to sync OAuth secret"),
+			givenKubeClientMock: func() k8s.Client {
+				mockKubeClient := new(k8smocks.Client)
+				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
+					nil, errors.New("secret not found")).Once()
+				return mockKubeClient
+			},
+			wantError:     fmt.Errorf("failed to sync OAuth secret: secret not found"),
 			wantHashAfter: int64(0),
 		},
 		{
@@ -115,11 +122,11 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenKubeClientMock: func() k8s.Client {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
+					utils.NewOAuthSecret("test-secret", givenEventing.Namespace), nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed to apply patch")).Once()
 				return mockKubeClient
 			},
-			wantError: errors.New("failed to sync Publisher Proxy secret"),
+			wantError: errors.New("failed to sync Publisher Proxy secret: failed to apply patch"),
 		},
 		{
 			name:                              "it should do nothing because subscription manager is already started",
@@ -143,7 +150,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
+					utils.NewOAuthSecret("test-secret", givenEventing.Namespace), nil).Once()
 				return mockKubeClient
 			},
 			wantHashAfter: int64(4922936597877296700),
@@ -174,7 +181,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
+					utils.NewOAuthSecret("test-secret", givenEventing.Namespace), nil).Once()
 				return mockKubeClient
 			},
 			wantAssertCheck: true,
@@ -205,7 +212,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Twice()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Twice()
+					utils.NewOAuthSecret("test-secret", givenEventing.Namespace), nil).Twice()
 				return mockKubeClient
 			},
 			wantAssertCheck:  true,
@@ -239,7 +246,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Twice()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Twice()
+					utils.NewOAuthSecret("test-secret", givenEventing.Namespace), nil).Twice()
 				return mockKubeClient
 			},
 			wantAssertCheck: true,
@@ -300,7 +307,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			// then
 			if tc.wantError != nil {
 				require.Error(t, err)
-				require.ErrorAs(t, err, &tc.wantError)
+				require.Equal(t, err.Error(), tc.wantError.Error())
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, testEnv.Reconciler.eventMeshSubManager)

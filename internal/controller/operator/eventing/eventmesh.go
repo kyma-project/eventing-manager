@@ -50,13 +50,13 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	// gets oauth2ClientID and secret and stops the EventMesh subscription manager if changed
 	err := r.syncOauth2ClientIDAndSecret(ctx, eventing)
 	if err != nil {
-		return fmt.Errorf("failed to sync OAuth secret: %w", err)
+		return fmt.Errorf("failed to sync OAuth secret: %v", err)
 	}
 
 	// CreateOrUpdate deployment for publisher proxy secret
 	secretForPublisher, err := r.SyncPublisherProxySecret(ctx, eventMeshSecret)
 	if err != nil {
-		return fmt.Errorf("failed to sync Publisher Proxy secret: %w", err)
+		return fmt.Errorf("failed to sync Publisher Proxy secret: %v", err)
 	}
 
 	// Set environment with secrets for EventMesh subscription controller
@@ -234,7 +234,6 @@ func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context, secretNames
 	var exists bool
 	var clientID, clientSecret, tokenURL, certsURL []byte
 
-	oauth2Secret := new(kcorev1.Secret)
 	oauth2SecretNamespacedName := types.NamespacedName{
 		Namespace: secretNamespace,
 		Name:      r.backendConfig.EventingWebhookAuthSecretName,
@@ -242,8 +241,9 @@ func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context, secretNames
 
 	r.namedLogger().Infof("Reading secret %s", oauth2SecretNamespacedName.String())
 
-	if getErr := r.Get(ctx, oauth2SecretNamespacedName, oauth2Secret); getErr != nil {
-		return nil, getErr
+	var oauth2Secret *kcorev1.Secret
+	if oauth2Secret, err = r.kubeClient.GetSecret(ctx, oauth2SecretNamespacedName.String()); err != nil {
+		return nil, err
 	}
 
 	if clientID, exists = oauth2Secret.Data[secretKeyClientID]; !exists {
