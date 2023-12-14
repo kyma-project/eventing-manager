@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	PublisherManagerMock "github.com/kyma-project/eventing-manager/pkg/ems/api/events/client/mocks"
@@ -15,7 +16,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	controllertesting "github.com/kyma-project/eventing-manager/testing"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 )
 
 func Test_getProcessedEventTypes(t *testing.T) {

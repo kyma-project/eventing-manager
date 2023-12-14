@@ -1,5 +1,9 @@
 package label
 
+import (
+	"k8s.io/apimachinery/pkg/labels"
+)
+
 const (
 	KeyComponent = "app.kubernetes.io/component"
 	KeyCreatedBy = "app.kubernetes.io/created-by"
@@ -14,3 +18,7 @@ const (
 	ValueEventingManager        = "eventing-manager"
 	ValueEventing               = "eventing"
 )
+
+func SelectorInstanceEventing() labels.Selector {
+	return labels.SelectorFromSet(map[string]string{KeyInstance: ValueEventing})
+}

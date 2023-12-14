@@ -19,8 +19,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	ecenv "github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	ecenv "github.com/kyma-project/eventing-manager/pkg/env"
 
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"

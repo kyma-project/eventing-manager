@@ -6,15 +6,19 @@ env:
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+      - "release-*"
     paths:
-      - 'api/**'
-      - 'config/crd/**'
+      - "api/**"
+      - "config/crd/**"
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+      - "release-*"
     paths:
-      - 'api/**'
-      - 'config/crd/**'
+      - "api/**"
+      - "config/crd/**"
 
 jobs:
   crd:

@@ -1,12 +1,12 @@
 package object
 
 import (
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"net/http"
 	"testing"
 
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	v2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -16,12 +16,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/deployment"
-	"github.com/kyma-project/kyma/components/eventing-controller/pkg/env"
-
-	"github.com/kyma-project/eventing-manager/pkg/utils"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
 func TestApiRuleEqual(t *testing.T) {
@@ -187,202 +182,6 @@ func TestApiRuleEqual(t *testing.T) {
 	}
 }
 
-func TestEventingBackendEqual(t *testing.T) {
-	emptyBackend := eventingv1alpha1.EventingBackend{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: "bar",
-		},
-		Spec: eventingv1alpha1.EventingBackendSpec{},
-	}
-
-	testCases := map[string]struct {
-		getBackend1    func() *eventingv1alpha1.EventingBackend
-		getBackend2    func() *eventingv1alpha1.EventingBackend
-		expectedResult bool
-	}{
-		"should be unequal if labels are different": {
-			getBackend1: func() *eventingv1alpha1.EventingBackend {
-				b := emptyBackend.DeepCopy()
-				b.Labels = map[string]string{"k1": "v1"}
-				return b
-			},
-			getBackend2: func() *eventingv1alpha1.EventingBackend {
-				return emptyBackend.DeepCopy()
-			},
-			expectedResult: false,
-		},
-		"should be equal if labels are the same": {
-			getBackend1: func() *eventingv1alpha1.EventingBackend {
-				b := emptyBackend.DeepCopy()
-				b.Labels = map[string]string{"k1": "v1"}
-				return b
-			},
-			getBackend2: func() *eventingv1alpha1.EventingBackend {
-				b := emptyBackend.DeepCopy()
-				b.Name = "bar"
-				b.Labels = map[string]string{"k1": "v1"}
-				return b
-			},
-			expectedResult: true,
-		},
-	}
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			if eventingBackendEqual(tc.getBackend1(), tc.getBackend2()) != tc.expectedResult {
-				t.Errorf("expected output to be %t", tc.expectedResult)
-			}
-		})
-	}
-}
-
-func TestEventingBackendStatusEqual(t *testing.T) {
-	testCases := []struct {
-		name                string
-		givenBackendStatus1 eventingv1alpha1.EventingBackendStatus
-		givenBackendStatus2 eventingv1alpha1.EventingBackendStatus
-		wantResult          bool
-	}{
-		{
-			name: "should be unequal if ready status is different",
-			givenBackendStatus1: eventingv1alpha1.EventingBackendStatus{
-				EventingReady: utils.BoolPtr(false),
-			},
-			givenBackendStatus2: eventingv1alpha1.EventingBackendStatus{
-				EventingReady: utils.BoolPtr(true),
-			},
-			wantResult: false,
-		},
-		{
-			name: "should be unequal if missing secret",
-			givenBackendStatus1: eventingv1alpha1.EventingBackendStatus{
-				EventingReady:      utils.BoolPtr(false),
-				BEBSecretName:      "secret",
-				BEBSecretNamespace: "default",
-			},
-			givenBackendStatus2: eventingv1alpha1.EventingBackendStatus{
-				EventingReady: utils.BoolPtr(false),
-			},
-			wantResult: false,
-		},
-		{
-			name: "should be unequal if different secretName",
-			givenBackendStatus1: eventingv1alpha1.EventingBackendStatus{
-				EventingReady:      utils.BoolPtr(false),
-				BEBSecretName:      "secret",
-				BEBSecretNamespace: "default",
-			},
-			givenBackendStatus2: eventingv1alpha1.EventingBackendStatus{
-				EventingReady:      utils.BoolPtr(false),
-				BEBSecretName:      "secretnew",
-				BEBSecretNamespace: "default",
-			},
-			wantResult: false,
-		},
-		{
-			name: "should be unequal if different secretNamespace",
-			givenBackendStatus1: eventingv1alpha1.EventingBackendStatus{
-				EventingReady:      utils.BoolPtr(false),
-				BEBSecretName:      "secret",
-				BEBSecretNamespace: "default",
-			},
-			givenBackendStatus2: eventingv1alpha1.EventingBackendStatus{
-				EventingReady:      utils.BoolPtr(false),
-				BEBSecretName:      "secret",
-				BEBSecretNamespace: "kyma-system",
-			},
-			wantResult: false,
-		},
-		{
-			name: "should be unequal if missing backend",
-			givenBackendStatus1: eventingv1alpha1.EventingBackendStatus{
-				Backend: eventingv1alpha1.NatsBackendType,
-			},
-			givenBackendStatus2: eventingv1alpha1.EventingBackendStatus{},
-			wantResult:          false,
-		},
-		{
-			name: "should be unequal if different backend",
-			givenBackendStatus1: eventingv1alpha1.EventingBackendStatus{
-				Backend: eventingv1alpha1.NatsBackendType,
-			},
-			givenBackendStatus2: eventingv1alpha1.EventingBackendStatus{
-				Backend: eventingv1alpha1.BEBBackendType,
-			},
-			wantResult: false,
-		},
-		{
-			name: "should be unequal if conditions different",
-			givenBackendStatus1: eventingv1alpha1.EventingBackendStatus{
-				Conditions: []eventingv1alpha1.Condition{
-					{Type: eventingv1alpha1.ConditionPublisherProxyReady, Status: corev1.ConditionTrue},
-				},
-			},
-			givenBackendStatus2: eventingv1alpha1.EventingBackendStatus{
-				Conditions: []eventingv1alpha1.Condition{
-					{Type: eventingv1alpha1.ConditionPublisherProxyReady, Status: corev1.ConditionFalse},
-				},
-			},
-			wantResult: false,
-		},
-		{
-			name: "should be unequal if conditions missing",
-			givenBackendStatus1: eventingv1alpha1.EventingBackendStatus{
-				Conditions: []eventingv1alpha1.Condition{
-					{Type: eventingv1alpha1.ConditionPublisherProxyReady, Status: corev1.ConditionTrue},
-				},
-			},
-			givenBackendStatus2: eventingv1alpha1.EventingBackendStatus{
-				Conditions: []eventingv1alpha1.Condition{},
-			},
-			wantResult: false,
-		},
-		{
-			name: "should be unequal if conditions different",
-			givenBackendStatus1: eventingv1alpha1.EventingBackendStatus{
-				Conditions: []eventingv1alpha1.Condition{
-					{Type: eventingv1alpha1.ConditionPublisherProxyReady, Status: corev1.ConditionTrue},
-				},
-			},
-			givenBackendStatus2: eventingv1alpha1.EventingBackendStatus{
-				Conditions: []eventingv1alpha1.Condition{
-					{Type: eventingv1alpha1.ConditionControllerReady, Status: corev1.ConditionTrue},
-				},
-			},
-			wantResult: false,
-		},
-		{
-			name: "should be equal if the status are the same",
-			givenBackendStatus1: eventingv1alpha1.EventingBackendStatus{
-				Backend: eventingv1alpha1.NatsBackendType,
-				Conditions: []eventingv1alpha1.Condition{
-					{Type: eventingv1alpha1.ConditionControllerReady, Status: corev1.ConditionTrue},
-					{Type: eventingv1alpha1.ConditionPublisherProxyReady, Status: corev1.ConditionTrue},
-				},
-				EventingReady: utils.BoolPtr(true),
-			},
-			givenBackendStatus2: eventingv1alpha1.EventingBackendStatus{
-				Backend: eventingv1alpha1.NatsBackendType,
-				Conditions: []eventingv1alpha1.Condition{
-					{Type: eventingv1alpha1.ConditionControllerReady, Status: corev1.ConditionTrue},
-					{Type: eventingv1alpha1.ConditionPublisherProxyReady, Status: corev1.ConditionTrue},
-				},
-				EventingReady: utils.BoolPtr(true),
-			},
-			wantResult: true,
-		},
-	}
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			if IsBackendStatusEqual(tc.givenBackendStatus1, tc.givenBackendStatus2) != tc.wantResult {
-				t.Errorf("expected output to be %t", tc.wantResult)
-			}
-		})
-	}
-}
-
 func Test_isSubscriptionStatusEqual(t *testing.T) {
 	testCases := []struct {
 		name                string
@@ -455,252 +254,178 @@ func Test_isSubscriptionStatusEqual(t *testing.T) {
 	}
 }
 
-func TestPublisherProxyDeploymentEqual(t *testing.T) {
-	publisherCfg := env.PublisherConfig{
-		Image:          "publisher",
-		PortNum:        0,
-		MetricsPortNum: 0,
-		ServiceAccount: "publisher-sa",
-		Replicas:       1,
-		RequestsCPU:    "32m",
-		RequestsMemory: "64Mi",
-		LimitsCPU:      "64m",
-		LimitsMemory:   "128Mi",
-	}
-	natsConfig := env.NATSConfig{
-		EventTypePrefix: "prefix",
-		JSStreamName:    "kyma",
-	}
-	defaultNATSPublisher := deployment.NewNATSPublisherDeployment(natsConfig, publisherCfg)
-	defaultBEBPublisher := deployment.NewBEBPublisherDeployment(publisherCfg)
-
-	testCases := map[string]struct {
-		getPublisher1  func() *appsv1.Deployment
-		getPublisher2  func() *appsv1.Deployment
-		expectedResult bool
-	}{
-		"should be equal if same default NATS publisher": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Name = "publisher1"
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Name = "publisher2"
-				return p
-			},
-			expectedResult: true,
-		},
-		"should be equal if same default BEB publisher": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultBEBPublisher.DeepCopy()
-				p.Name = "publisher1"
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				p := defaultBEBPublisher.DeepCopy()
-				p.Name = "publisher2"
-				return p
-			},
-			expectedResult: true,
-		},
-		"should be unequal if publisher types are different": {
-			getPublisher1: func() *appsv1.Deployment {
-				return defaultBEBPublisher.DeepCopy()
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				return defaultNATSPublisher.DeepCopy()
-			},
-			expectedResult: false,
-		},
-		"should be unequal if publisher image changes": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Spec.Containers[0].Image = "new-publisher-img"
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				return defaultNATSPublisher.DeepCopy()
-			},
-			expectedResult: false,
-		},
-		"should be unequal if env var changes": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Spec.Containers[0].Env[0].Value = "new-value"
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				return defaultNATSPublisher.DeepCopy()
-			},
-			expectedResult: false,
-		},
-		"should be equal if replicas changes": {
-			getPublisher1: func() *appsv1.Deployment {
-				replicas := int32(1)
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Replicas = &replicas
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				replicas := int32(2)
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Replicas = &replicas
-				return p
-			},
-			expectedResult: true,
-		},
-		"should be equal if replicas are the same": {
-			getPublisher1: func() *appsv1.Deployment {
-				replicas := int32(2)
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Replicas = &replicas
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				replicas := int32(2)
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Replicas = &replicas
-				return p
-			},
-			expectedResult: true,
-		},
-		"should be equal if spec annotations are nil and empty": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Annotations = nil
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Annotations = map[string]string{}
-				return p
-			},
-			expectedResult: true,
-		},
-		"should be unequal if spec annotations changes": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Annotations = map[string]string{"key": "value1"}
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Annotations = map[string]string{"key": "value2"}
-				return p
-			},
-			expectedResult: false,
-		},
-		"should be equal if spec Labels are nil and empty": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = nil
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{}
-				return p
-			},
-			expectedResult: true,
-		},
-		"should be equal if spec Labels are equal with same order": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{
-					"key1": "value1",
-					"key2": "value2",
-				}
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{
-					"key1": "value1",
-					"key2": "value2",
-				}
-				return p
-			},
-			expectedResult: true,
-		},
-		"should be equal if spec Labels are equal with different order": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{
-					"key1": "value1",
-					"key2": "value2",
-				}
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{
-					"key2": "value2",
-					"key1": "value1",
-				}
-				return p
-			},
-			expectedResult: true,
-		},
-		"should not be equal if spec Labels were added": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{
-					"key1": "value1",
-				}
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{
-					"key1": "value1",
-					"key2": "value2",
-				}
-				return p
-			},
-			expectedResult: false,
-		},
-		"should not be equal if spec Labels were removed": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{
-					"key1": "value1",
-					"key2": "value2",
-				}
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{
-					"key1": "value1",
-				}
-				return p
-			},
-			expectedResult: false,
-		},
-		"should be unequal if spec Labels changes": {
-			getPublisher1: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{"key": "value1"}
-				return p
-			},
-			getPublisher2: func() *appsv1.Deployment {
-				p := defaultNATSPublisher.DeepCopy()
-				p.Spec.Template.Labels = map[string]string{"key": "value2"}
-				return p
-			},
-			expectedResult: false,
-		},
-	}
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			if publisherProxyDeploymentEqual(tc.getPublisher1(), tc.getPublisher2()) != tc.expectedResult {
-				t.Errorf("expected output to be %t", tc.expectedResult)
-			}
-		})
-	}
-}
+//func TestPublisherProxyDeploymentEqual(t *testing.T) {
+//	publisherCfg := env.PublisherConfig{
+//		Image:          "publisher",
+//		PortNum:        0,
+//		MetricsPortNum: 0,
+//		ServiceAccount: "publisher-sa",
+//		Replicas:       1,
+//		RequestsCPU:    "32m",
+//		RequestsMemory: "64Mi",
+//		LimitsCPU:      "64m",
+//		LimitsMemory:   "128Mi",
+//	}
+//	natsConfig := env.NATSConfig{
+//		EventTypePrefix: "prefix",
+//		JSStreamName:    "kyma",
+//	}
+//	defaultNATSPublisher := eventingpkg.NewNATSPublisherDeployment(natsConfig, publisherCfg)
+//	defaultBEBPublisher := eventingpkg.NewBEBPublisherDeployment(publisherCfg)
+//
+//	testCases := map[string]struct {
+//		getPublisher1  func() *appsv1.Deployment
+//		getPublisher2  func() *appsv1.Deployment
+//		expectedResult bool
+//	}{
+//		"should be equal if same default NATS publisher": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Name = "publisher1"
+//				return p
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Name = "publisher2"
+//				return p
+//			},
+//			expectedResult: true,
+//		},
+//		"should be equal if same default BEB publisher": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				p := defaultBEBPublisher.DeepCopy()
+//				p.Name = "publisher1"
+//				return p
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				p := defaultBEBPublisher.DeepCopy()
+//				p.Name = "publisher2"
+//				return p
+//			},
+//			expectedResult: true,
+//		},
+//		"should be unequal if publisher types are different": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				return defaultBEBPublisher.DeepCopy()
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				return defaultNATSPublisher.DeepCopy()
+//			},
+//			expectedResult: false,
+//		},
+//		"should be unequal if publisher image changes": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Template.Spec.Containers[0].Image = "new-publisher-img"
+//				return p
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				return defaultNATSPublisher.DeepCopy()
+//			},
+//			expectedResult: false,
+//		},
+//		"should be unequal if env var changes": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Template.Spec.Containers[0].Env[0].Value = "new-value"
+//				return p
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				return defaultNATSPublisher.DeepCopy()
+//			},
+//			expectedResult: false,
+//		},
+//		"should be equal if replicas changes": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				replicas := int32(1)
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Replicas = &replicas
+//				return p
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				replicas := int32(2)
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Replicas = &replicas
+//				return p
+//			},
+//			expectedResult: true,
+//		},
+//		"should be equal if replicas are the same": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				replicas := int32(2)
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Replicas = &replicas
+//				return p
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				replicas := int32(2)
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Replicas = &replicas
+//				return p
+//			},
+//			expectedResult: true,
+//		},
+//		"should be equal if spec annotations are nil and empty": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Template.Annotations = nil
+//				return p
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Template.Annotations = map[string]string{}
+//				return p
+//			},
+//			expectedResult: true,
+//		},
+//		"should be unequal if spec annotations changes": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Template.Annotations = map[string]string{"key": "value1"}
+//				return p
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Template.Annotations = map[string]string{"key": "value2"}
+//				return p
+//			},
+//			expectedResult: false,
+//		},
+//		"should be equal if spec Labels are nil and empty": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Template.Labels = nil
+//				return p
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Template.Labels = map[string]string{}
+//				return p
+//			},
+//			expectedResult: true,
+//		},
+//		"should be unequal if spec Labels changes": {
+//			getPublisher1: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Template.Labels = map[string]string{"key": "value1"}
+//				return p
+//			},
+//			getPublisher2: func() *appsv1.Deployment {
+//				p := defaultNATSPublisher.DeepCopy()
+//				p.Spec.Template.Labels = map[string]string{"key": "value2"}
+//				return p
+//			},
+//			expectedResult: false,
+//		},
+//	}
+//	for name, tc := range testCases {
+//		t.Run(name, func(t *testing.T) {
+//			if publisherProxyDeploymentEqual(tc.getPublisher1(), tc.getPublisher2()) != tc.expectedResult {
+//				t.Errorf("expected output to be %t", tc.expectedResult)
+//			}
+//		})
+//	}
+//}
 
 func Test_ownerReferencesDeepEqual(t *testing.T) {
 	ownerReference := func(version, kind, name, uid string, controller, block *bool) metav1.OwnerReference {

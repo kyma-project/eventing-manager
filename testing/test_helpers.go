@@ -9,8 +9,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/object"
-	eventingv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
 
 	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,9 +19,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
-	eventingv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
 )
 
 const (
@@ -255,17 +255,6 @@ func NewNamespace(name string) *corev1.Namespace {
 		},
 	}
 	return &namespace
-}
-
-func NewEventingBackend(name, namespace string) *eventingv1alpha1.EventingBackend {
-	return &eventingv1alpha1.EventingBackend{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec:   eventingv1alpha1.EventingBackendSpec{},
-		Status: eventingv1alpha1.EventingBackendStatus{},
-	}
 }
 
 func GetStructuredMessageHeaders() http.Header {

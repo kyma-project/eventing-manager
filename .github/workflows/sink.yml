@@ -10,17 +10,19 @@ env:
 on:
   push:
     branches:
-    - main
-    tags: [ '*.*.*' ]
+      - main
+      - "release-*"
+    tags: ["*.*.*"]
     paths:
-      - 'hack/e2e/sink/**'
-      - '.github/workflows/sink.yml'
+      - "hack/e2e/sink/**"
+      - ".github/workflows/sink.yml"
   pull_request:
     branches:
-    - main
+      - main
+      - "release-*"
     paths:
-      - 'hack/e2e/sink/**'
-      - '.github/workflows/sink.yml'
+      - "hack/e2e/sink/**"
+      - ".github/workflows/sink.yml"
 
 jobs:
   build:
@@ -32,51 +34,51 @@ jobs:
         working-directory: ${{ env.E2E_SINK_DIR }}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 1.19
-        cache: true
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.19
+          cache: true
 
-    - name: Build
-      run: go build -v ./...
+      - name: Build
+        run: go build -v ./...
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    # Login against a Docker registry except on PR
-    # https://github.com/docker/login-action
-    - name: Log into registry ${{ env.REGISTRY }}
-      # if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into registry ${{ env.REGISTRY }}
+        # if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract Docker metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=sha
-          type=semver,pattern={{version}},event=tag
-        labels: |
-          org.opencontainers.image.title=E2E Tests Sink
-          org.opencontainers.image.description=A webserver imitating an eventing sink that receives events and stores in memory
-          org.opencontainers.image.url=https://github.com/kyma-project/eventing-manager/${{ env.E2E_SINK_DIR }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=semver,pattern={{version}},event=tag
+          labels: |
+            org.opencontainers.image.title=E2E Tests Sink
+            org.opencontainers.image.description=A webserver imitating an eventing sink that receives events and stores in memory
+            org.opencontainers.image.url=https://github.com/kyma-project/eventing-manager/${{ env.E2E_SINK_DIR }}
 
-    - name: Build Docker image
-      id: build-and-push
-      uses: docker/build-push-action@v5
-      with:
-        context: ${{ env.E2E_SINK_DIR }}
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        load: ${{ github.event_name == 'pull_request' }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.E2E_SINK_DIR }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          load: ${{ github.event_name == 'pull_request' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

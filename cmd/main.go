@@ -22,26 +22,24 @@ import (
 	"log"
 	"os"
 
-	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator.kyma-project.io/eventing"
-
-	istiopeerauthentication "github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
-
 	"github.com/go-logr/zapr"
-	subscriptionv1alpha1 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha1"
-	subscriptionv1alpha2 "github.com/kyma-project/kyma/components/eventing-controller/api/v1alpha2"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
-
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
+	apigatewayv1beta1 "github.com/kyma-incubator/api-gateway/api/v1beta1"
+	subscriptionv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
+	subscriptionv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	controllercache "github.com/kyma-project/eventing-manager/internal/controller/cache"
+	controllerclient "github.com/kyma-project/eventing-manager/internal/controller/client"
+	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 	"github.com/kyma-project/eventing-manager/options"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
+	istiopeerauthentication "github.com/kyma-project/eventing-manager/pkg/istio/peerauthentication"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager"
@@ -58,7 +56,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator.kyma-project.io/v1alpha1"
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -78,6 +76,8 @@ func init() {
 
 	utilruntime.Must(jetstream.AddToScheme(scheme))
 	utilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
+	utilruntime.Must(subscriptionv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(subscriptionv1alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -123,6 +123,8 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		WebhookServer:          webhook.NewServer(webhook.Options{Port: 9443}),
 		Cache:                  cache.Options{SyncPeriod: &opts.ReconcilePeriod},
 		Metrics:                server.Options{BindAddress: opts.MetricsAddr},
+		NewCache:               controllercache.New,
+		NewClient:              controllerclient.New,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
