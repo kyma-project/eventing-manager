@@ -3,7 +3,6 @@ package k8s
 import (
 	"context"
 	"crypto/rand"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -511,7 +510,7 @@ func Test_GetSecret(t *testing.T) {
 			name:                "namespaced name format error",
 			givenNamespacedName: "my-secret",
 			wantSecret:          nil,
-			wantError:           errors.New("invalid namespaced name. It must be in the format of 'namespace/name'"),
+			wantError:           ErrSecretRefInvalid,
 		},
 	}
 
@@ -538,7 +537,7 @@ func Test_GetSecret(t *testing.T) {
 			if tc.wantNotFoundError {
 				require.True(t, kerrors.IsNotFound(err))
 			} else {
-				require.Equal(t, tc.wantError, err)
+				require.ErrorIs(t, err, tc.wantError)
 			}
 			require.Equal(t, tc.wantSecret, secret)
 		})

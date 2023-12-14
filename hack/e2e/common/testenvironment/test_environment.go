@@ -40,6 +40,15 @@ const (
 	ThreeAttempts = 3
 )
 
+var (
+	ErrSubscriptionNotReconciled = errors.New("subscription not reconciled")
+	ErrSubscriptionNotReady      = errors.New("subscription not READY")
+	ErrDeploymentNotReady        = errors.New("deployment not READY")
+	ErrWrongActiveType           = errors.New("specified backend not active")
+	ErrEventingNotReady          = errors.New("eventing not READY")
+	ErrInvalidDeployment         = errors.New("deployment.spec invalid")
+)
+
 // TestEnvironment provides mocked resources for integration tests.
 type TestEnvironment struct {
 	Logger           *zap.Logger
@@ -216,7 +225,7 @@ func (te *TestEnvironment) WaitForSubscription(ctx context.Context, subsToTest e
 				"in namespace: %s to get recocniled by backend: %s", subsToTest.Name, te.TestConfigs.TestNamespace,
 				te.TestConfigs.BackendType)
 			te.Logger.Debug(errMsg)
-			return errors.New(errMsg)
+			return fmt.Errorf("%s, %w", errMsg, ErrSubscriptionNotReconciled)
 		}
 
 		// check if subscription is ready.
@@ -224,7 +233,7 @@ func (te *TestEnvironment) WaitForSubscription(ctx context.Context, subsToTest e
 			errMsg := fmt.Sprintf("waiting subscription: %s "+
 				"in namespace: %s to get ready", subsToTest.Name, te.TestConfigs.TestNamespace)
 			te.Logger.Debug(errMsg)
-			return errors.New(errMsg)
+			return fmt.Errorf("%s, %w", errMsg, ErrSubscriptionNotReady)
 		}
 		return nil
 	})
@@ -321,7 +330,7 @@ func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string)
 
 		// if image is provided, then check if the deployment has correct image.
 		if image != "" && gotDeployment.Spec.Template.Spec.Containers[0].Image != image {
-			err = fmt.Errorf("expected deployment (%s) image to be: %s, but found: %s", name, image,
+			err = fmt.Errorf("%w: expected deployment (%s) image to be: %s, but found: %s", ErrInvalidDeployment, name, image,
 				gotDeployment.Spec.Template.Spec.Containers[0].Image,
 			)
 			te.Logger.Debug(err.Error())
@@ -332,7 +341,7 @@ func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string)
 		if *gotDeployment.Spec.Replicas != gotDeployment.Status.UpdatedReplicas ||
 			*gotDeployment.Spec.Replicas != gotDeployment.Status.ReadyReplicas ||
 			*gotDeployment.Spec.Replicas != gotDeployment.Status.AvailableReplicas {
-			err = fmt.Errorf("waiting for deployment: %s to get ready", name)
+			err = fmt.Errorf("waiting for deployment: %s to get ready: %w", name, ErrDeploymentNotReady)
 			te.Logger.Debug(err.Error())
 			return err
 		}
@@ -549,13 +558,13 @@ func (te *TestEnvironment) WaitForEventingCRReady() error {
 		}
 
 		if gotEventingCR.Spec.Backend.Type != gotEventingCR.Status.ActiveBackend {
-			err := fmt.Errorf("waiting for Eventing CR to switch backend")
-			te.Logger.Debug(err.Error())
-			return err
+			msg := "waiting for Eventing CR to switch backend"
+			te.Logger.Debug(msg)
+			return fmt.Errorf("%s: %w", msg, ErrWrongActiveType)
 		}
 
 		if gotEventingCR.Status.State != operatorv1alpha1.StateReady {
-			err := fmt.Errorf("waiting for Eventing CR to get ready state")
+			err := fmt.Errorf("waiting for Eventing CR to get ready state: %w", ErrEventingNotReady)
 			te.Logger.Debug(err.Error())
 			return err
 		}

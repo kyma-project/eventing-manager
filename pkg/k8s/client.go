@@ -30,6 +30,8 @@ var NatsGVK = schema.GroupVersionResource{
 	Resource: "nats",
 }
 
+var ErrSecretRefInvalid = errors.New("invalid namespaced name. It must be in the format of 'namespace/name'")
+
 //nolint:interfacebloat // FIXME
 //go:generate go run github.com/vektra/mockery/v2 --name=Client --outpkg=mocks --case=underscore
 type Client interface {
@@ -194,7 +196,7 @@ func (c *KubeClient) PatchApply(ctx context.Context, object client.Object) error
 func (c *KubeClient) GetSecret(ctx context.Context, namespacedName string) (*kcorev1.Secret, error) {
 	substrings := strings.Split(namespacedName, "/")
 	if len(substrings) != 2 {
-		return nil, errors.New("invalid namespaced name. It must be in the format of 'namespace/name'")
+		return nil, ErrSecretRefInvalid
 	}
 	secret := &kcorev1.Secret{}
 	err := c.client.Get(ctx, client.ObjectKey{

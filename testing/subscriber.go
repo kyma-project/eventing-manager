@@ -26,6 +26,12 @@ const (
 	checkRetriesEndpoint  = "/check_retries"
 )
 
+var (
+	ErrEventNotReceived       = errors.New("event not received")
+	ErrUnexpectedResponseCode = errors.New("unexpected response code received")
+	ErrWrongRetries           = errors.New("wrong number of retries")
+)
+
 type Subscriber struct {
 	server           *httptest.Server
 	SinkURL          string
@@ -207,22 +213,22 @@ func (s Subscriber) CheckEvent(expectedData string) error {
 			// check if a response was received and that it's code is in 2xx-range
 			resp, err := http.Get(s.checkURL)
 			if err != nil {
-				return errors.Wrapf(err, "get HTTP request failed")
+				return fmt.Errorf("get HTTP request failed: %w", err)
 			}
 			if !is2XXStatusCode(resp.StatusCode) {
-				return fmt.Errorf("expected resonse code 2xx, actual response code: %d", resp.StatusCode)
+				return fmt.Errorf("%w: expected: 2xx, actual: %d", ErrUnexpectedResponseCode, resp.StatusCode)
 			}
 
 			// try to read the response body
 			defer func() { _ = resp.Body.Close() }()
 			body, err = io.ReadAll(resp.Body)
 			if err != nil {
-				return errors.Wrapf(err, "read data failed")
+				return fmt.Errorf("read data failed: %w", err)
 			}
 
 			// compare response body with expectations
 			if expectedData != string(body) {
-				return fmt.Errorf("event not received")
+				return ErrEventNotReceived
 			}
 			return nil
 		},
@@ -232,7 +238,7 @@ func (s Subscriber) CheckEvent(expectedData string) error {
 		retry.OnRetry(func(n uint, err error) { log.Printf("[%v] try failed: %s", n, err) }),
 	)
 	if err != nil {
-		return errors.Wrapf(err, "check event after retries failed")
+		return fmt.Errorf("check event after retries failed: %w", err)
 	}
 
 	log.Print("event received")
@@ -248,22 +254,22 @@ func (s Subscriber) CheckRetries(expectedNoOfRetries int, expectedData string) e
 		func() error {
 			resp, err := http.Get(s.checkRetriesURL)
 			if err != nil {
-				return errors.Wrapf(err, "get HTTP request failed")
+				return fmt.Errorf("get HTTP request failed: %w", err)
 			}
 			if !is2XXStatusCode(resp.StatusCode) {
-				return fmt.Errorf("expected resonse code 2xx, actual response code: %d", resp.StatusCode)
+				return fmt.Errorf("%w: expected: 2xx, actual: %d", ErrUnexpectedResponseCode, resp.StatusCode)
 			}
 			defer func() { _ = resp.Body.Close() }()
 			body, err = io.ReadAll(resp.Body)
 			if err != nil {
-				return errors.Wrapf(err, "read data failed")
+				return fmt.Errorf("read data failed: %w", err)
 			}
 			actualRetires, err := strconv.Atoi(string(body))
 			if err != nil {
-				return errors.Wrapf(err, "read data failed")
+				return fmt.Errorf("read data failed: %w", err)
 			}
 			if actualRetires < expectedNoOfRetries {
-				return fmt.Errorf("number of retries do not match (actualRetires=%d, expectedRetries=%d)", actualRetires, expectedNoOfRetries)
+				return fmt.Errorf("%w: actualRetires:%d, expectedRetries:%d", ErrWrongRetries, actualRetires, expectedNoOfRetries)
 			}
 			return nil
 		},

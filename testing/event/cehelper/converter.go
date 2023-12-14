@@ -29,7 +29,7 @@ func RequestToEventString(r *http.Request) (string, error) {
 	msg := cehttp.NewMessageFromHttpRequest(r)
 	event, err := cebinding.ToEvent(context.Background(), msg)
 	if err != nil {
-		return "", fmt.Errorf("failed to build a CloudEvent: %s", err.Error())
+		return "", fmt.Errorf("failed to build a CloudEvent: %w", err)
 	}
 	return event.String(), nil
 }

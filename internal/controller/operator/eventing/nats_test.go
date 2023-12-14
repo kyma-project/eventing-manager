@@ -3,7 +3,6 @@ package eventing
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -22,6 +21,8 @@ import (
 	submgrmocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
 	"github.com/kyma-project/eventing-manager/test/utils"
 )
+
+var ErrUseMeInMocks = errors.New("use me in mocks")
 
 func Test_reconcileNATSSubManager(t *testing.T) {
 	t.Parallel()
@@ -135,7 +136,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			givenNATSSubManagerMock: func() *submgrmanagermocks.Manager {
 				jetStreamSubManagerMock := new(submgrmanagermocks.Manager)
 				jetStreamSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
-				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(errors.New("failed to start")).Twice()
+				jetStreamSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(ErrUseMeInMocks).Twice()
 				return jetStreamSubManagerMock
 			},
 			givenEventingManagerMock: func() *eventingmocks.Manager {
@@ -155,7 +156,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 			},
 			wantAssertCheck:  true,
 			givenShouldRetry: true,
-			wantError:        errors.New("failed to start"),
+			wantError:        ErrUseMeInMocks,
 			wantHashAfter:    int64(-7550677537009891034),
 		},
 		{
@@ -308,11 +309,11 @@ func Test_stopNATSSubManager(t *testing.T) {
 			name: "should return error when subscription manager fails to stop",
 			givenNATSSubManagerMock: func() *submgrmanagermocks.Manager {
 				managerMock := new(submgrmanagermocks.Manager)
-				managerMock.On("Stop", mock.Anything).Return(errors.New("failed to stop")).Once()
+				managerMock.On("Stop", mock.Anything).Return(ErrUseMeInMocks).Once()
 				return managerMock
 			},
 			givenIsNATSSubManagerStarted: true,
-			wantError:                    errors.New("failed to stop"),
+			wantError:                    ErrUseMeInMocks,
 			wantAssertCheck:              true,
 		},
 		{
@@ -419,7 +420,7 @@ func Test_GetNatsConfig(t *testing.T) {
 			),
 			givenNatsResources: nil,
 			expectedConfig:     nil,
-			expectedError:      fmt.Errorf("failed to get NATS URL"),
+			expectedError:      ErrUseMeInMocks,
 		},
 	}
 
@@ -478,15 +479,15 @@ func Test_getNATSUrl(t *testing.T) {
 			givenNamespace:      "test-namespace",
 			want:                "",
 			getNATSResourcesErr: nil,
-			wantErr:             fmt.Errorf("NATS CR is not found to build NATS server URL"),
+			wantErr:             ErrCannotBuildNATSURL,
 		},
 		{
 			name:                "NATS resource does not exist",
 			givenNatsResources:  nil,
 			givenNamespace:      "test-namespace",
 			want:                "",
-			getNATSResourcesErr: fmt.Errorf("NATS CR is not found to build NATS server URL"),
-			wantErr:             fmt.Errorf("NATS CR is not found to build NATS server URL"),
+			getNATSResourcesErr: ErrCannotBuildNATSURL,
+			wantErr:             ErrCannotBuildNATSURL,
 		},
 	}
 
@@ -551,7 +552,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 				utils.WithEventingStreamData("Memory", "700Mi", 2, 1000),
 			),
 			givenNatsResources: nil,
-			expectedError:      fmt.Errorf("failed to get NATS URL"),
+			expectedError:      ErrCannotBuildNATSURL,
 		},
 	}
 

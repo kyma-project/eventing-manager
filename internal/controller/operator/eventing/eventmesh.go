@@ -29,6 +29,11 @@ const (
 	secretKeyCertsURL     = "certs_url"
 )
 
+var (
+	ErrEMSecretMessagingMissing = errors.New("messaging is missing from EM secret")
+	ErrEMSecretNamespaceMissing = errors.New("namespace is missing from EM secret")
+)
+
 type oauth2Credentials struct {
 	clientID     []byte
 	clientSecret []byte
@@ -40,23 +45,23 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	// gets oauth2ClientID and secret and stops the EventMesh subscription manager if changed
 	err := r.syncOauth2ClientIDAndSecret(ctx, eventing)
 	if err != nil {
-		return errors.Errorf("failed to sync OAuth secret: %v", err)
+		return fmt.Errorf("failed to sync OAuth secret: %w", err)
 	}
 	// retrieve secret to authenticate with EventMesh
 	eventMeshSecret, err := r.kubeClient.GetSecret(ctx, eventing.Spec.Backend.Config.EventMeshSecret)
 	if err != nil {
-		return errors.Errorf("failed to get EventMesh secret: %v", err)
+		return fmt.Errorf("failed to get EventMesh secret: %w", err)
 	}
 	// CreateOrUpdate deployment for publisher proxy secret
 	secretForPublisher, err := r.SyncPublisherProxySecret(ctx, eventMeshSecret)
 	if err != nil {
-		return errors.Errorf("failed to sync Publisher Proxy secret: %v", err)
+		return fmt.Errorf("failed to sync Publisher Proxy secret: %w", err)
 	}
 
 	// Set environment with secrets for EventMesh subscription controller
 	err = setUpEnvironmentForEventMesh(secretForPublisher, eventing)
 	if err != nil {
-		return fmt.Errorf("failed to setup environment variables for EventMesh controller: %v", err)
+		return fmt.Errorf("failed to setup environment variables for EventMesh controller: %w", err)
 	}
 
 	// Read the cluster domain from the Eventing CR, or
@@ -175,7 +180,7 @@ func (r *Reconciler) stopEventMeshSubManager(runCleanup bool, log *zap.SugaredLo
 func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *kcorev1.Secret) (*kcorev1.Secret, error) {
 	desiredSecret, err := getSecretForPublisher(secret)
 	if err != nil {
-		return nil, fmt.Errorf("invalid secret for Event Publisher: %v", err)
+		return nil, fmt.Errorf("invalid secret for Event Publisher: %w", err)
 	}
 
 	err = r.kubeClient.PatchApply(ctx, desiredSecret)
@@ -302,12 +307,12 @@ func getSecretForPublisher(eventMeshSecret *kcorev1.Secret) (*kcorev1.Secret, er
 	}
 
 	if _, ok := eventMeshSecret.Data["messaging"]; !ok {
-		return nil, errors.New("message is missing from BEB secret")
+		return nil, ErrEMSecretMessagingMissing
 	}
 	messagingBytes := eventMeshSecret.Data["messaging"]
 
 	if _, ok := eventMeshSecret.Data["namespace"]; !ok {
-		return nil, errors.New("namespace is missing from BEB secret")
+		return nil, ErrEMSecretNamespaceMissing
 	}
 	namespaceBytes := eventMeshSecret.Data["namespace"]
 
@@ -357,31 +362,31 @@ func getSecretStringData(clientID, clientSecret, tokenEndpoint, grantType, publi
 func setUpEnvironmentForEventMesh(secret *kcorev1.Secret, eventingCR *v1alpha1.Eventing) error {
 	err := os.Setenv("BEB_API_URL", fmt.Sprintf("%s%s", string(secret.Data[PublisherSecretEMSHostKey]), EventMeshPublishEndpointForSubscriber))
 	if err != nil {
-		return fmt.Errorf("set BEB_API_URL env var failed: %v", err)
+		return fmt.Errorf("set BEB_API_URL env var failed: %w", err)
 	}
 
 	err = os.Setenv("CLIENT_ID", string(secret.Data[eventing.PublisherSecretClientIDKey]))
 	if err != nil {
-		return fmt.Errorf("set CLIENT_ID env var failed: %v", err)
+		return fmt.Errorf("set CLIENT_ID env var failed: %w", err)
 	}
 
 	err = os.Setenv("CLIENT_SECRET", string(secret.Data[eventing.PublisherSecretClientSecretKey]))
 	if err != nil {
-		return fmt.Errorf("set CLIENT_SECRET env var failed: %v", err)
+		return fmt.Errorf("set CLIENT_SECRET env var failed: %w", err)
 	}
 
 	err = os.Setenv("TOKEN_ENDPOINT", string(secret.Data[eventing.PublisherSecretTokenEndpointKey]))
 	if err != nil {
-		return fmt.Errorf("set TOKEN_ENDPOINT env var failed: %v", err)
+		return fmt.Errorf("set TOKEN_ENDPOINT env var failed: %w", err)
 	}
 
 	err = os.Setenv("BEB_NAMESPACE", fmt.Sprintf("%s%s", NamespacePrefix, string(secret.Data[eventing.PublisherSecretBEBNamespaceKey])))
 	if err != nil {
-		return fmt.Errorf("set BEB_NAMESPACE env var failed: %v", err)
+		return fmt.Errorf("set BEB_NAMESPACE env var failed: %w", err)
 	}
 
 	if err := os.Setenv("EVENT_TYPE_PREFIX", eventingCR.Spec.Backend.Config.EventTypePrefix); err != nil {
-		return fmt.Errorf("set EVENT_TYPE_PREFIX env var failed: %v", err)
+		return fmt.Errorf("set EVENT_TYPE_PREFIX env var failed: %w", err)
 	}
 
 	return nil

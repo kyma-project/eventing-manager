@@ -2,10 +2,9 @@ package eventing
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
@@ -46,7 +45,7 @@ func Test_readDomainFromConfigMap(t *testing.T) {
 func Test_domainMissingError(t *testing.T) {
 	// given
 	const errorMessage = "some error"
-	err := fmt.Errorf(errorMessage)
+	err := errors.New(errorMessage)
 
 	// when
 	err0 := domainMissingError(nil)
@@ -55,6 +54,8 @@ func Test_domainMissingError(t *testing.T) {
 	// then
 	require.Error(t, err0)
 	require.Error(t, err1)
-	require.False(t, strings.Contains(strings.ToLower(err0.Error()), "nil"))
-	require.True(t, strings.Contains(err1.Error(), errorMessage))
+	require.ErrorIs(t, err0, ErrDomainConfigMissing)
+	require.ErrorIs(t, err1, ErrDomainConfigMissing)
+	require.NotErrorIs(t, err0, err)
+	require.ErrorIs(t, err1, err)
 }

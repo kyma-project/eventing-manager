@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -132,8 +132,8 @@ func (c *Collector) RecordDeliveryPerSubscription(subscriptionName, subscription
 		subscriptionName,
 		subscriptionNamespace,
 		eventType,
-		fmt.Sprintf("%v", sink),
-		fmt.Sprintf("%v", statusCode),
+		sink,
+		strconv.Itoa(statusCode),
 		consumerName).Inc()
 }
 
@@ -147,8 +147,8 @@ func (c *Collector) RecordLatencyPerSubscription(
 		subscriptionName,
 		subscriptionNamespace,
 		eventType,
-		fmt.Sprintf("%v", sink),
-		fmt.Sprintf("%v", statusCode),
+		sink,
+		strconv.Itoa(statusCode),
 		consumerName).Observe(duration.Seconds())
 }
 

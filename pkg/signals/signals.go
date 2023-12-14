@@ -15,6 +15,8 @@ var (
 
 	// shutdownSignals array of system signals to cause shutdown.
 	shutdownSignals = []os.Signal{syscall.SIGINT, syscall.SIGTERM}
+
+	ErrTerminationRequested = errors.New("received a termination signal")
 )
 
 // SetupSignalHandler registered for SIGTERM and SIGINT. A stop channel is returned
@@ -72,7 +74,7 @@ func (scc *signalContext) Err() error {
 	select {
 	case _, ok := <-scc.Done():
 		if !ok {
-			return errors.New("received a termination signal")
+			return ErrTerminationRequested
 		}
 	default:
 	}

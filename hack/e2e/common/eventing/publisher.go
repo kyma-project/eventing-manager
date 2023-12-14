@@ -22,6 +22,11 @@ const (
 	CloudEventPublishEndpointFormat = "%s/publish"
 )
 
+var (
+	ErrFailedSendingCE      = errors.New("failed to send cloudevent")
+	ErrEncodingNotSupported = errors.New("unsupported cloudevent encoding")
+)
+
 type Publisher struct {
 	clientCE     client.Client
 	clientHTTP   *http.Client
@@ -123,7 +128,7 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 		}
 	default:
 		{
-			return fmt.Errorf("failed to use unsupported cloudevent encoding:[%s]", encoding.String())
+			return fmt.Errorf("%w:[%s]", ErrEncodingNotSupported, encoding.String())
 		}
 	}
 
@@ -140,11 +145,11 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 	switch {
 	case cloudevents.IsUndelivered(result):
 		{
-			return fmt.Errorf("failed to send cloudevent-%s undelivered:[%s] response:[%s]", encoding.String(), ce.Type(), result)
+			return fmt.Errorf("%w: encoding:[%s] undelivered:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), ce.Type(), result)
 		}
 	case cloudevents.IsNACK(result):
 		{
-			return fmt.Errorf("failed to send cloudevent-%s nack:[%s] response:[%s]", encoding.String(), ce.Type(), result)
+			return fmt.Errorf("%w: encoding:[%s] nack:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), ce.Type(), result)
 		}
 	case cloudevents.IsACK(result):
 		{
@@ -153,7 +158,7 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 		}
 	default:
 		{
-			return fmt.Errorf("failed to send cloudevent-%s unknown:[%s] response:[%s]", encoding.String(), ce.Type(), result)
+			return fmt.Errorf("%w: encoding:[%s] unknown:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), ce.Type(), result)
 		}
 	}
 }

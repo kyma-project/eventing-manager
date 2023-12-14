@@ -93,7 +93,7 @@ func NewCloudEvent(eventSource, eventType string, encoding binding.Encoding) (*c
 	ce.SetType(eventType)
 	ce.SetSource(eventSource)
 	if err := ce.SetData(cloudevents.ApplicationJSON, data); err != nil {
-		return nil, fmt.Errorf("failed to set cloudevent-%s data with error:[%s]", encoding.String(), err)
+		return nil, fmt.Errorf("failed to set cloudevent-%s data with error:[%w]", encoding.String(), err)
 	}
 	return &ce, nil
 }

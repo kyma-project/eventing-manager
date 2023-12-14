@@ -14,7 +14,7 @@ import (
 // errors.Is(err, pkg.ErrPermission) instead of
 // err == pkg.ErrPermission { … }.
 func MakeError(actualError, underlyingError error) error {
-	return fmt.Errorf("%w: %v", actualError, underlyingError)
+	return fmt.Errorf("%w: %w", actualError, underlyingError)
 }
 
 // MakeSubscriptionError creates a new error and includes the underlyingError in the message

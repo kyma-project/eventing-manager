@@ -30,7 +30,6 @@ linters:
     - goconst
     - gocritic
     - godox
-    - goerr113
     - gomnd
     - gosec
     - inamedparam

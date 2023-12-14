@@ -2,7 +2,6 @@ package eventmesh
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -35,6 +34,11 @@ import (
 
 const (
 	subscriptionManagerName = "beb-subscription-manager"
+)
+
+var (
+	ErrDecodingOauthCredentialFailed = errors.New("in")
+	ErrDomainEmpty                   = errors.New("domain must be a non-empty value")
 )
 
 // AddToScheme adds the own schemes to the runtime scheme.
@@ -92,7 +96,7 @@ func NewSubscriptionManager(restCfg *rest.Config, metricsAddr string, resyncPeri
 // Init implements the subscriptionmanager.Manager interface.
 func (c *SubscriptionManager) Init(mgr manager.Manager) error {
 	if len(c.domain) == 0 {
-		return fmt.Errorf("domain must be a non-empty value")
+		return ErrDomainEmpty
 	}
 	c.mgr = mgr
 	return nil
@@ -104,10 +108,7 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subm
 	ctx, cancel := context.WithCancel(context.Background())
 	c.cancel = cancel
 
-	oauth2credential, err := getOAuth2ClientCredentials(params)
-	if err != nil {
-		return errors.Wrap(err, "get oauth2client credentials failed")
-	}
+	oauth2credential := getOAuth2ClientCredentials(params)
 
 	// Need to read env to read BEB related secrets
 	c.envCfg = env.GetConfig()
@@ -251,37 +252,13 @@ func cleanupEventMesh(backend backendeventmesh.Backend, dynamicClient dynamic.In
 	return nil
 }
 
-func getOAuth2ClientCredentials(params submgrmanager.Params) (*backendeventmesh.OAuth2ClientCredentials, error) {
-	val := params[submgrmanager.ParamNameClientID]
-	id, ok := val.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameClientID)
-	}
-
-	val = params[submgrmanager.ParamNameClientSecret]
-	secret, ok := val.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameClientSecret)
-	}
-
-	val = params[submgrmanager.ParamNameTokenURL]
-	tokenURL, ok := val.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameTokenURL)
-	}
-
-	val = params[submgrmanager.ParamNameCertsURL]
-	certsURL, ok := val.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("expected []byte value for %s", submgrmanager.ParamNameCertsURL)
-	}
-
+func getOAuth2ClientCredentials(params submgrmanager.Params) *backendeventmesh.OAuth2ClientCredentials {
 	return &backendeventmesh.OAuth2ClientCredentials{
-		ClientID:     string(id),
-		ClientSecret: string(secret),
-		TokenURL:     string(tokenURL),
-		CertsURL:     string(certsURL),
-	}, nil
+		ClientID:     string(params[submgrmanager.ParamNameClientID]),
+		ClientSecret: string(params[submgrmanager.ParamNameClientSecret]),
+		TokenURL:     string(params[submgrmanager.ParamNameTokenURL]),
+		CertsURL:     string(params[submgrmanager.ParamNameCertsURL]),
+	}
 }
 
 func (c *SubscriptionManager) namedLogger() *zap.SugaredLogger {
