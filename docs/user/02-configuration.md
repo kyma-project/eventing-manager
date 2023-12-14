@@ -78,7 +78,12 @@ Use the following sample CRs as guidance. Each can be applied immediately when y
 <!-- TABLE-END -->
 
 <h3>More Details about Eventing CR state</h3>
-In the table below there is more information about the overall state of the Eventing CR. The <b>State</b> column has the overall state of the Eventing CR. The <b>Backend Config</b> column is part of the eventing CR that is either available or mistakenly not specified by a user. The <b>Backend State</b> column describes the state of the NATS backend or EventMesh secret existence. As indicated in the table, warnings are set in all cases where user action is required, e.g. the user needs to install the NATS module or create an EventMesh secret.
+The following table provides more details on the overall state of the Eventing CR:
+- The <b>State</b> column has the overall state of the Eventing CR.
+- The <b>Backend Config</b> column is part of the eventing CR that is either available or mistakenly not specified by a user.
+- The <b>Backend State</b> column describes the state of the NATS backend or EventMesh Secret existence. 
+
+Warnings indicate that user action is required, that is, the user must install the NATS module or create an EventMesh Secret.
 
 | Backend Config | Backend State         | State |
 |---------------------------|---------------------------|----------------|
