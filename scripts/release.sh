@@ -63,5 +63,4 @@ fi
 UPLOAD_URL="https://uploads.github.com/repos/kyma-project/eventing-manager/releases/${RELEASE_ID}/assets"
 
 uploadFile "eventing-manager.yaml" "${UPLOAD_URL}?name=eventing-manager.yaml"
-uploadFile "module-template.yaml" "${UPLOAD_URL}?name=module-template.yaml"
 uploadFile "config/samples/default.yaml" "${UPLOAD_URL}?name=eventing_default_cr.yaml"
