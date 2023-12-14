@@ -21,9 +21,11 @@ import (
 	"flag"
 	"log"
 	"os"
+	"time"
 
 	"github.com/go-logr/zapr"
 	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	natsio "github.com/nats-io/nats.go"
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kapixclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +42,7 @@ import (
 	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	natsconnection "github.com/kyma-project/eventing-manager/internal/connection/nats"
 	controllercache "github.com/kyma-project/eventing-manager/internal/controller/cache"
 	controllerclient "github.com/kyma-project/eventing-manager/internal/controller/client"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
@@ -164,6 +167,14 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		ctrLogger,
 	)
 
+	// init NATS connection builder
+	natsConnectionBuilder, err := initNATSConnectionBuilder()
+	if err != nil {
+		setupLog.Error(err, "failed to get a NATS connection builder")
+		syncLogger(ctrLogger)
+		os.Exit(1)
+	}
+
 	// create Eventing reconciler instance
 	eventingReconciler := eventingcontroller.NewReconciler(
 		k8sClient,
@@ -182,6 +193,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 				Namespace: backendConfig.EventingCRNamespace,
 			},
 		},
+		natsConnectionBuilder,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(mgr); err != nil {
@@ -229,4 +241,31 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		os.Exit(1)
 	}
 	syncLogger(ctrLogger)
+}
+
+func initNATSConnectionBuilder() (natsconnection.Builder, error) {
+	const (
+		// connectionURL is the NATS connection URL.
+		// It should be configured as part of https://github.com/kyma-project/eventing-manager/issues/272.
+		connectionURL = "nats://eventing-nats.kyma-system.svc.cluster.local:4222"
+
+		// connectionName is the name to identify the NATS connection.
+		connectionName = "Eventing Reconciler"
+	)
+
+	// The following constants are used to configure the NATS client re-connectivity.
+	// Please do not change these values to not change the intended behavior.
+	const (
+		maxReconnects        = -1
+		retryOnFailedConnect = true
+		reconnectWait        = time.Second
+	)
+
+	return natsconnection.NewBuilder(
+		connectionURL,
+		connectionName,
+		natsio.MaxReconnects(maxReconnects),
+		natsio.RetryOnFailedConnect(retryOnFailedConnect),
+		natsio.ReconnectWait(reconnectWait),
+	)
 }

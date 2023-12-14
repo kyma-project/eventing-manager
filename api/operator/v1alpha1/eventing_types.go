@@ -225,6 +225,10 @@ func (e *Eventing) SyncStatusActiveBackend() {
 	e.Status.ActiveBackend = e.Spec.Backend.Type
 }
 
+func (e *Eventing) IsPreviousBackendEmpty() bool {
+	return e.Status.ActiveBackend == ""
+}
+
 func (e *Eventing) IsSpecBackendTypeChanged() bool {
 	return e.Status.ActiveBackend != e.Spec.Backend.Type
 }

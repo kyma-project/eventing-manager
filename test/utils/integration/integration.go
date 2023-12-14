@@ -42,6 +42,7 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	natsconnectionmocks "github.com/kyma-project/eventing-manager/internal/connection/nats/mocks"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -91,14 +92,16 @@ type TestEnvironmentConfig struct {
 }
 
 //nolint:funlen // Used in testing
-func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) {
+func NewTestEnvironment(config TestEnvironmentConfig, connMock *natsconnectionmocks.Connection) (*TestEnvironment, error) {
 	var err error
 	// setup context
 	ctx := context.Background()
 
-	opts := options.New()
-	if err := opts.Parse(); err != nil {
-		return nil, err
+	opts := &options.Options{
+		Env: options.Env{
+			LogFormat: "json",
+			LogLevel:  "info",
+		},
 	}
 
 	// setup logger
@@ -190,6 +193,16 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	subManagerFactoryMock.On("NewJetStreamManager", mock.Anything, mock.Anything).Return(jetStreamSubManagerMock)
 	subManagerFactoryMock.On("NewEventMeshManager", mock.Anything).Return(eventMeshSubManagerMock, nil)
 
+	// setup default mock
+	if connMock == nil {
+		connMock = &natsconnectionmocks.Connection{}
+		connMock.On("Connect").Return(nil)
+		connMock.On("IsConnected").Return(true)
+		connMock.On("Disconnect").Return()
+		connMock.On("RegisterReconnectHandlerIfNotRegistered", mock.Anything).Return()
+		connMock.On("RegisterDisconnectErrHandlerIfNotRegistered", mock.Anything).Return()
+	}
+
 	// create a new watcher
 	eventingReconciler := eventingcontroller.NewReconciler(
 		k8sClient,
@@ -203,6 +216,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 		subManagerFactoryMock,
 		opts,
 		config.AllowedEventingCR,
+		natsconnectionmocks.NewBuilder(connMock),
 	)
 
 	if err = (eventingReconciler).SetupWithManager(ctrlMgr); err != nil {
@@ -213,7 +227,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	var cancelCtx context.CancelFunc
 	go func() {
 		var mgrCtx context.Context
-		mgrCtx, cancelCtx = context.WithCancel(kctrl.SetupSignalHandler())
+		mgrCtx, cancelCtx = context.WithCancel(context.Background())
 		err = ctrlMgr.Start(mgrCtx)
 		if err != nil {
 			panic(err)
