@@ -73,7 +73,7 @@ In the following example, you port-forward the [Event Publisher Proxy](../evnt-a
 
 1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
    ```bash
-   kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
+   kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
    ```
 2. Publish an event of type `order.received.v1` to trigger your Function. In another terminal window, run:
 

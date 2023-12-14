@@ -123,7 +123,7 @@ func NewEventingCR(opts ...EventingOption) *v1alpha1.Eventing {
 			UID:       "1234-5678-1234-5678",
 		},
 		Spec: v1alpha1.EventingSpec{
-			Backend: v1alpha1.Backend{
+			Backend: &v1alpha1.Backend{
 				Type: v1alpha1.NatsBackendType,
 			},
 		},

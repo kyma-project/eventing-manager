@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"fmt"
 	"log"
 	"path/filepath"
 	"strings"
@@ -878,6 +879,26 @@ func (env TestEnvironment) EnsureOAuthSecretCreated(t *testing.T, eventing *v1al
 	env.EnsureK8sResourceCreated(t, secret)
 }
 
+func (env TestEnvironment) EnsurePublishServiceInEventingStatus(t *testing.T, name, namespace string) {
+	eventingCR, err := env.GetEventingFromK8s(name, namespace)
+	require.NoError(t, err)
+	require.NotNil(t, eventingCR)
+
+	switch eventingCR.Status.State {
+	case v1alpha1.StateReady:
+		{
+			serviceName := eventing.GetPublisherPublishServiceName(*eventingCR)
+			wantPublisherService := fmt.Sprintf("%s.%s", serviceName, namespace)
+			require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
+		}
+	default:
+		{
+			const wantPublisherService = ""
+			require.Equal(t, wantPublisherService, eventingCR.Status.PublisherService)
+		}
+	}
+}
+
 func (env TestEnvironment) DeleteServiceFromK8s(name, namespace string) error {
 	return env.k8sClient.Delete(context.Background(), &kcorev1.Service{
 		ObjectMeta: kmetav1.ObjectMeta{
@@ -1140,6 +1161,10 @@ func (env TestEnvironment) GetSubscriptionFromK8s(name, namespace string) (*even
 
 func (env TestEnvironment) CreateUnstructuredK8sResource(obj *unstructured.Unstructured) error {
 	return env.k8sClient.Create(context.Background(), obj)
+}
+
+func (env TestEnvironment) UpdateUnstructuredK8sResource(obj *unstructured.Unstructured) error {
+	return env.k8sClient.Update(env.Context, obj)
 }
 
 func (env TestEnvironment) EnsureK8sUnStructResourceCreated(t *testing.T, obj *unstructured.Unstructured) {

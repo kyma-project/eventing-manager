@@ -41,17 +41,17 @@ type oauth2Credentials struct {
 	certsURL     []byte
 }
 
-func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing) error {
+const EventMeshSecretMissingMessage = "The specified EventMesh secret is not found. Please provide an existing secret."
+
+func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing,
+	eventMeshSecret *kcorev1.Secret, log *zap.SugaredLogger,
+) error {
 	// gets oauth2ClientID and secret and stops the EventMesh subscription manager if changed
 	err := r.syncOauth2ClientIDAndSecret(ctx, eventing)
 	if err != nil {
 		return fmt.Errorf("failed to sync OAuth secret: %w", err)
 	}
-	// retrieve secret to authenticate with EventMesh
-	eventMeshSecret, err := r.kubeClient.GetSecret(ctx, eventing.Spec.Backend.Config.EventMeshSecret)
-	if err != nil {
-		return fmt.Errorf("failed to get EventMesh secret: %w", err)
-	}
+
 	// CreateOrUpdate deployment for publisher proxy secret
 	secretForPublisher, err := r.SyncPublisherProxySecret(ctx, eventMeshSecret)
 	if err != nil {

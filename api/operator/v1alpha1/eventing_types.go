@@ -33,7 +33,7 @@ const (
 	StateProcessing string = "Processing"
 	StateWarning    string = "Warning"
 
-	ConditionNATSAvailable            ConditionType = "NATSAvailable"
+	ConditionBackendAvailable         ConditionType = "BackendAvailable"
 	ConditionPublisherProxyReady      ConditionType = "PublisherProxyReady"
 	ConditionWebhookReady             ConditionType = "WebhookReady"
 	ConditionSubscriptionManagerReady ConditionType = "SubscriptionManagerReady"
@@ -48,8 +48,9 @@ const (
 	ConditionReasonDeployed                   ConditionReason = "Deployed"
 	ConditionReasonDeployedFailed             ConditionReason = "DeployFailed"
 	ConditionReasonDeploymentStatusSyncFailed ConditionReason = "DeploymentStatusSyncFailed"
-	ConditionReasonNATSAvailable              ConditionReason = "Available"
-	ConditionReasonNATSNotAvailable           ConditionReason = "NotAvailable"
+	ConditionReasonNATSAvailable              ConditionReason = "NATSAvailable"
+	ConditionReasonNATSNotAvailable           ConditionReason = "NATSUnavailable"
+	ConditionReasonBackendNotSpecified        ConditionReason = "BackendNotSpecified"
 	ConditionReasonForbidden                  ConditionReason = "Forbidden"
 	ConditionReasonWebhookFailed              ConditionReason = "WebhookFailed"
 	ConditionReasonWebhookReady               ConditionReason = "Ready"
@@ -63,6 +64,7 @@ const (
 	ConditionPublisherProxyProcessingMessage   = "Eventing publisher proxy deployment is in progress"
 	ConditionSubscriptionManagerReadyMessage   = "Subscription manager is ready"
 	ConditionSubscriptionManagerStoppedMessage = "Subscription manager is stopped"
+	ConditionBackendNotSpecifiedMessage        = "Backend config is not provided. Please specify a backend."
 
 	// subscription manager reasons.
 	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"
@@ -82,25 +84,30 @@ type Eventing struct {
 	kmetav1.TypeMeta   `json:",inline"`
 	kmetav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// +kubebuilder:default:={backend:{type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}, logging:{logLevel:Info}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"40m",memory:"256Mi"}}}}
+	// +kubebuilder:default:={logging:{logLevel:Info}, publisher:{replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"40m",memory:"256Mi"}}}}
+	// +kubebuilder:validation:XValidation:rule="!(oldSelf!=null && has(oldSelf.backend)) || has(self.backend)", message="backend config cannot be deleted"
 	Spec   EventingSpec   `json:"spec,omitempty"`
 	Status EventingStatus `json:"status,omitempty"`
 }
 
 // EventingStatus defines the observed state of Eventing.
 type EventingStatus struct {
-	ActiveBackend     BackendType         `json:"activeBackend"`
-	BackendConfigHash int64               `json:"specHash"`
-	State             string              `json:"state"`
-	Conditions        []kmetav1.Condition `json:"conditions,omitempty"`
+	ActiveBackend     BackendType `json:"activeBackend"`
+	BackendConfigHash int64       `json:"specHash"`
+	// Can have one of the following values: Ready, Error, Processing, Warning. Ready state is set
+	// when all the resources are deployed successfully and backend is connected.
+	// It gets Warning state in case backend is not specified and NATS module is not installed or EventMesh secret is missing in the cluster.
+	// Error state is set when there is an error. Processing state is set if recources are being created or changed.
+	State            string              `json:"state"`
+	PublisherService string              `json:"publisherService,omitempty"`
+	Conditions       []kmetav1.Condition `json:"conditions,omitempty"`
 }
 
 // EventingSpec defines the desired state of Eventing.
 type EventingSpec struct {
 	// Backend defines the active backend used by Eventing.
-	// +kubebuilder:default:={type:"NATS", config:{natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}}
 	// +kubebuilder:validation:XValidation:rule=" (self.type != 'EventMesh') || ((self.type == 'EventMesh') && (self.config.eventMeshSecret != ''))", message="secret cannot be empty if EventMesh backend is used"
-	Backend Backend `json:"backend"`
+	Backend *Backend `json:"backend,omitempty"`
 
 	// Publisher defines the configurations for eventing-publisher-proxy.
 	// +kubebuilder:default:={replicas:{min:2,max:2}, resources:{limits:{cpu:"500m",memory:"512Mi"}, requests:{cpu:"40m",memory:"256Mi"}}}

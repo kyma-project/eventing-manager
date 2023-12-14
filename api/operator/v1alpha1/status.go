@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"fmt"
 	"reflect"
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
@@ -8,11 +9,11 @@ import (
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (es *EventingStatus) UpdateConditionNATSAvailable(status kmetav1.ConditionStatus, reason ConditionReason,
+func (es *EventingStatus) UpdateConditionBackendAvailable(status kmetav1.ConditionStatus, reason ConditionReason,
 	message string,
 ) {
 	condition := kmetav1.Condition{
-		Type:               string(ConditionNATSAvailable),
+		Type:               string(ConditionBackendAvailable),
 		Status:             status,
 		LastTransitionTime: kmetav1.Now(),
 		Reason:             string(reason),
@@ -80,7 +81,7 @@ func (es *EventingStatus) SetSubscriptionManagerReadyConditionToTrue() {
 
 func (es *EventingStatus) SetStateReady() {
 	es.State = StateReady
-	es.UpdateConditionNATSAvailable(kmetav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
+	es.UpdateConditionBackendAvailable(kmetav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
 	es.UpdateConditionPublisherProxyReady(kmetav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)
 }
 
@@ -89,7 +90,7 @@ func (ns *EventingStatus) SetStateWarning() {
 }
 
 func (es *EventingStatus) SetNATSAvailableConditionToTrue() {
-	es.UpdateConditionNATSAvailable(kmetav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
+	es.UpdateConditionBackendAvailable(kmetav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
 }
 
 func (es *EventingStatus) SetSubscriptionManagerReadyConditionToFalse(reason ConditionReason, message string) {
@@ -133,4 +134,14 @@ func (es *EventingStatus) IsEqual(status EventingStatus) bool {
 
 	return reflect.DeepEqual(thisWithoutCond, statusWithoutCond) &&
 		natsv1alpha1.ConditionsEquals(es.Conditions, status.Conditions)
+}
+
+// ClearPublisherService clears the PublisherService.
+func (es *EventingStatus) ClearPublisherService() {
+	es.PublisherService = ""
+}
+
+// SetPublisherService sets the PublisherService from the given service name and namespace.
+func (es *EventingStatus) SetPublisherService(name, namespace string) {
+	es.PublisherService = fmt.Sprintf("%s.%s", name, namespace)
 }

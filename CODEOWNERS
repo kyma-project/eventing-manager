@@ -8,3 +8,11 @@
 * @kyma-project/eventing
 
 *.md @kyma-project/technical-writers
+
+*.sh @kyma-project/eventing @the1bit
+
+/.github/ @kyma-project/eventing @the1bit
+
+/.version @kyma-project/eventing @the1bit
+
+/.sec-scanners-config.yaml @kyma-project/eventing @the1bit

@@ -686,6 +686,20 @@ func Test_Validate_CreateEventing(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: `validation of spec.backend is empty`,
+			givenUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      test.GetRandK8sName(7),
+						namespace: test.GetRandK8sName(7),
+					},
+					spec: map[string]any{},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -698,6 +712,93 @@ func Test_Validate_CreateEventing(t *testing.T) {
 
 			// when
 			err := testEnvironment.CreateUnstructuredK8sResource(&tc.givenUnstructuredEventing)
+
+			// then
+			if tc.wantErrMsg == noError {
+				require.NoError(t, err, "Expected error message to be empty but got error instead."+
+					" Check the validation rule of the eventing CR.")
+			} else {
+				require.Error(t, err, fmt.Sprintf("Expected the following error message: \n \" %s \" \n"+
+					" but got no error. Check the validation rules of the eventing CR.", tc.wantErrMsg))
+
+				require.Contains(t, err.Error(), tc.wantErrMsg, "Expected a specific error message"+
+					" but messages do not match. Check the validation rules of the eventing CR.")
+			}
+		})
+	}
+}
+
+// Test_Validate_UpdateEventing updates an eventing CR with correct and purposefully incorrect values, and compares
+// the error that was caused by this against a wantErrMsg to test the eventing CR validation rules.
+func Test_Validate_UpdateEventing(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name                              string
+		givenOriginalUnstructuredEventing unstructured.Unstructured
+		givenTargetUnstructuredEventing   unstructured.Unstructured
+		wantErrMsg                        string
+	}{
+		{
+			name: `validation of spec.backend deletion, which is not allowed`,
+			givenOriginalUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      "test-name-777",
+						namespace: "test-namespace-777",
+					},
+					spec: map[string]any{
+						backend: map[string]any{
+							backendType: typeNats,
+						},
+						publisher: map[string]any{
+							replicas: map[string]any{
+								min: 2,
+								max: 3,
+							},
+						},
+					},
+				},
+			},
+			givenTargetUnstructuredEventing: unstructured.Unstructured{
+				Object: map[string]any{
+					kind:       kindEventing,
+					apiVersion: apiVersionEventing,
+					metadata: map[string]any{
+						name:      "test-name-777",
+						namespace: "test-namespace-777",
+					},
+					spec: map[string]any{
+						publisher: map[string]any{
+							replicas: map[string]any{
+								min: 2,
+								max: 3,
+							},
+						},
+					},
+				},
+			},
+			wantErrMsg: "backend config cannot be deleted",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// given
+			testEnvironment.EnsureNamespaceCreation(t, tc.givenOriginalUnstructuredEventing.GetNamespace())
+
+			// when
+			err := testEnvironment.CreateUnstructuredK8sResource(&tc.givenOriginalUnstructuredEventing)
+			require.NoError(t, err, "Expected error message to be empty but got error instead.")
+
+			tc.givenTargetUnstructuredEventing.SetResourceVersion(tc.givenOriginalUnstructuredEventing.GetResourceVersion())
+
+			err = testEnvironment.UpdateUnstructuredK8sResource(&tc.givenTargetUnstructuredEventing)
 
 			// then
 			if tc.wantErrMsg == noError {
@@ -737,7 +838,6 @@ func Test_Validate_Defaulting(t *testing.T) {
 				},
 			},
 			wantMatches: gomega.And(
-				testmatchers.HaveBackendTypeNats(defaultBackendConfig()),
 				testmatchers.HavePublisher(defaultPublisher()),
 				testmatchers.HavePublisherResources(defaultPublisherResources()),
 				testmatchers.HaveLogging(defaultLogging()),
@@ -757,7 +857,6 @@ func Test_Validate_Defaulting(t *testing.T) {
 				},
 			},
 			wantMatches: gomega.And(
-				testmatchers.HaveBackendTypeNats(defaultBackendConfig()),
 				testmatchers.HavePublisher(defaultPublisher()),
 				testmatchers.HavePublisherResources(defaultPublisherResources()),
 				testmatchers.HaveLogging(defaultLogging()),

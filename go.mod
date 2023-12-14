@@ -14,7 +14,7 @@ require (
 	github.com/kyma-project/kyma/common/logging v0.0.0-20231113125307-562a57ab5198
 	github.com/kyma-project/nats-manager v1.0.3-0.20231124103356-1904d89ab2b2
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/nats-io/nats-server/v2 v2.10.6
+	github.com/nats-io/nats-server/v2 v2.10.7
 	github.com/nats-io/nats.go v1.31.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.30.0
@@ -26,7 +26,7 @@ require (
 	go.uber.org/zap v1.26.0
 	golang.org/x/oauth2 v0.15.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028
-	istio.io/api v1.20.0
+	istio.io/api v1.20.1
 	istio.io/client-go v1.20.0
 	k8s.io/api v0.28.4
 	k8s.io/apiextensions-apiserver v0.28.4
@@ -62,7 +62,7 @@ require (
 	github.com/jinzhu/copier v0.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.17.3 // indirect
+	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

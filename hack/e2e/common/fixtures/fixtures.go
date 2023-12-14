@@ -63,7 +63,7 @@ func EventingNATSCR() *operatorv1alpha1.Eventing {
 			Namespace: NamespaceName,
 		},
 		Spec: operatorv1alpha1.EventingSpec{
-			Backend: operatorv1alpha1.Backend{
+			Backend: &operatorv1alpha1.Backend{
 				Type: "NATS",
 				Config: operatorv1alpha1.BackendConfig{
 					NATSStreamStorageType: "File",
@@ -88,7 +88,7 @@ func EventingEventMeshCR() *operatorv1alpha1.Eventing {
 			Namespace: NamespaceName,
 		},
 		Spec: operatorv1alpha1.EventingSpec{
-			Backend: operatorv1alpha1.Backend{
+			Backend: &operatorv1alpha1.Backend{
 				Type: "EventMesh",
 				Config: operatorv1alpha1.BackendConfig{
 					EventMeshSecret: fmt.Sprintf("%s/%s", EventMeshSecretNamespace, EventMeshSecretName),
