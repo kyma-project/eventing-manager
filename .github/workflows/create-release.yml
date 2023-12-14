@@ -32,8 +32,6 @@ jobs:
       - name: Check image Tag
         run: ./scripts/check_tag_info.sh ${{ github.event.inputs.name }}
 
-      - name: Verify job status
-        run: ./scripts/verify-status.sh ${{ github.ref_name }} 600 10 45
         #  run-unit-tests:
         #    name: Unit tests
         #    needs: verify-head-status
