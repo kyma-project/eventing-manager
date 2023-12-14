@@ -22,9 +22,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache Binaries
+        id: cache-binaries
+        uses: actions/cache@v3
+        with:
+          path: bin
+          key: ${{ runner.os }}-bin
+
       - name: Install k3d tools
         run: |
           make -C hack/ci/ install-k3d-tools
+
 
       - name: Install Kyma CLI & setup k3d cluster using kyma CLI
         run: |
