@@ -1164,7 +1164,7 @@ func (env TestEnvironment) CreateUnstructuredK8sResource(obj *unstructured.Unstr
 }
 
 func (env TestEnvironment) UpdateUnstructuredK8sResource(obj *unstructured.Unstructured) error {
-	return env.k8sClient.Update(env.Context, obj)
+	return env.k8sClient.Update(context.Background(), obj)
 }
 
 func (env TestEnvironment) EnsureK8sUnStructResourceCreated(t *testing.T, obj *unstructured.Unstructured) {

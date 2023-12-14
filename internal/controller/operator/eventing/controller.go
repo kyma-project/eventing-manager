@@ -623,10 +623,10 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			return kctrl.Result{}, r.syncSubManagerStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
-				fmt.Errorf(EventMeshSecretMissingMessage), log)
+				ErrEventMeshSecretMissing, log)
 		}
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing,
-			fmt.Errorf("failed to get EventMesh secret: %v", err), log)
+			fmt.Errorf("failed to get EventMesh secret: %w", err), log)
 	}
 
 	// Start the EventMesh subscription controller
