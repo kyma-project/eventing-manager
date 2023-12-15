@@ -32,11 +32,6 @@ jobs:
       - name: Check image Tag
         run: ./scripts/check_tag_info.sh ${{ github.event.inputs.name }}
 
-        #  run-unit-tests:
-        #    name: Unit tests
-        #    needs: verify-head-status
-        #    uses: "./.github/workflows/run-unit-tests.yaml"
-
   create-draft:
     name: Create draft release
     needs: verify-head-status
@@ -71,11 +66,6 @@ jobs:
 
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
-
-  # devOps-Insights:
-  #   name: DevOps Insights
-  #   needs: [verify-head-status, create-draft, run-unit-tests]
-  #   uses: "./.github/workflows/metrics.yaml"
 
   publish-release:
     name: Publish release
