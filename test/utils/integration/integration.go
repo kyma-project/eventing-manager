@@ -486,7 +486,7 @@ func (env TestEnvironment) EnsureNATSCRDDeleted(t *testing.T) {
 			Kind:       "CustomResourceDefinition",
 		},
 		ObjectMeta: kmetav1.ObjectMeta{
-			Name: k8s.NatsGVK.GroupResource().String(),
+			Name: k8s.NatsGVK().GroupResource().String(),
 		},
 	}
 	require.NoError(t, env.k8sClient.Delete(context.Background(), crdManifest))

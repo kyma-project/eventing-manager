@@ -54,20 +54,11 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
 )
 
-var (
-	scheme   = runtime.NewScheme()
-	setupLog = kctrl.Log.WithName("setup")
-)
-
-func init() {
+func registerSchemas(scheme *runtime.Scheme) {
 	kutilruntime.Must(kkubernetesscheme.AddToScheme(scheme))
-
 	kutilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
-
 	kutilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
-
 	kutilruntime.Must(kapiextensionsv1.AddToScheme(scheme))
-
 	kutilruntime.Must(jetstream.AddToScheme(scheme))
 	kutilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
 	kutilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
@@ -78,9 +69,13 @@ func init() {
 const defaultMetricsPort = 9443
 
 func main() { //nolint:funlen // main function needs to initialize many object
+	scheme := runtime.NewScheme()
+	registerSchemas(scheme)
+
 	var enableLeaderElection bool
 	var leaderElectionID string
 	var metricsPort int
+	setupLog := kctrl.Log.WithName("setup")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")

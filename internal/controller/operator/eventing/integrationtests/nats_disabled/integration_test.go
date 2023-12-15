@@ -98,7 +98,7 @@ func Test_DeletionOfPublisherResourcesWhenNATSNotEnabled(t *testing.T) {
 	// check if EPP resources exists.
 	ensureK8sResources(t, givenEventing, testEnvironment)
 
-	natsCRD, err := testEnvironment.KubeClient.GetCRD(context.TODO(), k8s.NatsGVK.GroupResource().String())
+	natsCRD, err := testEnvironment.KubeClient.GetCRD(context.TODO(), k8s.NatsGVK().GroupResource().String())
 	require.NoError(t, err)
 
 	// define cleanup.

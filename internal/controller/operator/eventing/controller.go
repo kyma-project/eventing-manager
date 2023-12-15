@@ -337,7 +337,7 @@ func (r *Reconciler) startNATSCRWatch(eventing *operatorv1alpha1.Eventing) error
 	}
 
 	if !found {
-		natsWatcher = watcher.NewResourceWatcher(r.dynamicClient, k8s.NatsGVK, eventing.Namespace)
+		natsWatcher = watcher.NewResourceWatcher(r.dynamicClient, k8s.NatsGVK(), eventing.Namespace)
 		r.natsWatchers[eventing.Namespace] = natsWatcher
 	}
 
@@ -526,7 +526,7 @@ func (r *Reconciler) handleBackendSwitching(
 
 func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (kctrl.Result, error) {
 	// retrieves the NATS CRD
-	_, err := r.kubeClient.GetCRD(ctx, k8s.NatsGVK.GroupResource().String())
+	_, err := r.kubeClient.GetCRD(ctx, k8s.NatsGVK().GroupResource().String())
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			// delete the publisher proxy resources, because the publisher deployment will go

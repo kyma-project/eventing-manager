@@ -16,8 +16,6 @@ const (
 	NatsBackendType BackendType = "NATS"
 )
 
-var Finalizer = GroupVersion.Group
-
 // WebhookAuth defines the Webhook called by an active subscription in BEB.
 // TODO: Remove it when depreciating code of v1alpha1.
 type WebhookAuth struct {

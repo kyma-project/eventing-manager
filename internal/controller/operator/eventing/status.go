@@ -219,6 +219,8 @@ func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kappsv
 }
 
 // to be able to mock this function in tests.
+//
+//nolint:gochecknoglobals //TODO: refactor the reconciler to support replacing this function without global variable
 var IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 	return deployment.Status.AvailableReplicas == *deployment.Spec.Replicas
 }

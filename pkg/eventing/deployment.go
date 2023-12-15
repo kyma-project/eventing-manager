@@ -35,10 +35,9 @@ const (
 	PublisherSecretEMSURLKey       = "ems-publish-url"
 	PublisherSecretBEBNamespaceKey = "beb-namespace"
 
-	PriorityClassName = "eventing-manager-priority-class"
+	PriorityClassName             = "eventing-manager-priority-class"
+	TerminationGracePeriodSeconds = int64(30)
 )
-
-var TerminationGracePeriodSeconds = int64(30)
 
 func newNATSPublisherDeployment(
 	eventing *v1alpha1.Eventing,
@@ -77,6 +76,7 @@ func newEventMeshPublisherDeployment(
 type DeployOpt func(deployment *kappsv1.Deployment)
 
 func newDeployment(eventing *v1alpha1.Eventing, publisherConfig env.PublisherConfig, opts ...DeployOpt) *kappsv1.Deployment {
+	trmGrcPrd := TerminationGracePeriodSeconds
 	newDeployment := &kappsv1.Deployment{
 		TypeMeta: kmetav1.TypeMeta{
 			Kind:       "Deployment",
@@ -94,7 +94,7 @@ func newDeployment(eventing *v1alpha1.Eventing, publisherConfig env.PublisherCon
 				Spec: kcorev1.PodSpec{
 					RestartPolicy:                 kcorev1.RestartPolicyAlways,
 					ServiceAccountName:            GetPublisherServiceAccountName(*eventing),
-					TerminationGracePeriodSeconds: &TerminationGracePeriodSeconds,
+					TerminationGracePeriodSeconds: &trmGrcPrd,
 					PriorityClassName:             publisherConfig.PriorityClassName,
 					SecurityContext:               getPodSecurityContext(),
 				},

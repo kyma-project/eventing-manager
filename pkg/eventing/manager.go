@@ -26,8 +26,10 @@ const (
 
 // allowedAnnotations are the publisher proxy deployment spec template annotations
 // which should be preserved during reconciliation.
-var allowedAnnotations = map[string]string{
-	"kubectl.kubernetes.io/restartedAt": "",
+func allowedAnnotations() map[string]string {
+	return map[string]string{
+		"kubectl.kubernetes.io/restartedAt": "",
+	}
 }
 
 var (
@@ -119,7 +121,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 		// preserve only allowed annotations
 		desiredPublisher.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
 		for k, v := range currentPublisher.Spec.Template.ObjectMeta.Annotations {
-			if _, ok := allowedAnnotations[k]; ok {
+			if _, ok := allowedAnnotations()[k]; ok {
 				desiredPublisher.Spec.Template.ObjectMeta.Annotations[k] = v
 			}
 		}
