@@ -120,8 +120,8 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	// ensure expected EventMesh mock requests
 	require.NotEqual(t, webhookAuthHashBefore, webhookAuthHashAfter)
 	require.Equal(t, deleteRequestsBefore, deleteRequestsAfter)
-	require.Equal(t, patchRequestsBefore, 0)
-	require.Equal(t, patchRequestsAfter, 1)
+	require.Equal(t, 0, patchRequestsBefore)
+	require.Equal(t, 1, patchRequestsAfter)
 
 	// cleanup
 	require.NoError(t, tearDownSuite())

@@ -141,7 +141,7 @@ func (src *Subscription) setProtocolSettings(dst *v1alpha2.Subscription) {
 		dst.Spec.Config[v1alpha2.ProtocolSettingsContentMode] = *src.Spec.ProtocolSettings.ContentMode
 	}
 	if src.Spec.ProtocolSettings.ExemptHandshake != nil {
-		dst.Spec.Config[v1alpha2.ProtocolSettingsExemptHandshake] = fmt.Sprint(*src.Spec.ProtocolSettings.ExemptHandshake)
+		dst.Spec.Config[v1alpha2.ProtocolSettingsExemptHandshake] = strconv.FormatBool(*src.Spec.ProtocolSettings.ExemptHandshake)
 	}
 	if src.Spec.ProtocolSettings.Qos != nil {
 		dst.Spec.Config[v1alpha2.ProtocolSettingsQos] = *src.Spec.ProtocolSettings.Qos
@@ -270,7 +270,7 @@ func (src *Subscription) natsSpecConfigToV2(dst *v1alpha2.Subscription) {
 		if dst.Spec.Config == nil {
 			dst.Spec.Config = map[string]string{}
 		}
-		dst.Spec.Config[v1alpha2.MaxInFlightMessages] = fmt.Sprint(src.Spec.Config.MaxInFlightMessages)
+		dst.Spec.Config[v1alpha2.MaxInFlightMessages] = strconv.Itoa(src.Spec.Config.MaxInFlightMessages)
 	}
 }
 

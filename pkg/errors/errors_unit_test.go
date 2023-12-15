@@ -1,3 +1,4 @@
+//nolint:goerr113 // no need to wrap errors in the test for the error package
 package errors_test
 
 import (
@@ -76,7 +77,7 @@ func Test_ArgumentError_Is(t *testing.T) {
 			ok := errors.Is(tc.givenError(), errInvalidStorageType)
 
 			// then
-			assert.Equal(t, ok, tc.wantIsTrue)
+			assert.Equal(t, tc.wantIsTrue, ok)
 		})
 	}
 }

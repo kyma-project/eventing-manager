@@ -13,6 +13,8 @@ import (
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
+var ErrInvalidSink = errors.New("invalid sink")
+
 // isInDeletion checks if the Subscription shall be deleted.
 func isInDeletion(subscription *eventingv1alpha2.Subscription) bool {
 	return !subscription.DeletionTimestamp.IsZero()
@@ -55,7 +57,7 @@ func removeFinalizer(sub *eventingv1alpha2.Subscription) {
 func getSvcNsAndName(url string) (string, string, error) {
 	parts := strings.Split(url, ".")
 	if len(parts) < 2 {
-		return "", "", fmt.Errorf("invalid sinkURL for cluster local svc: %s", url)
+		return "", "", fmt.Errorf("%w url: %s", ErrInvalidSink, url)
 	}
 	return parts[1], parts[0], nil
 }

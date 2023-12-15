@@ -208,7 +208,7 @@ func Test_Conversion(t *testing.T) {
 				convertedV1Alpha2 := &v1alpha2.Subscription{}
 				err := v1alpha1.V1ToV2(testCase.alpha1Sub, convertedV1Alpha2)
 				if err != nil && testCase.wantErrMsgV1toV2 != "" {
-					require.Equal(t, err.Error(), testCase.wantErrMsgV1toV2)
+					require.Equal(t, testCase.wantErrMsgV1toV2, err.Error())
 				} else {
 					require.NoError(t, err)
 					v1ToV2Assertions(t, testCase.alpha2Sub, convertedV1Alpha2)
@@ -224,7 +224,7 @@ func Test_Conversion(t *testing.T) {
 				convertedV1Alpha1 := &v1alpha1.Subscription{}
 				err := v1alpha1.V2ToV1(convertedV1Alpha1, testCase.alpha2Sub)
 				if err != nil && testCase.wantErrMsgV2toV1 != "" {
-					require.Equal(t, err.Error(), testCase.wantErrMsgV2toV1)
+					require.Equal(t, testCase.wantErrMsgV2toV1, err.Error())
 				} else {
 					require.NoError(t, err)
 					v2ToV1Assertions(t, testCase.alpha1Sub, convertedV1Alpha1)

@@ -565,11 +565,10 @@ func Test_handleKymaSubStatusUpdate(t *testing.T) {
 			isChanged, _ := eventMesh.handleKymaSubStatusUpdate(tc.givenEventMeshSub, tc.givenEventMeshSub, tc.givenKymaSub, tc.givenTypeInfos)
 
 			// then
-			require.Equal(t, isChanged, true)
-			require.Equal(t, tc.givenKymaSub.Status.Types, tc.wantEventTypes)
-			require.Equal(t, tc.givenKymaSub.Status.Backend.EmsTypes, tc.wantEventMeshTypes)
-			require.Equal(t, tc.givenKymaSub.Status.Backend.EventMeshSubscriptionStatus.StatusReason,
-				tc.givenEventMeshSub.SubscriptionStatusReason)
+			require.True(t, isChanged)
+			require.Equal(t, tc.wantEventTypes, tc.givenKymaSub.Status.Types)
+			require.Equal(t, tc.wantEventMeshTypes, tc.givenKymaSub.Status.Backend.EmsTypes)
+			require.Equal(t, tc.givenEventMeshSub.SubscriptionStatusReason, tc.givenKymaSub.Status.Backend.EventMeshSubscriptionStatus.StatusReason)
 		})
 	}
 }
@@ -720,7 +719,7 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			if test.givenSameHash {
 				hash, hashErr := backendutils.GetWebhookAuthHash(emSub.WebhookAuth)
 				require.NoError(t, hashErr)
-				require.True(t, hash != 0)
+				require.NotEqual(t, 0, hash)
 				kymaSub.Status.Backend.WebhookAuthHash = hash // simulate equal hashes
 			}
 
@@ -739,9 +738,9 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			putURI := fmt.Sprintf("/messaging/events/subscriptions/%s/state", emSubName)
 
 			// then
-			require.Equal(t, mock.CountRequests(http.MethodDelete, deleteURI), test.wantDeleteCount)
-			require.Equal(t, mock.CountRequests(http.MethodPatch, patchURI), test.wantPatchCount)
-			require.Equal(t, mock.CountRequests(http.MethodPut, putURI), test.wantPutCount)
+			require.Equal(t, test.wantDeleteCount, mock.CountRequests(http.MethodDelete, deleteURI))
+			require.Equal(t, test.wantPatchCount, mock.CountRequests(http.MethodPatch, patchURI))
+			require.Equal(t, test.wantPutCount, mock.CountRequests(http.MethodPut, putURI))
 		})
 	}
 }

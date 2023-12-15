@@ -72,7 +72,6 @@ type Ensemble struct {
 	DefaultSubscriptionConfig env.DefaultSubscriptionConfig
 	SubscriberSvc             *kcorev1.Service
 	Cancel                    context.CancelFunc
-	Ctx                       context.Context
 	G                         *gomega.GomegaWithT
 	T                         *testing.T
 }
@@ -92,7 +91,6 @@ type Want struct {
 }
 
 func setupSuite() error {
-	ctx := context.Background()
 	useExistingCluster := useExistingCluster
 
 	natsPort, err := eventingtesting.GetFreePort()
@@ -103,7 +101,6 @@ func setupSuite() error {
 	log.Printf("NATS server with JetStream started %v", natsServer.ClientURL())
 
 	ens := &Ensemble{
-		Ctx: ctx,
 		DefaultSubscriptionConfig: env.DefaultSubscriptionConfig{
 			MaxInFlightMessages: 1,
 		},
@@ -192,17 +189,17 @@ func startReconciler() error {
 	k8sClient := k8sManager.GetClient()
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller-jetstream")
 
-	jsTestEnsemble.Reconciler = subscriptioncontrollerjetstream.NewReconciler(ctx,
+	jsTestEnsemble.Reconciler = subscriptioncontrollerjetstream.NewReconciler(
 		k8sClient,
 		jetStreamHandler,
 		defaultLogger,
 		recorder,
 		cleaner,
-		sink.NewValidator(ctx, k8sClient, recorder),
+		sink.NewValidator(k8sClient, recorder),
 		metricsCollector,
 	)
 
-	if err := jsTestEnsemble.Reconciler.SetupUnmanaged(k8sManager); err != nil {
+	if err := jsTestEnsemble.Reconciler.SetupUnmanaged(ctx, k8sManager); err != nil {
 		return err
 	}
 
@@ -268,7 +265,7 @@ func testSubscriptionOnNATS(g *gomega.GomegaWithT, subscription *eventingv1alpha
 // testSubscriptionDeletion deletes the subscription and ensures it is not found anymore on the apiserver.
 func testSubscriptionDeletion(g *gomega.GomegaWithT, subscription *eventingv1alpha2.Subscription) {
 	g.Eventually(func() error {
-		return jsTestEnsemble.K8sClient.Delete(jsTestEnsemble.Ctx, subscription)
+		return jsTestEnsemble.K8sClient.Delete(context.Background(), subscription)
 	}, SmallTimeout, SmallPollingInterval).ShouldNot(gomega.HaveOccurred())
 	IsSubscriptionDeletedOnK8s(g, jsTestEnsemble.Ensemble, subscription).
 		Should(eventingtesting.HaveNotFoundSubscription(), "Failed to delete subscription")
@@ -374,7 +371,7 @@ func IsSubscriptionDeletedOnK8s(g *gomega.WithT, ens *Ensemble,
 			Namespace: subscription.Namespace,
 			Name:      subscription.Name,
 		}
-		if err := ens.K8sClient.Get(ens.Ctx, lookupKey, subscription); err != nil {
+		if err := ens.K8sClient.Get(context.Background(), lookupKey, subscription); err != nil {
 			return kerrors.IsNotFound(err)
 		}
 		return false
@@ -457,7 +454,7 @@ func createSubscriberSvcInK8s(ens *Ensemble) error {
 	if ens.SubscriberSvc.Namespace != "default " {
 		namespace := fixtureNamespace(ens.SubscriberSvc.Namespace)
 		err := doRetry(func() error {
-			if err := ens.K8sClient.Create(ens.Ctx, namespace); !kerrors.IsAlreadyExists(err) {
+			if err := ens.K8sClient.Create(context.Background(), namespace); !kerrors.IsAlreadyExists(err) {
 				return err
 			}
 			return nil
@@ -468,7 +465,7 @@ func createSubscriberSvcInK8s(ens *Ensemble) error {
 	}
 
 	return doRetry(func() error {
-		return ens.K8sClient.Create(ens.Ctx, ens.SubscriberSvc)
+		return ens.K8sClient.Create(context.Background(), ens.SubscriberSvc)
 	}, "Failed to create the subscriber service")
 }
 
@@ -478,7 +475,7 @@ func EnsureNamespaceCreatedForSub(t *testing.T, ens *Ensemble, subscription *eve
 	if subscription.Namespace != "default " {
 		// create testing namespace
 		namespace := fixtureNamespace(subscription.Namespace)
-		err := ens.K8sClient.Create(ens.Ctx, namespace)
+		err := ens.K8sClient.Create(context.Background(), namespace)
 		if !kerrors.IsAlreadyExists(err) {
 			require.NoError(t, err)
 		}
@@ -490,13 +487,13 @@ func EnsureNamespaceCreatedForSub(t *testing.T, ens *Ensemble, subscription *eve
 func ensureSubscriptionCreated(ens *Ensemble, subscription *eventingv1alpha2.Subscription) error {
 	// create subscription on cluster
 	return doRetry(func() error {
-		return ens.K8sClient.Create(ens.Ctx, subscription)
+		return ens.K8sClient.Create(context.Background(), subscription)
 	}, "failed to create a subscription")
 }
 
 // EnsureK8sResourceNotCreated ensures that the obj creation in K8s fails.
 func EnsureK8sResourceNotCreated(t *testing.T, ens *Ensemble, obj client.Object, err error) {
-	require.Equal(t, ens.K8sClient.Create(ens.Ctx, obj), err)
+	require.Equal(t, ens.K8sClient.Create(context.Background(), obj), err)
 }
 
 func fixtureNamespace(name string) *kcorev1.Namespace {
@@ -521,7 +518,7 @@ func getSubscriptionOnK8S(g *gomega.WithT, ens *Ensemble,
 			Namespace: subscription.Namespace,
 			Name:      subscription.Name,
 		}
-		if err := ens.K8sClient.Get(ens.Ctx, lookupKey, subscription); err != nil {
+		if err := ens.K8sClient.Get(context.Background(), lookupKey, subscription); err != nil {
 			return &eventingv1alpha2.Subscription{}
 		}
 		return subscription
@@ -533,7 +530,7 @@ func getSubscriptionOnK8S(g *gomega.WithT, ens *Ensemble,
 func getK8sEvents(g *gomega.WithT, ens *Ensemble) gomega.AsyncAssertion {
 	eventList := kcorev1.EventList{}
 	return g.Eventually(func() kcorev1.EventList {
-		err := ens.K8sClient.List(ens.Ctx, &eventList, client.InNamespace(ens.SubscriberSvc.Namespace))
+		err := ens.K8sClient.List(context.Background(), &eventList, client.InNamespace(ens.SubscriberSvc.Namespace))
 		if err != nil {
 			return kcorev1.EventList{}
 		}

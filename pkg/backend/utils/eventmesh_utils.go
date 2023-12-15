@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/sha1" //nolint:gosec
+	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -70,7 +71,7 @@ func GetWebhookAuthHash(webhookAuth *types.WebhookAuth) (int64, error) {
 
 func hashSubscriptionFullName(domainName, namespace, name string) string {
 	hash := sha1.Sum([]byte(domainName + namespace + name)) //nolint:gosec
-	return fmt.Sprintf("%x", hash)
+	return hex.EncodeToString(hash[:])
 }
 
 func getDefaultSubscriptionV1Alpha2(protocolSettings *ProtocolSettings) (*types.Subscription, error) {

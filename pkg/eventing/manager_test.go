@@ -3,7 +3,6 @@ package eventing
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
@@ -25,6 +24,8 @@ import (
 	"github.com/kyma-project/eventing-manager/test"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 )
+
+var ErrUseMeWithMocks = errors.New("use me with mocks")
 
 func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 	// given
@@ -77,7 +78,7 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 				testutils.WithEventingCRMinimal(),
 			),
 			givenBackendType: "unknown-backend",
-			wantErr:          fmt.Errorf("unknown EventingBackend type %q", "unknown-backend"),
+			wantErr:          ErrUnknownBackendType,
 		},
 		{
 			name: "PatchApply failure",
@@ -86,9 +87,8 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 				testutils.WithEventingEventTypePrefix("test-prefix"),
 			),
 			givenBackendType: v1alpha1.NatsBackendType,
-			patchApplyErr:    errors.New("patch apply error"),
-			wantErr: fmt.Errorf("failed to apply Publisher Proxy deployment: %v",
-				errors.New("patch apply error")),
+			patchApplyErr:    ErrUseMeWithMocks,
+			wantErr:          ErrUseMeWithMocks,
 		},
 	}
 
@@ -122,7 +122,7 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 			deployment, err := em.applyPublisherProxyDeployment(ctx, tc.givenEventing, &env.NATSConfig{}, tc.givenBackendType)
 
 			// then
-			require.Equal(t, tc.wantErr, err)
+			require.ErrorIs(t, err, tc.wantErr)
 			if tc.wantedDeployment != nil {
 				require.NotNil(t, deployment)
 				require.Equal(t, tc.wantedDeployment.Spec.Template.ObjectMeta.Annotations,
@@ -289,7 +289,7 @@ func Test_IsNATSAvailable(t *testing.T) {
 			givenNATSResources: nil,
 			givenNamespace:     "test-namespace",
 			wantAvailable:      false,
-			wantErr:            errors.New("failed to get NATS resources"),
+			wantErr:            ErrUseMeWithMocks,
 		},
 	}
 
@@ -339,7 +339,7 @@ func Test_ConvertECBackendType(t *testing.T) {
 			name:           "Unknown backend type",
 			backendType:    "unknown",
 			expectedResult: "",
-			expectedError:  fmt.Errorf("unknown backend type: unknown"),
+			expectedError:  ErrUnknownBackendType,
 		},
 	}
 
@@ -349,7 +349,7 @@ func Test_ConvertECBackendType(t *testing.T) {
 			// when
 			result, err := convertECBackendType(tc.backendType)
 			// then
-			require.Equal(t, tc.expectedError, err)
+			require.ErrorIs(t, err, tc.expectedError)
 			require.Equal(t, tc.expectedResult, result)
 		})
 	}
@@ -407,7 +407,7 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			var createdObjects []client.Object
 			// define mocks behaviours.
 			if tc.wantError {
-				kubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed"))
+				kubeClient.On("PatchApply", ctx, mock.Anything).Return(ErrUseMeWithMocks)
 			} else {
 				kubeClient.On("PatchApply", ctx, mock.Anything).Run(func(args mock.Arguments) {
 					obj := args.Get(1).(client.Object)
@@ -430,7 +430,7 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			require.Equal(t, tc.wantCreatedResourcesCount, len(createdObjects))
+			require.Len(t, createdObjects, tc.wantCreatedResourcesCount)
 
 			// check ServiceAccount.
 			sa, err := testutils.FindObjectByKind("ServiceAccount", createdObjects)
@@ -521,7 +521,7 @@ func Test_DeletePublisherProxyResources(t *testing.T) {
 
 			// define mocks behaviours.
 			if tc.wantError {
-				kubeClient.On("DeleteResource", ctx, mock.Anything).Return(errors.New("failed"))
+				kubeClient.On("DeleteResource", ctx, mock.Anything).Return(ErrUseMeWithMocks)
 			} else {
 				kubeClient.On("DeleteResource", ctx, mock.Anything).Return(nil).Times(tc.wantDeletedResourcesCount)
 			}
@@ -586,7 +586,7 @@ func Test_SubscriptionExists(t *testing.T) {
 		{
 			name:       "error should have occurred",
 			wantResult: false,
-			wantError:  errors.New("client error"),
+			wantError:  ErrUseMeWithMocks,
 		},
 	}
 

@@ -1,7 +1,6 @@
 package jetstream
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"testing"
@@ -9,7 +8,6 @@ import (
 
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/nats-io/nats.go"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -439,7 +437,7 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// create a new subscription with no filters
-			sub := eventingtesting.NewSubscription("sub"+fmt.Sprint(i), "foo",
+			sub := eventingtesting.NewSubscription(fmt.Sprintf("sub%v", i), "foo",
 				tc.subOpts...,
 			)
 			AddJSCleanEventTypesToStatus(sub, testEnvironment.cleaner)
@@ -447,7 +445,7 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 			// when
 			err := jsBackend.SyncSubscription(sub)
 			require.NoError(t, err)
-			require.Equal(t, len(jsBackend.subscriptions), tc.wantNatsSubsLen)
+			require.Len(t, jsBackend.subscriptions, tc.wantNatsSubsLen)
 
 			if tc.givenManuallyDeleteSubscription {
 				// manually delete the subscription from map
@@ -464,7 +462,7 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 				// because the subscription was manually deleted from the js.subscriptions map
 				// hence the consumer will be shown in the NATS Backend as still bound
 				err = jsBackend.SyncSubscription(sub)
-				assert.ErrorIs(t, err, tc.wantErr)
+				require.ErrorIs(t, err, tc.wantErr)
 			}
 
 			// empty the js.subscriptions map
@@ -564,7 +562,7 @@ func TestJetStream_ServerRestart(t *testing.T) {
 			_, err = testEnvironment.jsClient.StreamInfo(testEnvironment.natsConfig.JSStreamName)
 			if tc.givenStorageType == StorageTypeMemory && tc.givenMaxReconnects == 0 {
 				// for memory storage with reconnects disabled
-				require.True(t, errors.Is(err, nats.ErrStreamNotFound))
+				require.ErrorIs(t, nats.ErrStreamNotFound, err)
 			} else {
 				// check that the stream is still present for file storage
 				// or recreated via reconnect handler for memory storage

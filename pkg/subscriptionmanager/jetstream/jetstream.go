@@ -105,13 +105,12 @@ func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionCo
 	jetStreamHandler := backendjetstream.NewJetStream(sm.envCfg,
 		sm.metricsCollector, jsCleaner, defaultSubsConfig, sm.logger)
 	jetStreamReconciler := subscriptioncontrollerjetstream.NewReconciler(
-		ctx,
 		client,
 		jetStreamHandler,
 		sm.logger,
 		recorder,
 		jsCleaner,
-		sink.NewValidator(ctx, client, recorder),
+		sink.NewValidator(client, recorder),
 		sm.metricsCollector,
 	)
 	sm.backendv2 = jetStreamReconciler.Backend
@@ -130,7 +129,7 @@ func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionCo
 	}
 
 	// start the subscription controller
-	if err := jetStreamReconciler.SetupUnmanaged(sm.mgr); err != nil {
+	if err := jetStreamReconciler.SetupUnmanaged(ctx, sm.mgr); err != nil {
 		return xerrors.Errorf("unable to setup the NATS subscription controller: %v", err)
 	}
 	sm.namedLogger().Info("Started v1alpha2 JetStream subscription manager")

@@ -71,6 +71,14 @@ const (
 	SubscriptionExistsErrMessage = "cannot delete the eventing module as subscription exists"
 )
 
+var (
+	ErrSubscriptionExists      = errors.New(SubscriptionExistsErrMessage)
+	ErrUnsupportedBackedType   = errors.New("backend type not supported")
+	ErrNatsModuleMissing       = errors.New("NATS module has to be installed")
+	ErrNATSServerUnavailable   = errors.New(NatsServerNotAvailableMsg)
+	ErrAPIGatewayModuleMissing = errors.New("API-Gateway module is needed for EventMesh backend. APIRules CRD is not installed")
+)
+
 // Reconciler reconciles an Eventing object
 //
 //go:generate go run github.com/vektra/mockery/v2 --name=Controller --dir=../../../../vendor/sigs.k8s.io/controller-runtime/pkg/controller --outpkg=mocks --case=underscore
@@ -393,8 +401,7 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *opera
 	}
 	if exists {
 		eventing.Status.SetStateWarning()
-		return kctrl.Result{Requeue: true}, r.syncStatusWithDeletionErr(ctx, eventing,
-			errors.New(SubscriptionExistsErrMessage), log)
+		return kctrl.Result{Requeue: true}, r.syncStatusWithDeletionErr(ctx, eventing, ErrSubscriptionExists, log)
 	}
 
 	log.Info("handling Eventing deletion...")
@@ -486,7 +493,7 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	case operatorv1alpha1.EventMeshBackendType:
 		return r.reconcileEventMeshBackend(ctx, eventing, log)
 	default:
-		return kctrl.Result{Requeue: false}, fmt.Errorf("not supported backend type %s", eventing.Spec.Backend.Type)
+		return kctrl.Result{Requeue: false}, fmt.Errorf("%w: %s", ErrUnsupportedBackedType, eventing.Spec.Backend.Type)
 	}
 }
 
@@ -530,7 +537,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *operato
 				return kctrl.Result{}, delErr
 			}
 			// update the Eventing CR status.
-			notFoundErr := fmt.Errorf("NATS module has to be installed: %v", err)
+			notFoundErr := fmt.Errorf("%w: %v", ErrNatsModuleMissing, err)
 			return kctrl.Result{}, r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
 				notFoundErr, log)
 		}
@@ -569,7 +576,7 @@ func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *operat
 		return err
 	}
 	if !natsAvailable {
-		return fmt.Errorf(NatsServerNotAvailableMsg)
+		return ErrNATSServerUnavailable
 	}
 	return nil
 }
@@ -608,8 +615,7 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 	if err != nil {
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	} else if !isAPIRuleCRDEnabled {
-		apiRuleMissingErr := errors.New("API-Gateway module is needed for EventMesh backend. APIRules CRD is not installed")
-		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, apiRuleMissingErr, log)
+		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, ErrAPIGatewayModuleMissing, log)
 	}
 
 	// retrieve secret used to authenticate with EventMesh
@@ -617,10 +623,10 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			return kctrl.Result{}, r.syncSubManagerStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
-				fmt.Errorf(EventMeshSecretMissingMessage), log)
+				ErrEventMeshSecretMissing, log)
 		}
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing,
-			fmt.Errorf("failed to get EventMesh secret: %v", err), log)
+			fmt.Errorf("failed to get EventMesh secret: %w", err), log)
 	}
 
 	// Start the EventMesh subscription controller

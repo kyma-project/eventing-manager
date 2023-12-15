@@ -11,6 +11,7 @@ import (
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	kappsv1 "k8s.io/api/apps/v1"
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -33,6 +34,8 @@ const (
 )
 
 var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
+
+var ErrPatchApplyFailed = errors.New("patch apply failed")
 
 // TestMain pre-hook and post-hook to run before and after all tests.
 func TestMain(m *testing.M) {
@@ -611,7 +614,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			wantMatches: gomega.And(
 				matchers.HaveStatusError(),
 				matchers.HaveEventMeshSubManagerNotReadyCondition(
-					"failed to sync Publisher Proxy secret: unexpected error"),
+					"failed to sync Publisher Proxy secret: patch apply failed"),
 				matchers.HaveFinalizer(),
 			),
 			shouldFailSubManager: true,
@@ -1113,5 +1116,5 @@ func (mkc *MockKubeClient) GetCRD(ctx context.Context, name string) (*kapiextens
 }
 
 func (mkc *MockKubeClient) PatchApply(ctx context.Context, object kctrlclient.Object) error {
-	return fmt.Errorf("unexpected error")
+	return ErrPatchApplyFailed
 }

@@ -74,7 +74,7 @@ func Test_Default(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			tc.givenSub.Default()
-			require.Equal(t, tc.givenSub, tc.wantSub)
+			require.Equal(t, tc.wantSub, tc.givenSub)
 		})
 	}
 }
@@ -425,7 +425,7 @@ func Test_validateSubscription(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			_, err := tc.givenSub.ValidateSubscription()
-			require.Equal(t, err, tc.wantErr)
+			require.Equal(t, tc.wantErr, err)
 		})
 	}
 }

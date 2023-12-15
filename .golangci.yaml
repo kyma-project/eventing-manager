@@ -19,7 +19,6 @@ linters:
     - varcheck # deprecated (since v1.49.0) and replaced by 'unused'
     - wsl # too strict and mostly code is not more readable
     ### disabled for now... will be enabled 1 by 1
-    - containedctx
     - dupl
     - errorlint
     - forcetypeassert
@@ -31,7 +30,6 @@ linters:
     - goconst
     - gocritic
     - godox
-    - goerr113
     - gomnd
     - gosec
     - inamedparam
@@ -39,12 +37,9 @@ linters:
     - maintidx
     - noctx
     - nolintlint
-    - nonamedreturns
     - paralleltest
-    - perfsprint
     - prealloc
     - stylecheck
-    - testifylint
     - testpackage
     - thelper
     - tparallel
@@ -54,7 +49,6 @@ linters:
     - wrapcheck
     - godot
     - tagalign
-    - whitespace
 
 linters-settings:
   stylecheck:

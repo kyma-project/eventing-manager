@@ -44,7 +44,6 @@ type syncConditionWebhookCallStatusFunc func(subscription *eventingv1alpha2.Subs
 
 // Reconciler reconciles a Subscription object.
 type Reconciler struct {
-	ctx context.Context
 	client.Client
 	logger            *logger.Logger
 	recorder          record.EventRecorder
@@ -70,7 +69,7 @@ const (
 	backendType                 = "EventMesh"
 )
 
-func NewReconciler(ctx context.Context, client client.Client, logger *logger.Logger, recorder record.EventRecorder,
+func NewReconciler(client client.Client, logger *logger.Logger, recorder record.EventRecorder,
 	cfg env.Config, cleaner cleaner.Cleaner, eventMeshBackend eventmesh.Backend,
 	credential *eventmesh.OAuth2ClientCredentials, mapper backendutils.NameMapper, validator sink.Validator,
 	collector *metrics.Collector, domain string,
@@ -81,7 +80,6 @@ func NewReconciler(ctx context.Context, client client.Client, logger *logger.Log
 		panic(err)
 	}
 	return &Reconciler{
-		ctx:                            ctx,
 		Client:                         client,
 		logger:                         logger,
 		recorder:                       recorder,
@@ -359,7 +357,7 @@ func syncConditionWebhookCallStatus(subscription *eventingv1alpha2.Subscription)
 func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
 	logger *zap.SugaredLogger,
 ) (*apigatewayv1beta1.APIRule, error) {
-	if err := r.sinkValidator.Validate(subscription); err != nil {
+	if err := r.sinkValidator.Validate(ctx, subscription); err != nil {
 		return nil, err
 	}
 
@@ -739,7 +737,7 @@ func (r *Reconciler) emitConditionEvent(subscription *eventingv1alpha2.Subscript
 }
 
 // SetupUnmanaged creates a controller under the client control.
-func (r *Reconciler) SetupUnmanaged(mgr kctrl.Manager) error {
+func (r *Reconciler) SetupUnmanaged(ctx context.Context, mgr kctrl.Manager) error {
 	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return fmt.Errorf("failed to create unmanaged controller: %w", err)
@@ -757,7 +755,7 @@ func (r *Reconciler) SetupUnmanaged(mgr kctrl.Manager) error {
 	}
 
 	go func(r *Reconciler, c controller.Controller) {
-		if err := c.Start(r.ctx); err != nil {
+		if err := c.Start(ctx); err != nil {
 			r.namedLogger().Fatalw("Failed to start controller",
 				"name", reconcilerName, "error", err)
 		}
@@ -767,7 +765,7 @@ func (r *Reconciler) SetupUnmanaged(mgr kctrl.Manager) error {
 }
 
 // checkStatusActive checks if the subscription is active and if not, sets a timer for retry.
-func (r *Reconciler) checkStatusActive(subscription *eventingv1alpha2.Subscription) (active bool, err error) {
+func (r *Reconciler) checkStatusActive(subscription *eventingv1alpha2.Subscription) (bool, error) {
 	if subscription.Status.Backend.EventMeshSubscriptionStatus == nil {
 		return false, nil
 	}
@@ -788,13 +786,13 @@ func (r *Reconciler) checkStatusActive(subscription *eventingv1alpha2.Subscripti
 	}
 
 	// check the timeout
-	if t0, er := time.Parse(time.RFC3339, subscription.Status.Backend.FailedActivation); er != nil {
-		err = er
+	if t0, err := time.Parse(time.RFC3339, subscription.Status.Backend.FailedActivation); err != nil {
+		return false, err
 	} else if t1.Sub(t0) > timeoutRetryActiveEmsStatus {
-		err = xerrors.Errorf("timeout waiting for the subscription to be active: %s", subscription.Name)
+		return false, errors.Errorf("timeout waiting for the subscription to be active: %s", subscription.Name)
 	}
 
-	return false, err
+	return false, nil
 }
 
 // checkLastFailedDelivery checks if LastFailedDelivery exists and if it happened after LastSuccessfulDelivery.
@@ -809,7 +807,7 @@ func checkLastFailedDelivery(subscription *eventingv1alpha2.Subscription) (bool,
 	var err error
 	var lastFailedDeliveryTime time.Time
 	if lastFailedDeliveryTime, err = time.Parse(time.RFC3339, lastFailed); err != nil {
-		return true, xerrors.Errorf("failed to parse LastFailedDelivery: %v", err)
+		return true, errors.Errorf("failed to parse LastFailedDelivery: %v", err)
 	}
 
 	// Check if LastSuccessfulDelivery exists. If not, LastFailedDelivery happened last.
@@ -821,7 +819,7 @@ func checkLastFailedDelivery(subscription *eventingv1alpha2.Subscription) (bool,
 	// Try to parse LastSuccessfulDelivery.
 	var lastSuccessfulDeliveryTime time.Time
 	if lastSuccessfulDeliveryTime, err = time.Parse(time.RFC3339, lastSuccessful); err != nil {
-		return true, xerrors.Errorf("failed to parse LastSuccessfulDelivery: %v", err)
+		return true, errors.Errorf("failed to parse LastSuccessfulDelivery: %v", err)
 	}
 
 	return lastFailedDeliveryTime.After(lastSuccessfulDeliveryTime), nil

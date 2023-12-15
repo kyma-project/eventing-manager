@@ -21,13 +21,13 @@ func TestClearConditions(t *testing.T) {
 			},
 		},
 	}
-	require.NotEqual(t, 0, len(givenEventingStatus.Conditions))
+	require.NotEmpty(t, givenEventingStatus.Conditions)
 
 	// when
 	givenEventingStatus.ClearConditions()
 
 	// then
-	require.Len(t, givenEventingStatus.Conditions, 0)
+	require.Empty(t, givenEventingStatus.Conditions)
 }
 
 func TestClearPublisherService(t *testing.T) {

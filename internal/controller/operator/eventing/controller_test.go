@@ -1,7 +1,7 @@
 package eventing
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"testing"
 
@@ -78,7 +78,7 @@ func Test_handleEventingCRAllowedCheck(t *testing.T) {
 			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
 			// when
-			result, err := testEnv.Reconciler.handleEventingCRAllowedCheck(testEnv.Context, tc.givenEventing, logger)
+			result, err := testEnv.Reconciler.handleEventingCRAllowedCheck(context.Background(), tc.givenEventing, logger)
 
 			// then
 			require.NoError(t, err)
@@ -176,13 +176,13 @@ func Test_handleBackendSwitching(t *testing.T) {
 			),
 			givenNATSSubManagerMock: func() *submgrmanagermocks.Manager {
 				managerMock := new(submgrmanagermocks.Manager)
-				managerMock.On("Stop", true).Return(errors.New("failed to stop")).Once()
+				managerMock.On("Stop", true).Return(ErrFailedToStop).Once()
 				return managerMock
 			},
 			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
 				return new(submgrmanagermocks.Manager)
 			},
-			wantError:                 errors.New("failed to stop"),
+			wantError:                 ErrFailedToStop,
 			wantEventingState:         operatorv1alpha1.StateReady,
 			wantEventingConditionsLen: 1,
 			wantNATSStopped:           false,
@@ -223,10 +223,10 @@ func Test_handleBackendSwitching(t *testing.T) {
 			},
 			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
 				managerMock := new(submgrmanagermocks.Manager)
-				managerMock.On("Stop", true).Return(errors.New("failed to stop")).Once()
+				managerMock.On("Stop", true).Return(ErrFailedToStop).Once()
 				return managerMock
 			},
-			wantError:                 errors.New("failed to stop"),
+			wantError:                 ErrFailedToStop,
 			wantEventingState:         operatorv1alpha1.StateReady,
 			wantEventingConditionsLen: 1,
 			wantNATSStopped:           false,
@@ -320,7 +320,7 @@ func Test_startNatsCRWatch(t *testing.T) {
 		{
 			name:         "NATS watcher error",
 			watchStarted: false,
-			watchErr:     errors.New("NATS watcher error"),
+			watchErr:     ErrUseMeInMocks,
 		},
 	}
 
@@ -395,8 +395,8 @@ func Test_stopNatsCRWatch(t *testing.T) {
 			testEnv.Reconciler.stopNATSCRWatch(eventing)
 
 			// Check the results
-			require.Equal(t, tc.watchNatsWatcher, nil)
-			require.Equal(t, tc.natsCRWatchStarted, false)
+			require.Equal(t, nil, tc.watchNatsWatcher)
+			require.False(t, tc.natsCRWatchStarted)
 		})
 	}
 }

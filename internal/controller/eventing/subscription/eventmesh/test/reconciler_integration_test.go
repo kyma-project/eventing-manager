@@ -13,6 +13,7 @@ import (
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -693,7 +694,7 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 
 			// check if the created APIRule is as required
 			apiRules, err := getAPIRulesList(ctx, subscriberSvc)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			apiRuleUpdated := filterAPIRulesForASvc(apiRules, subscriberSvc)
 			getAPIRuleAssert(ctx, g, &apiRuleUpdated).Should(gomega.And(
 				eventingtesting.HaveNotEmptyHost(),

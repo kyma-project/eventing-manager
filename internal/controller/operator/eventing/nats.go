@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -12,6 +13,8 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 )
+
+var ErrCannotBuildNATSURL = errors.New("NATS CR is not found to build NATS server URL")
 
 func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
 	// get the subscription config
@@ -162,5 +165,5 @@ func (n *NatsConfigHandlerImpl) getNATSUrl(ctx context.Context, namespace string
 	for _, nats := range natsList.Items {
 		return fmt.Sprintf("nats://%s.%s.svc.cluster.local:%d", nats.Name, nats.Namespace, natsClientPort), nil
 	}
-	return "", fmt.Errorf("NATS CR is not found to build NATS server URL")
+	return "", ErrCannotBuildNATSURL
 }

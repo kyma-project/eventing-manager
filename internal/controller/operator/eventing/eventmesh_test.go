@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
@@ -31,6 +30,12 @@ const (
 	defaultEventingWebhookAuthSecretNamespace = "kyma-system"
 )
 
+var (
+	ErrFailedToStart = errors.New("failed to start")
+	ErrFailedToStop  = errors.New("failed to stop")
+)
+
+//nolint:goerr113 // all tests here need to be fixed, as they use require.ErrorAs and use it wrongly
 func Test_reconcileEventMeshSubManager(t *testing.T) {
 	t.Parallel()
 
@@ -463,11 +468,11 @@ func Test_stopEventMeshSubManager(t *testing.T) {
 			name: "should return error when subscription manager fails to stop",
 			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
 				managerMock := new(submgrmanagermocks.Manager)
-				managerMock.On("Stop", mock.Anything).Return(errors.New("failed to stop")).Once()
+				managerMock.On("Stop", mock.Anything).Return(ErrFailedToStop).Once()
 				return managerMock
 			},
 			givenIsEventMeshSubManagerStarted: true,
-			wantError:                         errors.New("failed to stop"),
+			wantError:                         ErrFailedToStop,
 			wantAssertCheck:                   true,
 		},
 		{
@@ -545,7 +550,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 		name           string
 		messagingData  []byte
 		namespaceData  []byte
-		expectedSecret kcorev1.Secret
+		expectedSecret *kcorev1.Secret
 		expectedError  error
 	}{
 		{
@@ -598,7 +603,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 									  }
 									] `),
 			namespaceData: []byte("valid/namespace"),
-			expectedSecret: kcorev1.Secret{
+			expectedSecret: &kcorev1.Secret{
 				TypeMeta: kmetav1.TypeMeta{
 					Kind:       "Secret",
 					APIVersion: kcorev1.SchemeGroupVersion.String(),
@@ -623,7 +628,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 		{
 			name:          "with empty message data",
 			namespaceData: []byte("valid/namespace"),
-			expectedError: errors.New("message is missing from BEB secret"),
+			expectedError: ErrEMSecretMessagingMissing,
 		},
 		{
 			name: "with empty namespace data",
@@ -674,7 +679,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 										"uri": "https://rest-messaging"
 									  }
 									]`),
-			expectedError: errors.New("namespace is missing from BEB secret"),
+			expectedError: ErrEMSecretNamespaceMissing,
 		},
 	}
 
@@ -684,12 +689,12 @@ func Test_GetSecretForPublisher(t *testing.T) {
 
 			gotPublisherSecret, err := getSecretForPublisher(publisherSecret)
 			if tc.expectedError != nil {
-				assert.NotNil(t, err)
-				assert.Equal(t, tc.expectedError.Error(), err.Error(), "invalid error")
+				require.Error(t, err)
+				require.ErrorContains(t, err, tc.expectedError.Error())
 				return
 			}
-			assert.Nil(t, err)
-			assert.Equal(t, tc.expectedSecret, *gotPublisherSecret, "invalid publisher secret")
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedSecret, gotPublisherSecret, "invalid publisher secret")
 		})
 	}
 }
@@ -902,7 +907,7 @@ func Test_SyncPublisherProxySecret(t *testing.T) {
 			givenSecret: utils.NewEventMeshSecret("valid", "test-namespace"),
 			mockKubeClient: func() *k8smocks.Client {
 				kubeClient := new(k8smocks.Client)
-				kubeClient.On("PatchApply", mock.Anything, mock.Anything).Return(errors.New("fake error")).Once()
+				kubeClient.On("PatchApply", mock.Anything, mock.Anything).Return(ErrUseMeInMocks).Once()
 				return kubeClient
 			},
 			wantErr: true,

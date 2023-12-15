@@ -22,7 +22,7 @@ func TestSinkValidator(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 	ctx := context.Background()
 	recorder := &record.FakeRecorder{}
-	sinkValidator := NewValidator(ctx, fakeClient, recorder)
+	sinkValidator := NewValidator(fakeClient, recorder)
 
 	testCases := []struct {
 		name                  string
@@ -80,7 +80,7 @@ func TestSinkValidator(t *testing.T) {
 
 			// when
 			// call the defaultSinkValidator function
-			err := sinkValidator.Validate(sub)
+			err := sinkValidator.Validate(ctx, sub)
 
 			// then
 			// given error should match expected error
