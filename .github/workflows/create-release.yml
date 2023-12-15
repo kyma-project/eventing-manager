@@ -66,10 +66,10 @@ jobs:
 
       - name: Create and upload eventing-manager.yaml and eventing-default-cr.yaml
         env:
-          PULL_BASE_REF: ${{ PULL_BASE_REF }}
+          PULL_BASE_REF: ${{ github.event.input.name }}
           BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
         run: |
-          ./scripts/render_and_upload_manifests.sh ${{ PULL_BASE_REF }} ${{ BOT_GITHUB_TOKEN }}
+          ./scripts/render_and_upload_manifests.sh
 
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
