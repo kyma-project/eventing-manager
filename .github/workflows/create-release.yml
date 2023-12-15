@@ -69,7 +69,6 @@ jobs:
           PULL_BASE_REF: ${{ github.event.input.name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMG: "europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${{ github.event.input.name }}"
-          MODULE_REGISTRY: "europe-docker.pkg.dev/kyma-project/prod/unsigned"
           KUSTOMIZE_VERSION: "v4.5.6"
         run: |
           ./scripts/render_and_upload_manifests.sh
