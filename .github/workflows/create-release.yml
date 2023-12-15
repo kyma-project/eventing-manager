@@ -9,11 +9,13 @@ on:
         required: true
 
 jobs:
-  verify-head-status:
-    name: Verify head (image version and prow job)
+  verify-release:
+    name: Verify the release branch, tag and version
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check if the desired version is valid
+        run: .github/scripts/check_version_format.sh
       - name: Checkout code
         uses: actions/checkout@v4
         with:
