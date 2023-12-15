@@ -33,7 +33,6 @@ linters:
     - inamedparam
     - ireturn
     - maintidx
-    - noctx
     - nolintlint
     - paralleltest
     - prealloc
@@ -46,7 +45,6 @@ linters:
     - varnamelen
     - wrapcheck
     - godot
-    - tagalign
 
 linters-settings:
   stylecheck:

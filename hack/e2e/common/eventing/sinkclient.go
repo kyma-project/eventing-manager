@@ -2,6 +2,7 @@ package eventing
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -58,7 +59,8 @@ func (sc *SinkClient) GetEventFromSink(eventId string) (*SinkEvent, error) {
 	url := sc.EventsEndpoint(eventId)
 	sc.logger.Debug(fmt.Sprintf("Fetching event with ID: %s from the sink URL: %s", eventId, url))
 
-	req, err := http.NewRequest(http.MethodGet, url, bytes.NewBuffer([]byte{}))
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, bytes.NewBuffer([]byte{}))
 	if err != nil {
 		err = errors.Wrap(err, "Failed to create HTTP request for fetching event from sink")
 		sc.logger.Debug(err.Error())

@@ -111,7 +111,9 @@ func Test_cleanupEventMesh(t *testing.T) {
 	getSubscriptionURL := fmt.Sprintf(client.GetURLFormat, nameMapper.MapSubscriptionName(subscription.Name,
 		subscription.Namespace))
 	getSubscriptionURL = bebMock.MessagingURL + getSubscriptionURL
-	resp, err := http.Get(getSubscriptionURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, getSubscriptionURL, nil)
+	require.NoError(t, err)
+	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -135,7 +137,10 @@ func Test_cleanupEventMesh(t *testing.T) {
 
 	// then
 	// the BEB subscription should be deleted from BEB Mock
-	resp, err = http.Get(getSubscriptionURL)
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, getSubscriptionURL, nil)
+	require.NoError(t, err)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusNotFound, resp.StatusCode)

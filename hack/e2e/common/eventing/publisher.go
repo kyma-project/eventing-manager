@@ -64,9 +64,10 @@ func (p *Publisher) SendCloudEventWithRetries(event *cloudevents.Event, encoding
 }
 
 func (p *Publisher) SendLegacyEvent(source, eventType, payload string) error {
+	ctx := context.Background()
 	url := p.LegacyPublishEndpoint(source)
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBufferString(payload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBufferString(payload))
 	if err != nil {
 		err = errors.Wrap(err, "Failed to create HTTP request for sending legacy event")
 		p.logger.Debug(err.Error())
