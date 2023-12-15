@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu # stop on error and on missing variable.
+
 # This script checks that the TAG arg does not exist, already.
 
 TAG="$1"
