@@ -12,27 +12,17 @@ jobs:
   verify-release:
     name: Verify the release branch, tag and version
     runs-on: ubuntu-latest
-
     steps:
       - name: Check if the desired version is valid
         run: .github/scripts/check_version_format.sh
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Verify that the current branch has a name that starts with 'release-'
-        run: |
-          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          if [[ "$CURRENT_BRANCH" == release-* ]]; then
-            echo "Branch name starts with 'release-'."
-          else
-            echo "Branch name does not start with 'release-'."
-            exit 1
-          fi
-
-      - name: Check image Tag
-        run: ./scripts/check_tag_info.sh ${{ github.event.inputs.name }}
+        run: .github/scripts/verify_is_on_release_branch.sh
 
   create-draft:
     name: Create draft release
