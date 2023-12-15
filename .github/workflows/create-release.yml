@@ -72,7 +72,7 @@ jobs:
           MODULE_REGISTRY: "europe-docker.pkg.dev/kyma-project/prod/unsigned"
           KUSTOMIZE_VERSION: "v4.5.6"
         run: |
-          ./scripts/render_and_upload_manifests.sh
+          ./scripts/render_and_upload_manifests.sh ci
 
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
