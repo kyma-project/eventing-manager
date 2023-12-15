@@ -67,7 +67,7 @@ jobs:
       - name: Create and upload eventing-manager.yaml and eventing-default-cr.yaml
         env:
           PULL_BASE_REF: ${{ PULL_BASE_REF }}
-          BOT_GITHUB_TOKEN: ${{ BOT_GITHUB_TOKEN }}
+          BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
         run: |
           ./scripts/render_and_upload_manifests.sh ${{ PULL_BASE_REF }} ${{ BOT_GITHUB_TOKEN }}
 
