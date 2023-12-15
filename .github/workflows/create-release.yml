@@ -68,8 +68,10 @@ jobs:
         env:
           PULL_BASE_REF: ${{ github.event.input.name }}
           BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+          IMG: "europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${{ github.event.input.name }}"
+          MODULE_REGISTRY: "europe-docker.pkg.dev/kyma-project/prod/unsigned"
         run: |
-          ./scripts/render_and_upload_manifests.sh
+          ./scripts/render_and_upload_manifests.sh ci
 
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
