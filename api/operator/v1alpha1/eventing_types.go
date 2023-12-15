@@ -216,6 +216,7 @@ type Logging struct {
 	LogLevel string `json:"logLevel,omitempty"`
 }
 
+//nolint:gochecknoinits // registers Eventing CRD at startup
 func init() {
 	SchemeBuilder.Register(&Eventing{}, &EventingList{})
 }
