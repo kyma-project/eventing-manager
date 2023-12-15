@@ -70,6 +70,7 @@ jobs:
           BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
           IMG: "europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${{ github.event.input.name }}"
           MODULE_REGISTRY: "europe-docker.pkg.dev/kyma-project/prod/unsigned"
+          KUSTOMIZE_VERSION: "v4.5.6"
         run: |
           ./scripts/render_and_upload_manifests.sh
 
