@@ -32,11 +32,6 @@ jobs:
       - name: Check image Tag
         run: ./scripts/check_tag_info.sh ${{ github.event.inputs.name }}
 
-        #  run-unit-tests:
-        #    name: Unit tests
-        #    needs: verify-head-status
-        #    uses: "./.github/workflows/run-unit-tests.yaml"
-
   create-draft:
     name: Create draft release
     needs: verify-head-status
@@ -69,13 +64,15 @@ jobs:
       - name: Verify job status
         run: ./scripts/verify-status.sh ${{ github.ref_name }} 600 10 30
 
+      - name: Create and upload eventing-manager.yaml and eventing-default-cr.yaml
+        env:
+          PULL_BASE_REF: ${{ PULL_BASE_REF }}
+          BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+        run: |
+          ./scripts/render_and_upload_manifests.sh ${{ PULL_BASE_REF }} ${{ BOT_GITHUB_TOKEN }}
+
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
-
-  # devOps-Insights:
-  #   name: DevOps Insights
-  #   needs: [verify-head-status, create-draft, run-unit-tests]
-  #   uses: "./.github/workflows/metrics.yaml"
 
   publish-release:
     name: Publish release
