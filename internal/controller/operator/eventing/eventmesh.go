@@ -27,11 +27,14 @@ const (
 	secretKeyClientSecret = "client_secret"
 	secretKeyTokenURL     = "token_url"
 	secretKeyCertsURL     = "certs_url"
+
+	EventMeshSecretMissingMessage = "The specified EventMesh secret is not found. Please provide an existing secret."
 )
 
 var (
 	ErrEMSecretMessagingMissing = errors.New("messaging is missing from EM secret")
 	ErrEMSecretNamespaceMissing = errors.New("namespace is missing from EM secret")
+	ErrEventMeshSecretMissing   = errors.New(EventMeshSecretMissingMessage)
 )
 
 type oauth2Credentials struct {
@@ -40,10 +43,6 @@ type oauth2Credentials struct {
 	tokenURL     []byte
 	certsURL     []byte
 }
-
-const EventMeshSecretMissingMessage = "The specified EventMesh secret is not found. Please provide an existing secret."
-
-var ErrEventMeshSecretMissing = errors.New(EventMeshSecretMissingMessage)
 
 func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing,
 	eventMeshSecret *kcorev1.Secret, log *zap.SugaredLogger,
