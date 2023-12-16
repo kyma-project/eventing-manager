@@ -27,6 +27,18 @@ jobs:
       - name: Verify that the desired release tag does not already exist
         run: .github/scripts/check_tag_does_not_exist.sh
 
+  generate-sec-scanner-config:
+    name: Generate the sec-scanner-config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Generate sec scanner config
+        run: .github/scripts/generate_sec-scanners-config.sh ${{ github.event.inputs.name }}
+
   create-draft:
     name: Create draft release
     needs: verify-head-status
