@@ -23,7 +23,6 @@ linters:
     - errorlint
     - forcetypeassert
     - funlen
-    - ginkgolinter
     - gocognit
     - goconst
     - gocritic

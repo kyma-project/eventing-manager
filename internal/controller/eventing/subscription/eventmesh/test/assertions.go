@@ -33,7 +33,7 @@ func getSubscriptionAssert(ctx context.Context, g *gomega.GomegaWithT,
 func getAPIRuleForASvcAssert(ctx context.Context, g *gomega.GomegaWithT, svc *kcorev1.Service) gomega.AsyncAssertion {
 	return g.Eventually(func() apigatewayv1beta1.APIRule {
 		apiRules, err := getAPIRulesList(ctx, svc)
-		g.Expect(err).Should(gomega.BeNil())
+		g.Expect(err).ShouldNot(gomega.HaveOccurred())
 		return filterAPIRulesForASvc(apiRules, svc)
 	}, smallTimeOut, smallPollingInterval)
 }
