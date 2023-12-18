@@ -71,6 +71,12 @@ const (
 	webhookServerPort  = 9443
 )
 
+func syncLogger(logger *logger.Logger) {
+	if err := logger.WithContext().Sync(); err != nil {
+		log.Printf("Failed to flush logger, error: %v", err)
+	}
+}
+
 func main() { //nolint:funlen // main function needs to initialize many object
 	scheme := runtime.NewScheme()
 	registerSchemas(scheme)
@@ -95,12 +101,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	if err != nil {
 		log.Fatalf("Failed to initialize logger, error: %v", err)
 	}
-	defer func() {
-		if err = ctrLogger.WithContext().Sync(); err != nil {
-			log.Printf("Failed to flush logger, error: %v", err)
-		}
-	}()
-
 	// Set controller core logger.
 	kctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 
@@ -120,6 +120,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 
@@ -127,6 +128,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	k8sClient := mgr.GetClient()
 	dynamicClient, err := dynamic.NewForConfig(k8sRestCfg)
 	if err != nil {
+		syncLogger(ctrLogger)
 		panic(err.Error())
 	}
 
@@ -134,6 +136,8 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	apiClientSet, err := kapixclientset.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		setupLog.Error(err, "failed to create new k8s clientset")
+		syncLogger(ctrLogger)
+
 		os.Exit(1)
 	}
 
@@ -189,11 +193,13 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	// Setup webhooks.
 	if err = (&eventingv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 
 	if err = (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 
@@ -201,21 +207,26 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	err = peerauthentication.SyncPeerAuthentications(ctx, kubeClient, ctrLogger.WithContext().Named("main"))
 	if err != nil {
 		setupLog.Error(err, "unable to sync PeerAuthentication")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 
 	setupLog.Info("starting manager")
 	if err = mgr.Start(kctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
+	syncLogger(ctrLogger)
 }

@@ -38,7 +38,7 @@ func NewHTTPClient(baseURL string, client *http.Client) (*Client, error) {
 
 	// add trailing '/' to the url path, so that we can combine the url with other paths according to standards
 	if !strings.HasSuffix(u.Path, "/") {
-		u.Path = u.Path + "/"
+		u.Path += "/"
 	}
 	if err != nil {
 		return nil, err

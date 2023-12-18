@@ -24,7 +24,6 @@ linters:
     - funlen
     - gocognit
     - goconst
-    - gocritic
     - gosec
     - inamedparam
     - ireturn
