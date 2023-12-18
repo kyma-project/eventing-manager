@@ -55,6 +55,7 @@ type TestEnvironment struct {
 }
 
 func getJetStreamClient(t *testing.T, natsURL string) nats.JetStreamContext {
+	t.Helper()
 	conn, err := nats.Connect(natsURL)
 	require.NoError(t, err)
 	jsClient, err := conn.JetStream()
@@ -77,9 +78,8 @@ func getNATSConf(natsURL string, natsPort int) env.NATSConfig {
 	}
 }
 
-func createAndSyncSubscription(t *testing.T, sinkURL string,
-	jsBackend *jetstream.JetStream,
-) *eventingv1alpha2.Subscription {
+func createAndSyncSubscription(t *testing.T, sinkURL string, jsBackend *jetstream.JetStream) *eventingv1alpha2.Subscription {
+	t.Helper()
 	// create test subscription
 	testSub := eventingtesting.NewSubscription(
 		subscriptionName, subscriptionNamespace,
@@ -101,6 +101,7 @@ func createAndSyncSubscription(t *testing.T, sinkURL string,
 }
 
 func (te *TestEnvironment) consumersEquals(t *testing.T, length int) {
+	t.Helper()
 	// verify that the number of consumers is one
 	info, err := te.jsCtx.StreamInfo(te.envConf.JSStreamName)
 	require.NoError(t, err)
@@ -108,6 +109,7 @@ func (te *TestEnvironment) consumersEquals(t *testing.T, length int) {
 }
 
 func setUpTestEnvironment(t *testing.T) *TestEnvironment {
+	t.Helper()
 	// create a test subscriber and natsServer
 	subscriber := eventingtesting.NewSubscriber()
 	// create NATS Server with JetStream enabled

@@ -731,6 +731,7 @@ type TestEnvironment struct {
 
 // setupTestEnvironment is a TestEnvironment constructor.
 func setupTestEnvironment(t *testing.T, objs ...client.Object) *TestEnvironment {
+	t.Helper()
 	mockedBackend := &backendjetstreammocks.Backend{}
 	fakeClient := createFakeClientBuilder(t).WithObjects(objs...).WithStatusSubresource(objs...).Build()
 	recorder := &record.FakeRecorder{}
@@ -763,12 +764,14 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *TestEnvironment 
 }
 
 func createFakeClientBuilder(t *testing.T) *fake.ClientBuilder {
+	t.Helper()
 	err := eventingv1alpha2.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
 	return fake.NewClientBuilder().WithScheme(scheme.Scheme)
 }
 
 func ensureFinalizerMatch(t *testing.T, subscription *eventingv1alpha2.Subscription, wantFinalizers []string) {
+	t.Helper()
 	if len(wantFinalizers) == 0 {
 		require.Empty(t, subscription.ObjectMeta.Finalizers)
 	} else {
@@ -785,9 +788,8 @@ func fetchTestSubscription(ctx context.Context, r *Reconciler) (eventingv1alpha2
 	return fetchedSub, err
 }
 
-func ensureSubscriptionMatchesConditionsAndStatus(t *testing.T,
-	subscription eventingv1alpha2.Subscription, wantConditions []eventingv1alpha2.Condition, wantStatus bool,
-) {
+func ensureSubscriptionMatchesConditionsAndStatus(t *testing.T, subscription eventingv1alpha2.Subscription, wantConditions []eventingv1alpha2.Condition, wantStatus bool) {
+	t.Helper()
 	require.Equal(t, len(wantConditions), len(subscription.Status.Conditions))
 	comparisonResult := eventingv1alpha2.ConditionsEquals(wantConditions, subscription.Status.Conditions)
 	require.True(t, comparisonResult)

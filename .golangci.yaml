@@ -32,7 +32,6 @@ linters:
     - paralleltest
     - prealloc
     - testpackage
-    - thelper
     - tparallel
     - unconvert
     - unparam

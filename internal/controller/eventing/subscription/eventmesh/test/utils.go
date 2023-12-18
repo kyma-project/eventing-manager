@@ -279,6 +279,7 @@ func getTestNamespace() string {
 }
 
 func ensureNamespaceCreated(ctx context.Context, t *testing.T, namespace string) {
+	t.Helper()
 	if namespace == "default" {
 		return
 	}
@@ -304,18 +305,22 @@ func fixtureNamespace(name string) *kcorev1.Namespace {
 }
 
 func ensureK8sResourceCreated(ctx context.Context, t *testing.T, obj client.Object) {
+	t.Helper()
 	require.NoError(t, emTestEnsemble.k8sClient.Create(ctx, obj))
 }
 
 func ensureK8sResourceNotCreated(ctx context.Context, t *testing.T, obj client.Object, err error) {
+	t.Helper()
 	require.Equal(t, emTestEnsemble.k8sClient.Create(ctx, obj), err)
 }
 
 func ensureK8sResourceDeleted(ctx context.Context, t *testing.T, obj client.Object) {
+	t.Helper()
 	require.NoError(t, emTestEnsemble.k8sClient.Delete(ctx, obj))
 }
 
 func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscription *eventingv1alpha2.Subscription) {
+	t.Helper()
 	require.Eventually(t, func() bool {
 		latestSubscription := &eventingv1alpha2.Subscription{}
 		lookupKey := types.NamespacedName{
@@ -333,6 +338,7 @@ func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscriptio
 
 // ensureAPIRuleStatusUpdatedWithStatusReady updates the status fof the APIRule (mocking APIGateway controller).
 func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
+	t.Helper()
 	require.Eventually(t, func() bool {
 		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
 		if err != nil {
@@ -351,6 +357,7 @@ func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T
 
 // ensureAPIRuleNotFound ensures that a APIRule does not exists (or deleted).
 func ensureAPIRuleNotFound(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
+	t.Helper()
 	require.Eventually(t, func() bool {
 		apiRuleKey := client.ObjectKey{
 			Namespace: apiRule.Namespace,
@@ -439,6 +446,7 @@ func getEventMeshKeyForMock(name string) string {
 
 // ensureK8sEventReceived checks if a certain event have triggered for the given namespace.
 func ensureK8sEventReceived(t *testing.T, event kcorev1.Event, namespace string) {
+	t.Helper()
 	ctx := context.TODO()
 	require.Eventually(t, func() bool {
 		// get all events from k8s for namespace

@@ -265,6 +265,7 @@ func getTestNamespace() string {
 }
 
 func ensureNamespaceCreated(ctx context.Context, t *testing.T, namespace string) {
+	t.Helper()
 	if namespace == "default" {
 		return
 	}
@@ -290,10 +291,12 @@ func fixtureNamespace(name string) *kcorev1.Namespace {
 }
 
 func ensureK8sResourceCreated(ctx context.Context, t *testing.T, obj client.Object) {
+	t.Helper()
 	require.NoError(t, emTestEnsemble.k8sClient.Create(ctx, obj))
 }
 
 func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscription *eventingv1alpha2.Subscription) {
+	t.Helper()
 	require.Eventually(t, func() bool {
 		latestSubscription := &eventingv1alpha2.Subscription{}
 		lookupKey := types.NamespacedName{
@@ -311,6 +314,7 @@ func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscriptio
 
 // ensureAPIRuleStatusUpdatedWithStatusReady updates the status fof the APIRule (mocking APIGateway controller).
 func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
+	t.Helper()
 	require.Eventually(t, func() bool {
 		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
 		if err != nil {

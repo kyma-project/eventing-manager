@@ -37,6 +37,7 @@ type MockedUnitTestEnvironment struct {
 }
 
 func NewMockedUnitTestEnvironment(t *testing.T, objs ...client.Object) *MockedUnitTestEnvironment {
+	t.Helper()
 	// setup logger
 	ctrLogger, err := logger.New("json", "info")
 	require.NoError(t, err)

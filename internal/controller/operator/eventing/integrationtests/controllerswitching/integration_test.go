@@ -197,6 +197,7 @@ func Test_Switching(t *testing.T) {
 }
 
 func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
+	t.Helper()
 	testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
@@ -205,6 +206,7 @@ func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1a
 }
 
 func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
+	t.Helper()
 	testEnvironment.EnsureEPPK8sResourcesExists(t, *givenEventing)
 
 	// check if the owner reference is set.

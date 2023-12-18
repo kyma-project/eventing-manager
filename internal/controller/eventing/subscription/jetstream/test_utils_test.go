@@ -331,9 +331,8 @@ func NewSubscription(ens *Ensemble,
 	return subscription
 }
 
-func CreateSubscription(t *testing.T, ens *Ensemble,
-	subscriptionOpts ...eventingtesting.SubscriptionOpt,
-) *eventingv1alpha2.Subscription {
+func CreateSubscription(t *testing.T, ens *Ensemble, subscriptionOpts ...eventingtesting.SubscriptionOpt) *eventingv1alpha2.Subscription {
+	t.Helper()
 	subscription := NewSubscription(ens, subscriptionOpts...)
 	EnsureNamespaceCreatedForSub(t, ens, subscription)
 	require.NoError(t, ensureSubscriptionCreated(ens, subscription))
@@ -471,6 +470,7 @@ func createSubscriberSvcInK8s(ens *Ensemble) error {
 
 // EnsureNamespaceCreatedForSub creates the namespace for subscription if it does not exist.
 func EnsureNamespaceCreatedForSub(t *testing.T, ens *Ensemble, subscription *eventingv1alpha2.Subscription) {
+	t.Helper()
 	// create subscription on cluster
 	if subscription.Namespace != "default " {
 		// create testing namespace
@@ -493,6 +493,7 @@ func ensureSubscriptionCreated(ens *Ensemble, subscription *eventingv1alpha2.Sub
 
 // EnsureK8sResourceNotCreated ensures that the obj creation in K8s fails.
 func EnsureK8sResourceNotCreated(t *testing.T, ens *Ensemble, obj client.Object, err error) {
+	t.Helper()
 	require.Equal(t, ens.K8sClient.Create(context.Background(), obj), err)
 }
 

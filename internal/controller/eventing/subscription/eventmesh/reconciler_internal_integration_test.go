@@ -1371,6 +1371,7 @@ type testEnvironment struct {
 
 // setupTestEnvironment is a testEnvironment constructor.
 func setupTestEnvironment(t *testing.T, objs ...client.Object) *testEnvironment {
+	t.Helper()
 	mockedBackend := &mocks.Backend{}
 	fakeClient := createFakeClientBuilder(t).WithObjects(objs...).WithStatusSubresource(objs...).Build()
 	recorder := &record.FakeRecorder{}
@@ -1396,6 +1397,7 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *testEnvironment 
 }
 
 func createFakeClientBuilder(t *testing.T) *fake.ClientBuilder {
+	t.Helper()
 	err := eventingv1alpha2.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
 	err = apigatewayv1beta1.AddToScheme(scheme.Scheme)

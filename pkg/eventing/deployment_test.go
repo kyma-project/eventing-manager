@@ -289,6 +289,7 @@ func Test_GetEventMeshEnvVars(t *testing.T) {
 
 // natsBackendAssertions checks that the NATS-specific data was set in the NewNATSPublisherDeployment.
 func natsBackendAssertions(t *testing.T, publisherName string, deployment kappsv1.Deployment) {
+	t.Helper()
 	container := findPublisherContainer(publisherName, deployment)
 	assert.NotNil(t, container)
 
@@ -308,6 +309,7 @@ func natsBackendAssertions(t *testing.T, publisherName string, deployment kappsv
 
 // eventMeshBackendAssertions checks that the eventmesh-specific data was set in the NewEventMeshPublisherDeployment.
 func eventMeshBackendAssertions(t *testing.T, publisherName string, deployment kappsv1.Deployment) {
+	t.Helper()
 	container := findPublisherContainer(publisherName, deployment)
 	assert.NotNil(t, container)
 

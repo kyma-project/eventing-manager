@@ -365,6 +365,7 @@ func Test_CleanupInV1ToV2Conversion(t *testing.T) {
 }
 
 func v1ToV2Assertions(t *testing.T, wantSub, convertedSub *v1alpha2.Subscription) {
+	t.Helper()
 	assert.Equal(t, wantSub.ObjectMeta, convertedSub.ObjectMeta)
 
 	// Spec
@@ -377,6 +378,7 @@ func v1ToV2Assertions(t *testing.T, wantSub, convertedSub *v1alpha2.Subscription
 }
 
 func v2ToV1Assertions(t *testing.T, wantSub, convertedSub *v1alpha1.Subscription) {
+	t.Helper()
 	assert.Equal(t, wantSub.ObjectMeta, convertedSub.ObjectMeta)
 
 	// Spec

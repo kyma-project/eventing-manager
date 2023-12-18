@@ -721,7 +721,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			if tc.givenDeploymentReady {
 				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
 				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
-				//nolint:godox TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
+				//nolint:godox // TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
 			if tc.wantEnsureK8sObjects {
@@ -1072,6 +1072,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 }
 
 func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
+	t.Helper()
 	testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
@@ -1081,6 +1082,7 @@ func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1a
 }
 
 func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
+	t.Helper()
 	testEnvironment.EnsureEPPK8sResourcesExists(t, *givenEventing)
 
 	// check if the owner reference is set.
