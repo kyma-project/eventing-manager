@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check if the desired version is valid
-        run: .github/scripts/check_version_format.sh
+        run: ./.github/scripts/check_version_format.sh ${{ github.event.inputs.name }}
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -22,13 +22,13 @@ jobs:
           fetch-depth: 0
 
       - name: Verify that the current branch has a name that starts with 'release-'
-        run: .github/scripts/verify_is_on_release_branch.sh
+        run: ./.github/scripts/verify_is_on_release_branch.sh
 
       - name: Verify that the desired release tag does not already exist
-        run: .github/scripts/check_tag_does_not_exist.sh
+        run: ./.github/scripts/check_tag_does_not_exist.sh ${{ github.event.inputs.name }}
 
-  generate-sec-scanner-config:
-    name: Generate the sec-scanner-config
+  generate-sec-scanners-config:
+    name: Generate the sec-scanners-config
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -36,8 +36,24 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Generate sec scanner config
+      - name: Generate sec-scanners-config
         run: .github/scripts/generate_sec-scanners-config.sh ${{ github.event.inputs.name }}
+
+      - name: Create PR if anything changed
+        env:
+          GH_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          prs=$(gh pr list -A ${{ env.GIT_NAME }} --state open --json headRefName | jq -r '.[] | .headRefName')
+          if echo $prs | tr " " '\n' | grep -F -q -x ${{ env.BRANCH_NAME }}; then
+            echo "PR already exists, no need to create a new one"
+            echo "PR_NUMBER=$(gh pr list --search "base:main head:${{ env.BRANCH_NAME }}" --json number | jq -r '.[] | .number')" >> $GITHUB_ENV
+          elif [ -z "$(git status --porcelain)" ]; then
+            echo "Nothing changed, no need to create PR"
+            echo "PR_NUMBER=-1" >> $GITHUB_ENV
+          else
+            PR_STATUS=$(scripts/create_sec_scanner_bump_pr.sh ${{ inputs.name }})
+            echo "PR_NUMBER=$(echo "$PR_STATUS" | tail -n 1)" >> $GITHUB_ENV          
+          fi
 
   create-draft:
     name: Create draft release
