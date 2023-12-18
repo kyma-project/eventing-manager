@@ -14,8 +14,9 @@ import (
 )
 
 func NewResourceWatcher(client dynamic.Interface, gvk schema.GroupVersionResource, namespace string) *ResourceWatcher {
+	const resyncTime = 30 * time.Second
 	dynamicInformerFactory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(
-		client, 30*time.Second, namespace, nil)
+		client, resyncTime, namespace, nil)
 	dynamicInformer := dynamicInformerFactory.ForResource(gvk).Informer()
 	return &ResourceWatcher{
 		client:                 client,

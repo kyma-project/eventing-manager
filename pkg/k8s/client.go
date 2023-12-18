@@ -196,8 +196,9 @@ func (c *KubeClient) PatchApply(ctx context.Context, object client.Object) error
 // GetSecret returns the secret with the given namespaced name.
 // namespacedName is in the format of "namespace/name".
 func (c *KubeClient) GetSecret(ctx context.Context, namespacedName string) (*kcorev1.Secret, error) {
+	const nameNamespace = 2
 	substrings := strings.Split(namespacedName, "/")
-	if len(substrings) != 2 {
+	if len(substrings) != nameNamespace {
 		return nil, ErrSecretRefInvalid
 	}
 	secret := &kcorev1.Secret{}

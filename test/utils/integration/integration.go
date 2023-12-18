@@ -226,7 +226,8 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	}
 
 	// create webhook cert secret.
-	newCABundle := make([]byte, 40)
+	const caBundleSize = 40
+	newCABundle := make([]byte, caBundleSize)
 	if _, err := rand.Read(newCABundle); err != nil {
 		return nil, err
 	}
@@ -253,7 +254,8 @@ func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Con
 	// Reference: https://book.kubebuilder.io/reference/envtest.html
 	useExistingCluster := useExistingCluster
 
-	dummyCABundle := make([]byte, 20)
+	const caBundleSize = 20
+	dummyCABundle := make([]byte, caBundleSize)
 	if _, err := rand.Read(dummyCABundle); err != nil {
 		return nil, nil, err
 	}

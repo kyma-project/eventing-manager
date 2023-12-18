@@ -21,6 +21,10 @@ var ErrParseSink = errors.Errorf("failed to parse subscription sink URL")
 
 // GetPortNumberFromURL converts string port from url.URL to uint32 port.
 func GetPortNumberFromURL(u url.URL) (uint32, error) {
+	const (
+		httpPort  = 80
+		httpsPort = 443
+	)
 	port := uint32(0)
 	sinkPort := u.Port()
 	if sinkPort != "" {
@@ -33,9 +37,9 @@ func GetPortNumberFromURL(u url.URL) (uint32, error) {
 	if port == uint32(0) {
 		switch strings.ToLower(u.Scheme) {
 		case "https":
-			port = uint32(443)
+			port = uint32(httpsPort)
 		default:
-			port = uint32(80)
+			port = uint32(httpPort)
 		}
 	}
 	return port, nil

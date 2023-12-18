@@ -158,9 +158,11 @@ func newPublisherProxyClusterRoleBinding(name, namespace string, labels map[stri
 	}
 }
 
-func newPublisherProxyService(name, namespace string, labels map[string]string,
-	selectorLabels map[string]string,
-) *kcorev1.Service {
+func newPublisherProxyService(name, namespace string, labels map[string]string, selectorLabels map[string]string) *kcorev1.Service {
+	const (
+		srcPort    = 80
+		targetPort = 8080
+	)
 	// setting `TypeMeta` is important for patch apply to work.
 	return &kcorev1.Service{
 		TypeMeta: kmetav1.TypeMeta{
@@ -178,17 +180,19 @@ func newPublisherProxyService(name, namespace string, labels map[string]string,
 				{
 					Name:       "http-client",
 					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(8080),
+					Port:       srcPort,
+					TargetPort: intstr.FromInt(targetPort),
 				},
 			},
 		},
 	}
 }
 
-func newPublisherProxyMetricsService(name, namespace string, labels map[string]string,
-	selectorLabels map[string]string,
-) *kcorev1.Service {
+func newPublisherProxyMetricsService(name, namespace string, labels map[string]string, selectorLabels map[string]string) *kcorev1.Service {
+	const (
+		srcPort  = 80
+		trgtPort = 9090
+	)
 	// setting `TypeMeta` is important for patch apply to work.
 	return &kcorev1.Service{
 		TypeMeta: kmetav1.TypeMeta{
@@ -211,17 +215,18 @@ func newPublisherProxyMetricsService(name, namespace string, labels map[string]s
 				{
 					Name:       "http-metrics",
 					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(9090),
+					Port:       srcPort,
+					TargetPort: intstr.FromInt(trgtPort),
 				},
 			},
 		},
 	}
 }
 
-func newPublisherProxyHealthService(name, namespace string, labels map[string]string,
-	selectorLabels map[string]string,
-) *kcorev1.Service {
+func newPublisherProxyHealthService(name, namespace string, labels map[string]string, selectorLabels map[string]string) *kcorev1.Service {
+	const (
+		port = 15020
+	)
 	// setting `TypeMeta` is important for patch apply to work.
 	return &kcorev1.Service{
 		TypeMeta: kmetav1.TypeMeta{
@@ -239,8 +244,8 @@ func newPublisherProxyHealthService(name, namespace string, labels map[string]st
 				{
 					Name:       "http-status",
 					Protocol:   "TCP",
-					Port:       15020,
-					TargetPort: intstr.FromInt(15020),
+					Port:       port,
+					TargetPort: intstr.FromInt32(port),
 				},
 			},
 		},

@@ -27,8 +27,9 @@ func parse(eventType, prefix string) (string, string, string, error) {
 
 	// make sure that the remaining string has at least 4 segments separated by "."
 	// (e.g. application.businessObject.operation.version)
+	const minSAPEventTypeLength = 4
 	parts := strings.Split(eventType, ".")
-	if len(parts) < 4 {
+	if len(parts) < minSAPEventTypeLength {
 		return "", "", "", ErrInvalidFormat
 	}
 

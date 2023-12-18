@@ -32,8 +32,9 @@ func SetupSignalHandler() <-chan struct{} {
 }
 
 func setupStopChannel() <-chan struct{} {
+	const chanSize = 2 // we want to be able to read twice
 	stop := make(chan struct{})
-	osSignal := make(chan os.Signal, 2)
+	osSignal := make(chan os.Signal, chanSize)
 	signal.Notify(osSignal, shutdownSignals()...)
 	go func() {
 		<-osSignal

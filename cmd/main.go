@@ -66,7 +66,10 @@ func registerSchemas(scheme *runtime.Scheme) {
 	//+kubebuilder:scaffold:scheme
 }
 
-const defaultMetricsPort = 9443
+const (
+	defaultMetricsPort = 9443
+	webhookServerPort  = 9443
+)
 
 func main() { //nolint:funlen // main function needs to initialize many object
 	scheme := runtime.NewScheme()
@@ -109,7 +112,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		HealthProbeBindAddress: opts.ProbeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       leaderElectionID,
-		WebhookServer:          webhook.NewServer(webhook.Options{Port: 9443}),
+		WebhookServer:          webhook.NewServer(webhook.Options{Port: webhookServerPort}),
 		Cache:                  cache.Options{SyncPeriod: &opts.ReconcilePeriod},
 		Metrics:                server.Options{BindAddress: opts.MetricsAddr},
 		NewCache:               controllercache.New,

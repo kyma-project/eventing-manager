@@ -21,6 +21,15 @@ const (
 	// All the available environment variables.
 	envNameLogFormat = "APP_LOG_FORMAT"
 	envNameLogLevel  = "APP_LOG_LEVEL"
+
+	// default values
+	defaultMaxReconnects   = 10
+	defaultMetricsAddr     = ":8080"
+	defaultReconnectWait   = 3 * time.Second
+	defaultReconcilePeriod = time.Minute * 10
+	defaultProbeAddr       = ":8081"
+	defaultReadyEndpoint   = "readyz"
+	defaultHealthEndpoint  = "healthz"
 )
 
 // Options represents the controller options.
@@ -53,13 +62,13 @@ func New() *Options {
 
 // Parse parses the controller options.
 func (o *Options) Parse() error {
-	flag.IntVar(&o.MaxReconnects, argNameMaxReconnects, 10, "Maximum number of reconnect attempts (NATS).")
-	flag.StringVar(&o.MetricsAddr, argNameMetricsAddr, ":8080", "The address the metric endpoint binds to.")
-	flag.DurationVar(&o.ReconnectWait, argNameReconnectWait, 3*time.Second, "Wait time between reconnect attempts (NATS).")
-	flag.DurationVar(&o.ReconcilePeriod, argNameReconcilePeriod, time.Minute*10, "Period between triggering of reconciling calls (BEB).")
-	flag.StringVar(&o.ProbeAddr, argNameProbeAddr, ":8081", "The TCP address that the controller should bind to for serving health probes.")
-	flag.StringVar(&o.ReadyEndpoint, argNameReadyEndpoint, "readyz", "The endpoint of the readiness probe.")
-	flag.StringVar(&o.HealthEndpoint, argNameHealthEndpoint, "healthz", "The endpoint of the health probe.")
+	flag.IntVar(&o.MaxReconnects, argNameMaxReconnects, defaultMaxReconnects, "Maximum number of reconnect attempts (NATS).")
+	flag.StringVar(&o.MetricsAddr, argNameMetricsAddr, defaultMetricsAddr, "The address the metric endpoint binds to.")
+	flag.DurationVar(&o.ReconnectWait, argNameReconnectWait, defaultReconnectWait, "Wait time between reconnect attempts (NATS).")
+	flag.DurationVar(&o.ReconcilePeriod, argNameReconcilePeriod, defaultReconcilePeriod, "Period between triggering of reconciling calls (BEB).")
+	flag.StringVar(&o.ProbeAddr, argNameProbeAddr, defaultProbeAddr, "The TCP address that the controller should bind to for serving health probes.")
+	flag.StringVar(&o.ReadyEndpoint, argNameReadyEndpoint, defaultReadyEndpoint, "The endpoint of the readiness probe.")
+	flag.StringVar(&o.HealthEndpoint, argNameHealthEndpoint, defaultHealthEndpoint, "The endpoint of the health probe.")
 	flag.Parse()
 
 	if err := envconfig.Process("", &o.Env); err != nil {

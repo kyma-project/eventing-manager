@@ -165,11 +165,12 @@ func WithPriorityClassName(name string) DeployOpt {
 
 func WithAffinity(publisherName string) DeployOpt {
 	return func(d *kappsv1.Deployment) {
+		const affinityWeight = 100
 		d.Spec.Template.Spec.Affinity = &kcorev1.Affinity{
 			PodAntiAffinity: &kcorev1.PodAntiAffinity{
 				PreferredDuringSchedulingIgnoredDuringExecution: []kcorev1.WeightedPodAffinityTerm{
 					{
-						Weight: 100,
+						Weight: affinityWeight,
 						PodAffinityTerm: kcorev1.PodAffinityTerm{
 							LabelSelector: &kmetav1.LabelSelector{
 								MatchLabels: map[string]string{label.KeyName: publisherName},
@@ -266,32 +267,43 @@ func getContainerSecurityContext() *kcorev1.SecurityContext {
 }
 
 func getReadinessProbe() *kcorev1.Probe {
+	const (
+		readyPath  = "/readyz"
+		readyPort  = 8080
+		maxFailure = 3
+	)
 	return &kcorev1.Probe{
 		ProbeHandler: kcorev1.ProbeHandler{
 			HTTPGet: &kcorev1.HTTPGetAction{
-				Path:   "/readyz",
-				Port:   intstr.FromInt32(8080),
+				Path:   readyPath,
+				Port:   intstr.FromInt32(readyPort),
 				Scheme: kcorev1.URISchemeHTTP,
 			},
 		},
-		FailureThreshold: 3,
+		FailureThreshold: maxFailure,
 	}
 }
 
 func getLivenessProbe() *kcorev1.Probe {
+	const (
+		healthPath = "/healthz"
+		healthPort = 8080
+		minSuccess = 1
+		maxError   = 3
+	)
 	return &kcorev1.Probe{
 		ProbeHandler: kcorev1.ProbeHandler{
 			HTTPGet: &kcorev1.HTTPGetAction{
-				Path:   "/healthz",
-				Port:   intstr.FromInt32(8080),
+				Path:   healthPath,
+				Port:   intstr.FromInt32(healthPort),
 				Scheme: kcorev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: livenessInitialDelaySecs,
 		TimeoutSeconds:      livenessTimeoutSecs,
 		PeriodSeconds:       livenessPeriodSecs,
-		SuccessThreshold:    1,
-		FailureThreshold:    3,
+		SuccessThreshold:    minSuccess,
+		FailureThreshold:    maxError,
 	}
 }
 

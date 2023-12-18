@@ -25,6 +25,7 @@ const (
 	checkEndpoint         = "/check"
 	internalErrorEndpoint = "/return500"
 	checkRetriesEndpoint  = "/check_retries"
+	notFoundTimeout       = 500 * time.Millisecond
 )
 
 var (
@@ -105,7 +106,7 @@ func getCloudEventServeMux() *http.ServeMux {
 		select {
 		case m := <-store:
 			msg = m
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(notFoundTimeout):
 			msg = ""
 		}
 		_, err := w.Write([]byte(msg))
@@ -161,7 +162,7 @@ func getDataServeMux() *http.ServeMux {
 		select {
 		case m := <-store:
 			msg = m
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(notFoundTimeout):
 			msg = ""
 		}
 		_, err := w.Write([]byte(msg))
