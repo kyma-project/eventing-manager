@@ -33,7 +33,6 @@ linters:
     - nolintlint
     - paralleltest
     - prealloc
-    - stylecheck
     - testpackage
     - thelper
     - tparallel

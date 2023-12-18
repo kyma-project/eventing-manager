@@ -574,7 +574,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 
 			// when
 			natsConfig := env.NATSConfig{}
-			err := natsConfigHandler.setUrlToNatsConfig(ctx, tc.eventing, &natsConfig)
+			err := natsConfigHandler.setURLToNatsConfig(ctx, tc.eventing, &natsConfig)
 
 			// then
 			require.Equal(t, tc.expectedError, err)

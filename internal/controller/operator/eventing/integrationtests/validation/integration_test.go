@@ -61,9 +61,9 @@ const (
 	requests               = "requests"
 	cpu                    = "cpu"
 	memory                 = "memory"
-	limitsCpuValue         = "500m"
+	limitsCPUValue         = "500m"
 	limitsMemoryValue      = "512Mi"
-	requestsCpuValue       = "10m"
+	requestsCPUValue       = "10m"
 	requestsMemoryValue    = "256Mi"
 	logging                = "logging"
 	logLevel               = "logLevel"
@@ -885,11 +885,11 @@ func Test_Validate_Defaulting(t *testing.T) {
 								},
 								resources: map[string]any{
 									limits: map[string]any{
-										cpu:    limitsCpuValue,
+										cpu:    limitsCPUValue,
 										memory: limitsMemoryValue,
 									},
 									requests: map[string]any{
-										cpu:    requestsCpuValue,
+										cpu:    requestsCPUValue,
 										memory: requestsMemoryValue,
 									},
 								},
@@ -965,11 +965,11 @@ func Test_Validate_Defaulting(t *testing.T) {
 								},
 								resources: map[string]any{
 									limits: map[string]any{
-										cpu:    limitsCpuValue,
+										cpu:    limitsCPUValue,
 										memory: limitsMemoryValue,
 									},
 									requests: map[string]any{
-										cpu:    requestsCpuValue,
+										cpu:    requestsCPUValue,
 										memory: requestsMemoryValue,
 									},
 								},

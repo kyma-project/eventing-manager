@@ -4,8 +4,8 @@ import (
 	kctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *Subscription) SetupWebhookWithManager(mgr kctrl.Manager) error {
+func (s *Subscription) SetupWebhookWithManager(mgr kctrl.Manager) error {
 	return kctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(s).
 		Complete()
 }

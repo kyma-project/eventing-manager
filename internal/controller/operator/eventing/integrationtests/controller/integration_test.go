@@ -363,20 +363,20 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 	resourceVersionBefore := eppDeployment.ObjectMeta.ResourceVersion
 	for r := 0; r < runs; r++ {
 		// when
-		runId := fmt.Sprintf("run-%d", r)
+		runID := fmt.Sprintf("run-%d", r)
 
 		eventingCR, err = testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
 		require.NoError(t, err)
 		require.NotNil(t, eventingCR)
 
 		eventingCR = eventingCR.DeepCopy()
-		eventingCR.ObjectMeta.Labels = map[string]string{"reconcile": runId} // force new reconciliation
+		eventingCR.ObjectMeta.Labels = map[string]string{"reconcile": runID} // force new reconciliation
 		testEnvironment.EnsureK8sResourceUpdated(t, eventingCR)
 
 		eventingCR, err = testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
 		require.NoError(t, err)
 		require.NotNil(t, eventingCR)
-		require.Equal(t, eventingCR.ObjectMeta.Labels["reconcile"], runId)
+		require.Equal(t, eventingCR.ObjectMeta.Labels["reconcile"], runID)
 
 		// then
 		testEnvironment.EnsureEventingSpecPublisherReflected(t, eventingCR)

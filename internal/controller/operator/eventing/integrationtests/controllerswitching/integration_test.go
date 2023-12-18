@@ -1,4 +1,4 @@
-package controller_switching
+package controllerswitching
 
 import (
 	"fmt"
