@@ -77,7 +77,7 @@ Use the following sample CRs as guidance. Each can be applied immediately when y
 
 <!-- TABLE-END -->
 
-<h3>More Details about Eventing CR state</h3>
+<h3>More Details About Eventing CR State</h3>
 The following table provides more details on the overall state of the Eventing CR:
 - The <b>State</b> column has the overall state of the Eventing CR.
 - The <b>Backend Config</b> column is part of the eventing CR that is either available or mistakenly not specified by a user.
@@ -85,10 +85,12 @@ The following table provides more details on the overall state of the Eventing C
 
 Warnings indicate that user action is required, that is, the user must install the NATS module or create an EventMesh Secret.
 
-| Backend Config | Backend State         | State |
-|---------------------------|---------------------------|----------------|
-| available                        | no NATS backend available | Warning|
-| not available            |                           | Warning |
-| available                        | no EventMesh secret       | Warning |
-| available                    | error cases not caused by a user      | Error |
-| available                        | creating/updating eventing module      | Processing |
+| Backend Config | Backend State         | Backend Type | Eventing State | Addition comment |
+|---------------------------|---------------------------|----------------|----------------|----------|
+| exists                        | Error (NATS ist unavailable or cannot be connected) | NATS | Warning | no events will be accepted / dispatched |
+| exists                        | Missing | NATS | Warning | no events will be accepted / dispatched |
+| exists            | Warning (NATS deletion blocked)                         | NATS | Ready | events will be accepted / dispatched |
+| missing            |                           | NATS/EventMesh | Warning | no events will be accepted / dispatched |
+| exists                        | Error (secret for EventMesh missing)      | EventMesh | Warning | no events will be accepted / dispatched |
+| exists                    | Error (cases not caused by a user)      | NATS/EventMesh | Error | |
+| exists                        | Processing (creating/updating eventing module)      | NATS/EventMesh | Processing | |
