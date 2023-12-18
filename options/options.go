@@ -22,7 +22,7 @@ const (
 	envNameLogFormat = "APP_LOG_FORMAT"
 	envNameLogLevel  = "APP_LOG_LEVEL"
 
-	// default values
+	// default values.
 	defaultMaxReconnects   = 10
 	defaultMetricsAddr     = ":8080"
 	defaultReconnectWait   = 3 * time.Second
