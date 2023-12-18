@@ -50,13 +50,13 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	// gets oauth2ClientID and secret and stops the EventMesh subscription manager if changed
 	err := r.syncOauth2ClientIDAndSecret(ctx, eventing)
 	if err != nil {
-		return fmt.Errorf("failed to sync OAuth secret: %v", err)
+		return fmt.Errorf("failed to sync OAuth secret: %w", err)
 	}
 
 	// CreateOrUpdate deployment for publisher proxy secret
 	secretForPublisher, err := r.SyncPublisherProxySecret(ctx, eventMeshSecret)
 	if err != nil {
-		return fmt.Errorf("failed to sync Publisher Proxy secret: %v", err)
+		return fmt.Errorf("failed to sync Publisher Proxy secret: %w", err)
 	}
 
 	// Set environment with secrets for EventMesh subscription controller

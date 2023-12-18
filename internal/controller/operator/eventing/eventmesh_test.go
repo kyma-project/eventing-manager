@@ -97,7 +97,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenKubeClientMock: func() k8s.Client {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					nil, errors.New("secret not found")).Once()
+					nil, fmt.Errorf("secret not found")).Once()
 				return mockKubeClient
 			},
 			wantError:     fmt.Errorf("failed to sync OAuth secret: secret not found"),
@@ -769,7 +769,7 @@ func Test_getOAuth2ClientCredentials(t *testing.T) {
 
 			kubeClient := new(k8smocks.Client)
 
-			notFoundErr := errors.New("secret not found")
+			notFoundErr := fmt.Errorf("secret not found")
 			if tc.givenSecret != nil {
 				kubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(tc.givenSecret, nil).Once()
 			} else {
