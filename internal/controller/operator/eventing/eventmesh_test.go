@@ -33,6 +33,7 @@ const (
 var (
 	ErrFailedToStart = errors.New("failed to start")
 	ErrFailedToStop  = errors.New("failed to stop")
+	errNotFound      = errors.New("secret not found")
 )
 
 //nolint:goerr113 // all tests here need to be fixed, as they use require.ErrorAs and use it wrongly
@@ -97,10 +98,10 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenKubeClientMock: func() k8s.Client {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					nil, fmt.Errorf("secret not found")).Once()
+					nil, errNotFound).Once()
 				return mockKubeClient
 			},
-			wantError:     fmt.Errorf("failed to sync OAuth secret: secret not found"),
+			wantError:     fmt.Errorf("failed to sync OAuth secret: %w", errNotFound),
 			wantHashAfter: int64(0),
 		},
 		{
@@ -769,11 +770,10 @@ func Test_getOAuth2ClientCredentials(t *testing.T) {
 
 			kubeClient := new(k8smocks.Client)
 
-			notFoundErr := fmt.Errorf("secret not found")
 			if tc.givenSecret != nil {
 				kubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(tc.givenSecret, nil).Once()
 			} else {
-				kubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(nil, notFoundErr).Once()
+				kubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(nil, errNotFound).Once()
 			}
 
 			r := Reconciler{
