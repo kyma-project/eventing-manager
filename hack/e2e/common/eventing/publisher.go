@@ -143,6 +143,8 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 		p.PublishEndpoint(), encoding.String(), ce.ID(), ce.Source(), ce.Type(), ce.Data()))
 
 	result := p.clientCE.Send(ctx, ce)
+
+	//nolint:errorlint // this error is used in logs
 	switch {
 	case cloudevents.IsUndelivered(result):
 		{

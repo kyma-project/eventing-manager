@@ -537,7 +537,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *operato
 				return kctrl.Result{}, delErr
 			}
 			// update the Eventing CR status.
-			notFoundErr := fmt.Errorf("%w: %v", ErrNatsModuleMissing, err)
+			notFoundErr := fmt.Errorf("%w: %w", ErrNatsModuleMissing, err)
 			return kctrl.Result{}, r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
 				notFoundErr, log)
 		}

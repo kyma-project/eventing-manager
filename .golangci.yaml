@@ -20,7 +20,6 @@ linters:
     - wsl # too strict and mostly code is not more readable
     ### disabled for now... will be enabled 1 by 1
     - dupl
-    - errorlint
     - forcetypeassert
     - funlen
     - gocognit
