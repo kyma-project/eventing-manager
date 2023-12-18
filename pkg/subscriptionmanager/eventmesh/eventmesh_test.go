@@ -221,9 +221,6 @@ func Test_markAllV1Alpha2SubscriptionsAsNotReady(t *testing.T) {
 }
 
 func startBEBMock() *eventingtesting.EventMeshMock {
-	// TODO(k15r): FIX THIS HACK
-	// this is a very evil hack for the time being, until we refactored the config properly
-	// it sets the URLs to relative paths, that can easily be used in the mux.
 	b := eventingtesting.NewEventMeshMock()
 	b.Start()
 	return b

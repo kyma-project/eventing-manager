@@ -3,7 +3,8 @@ package jetstream
 import "github.com/kyma-project/eventing-manager/pkg/env"
 
 // Validate ensures that the NatsConfig is valid and therefore can be used safely.
-// TODO: as soon as backend/nats is gone, make this method a function of backendnats.Config.
+//
+//nolint:godox // TODO: as soon as backend/nats is gone, make this method a function of backendnats.Config.
 func Validate(natsConfig env.NATSConfig) error {
 	if natsConfig.JSStreamName == "" {
 		return ErrEmptyStreamName

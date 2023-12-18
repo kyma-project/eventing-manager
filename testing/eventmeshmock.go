@@ -112,7 +112,6 @@ func (m *EventMeshMock) Start() string {
 
 	// oauth2 request
 	mux.HandleFunc(TokenURLPath, func(w http.ResponseWriter, r *http.Request) {
-		// TODO(k15r): method not allowed/implementd handling
 		if r.Method == http.MethodPost {
 			m.AuthResponse(w)
 		}

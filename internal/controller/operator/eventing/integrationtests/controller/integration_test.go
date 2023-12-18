@@ -224,7 +224,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			if tc.givenDeploymentReady && tc.givenEventing.Spec.Backend != nil {
 				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
 				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
-				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
+				//nolint:godox // TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
 			if tc.wantEnsureK8sObjects && tc.givenEventing.Spec.Backend != nil {
@@ -721,7 +721,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			if tc.givenDeploymentReady {
 				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
 				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
-				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
+				//nolint:godox TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
 			if tc.wantEnsureK8sObjects {

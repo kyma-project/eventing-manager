@@ -27,7 +27,6 @@ linters:
     - gocognit
     - goconst
     - gocritic
-    - godox
     - gomnd
     - gosec
     - inamedparam

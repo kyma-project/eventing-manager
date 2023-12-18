@@ -1,3 +1,4 @@
+//nolint:godox // this package will be removed soon
 package v1alpha1
 
 import (

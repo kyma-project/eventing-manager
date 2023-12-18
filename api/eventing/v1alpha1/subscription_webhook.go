@@ -9,5 +9,3 @@ func (r *Subscription) SetupWebhookWithManager(mgr kctrl.Manager) error {
 		For(r).
 		Complete()
 }
-
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!

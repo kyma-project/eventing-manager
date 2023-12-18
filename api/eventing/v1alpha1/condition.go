@@ -164,8 +164,7 @@ func MakeCondition(conditionType ConditionType, reason ConditionReason, status k
 		Status:             status,
 		LastTransitionTime: kmetav1.Now(),
 		Reason:             reason,
-		// TODO: https://github.com/kyma-project/kyma/issues/9770
-		Message: message,
+		Message:            message,
 	}
 }
 
