@@ -22,7 +22,6 @@ linters:
     - dupl
     - forcetypeassert
     - funlen
-    - gocognit
     - goconst
     - gosec
     - inamedparam

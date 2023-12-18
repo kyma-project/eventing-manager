@@ -105,11 +105,15 @@ func getEventMeshEvents(typeInfos []EventTypeInfo, typeMatching eventingv1alpha2
 	return events
 }
 
-func ConvertKymaSubToEventMeshSub(subscription *eventingv1alpha2.Subscription, typeInfos []EventTypeInfo,
-	apiRule *apigatewayv1beta1.APIRule, defaultWebhookAuth *types.WebhookAuth,
+func ConvertKymaSubToEventMeshSub(
+	subscription *eventingv1alpha2.Subscription,
+	typeInfos []EventTypeInfo,
+	apiRule *apigatewayv1beta1.APIRule,
+	defaultWebhookAuth *types.WebhookAuth,
 	defaultProtocolSettings *ProtocolSettings,
-	defaultNamespace string, nameMapper NameMapper,
-) (*types.Subscription, error) { //nolint:gocognit
+	defaultNamespace string,
+	nameMapper NameMapper,
+) (*types.Subscription, error) {
 	// get default EventMesh subscription object
 	eventMeshSubscription, err := getDefaultSubscriptionV1Alpha2(defaultProtocolSettings)
 	if err != nil {

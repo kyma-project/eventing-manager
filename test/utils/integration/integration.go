@@ -651,22 +651,23 @@ func (env TestEnvironment) EnsureSubscriptionResourceDeletion(t *testing.T, name
 	}, BigTimeOut, BigPollingInterval, "failed to ensure deletion of Subscription")
 }
 
-func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *natsv1alpha1.NATS) {
+func (env TestEnvironment) EnsureNATSResourceState(t *testing.T, nats *natsv1alpha1.NATS, status string) {
 	t.Helper()
-	env.makeNATSCrReady(t, nats)
+	env.setNATSCRStatus(t, nats, status)
 	require.Eventually(t, func() bool {
 		err := env.k8sClient.Get(context.Background(), types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
-		return err == nil && nats.Status.State == natsv1alpha1.StateReady
+		return err == nil && nats.Status.State == string(status)
 	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
+}
+
+func (env TestEnvironment) EnsureNATSResourceStateReady(t *testing.T, nats *natsv1alpha1.NATS) {
+	t.Helper()
+	env.EnsureNATSResourceState(t, nats, natsv1alpha1.StateReady)
 }
 
 func (env TestEnvironment) EnsureNATSResourceStateError(t *testing.T, nats *natsv1alpha1.NATS) {
 	t.Helper()
-	env.makeNatsCrError(t, nats)
-	require.Eventually(t, func() bool {
-		err := env.k8sClient.Get(context.Background(), types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
-		return err == nil && nats.Status.State == natsv1alpha1.StateError
-	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
+	env.EnsureNATSResourceState(t, nats, natsv1alpha1.StateError)
 }
 
 func (env TestEnvironment) EnsureEventingSpecPublisherReflected(t *testing.T, eventingCR *v1alpha1.Eventing) {
@@ -1006,24 +1007,10 @@ func (env TestEnvironment) UpdateNATSStatus(nats *natsv1alpha1.NATS) error {
 	return env.k8sClient.Status().Update(context.Background(), baseNats)
 }
 
-func (env TestEnvironment) makeNATSCrReady(t *testing.T, nats *natsv1alpha1.NATS) {
+func (env TestEnvironment) setNATSCRStatus(t *testing.T, nats *natsv1alpha1.NATS, status string) {
 	t.Helper()
 	require.Eventually(t, func() bool {
-		nats.Status.State = natsv1alpha1.StateReady
-
-		err := env.UpdateNATSStatus(nats)
-		if err != nil {
-			env.Logger.WithContext().Errorw("failed to update NATS CR status", "error", err)
-			return false
-		}
-		return true
-	}, BigTimeOut, BigPollingInterval, "failed to update status of NATS CR")
-}
-
-func (env TestEnvironment) makeNatsCrError(t *testing.T, nats *natsv1alpha1.NATS) {
-	t.Helper()
-	require.Eventually(t, func() bool {
-		nats.Status.State = natsv1alpha1.StateError
+		nats.Status.State = status
 
 		err := env.UpdateNATSStatus(nats)
 		if err != nil {

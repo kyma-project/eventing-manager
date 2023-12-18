@@ -988,16 +988,11 @@ func Test_WatcherNATSResource(t *testing.T) {
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
-			// create NATS CR.
+			// create original NATS CR.
 			originalNats := tc.givenOriginalNATS.DeepCopy()
 			testEnvironment.EnsureK8sResourceCreated(t, originalNats)
-			// create original NATS CR.
 
-			if tc.givenOriginalNATS.Status.State == natsv1alpha1.StateReady {
-				testEnvironment.EnsureNATSResourceStateReady(t, originalNats)
-			} else if tc.givenOriginalNATS.Status.State == natsv1alpha1.StateError {
-				testEnvironment.EnsureNATSResourceStateError(t, originalNats)
-			}
+			testEnvironment.EnsureNATSResourceState(t, originalNats, tc.givenOriginalNATS.Status.State)
 
 			// create Eventing CR.
 			var eventingResource *operatorv1alpha1.Eventing
@@ -1043,11 +1038,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 
 			// update target NATS CR to target NATS CR state
 			if tc.givenOriginalNATS != nil {
-				if tc.givenOriginalNATS.Status.State == natsv1alpha1.StateReady {
-					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenOriginalNATS)
-				} else if tc.givenOriginalNATS.Status.State == natsv1alpha1.StateError {
-					testEnvironment.EnsureNATSResourceStateError(t, tc.givenOriginalNATS)
-				}
+				testEnvironment.EnsureNATSResourceState(t, tc.givenOriginalNATS, tc.givenOriginalNATS.Status.State)
 			}
 
 			// check Eventing CR status.
@@ -1055,11 +1046,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 
 			// update target NATS CR to target NATS CR state
 			if tc.givenTargetNATS != nil {
-				if tc.givenTargetNATS.Status.State == natsv1alpha1.StateReady {
-					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenTargetNATS)
-				} else if tc.givenTargetNATS.Status.State == natsv1alpha1.StateError {
-					testEnvironment.EnsureNATSResourceStateError(t, tc.givenTargetNATS)
-				}
+				testEnvironment.EnsureNATSResourceState(t, tc.givenTargetNATS, tc.givenTargetNATS.Status.State)
 			} else {
 				// delete NATS CR
 				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenOriginalNATS)
