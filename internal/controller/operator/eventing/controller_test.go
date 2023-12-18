@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	eventingmocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	submgrmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/watcher"
 	watchermocks "github.com/kyma-project/eventing-manager/pkg/watcher/mocks"
@@ -118,6 +119,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 		givenEventing                *operatorv1alpha1.Eventing
 		givenNATSSubManagerMock      func() *submgrmanagermocks.Manager
 		givenEventMeshSubManagerMock func() *submgrmanagermocks.Manager
+		givenEventingManagerMock     func() *eventingmocks.Manager
 		wantNATSStopped              bool
 		wantEventMeshStopped         bool
 		wantEventingState            string
@@ -137,6 +139,9 @@ func Test_handleBackendSwitching(t *testing.T) {
 			},
 			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
 				return new(submgrmanagermocks.Manager)
+			},
+			givenEventingManagerMock: func() *eventingmocks.Manager {
+				return new(eventingmocks.Manager)
 			},
 			wantError:                 nil,
 			wantEventingState:         operatorv1alpha1.StateReady,
@@ -160,6 +165,12 @@ func Test_handleBackendSwitching(t *testing.T) {
 			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
 				return new(submgrmanagermocks.Manager)
 			},
+			givenEventingManagerMock: func() *eventingmocks.Manager {
+				emMock := new(eventingmocks.Manager)
+				emMock.On("DeletePublisherProxyResources", mock.Anything,
+					mock.Anything).Return(nil).Once()
+				return emMock
+			},
 			wantError:                 nil,
 			wantEventingState:         operatorv1alpha1.StateProcessing,
 			wantEventingConditionsLen: 0,
@@ -181,6 +192,9 @@ func Test_handleBackendSwitching(t *testing.T) {
 			},
 			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
 				return new(submgrmanagermocks.Manager)
+			},
+			givenEventingManagerMock: func() *eventingmocks.Manager {
+				return new(eventingmocks.Manager)
 			},
 			wantError:                 ErrFailedToStop,
 			wantEventingState:         operatorv1alpha1.StateReady,
@@ -204,6 +218,12 @@ func Test_handleBackendSwitching(t *testing.T) {
 				managerMock.On("Stop", true).Return(nil).Once()
 				return managerMock
 			},
+			givenEventingManagerMock: func() *eventingmocks.Manager {
+				emMock := new(eventingmocks.Manager)
+				emMock.On("DeletePublisherProxyResources", mock.Anything,
+					mock.Anything).Return(nil).Once()
+				return emMock
+			},
 			wantError:                 nil,
 			wantEventingState:         operatorv1alpha1.StateProcessing,
 			wantEventingConditionsLen: 0,
@@ -226,10 +246,41 @@ func Test_handleBackendSwitching(t *testing.T) {
 				managerMock.On("Stop", true).Return(ErrFailedToStop).Once()
 				return managerMock
 			},
+			givenEventingManagerMock: func() *eventingmocks.Manager {
+				return new(eventingmocks.Manager)
+			},
 			wantError:                 ErrFailedToStop,
 			wantEventingState:         operatorv1alpha1.StateReady,
 			wantEventingConditionsLen: 1,
 			wantNATSStopped:           false,
+			wantEventMeshStopped:      false,
+		},
+		{
+			name: "it should return error because it failed to remove EPP resources",
+			givenEventing: testutils.NewEventingCR(
+				testutils.WithEventMeshBackend("test"),
+				testutils.WithStatusActiveBackend(operatorv1alpha1.NatsBackendType),
+				testutils.WithStatusState(operatorv1alpha1.StateReady),
+				testutils.WithStatusConditions([]kmetav1.Condition{{Type: "Available"}}),
+			),
+			givenNATSSubManagerMock: func() *submgrmanagermocks.Manager {
+				managerMock := new(submgrmanagermocks.Manager)
+				managerMock.On("Stop", true).Return(nil).Once()
+				return managerMock
+			},
+			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
+				return new(submgrmanagermocks.Manager)
+			},
+			givenEventingManagerMock: func() *eventingmocks.Manager {
+				emMock := new(eventingmocks.Manager)
+				emMock.On("DeletePublisherProxyResources", mock.Anything,
+					mock.Anything).Return(ErrFailedToRemove).Once()
+				return emMock
+			},
+			wantError:                 ErrFailedToRemove,
+			wantEventingState:         operatorv1alpha1.StateProcessing,
+			wantEventingConditionsLen: 0,
+			wantNATSStopped:           true,
 			wantEventMeshStopped:      false,
 		},
 	}
@@ -255,13 +306,15 @@ func Test_handleBackendSwitching(t *testing.T) {
 			// get mocks from test-case.
 			givenNATSSubManagerMock := tc.givenNATSSubManagerMock()
 			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
+			givenEventingManagerMock := tc.givenEventingManagerMock()
 
 			// connect mocks with reconciler.
 			testEnv.Reconciler.natsSubManager = givenNATSSubManagerMock
 			testEnv.Reconciler.eventMeshSubManager = givenEventMeshSubManagerMock
+			testEnv.Reconciler.eventingManager = givenEventingManagerMock
 
 			// when
-			err := testEnv.Reconciler.handleBackendSwitching(tc.givenEventing, logger)
+			err := testEnv.Reconciler.handleBackendSwitching(context.TODO(), tc.givenEventing, logger)
 
 			// then
 			if tc.wantError != nil {
@@ -283,6 +336,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 			if tc.wantNATSStopped {
 				require.Nil(t, testEnv.Reconciler.natsSubManager)
 				require.False(t, testEnv.Reconciler.isNATSSubManagerStarted)
+				givenEventingManagerMock.AssertExpectations(t)
 			} else {
 				require.NotNil(t, testEnv.Reconciler.natsSubManager)
 				require.True(t, testEnv.Reconciler.isNATSSubManagerStarted)
@@ -292,6 +346,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 			if tc.wantEventMeshStopped {
 				require.Nil(t, testEnv.Reconciler.eventMeshSubManager)
 				require.False(t, testEnv.Reconciler.isEventMeshSubManagerStarted)
+				givenEventingManagerMock.AssertExpectations(t)
 			} else {
 				require.NotNil(t, testEnv.Reconciler.eventMeshSubManager)
 				require.True(t, testEnv.Reconciler.isEventMeshSubManagerStarted)
