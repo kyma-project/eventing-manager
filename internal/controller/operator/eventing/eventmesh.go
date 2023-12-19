@@ -234,7 +234,6 @@ func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context, secretNames
 	var exists bool
 	var clientID, clientSecret, tokenURL, certsURL []byte
 
-	oauth2Secret := new(kcorev1.Secret)
 	oauth2SecretNamespacedName := types.NamespacedName{
 		Namespace: secretNamespace,
 		Name:      r.backendConfig.EventingWebhookAuthSecretName,
@@ -242,8 +241,9 @@ func (r *Reconciler) getOAuth2ClientCredentials(ctx context.Context, secretNames
 
 	r.namedLogger().Infof("Reading secret %s", oauth2SecretNamespacedName.String())
 
-	if getErr := r.Get(ctx, oauth2SecretNamespacedName, oauth2Secret); getErr != nil {
-		return nil, getErr
+	var oauth2Secret *kcorev1.Secret
+	if oauth2Secret, err = r.kubeClient.GetSecret(ctx, oauth2SecretNamespacedName.String()); err != nil {
+		return nil, err
 	}
 
 	if clientID, exists = oauth2Secret.Data[secretKeyClientID]; !exists {
