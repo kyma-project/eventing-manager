@@ -111,19 +111,58 @@ func (m *EventMeshMock) Start() string {
 	mux := http.NewServeMux()
 
 	// oauth2 request
-	mux.HandleFunc(TokenURLPath, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(TokenURLPath, m.handleToken())
+	mux.HandleFunc(client.ListURL, m.handleList())
+	mux.HandleFunc(MessagingURLPath+"/", m.handleMessaging())
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		m.log.V(1).Info(r.RequestURI)
+	})
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer GinkgoRecover()
+
+		// store request
+		m.Requests.StoreRequest(r)
+
+		description := ""
+		reqBytes, err := httputil.DumpRequest(r, true)
+		if err == nil {
+			description = string(reqBytes)
+		}
+		m.log.V(1).Info("received request",
+			"uri", r.RequestURI,
+			"method", r.Method,
+			"description", description,
+		)
+
+		w.Header().Set("Content-Type", "application/json")
+		mux.ServeHTTP(w, r)
+	}))
+	uri := ts.URL
+	m.server = ts
+	m.MessagingURL = m.server.URL + MessagingURLPath
+	m.TokenURL = m.server.URL + TokenURLPath
+	return uri
+}
+
+func (m *EventMeshMock) handleToken() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			m.AuthResponse(w)
 		}
-	})
+	}
+}
 
-	mux.HandleFunc(client.ListURL, func(w http.ResponseWriter, r *http.Request) {
+func (m *EventMeshMock) handleList() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			m.ListResponse(w)
 		}
-	})
+	}
+}
 
-	mux.HandleFunc(MessagingURLPath+"/", func(w http.ResponseWriter, r *http.Request) {
+func (m *EventMeshMock) handleMessaging() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodDelete:
 			key := r.URL.Path
@@ -178,37 +217,7 @@ func (m *EventMeshMock) Start() string {
 		default:
 			w.WriteHeader(http.StatusNotImplemented)
 		}
-	})
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		m.log.V(1).Info(r.RequestURI)
-	})
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer GinkgoRecover()
-
-		// store request
-		m.Requests.StoreRequest(r)
-
-		description := ""
-		reqBytes, err := httputil.DumpRequest(r, true)
-		if err == nil {
-			description = string(reqBytes)
-		}
-		m.log.V(1).Info("received request",
-			"uri", r.RequestURI,
-			"method", r.Method,
-			"description", description,
-		)
-
-		w.Header().Set("Content-Type", "application/json")
-		mux.ServeHTTP(w, r)
-	}))
-	uri := ts.URL
-	m.server = ts
-	m.MessagingURL = m.server.URL + MessagingURLPath
-	m.TokenURL = m.server.URL + TokenURLPath
-	return uri
+	}
 }
 
 func (m *EventMeshMock) Stop() {

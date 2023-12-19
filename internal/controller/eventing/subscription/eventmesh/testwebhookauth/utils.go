@@ -117,19 +117,7 @@ func setupSuite() error {
 	// +kubebuilder:scaffold:scheme
 
 	// start eventMesh manager instance
-	syncPeriod := syncPeriodSeconds * time.Second
-	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
-	k8sManager, err := kctrl.NewManager(cfg, kctrl.Options{
-		Scheme:                 scheme.Scheme,
-		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
-		Metrics:                server.Options{BindAddress: "0"}, // disable
-		HealthProbeBindAddress: "0",                              // disable
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Host:    webhookInstallOptions.LocalServingHost,
-			Port:    webhookInstallOptions.LocalServingPort,
-			CertDir: webhookInstallOptions.LocalServingCertDir,
-		}),
-	})
+	k8sManager, webhookInstallOptions, err := setupManager(cfg)
 	if err != nil {
 		return err
 	}
@@ -175,6 +163,23 @@ func setupSuite() error {
 	emTestEnsemble.k8sClient = k8sManager.GetClient()
 
 	return startAndWaitForWebhookServer(k8sManager, webhookInstallOptions)
+}
+
+func setupManager(cfg *rest.Config) (manager.Manager, *envtest.WebhookInstallOptions, error) {
+	syncPeriod := syncPeriodSeconds * time.Second
+	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
+	k8sManager, err := kctrl.NewManager(cfg, kctrl.Options{
+		Scheme:                 scheme.Scheme,
+		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
+		Metrics:                server.Options{BindAddress: "0"}, // disable
+		HealthProbeBindAddress: "0",                              // disable
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host:    webhookInstallOptions.LocalServingHost,
+			Port:    webhookInstallOptions.LocalServingPort,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
+	})
+	return k8sManager, webhookInstallOptions, err
 }
 
 func startAndWaitForWebhookServer(manager manager.Manager, installOpts *envtest.WebhookInstallOptions) error {

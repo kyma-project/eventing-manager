@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -108,7 +109,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	// Set controller core logger.
 	kctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 
-	testEnv, envTestKubeCfg, err := StartEnvTest(config)
+	testEnv, envTestKubeCfg, err := SetupAndStartEnvTest(config)
 	if err != nil {
 		return nil, err
 	}
@@ -250,10 +251,7 @@ func NewTestEnvironment(config TestEnvironmentConfig) (*TestEnvironment, error) 
 	}, nil
 }
 
-func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Config, error) {
-	// Reference: https://book.kubebuilder.io/reference/envtest.html
-	useExistingCluster := useExistingCluster
-
+func SetupAndStartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Config, error) {
 	const caBundleSize = 20
 	dummyCABundle := make([]byte, caBundleSize)
 	if _, err := rand.Read(dummyCABundle); err != nil {
@@ -262,13 +260,14 @@ func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Con
 
 	url := "https://eventing-controller.kyma-system.svc.cluster.local"
 	sideEffectClassNone := kadmissionregistrationv1.SideEffectClassNone
+	webhookClientConfig := kadmissionregistrationv1.WebhookClientConfig{
+		URL:      &url,
+		CABundle: dummyCABundle,
+	}
 	mwh := getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
 		{
-			Name: "reconciler.eventing.test",
-			ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
-				URL:      &url,
-				CABundle: dummyCABundle,
-			},
+			Name:                    "reconciler.eventing.test",
+			ClientConfig:            webhookClientConfig,
 			SideEffects:             &sideEffectClassNone,
 			AdmissionReviewVersions: []string{"v1beta1"},
 		},
@@ -278,11 +277,8 @@ func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Con
 	// setup dummy validating webhook
 	vwh := getValidatingWebhookConfig([]kadmissionregistrationv1.ValidatingWebhook{
 		{
-			Name: "reconciler2.eventing.test",
-			ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
-				URL:      &url,
-				CABundle: dummyCABundle,
-			},
+			Name:                    "reconciler.eventing.test",
+			ClientConfig:            webhookClientConfig,
 			SideEffects:             &sideEffectClassNone,
 			AdmissionReviewVersions: []string{"v1beta1"},
 		},
@@ -306,11 +302,13 @@ func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Con
 			filepath.Join(config.ProjectRootDir, "config", "crd", "for-tests", "operator.kyma-project.io_nats.yaml"))
 	}
 
+	// Reference: https://book.kubebuilder.io/reference/envtest.html
+	uec := useExistingCluster
 	testEnv := &envtest.Environment{
 		CRDDirectoryPaths:        includedCRDs,
 		ErrorIfCRDPathMissing:    true,
 		AttachControlPlaneOutput: attachControlPlaneOutput,
-		UseExistingCluster:       &useExistingCluster,
+		UseExistingCluster:       &uec,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			MutatingWebhooks:   []*kadmissionregistrationv1.MutatingWebhookConfiguration{mwh},
 			ValidatingWebhooks: []*kadmissionregistrationv1.ValidatingWebhookConfiguration{vwh},
@@ -318,12 +316,13 @@ func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Con
 	}
 
 	args := testEnv.ControlPlane.GetAPIServer().Configure()
-	if config.CELValidationEnabled {
-		args.Set("feature-gates", "CustomResourceValidationExpressions=true")
-	} else {
-		args.Set("feature-gates", "CustomResourceValidationExpressions=false")
-	}
+	args.Set("feature-gates", "CustomResourceValidationExpressions=%s", strconv.FormatBool(config.CELValidationEnabled))
 
+	cfg, err := StartEnvTestWithRetry(testEnv)
+	return testEnv, cfg, err
+}
+
+func StartEnvTestWithRetry(testEnv *envtest.Environment) (*rest.Config, error) {
 	var cfg *rest.Config
 	err := retry.Do(func() error {
 		defer func() {
@@ -345,7 +344,7 @@ func StartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Con
 			}
 		}),
 	)
-	return testEnv, cfg, err
+	return cfg, err
 }
 
 func (env TestEnvironment) TearDown() error {

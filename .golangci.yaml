@@ -21,7 +21,6 @@ linters:
     ### disabled for now... will be enabled 1 by 1
     - dupl
     - forcetypeassert
-    - funlen
     - goconst
     - gosec
     - inamedparam
@@ -214,6 +213,8 @@ issues:
       linters:
         - wrapcheck
         - gochecknoglobals
+        - funlen # Table driven unit and integration tests exceed function length by design
+        - maintidx # Table driven unit and integration tests exceed maintainability index by design
     - linters:
       - importas
       text: has alias "" which is not part of config # Ignore false positives that emerged due to https://github.com/julz/importas/issues/15.

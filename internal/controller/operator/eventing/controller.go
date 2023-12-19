@@ -630,7 +630,7 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 	}
 
 	// Start the EventMesh subscription controller
-	err = r.reconcileEventMeshSubManager(ctx, eventing, eventMeshSecret, log)
+	err = r.reconcileEventMeshSubManager(ctx, eventing, eventMeshSecret)
 	if err != nil {
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}

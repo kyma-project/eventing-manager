@@ -115,20 +115,8 @@ func setupSuite() error {
 	}
 	// +kubebuilder:scaffold:scheme
 
-	// start eventMesh manager instance
-	syncPeriod := syncPeriodSeconds * time.Second
-	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
-	k8sManager, err := kctrl.NewManager(cfg, kctrl.Options{
-		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
-		HealthProbeBindAddress: "0", // disable
-		Scheme:                 scheme.Scheme,
-		Metrics:                server.Options{BindAddress: "0"}, // disable
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Port:    webhookInstallOptions.LocalServingPort,
-			Host:    webhookInstallOptions.LocalServingHost,
-			CertDir: webhookInstallOptions.LocalServingCertDir,
-		}),
-	})
+	// setup eventMesh manager instance
+	k8sManager, webhookInstallOptions, err := setupManager(cfg)
 	if err != nil {
 		return err
 	}
@@ -140,21 +128,18 @@ func setupSuite() error {
 	// setup eventMesh reconciler
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller")
 	sinkValidator := sink.NewValidator(k8sManager.GetClient(), recorder)
-	credentials := &backendeventmesh.OAuth2ClientCredentials{
-		ClientID:     "foo-client-id",
-		ClientSecret: "foo-client-secret",
-		TokenURL:     "foo-token-url",
-		CertsURL:     certsURL,
-	}
 	emTestEnsemble.envConfig = getEnvConfig()
+
+	eventMesh, credentials := setupEventMesh(defaultLogger)
+
 	col := metrics.NewCollector()
 	testReconciler := subscriptioncontrollereventmesh.NewReconciler(
 		k8sManager.GetClient(),
 		defaultLogger,
 		recorder,
-		getEnvConfig(),
+		emTestEnsemble.envConfig,
 		cleaner.NewEventMeshCleaner(defaultLogger),
-		backendeventmesh.NewEventMesh(credentials, emTestEnsemble.nameMapper, defaultLogger),
+		eventMesh,
 		credentials,
 		emTestEnsemble.nameMapper,
 		sinkValidator,
@@ -179,6 +164,38 @@ func setupSuite() error {
 	emTestEnsemble.k8sClient = k8sManager.GetClient()
 
 	return startAndWaitForWebhookServer(k8sManager, webhookInstallOptions)
+}
+
+func setupManager(cfg *rest.Config) (manager.Manager, *envtest.WebhookInstallOptions, error) {
+	syncPeriod := syncPeriodSeconds * time.Second
+	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
+	opts := kctrl.Options{
+		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
+		HealthProbeBindAddress: "0", // disable
+		Scheme:                 scheme.Scheme,
+		Metrics:                server.Options{BindAddress: "0"}, // disable
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port:    webhookInstallOptions.LocalServingPort,
+			Host:    webhookInstallOptions.LocalServingHost,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
+	}
+	k8sManager, err := kctrl.NewManager(cfg, opts)
+	if err != nil {
+		return nil, nil, err
+	}
+	return k8sManager, webhookInstallOptions, nil
+}
+
+func setupEventMesh(defaultLogger *logger.Logger) (*backendeventmesh.EventMesh, *backendeventmesh.OAuth2ClientCredentials) {
+	credentials := &backendeventmesh.OAuth2ClientCredentials{
+		ClientID:     "foo-client-id",
+		ClientSecret: "foo-client-secret",
+		TokenURL:     "foo-token-url",
+		CertsURL:     certsURL,
+	}
+	eventMesh := backendeventmesh.NewEventMesh(credentials, emTestEnsemble.nameMapper, defaultLogger)
+	return eventMesh, credentials
 }
 
 func startAndWaitForWebhookServer(k8sManager manager.Manager, webhookInstallOpts *envtest.WebhookInstallOptions) error {
