@@ -16,7 +16,7 @@ import (
 
 var ErrCannotBuildNATSURL = errors.New("NATS CR is not found to build NATS server URL")
 
-func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
 	// get the subscription config
 	defaultSubsConfig := r.getDefaultSubscriptionConfig()
 	// get the nats config

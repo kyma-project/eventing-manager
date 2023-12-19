@@ -31,7 +31,6 @@ linters:
     - testpackage
     - tparallel
     - unconvert
-    - unparam
     - varnamelen
     - wrapcheck
 

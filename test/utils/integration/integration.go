@@ -58,7 +58,7 @@ import (
 
 const (
 	useExistingCluster       = false
-	attachControlPlaneOutput = false
+	attachControlPlaneOutput = true
 	testEnvStartDelay        = time.Minute
 	testEnvStartAttempts     = 10
 	BigPollingInterval       = 3 * time.Second
@@ -316,7 +316,7 @@ func SetupAndStartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *
 	}
 
 	args := testEnv.ControlPlane.GetAPIServer().Configure()
-	args.Set("feature-gates", "CustomResourceValidationExpressions=%s", strconv.FormatBool(config.CELValidationEnabled))
+	args.Set("feature-gates", fmt.Sprintf("CustomResourceValidationExpressions=%s", strconv.FormatBool(config.CELValidationEnabled)))
 
 	cfg, err := StartEnvTestWithRetry(testEnv)
 	return testEnv, cfg, err

@@ -222,10 +222,9 @@ func Test_setEventMeshProtocolSettings(t *testing.T) {
 			eventMeshSubscription := tc.givenEventMeshSubscription
 
 			// when
-			err := setEventMeshProtocolSettings(tc.givenSubscription, eventMeshSubscription)
+			setEventMeshProtocolSettings(tc.givenSubscription, eventMeshSubscription)
 
 			// then
-			require.NoError(t, err)
 			require.Equal(t, tc.wantEventMeshSubscription, eventMeshSubscription)
 		})
 	}
@@ -283,10 +282,9 @@ func Test_getEventMeshWebhookAuth(t *testing.T) {
 			// given
 
 			// when
-			webhookAuth, err := getEventMeshWebhookAuth(tc.givenSubscription, defaultWebhookAuth)
+			webhookAuth := getEventMeshWebhookAuth(tc.givenSubscription, defaultWebhookAuth)
 
 			// then
-			require.NoError(t, err)
 			require.Equal(t, tc.wantWebhook, webhookAuth)
 		})
 	}

@@ -134,7 +134,7 @@ func (r *Reconciler) checkDomain(ctx context.Context, domain string) (string, er
 			shootInfoConfigMapNamespace, shootInfoConfigMapName,
 		)
 		cmDomain, err := r.readDomainFromConfigMap(ctx)
-		if err != nil || utils.IsEmpty(domain) {
+		if err != nil || utils.IsEmpty(cmDomain) {
 			return "", domainMissingError(err)
 		}
 		ret = cmDomain

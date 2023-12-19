@@ -44,7 +44,7 @@ func (r *Reconciler) syncStatusWithNATSState(ctx context.Context, state string,
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
-func (r *Reconciler) syncStatusForEmptyBackend(ctx context.Context, reason operatorv1alpha1.ConditionReason,
+func (r *Reconciler) syncStatusForEmptyBackend(ctx context.Context,
 	message string, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
 ) error {
 	// Set error state in status

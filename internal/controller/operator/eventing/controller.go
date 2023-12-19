@@ -456,7 +456,6 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	r.InitStateProcessing(eventing)
 	if eventing.Spec.Backend == nil {
 		return kctrl.Result{Requeue: true}, r.syncStatusForEmptyBackend(ctx,
-			operatorv1alpha1.ConditionReasonBackendNotSpecified,
 			operatorv1alpha1.ConditionBackendNotSpecifiedMessage,
 			eventing, log)
 	}
@@ -563,7 +562,7 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *operato
 	}
 
 	// start NATS subscription manager
-	if err := r.reconcileNATSSubManager(ctx, eventing, log); err != nil {
+	if err := r.reconcileNATSSubManager(eventing, log); err != nil {
 		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
 	}
 
