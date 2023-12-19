@@ -45,10 +45,10 @@ type Manager interface {
 		eventing *v1alpha1.Eventing,
 		natsConfig *env.NATSConfig,
 		backendType v1alpha1.BackendType) (*kappsv1.Deployment, error)
-	DeployPublisherProxyResources(context.Context, *v1alpha1.Eventing, *kappsv1.Deployment) error
+	DeployPublisherProxyResources(ctx context.Context, eventing *v1alpha1.Eventing, deploy *kappsv1.Deployment) error
 	DeletePublisherProxyResources(ctx context.Context, eventing *v1alpha1.Eventing) error
 	GetBackendConfig() *env.BackendConfig
-	SetBackendConfig(env.BackendConfig)
+	SetBackendConfig(config env.BackendConfig)
 	SubscriptionExists(ctx context.Context) (bool, error)
 }
 

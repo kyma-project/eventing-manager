@@ -75,7 +75,7 @@ type Subscriber interface {
 	ConsumerInfo() (*nats.ConsumerInfo, error)
 	IsValid() bool
 	Unsubscribe() error
-	SetPendingLimits(int, int) error
+	SetPendingLimits(msgLimit, byteLimit int) error
 	PendingLimits() (int, int, error)
 }
 

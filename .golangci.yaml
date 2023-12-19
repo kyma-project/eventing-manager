@@ -21,7 +21,6 @@ linters:
     ### disabled for now... will be enabled 1 by 1
     - dupl
     - gosec
-    - inamedparam
     - ireturn
     - maintidx
     - nolintlint
