@@ -109,7 +109,10 @@ func (te *TestEnvironment) InitEventPublisherClient() error {
 	maxConnsPerHost := 10
 	maxIdleConnsPerHost := 10
 	idleConnTimeout := 1 * time.Minute
-	t := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	t, err := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	if err != nil {
+		return err
+	}
 	clientHTTP := http.NewHTTPClient(t.Clone())
 	clientCE, err := http.NewCloudEventsClient(t.Clone())
 	if err != nil {
@@ -119,14 +122,18 @@ func (te *TestEnvironment) InitEventPublisherClient() error {
 	return nil
 }
 
-func (te *TestEnvironment) InitSinkClient() {
+func (te *TestEnvironment) InitSinkClient() error {
 	maxIdleConns := 10
 	maxConnsPerHost := 10
 	maxIdleConnsPerHost := 10
 	idleConnTimeout := 1 * time.Minute
-	t := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	t, err := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	if err != nil {
+		return err
+	}
 	clientHTTP := http.NewHTTPClient(t.Clone())
 	te.SinkClient = eventing.NewSinkClient(clientHTTP, te.TestConfigs.SinkPortForwardedURL, te.Logger)
+	return nil
 }
 
 func (te *TestEnvironment) CreateAllSubscriptions() error {

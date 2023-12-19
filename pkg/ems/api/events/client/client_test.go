@@ -28,7 +28,9 @@ func Test_Client_Update(t *testing.T) {
 		BEBAPIURL:     emMock.MessagingURL,
 		TokenEndpoint: emMock.TokenURL,
 	}
-	authenticatedClient := auth.NewAuthenticatedClient(cfg)
+	authenticatedClient, err := auth.NewAuthenticatedClient(cfg)
+	require.NoError(t, err)
+
 	httpClient, err := httpclient.NewHTTPClient(cfg.BEBAPIURL, authenticatedClient)
 	require.NoError(t, err)
 	emClient := client.NewClient(httpClient)

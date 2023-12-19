@@ -82,7 +82,7 @@ func GetFreePort() (int, error) {
 		return -1, err
 	}
 
-	port := l.Addr().(*net.TCPAddr).Port
+	port := l.Addr().(*net.TCPAddr).Port //nolint:forcetypeassert // will always return a TCPAddr according to documentation
 	err = l.Close()
 	return port, err
 }

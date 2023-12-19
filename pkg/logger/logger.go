@@ -2,10 +2,13 @@ package logger
 
 import (
 	"context"
+	"errors"
 
 	"github.com/kyma-project/kyma/common/logging/logger"
 	"go.uber.org/zap"
 )
+
+var ErrCannotCreateLogger = errors.New("cannot create logger")
 
 type Logger struct {
 	*logger.Logger
@@ -15,7 +18,14 @@ type Logger struct {
 // This method needs to return Logger in favor of KLogger until the whole codebase is migrated to the new interface.
 func New(format, level string) (*Logger, error) {
 	log, err := build(format, level)
-	return log.(*Logger), err
+	if err != nil {
+		return nil, err
+	}
+	logger, ok := log.(*Logger)
+	if !ok {
+		return nil, ErrCannotCreateLogger
+	}
+	return logger, nil
 }
 
 // KLogger is an interface for the Kyma wide logger.

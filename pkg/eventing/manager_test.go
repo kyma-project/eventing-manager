@@ -410,7 +410,8 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 				kubeClient.On("PatchApply", ctx, mock.Anything).Return(ErrUseMeWithMocks)
 			} else {
 				kubeClient.On("PatchApply", ctx, mock.Anything).Run(func(args mock.Arguments) {
-					obj := args.Get(1).(client.Object)
+					obj, ok := args.Get(1).(client.Object)
+					require.True(t, ok)
 					createdObjects = append(createdObjects, obj)
 				}).Return(nil)
 			}

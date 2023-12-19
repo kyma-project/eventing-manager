@@ -68,7 +68,10 @@ type EventMesh struct {
 
 func (em *EventMesh) Initialize(cfg env.Config) error {
 	if em.client == nil {
-		authenticatedClient := auth.NewAuthenticatedClient(cfg)
+		authenticatedClient, err := auth.NewAuthenticatedClient(cfg)
+		if err != nil {
+			return err
+		}
 		httpClient, err := httpclient.NewHTTPClient(cfg.BEBAPIURL, authenticatedClient)
 		if err != nil {
 			return err

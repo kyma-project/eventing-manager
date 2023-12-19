@@ -16,12 +16,16 @@ const (
 )
 
 func TestAuthenticator(t *testing.T) {
+	t.Helper()
 	t.Setenv("CLIENT_ID", "foo")
 	t.Setenv("CLIENT_SECRET", "foo")
 	t.Setenv("TOKEN_ENDPOINT", "foo")
 	cfg := env.Config{}
 	// authenticate
-	client := NewAuthenticatedClient(cfg)
+	client, err := NewAuthenticatedClient(cfg)
+	if err != nil {
+		t.Error(err)
+	}
 
 	secTransport, ok := client.Transport.(*oauth2.Transport)
 	if !ok {

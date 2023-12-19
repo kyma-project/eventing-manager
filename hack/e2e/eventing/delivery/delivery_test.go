@@ -44,7 +44,10 @@ func TestMain(m *testing.M) {
 	}
 
 	// initialize sink client for fetching events.
-	testEnvironment.InitSinkClient()
+	err = testEnvironment.InitSinkClient()
+	if err != nil {
+		testEnvironment.Logger.Fatal(err.Error())
+	}
 
 	// Run the tests and exit.
 	code := m.Run()
