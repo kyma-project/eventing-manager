@@ -655,7 +655,7 @@ func (env TestEnvironment) EnsureNATSResourceState(t *testing.T, nats *natsv1alp
 	env.setNATSCRStatus(t, nats, status)
 	require.Eventually(t, func() bool {
 		err := env.k8sClient.Get(context.Background(), types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
-		return err == nil && nats.Status.State == string(status)
+		return err == nil && nats.Status.State == status
 	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
 }
 

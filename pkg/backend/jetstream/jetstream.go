@@ -633,7 +633,7 @@ func (js *JetStream) getOrCreateConsumer(subscription *eventingv1alpha2.Subscrip
 	consumerInfo, err := js.jsCtx.ConsumerInfo(js.Config.JSStreamName, jsSubKey.ConsumerName())
 	if err != nil {
 		if pkgerrors.Is(err, nats.ErrConsumerNotFound) {
-			ecSubsConfig := env.DefaultSubscriptionConfig(js.subsConfig)
+			ecSubsConfig := js.subsConfig
 			consumerInfo, err = js.jsCtx.AddConsumer(
 				js.Config.JSStreamName,
 				js.getConsumerConfig(jsSubKey, jsSubject, subscription.GetMaxInFlightMessages(&ecSubsConfig)),
@@ -655,7 +655,7 @@ func (js *JetStream) createNATSSubscription(subscription *eventingv1alpha2.Subsc
 	jsSubject := js.GetJetStreamSubject(subscription.Spec.Source, subject.CleanType, subscription.Spec.TypeMatching)
 	jsSubKey := NewSubscriptionSubjectIdentifier(subscription, jsSubject)
 
-	ecSubsConfig := env.DefaultSubscriptionConfig(js.subsConfig)
+	ecSubsConfig := js.subsConfig
 	jsSubscription, err := js.jsCtx.Subscribe(
 		jsSubject,
 		asyncCallback,
@@ -701,7 +701,7 @@ func (js *JetStream) bindInvalidSubscriptions(subscription *eventingv1alpha2.Sub
 func (js *JetStream) syncConsumerMaxInFlight(subscription *eventingv1alpha2.Subscription,
 	consumerInfo nats.ConsumerInfo,
 ) error {
-	ecSubsConfig := env.DefaultSubscriptionConfig(js.subsConfig)
+	ecSubsConfig := js.subsConfig
 	maxInFlight := subscription.GetMaxInFlightMessages(&ecSubsConfig)
 
 	if consumerInfo.Config.MaxAckPending == maxInFlight {

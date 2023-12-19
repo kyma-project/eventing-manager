@@ -28,7 +28,6 @@ linters:
     - prealloc
     - testpackage
     - tparallel
-    - unconvert
     - varnamelen
     - wrapcheck
 
