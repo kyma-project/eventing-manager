@@ -13,7 +13,7 @@ import (
 )
 
 func TestAddTracingHeadersToContext(t *testing.T) {
-	g := NewGomegaWithT(t)
+	g := NewWithT(t)
 	testCases := []struct {
 		name            string
 		event           *ceevent.Event
@@ -71,14 +71,14 @@ func TestAddTracingHeadersToContext(t *testing.T) {
 
 func getTracingExtensions(event *ceevent.Event) map[string]string {
 	traceExtensions := make(map[string]string)
-	for k, v := range event.Extensions() {
-		if k == traceParentCEExtensionsKey ||
-			k == b3TraceIDCEExtensionsKey ||
-			k == b3ParentSpanIDCEExtensionsKey ||
-			k == b3SpanIDCEExtensionsKey ||
-			k == b3SampledCEExtensionsKey ||
-			k == b3FlagsCEExtensionsKey {
-			traceExtensions[k] = fmt.Sprintf("%v", v)
+	for extension, setting := range event.Extensions() {
+		if extension == traceParentCEExtensionsKey ||
+			extension == b3TraceIDCEExtensionsKey ||
+			extension == b3ParentSpanIDCEExtensionsKey ||
+			extension == b3SpanIDCEExtensionsKey ||
+			extension == b3SampledCEExtensionsKey ||
+			extension == b3FlagsCEExtensionsKey {
+			traceExtensions[extension] = fmt.Sprintf("%v", setting)
 		}
 	}
 	return traceExtensions

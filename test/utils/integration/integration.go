@@ -1082,13 +1082,13 @@ func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*v1alpha1
 }
 
 func (env TestEnvironment) DeleteEventingFromK8s(name, namespace string) error {
-	cr := &v1alpha1.Eventing{
+	eventing := &v1alpha1.Eventing{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 	}
-	return env.k8sClient.Delete(context.Background(), cr)
+	return env.k8sClient.Delete(context.Background(), eventing)
 }
 
 func (env TestEnvironment) DeleteSecretFromK8s(name, namespace string) error {

@@ -79,31 +79,31 @@ func Test_PatchApply(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			var objs []client.Object
-			if tc.givenDeployment != nil {
-				objs = append(objs, tc.givenDeployment)
+			if testcase.givenDeployment != nil {
+				objs = append(objs, testcase.givenDeployment)
 			}
 			fakeClientBuilder := fake.NewClientBuilder()
 			fakeClient := fakeClientBuilder.WithObjects(objs...).Build()
 			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager, nil)
 
 			// when
-			err := kubeClient.PatchApply(context.Background(), tc.givenUpdateDeployment)
+			err := kubeClient.PatchApply(context.Background(), testcase.givenUpdateDeployment)
 
 			// then
 			require.NoError(t, err)
 			// check that it should exist on k8s.
 			gotSTS, err := kubeClient.GetDeployment(context.Background(),
-				tc.givenUpdateDeployment.GetName(), tc.givenUpdateDeployment.GetNamespace())
+				testcase.givenUpdateDeployment.GetName(), testcase.givenUpdateDeployment.GetNamespace())
 			require.NoError(t, err)
-			require.Equal(t, tc.givenUpdateDeployment.GetName(), gotSTS.Name)
-			require.Equal(t, tc.givenUpdateDeployment.GetNamespace(), gotSTS.Namespace)
-			require.Equal(t, *tc.givenUpdateDeployment.Spec.Replicas, *gotSTS.Spec.Replicas)
+			require.Equal(t, testcase.givenUpdateDeployment.GetName(), gotSTS.Name)
+			require.Equal(t, testcase.givenUpdateDeployment.GetNamespace(), gotSTS.Namespace)
+			require.Equal(t, *testcase.givenUpdateDeployment.Spec.Replicas, *gotSTS.Spec.Replicas)
 		})
 	}
 }
@@ -160,8 +160,8 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// get crd
@@ -171,8 +171,8 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 			// given
 			var objs []client.Object
 			objs = append(objs, paCRD)
-			if tc.givenPeerAuthentication != nil {
-				objs = append(objs, tc.givenPeerAuthentication)
+			if testcase.givenPeerAuthentication != nil {
+				objs = append(objs, testcase.givenPeerAuthentication)
 			}
 
 			// define scheme
@@ -184,7 +184,7 @@ func Test_PatchApplyPeerAuthentication(t *testing.T) {
 			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager, nil)
 
 			// when
-			err = kubeClient.PatchApplyPeerAuthentication(context.Background(), tc.givenUpdatePeerAuthentication)
+			err = kubeClient.PatchApplyPeerAuthentication(context.Background(), testcase.givenUpdatePeerAuthentication)
 
 			// then
 			require.NoError(t, err)
@@ -216,8 +216,8 @@ func Test_UpdateDeployment(t *testing.T) {
 
 	// Run tests
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
@@ -225,26 +225,26 @@ func Test_UpdateDeployment(t *testing.T) {
 			kubeClient := &KubeClient{
 				client: fakeClient,
 			}
-			givenDeployment := testutils.NewDeployment("test-deployment", tc.namespace, map[string]string{})
+			givenDeployment := testutils.NewDeployment("test-deployment", testcase.namespace, map[string]string{})
 			// Create the deployment if it should exist
-			if tc.givenDeploymentExists {
+			if testcase.givenDeploymentExists {
 				require.NoError(t, fakeClient.Create(ctx, givenDeployment))
 			}
 
 			givenUpdatedDeployment := givenDeployment.DeepCopy()
-			givenUpdatedDeployment.Spec = tc.givenNewDeploymentSpec
+			givenUpdatedDeployment.Spec = testcase.givenNewDeploymentSpec
 
 			// when
 			err := kubeClient.UpdateDeployment(ctx, givenUpdatedDeployment)
 
 			// then
-			if !tc.givenDeploymentExists {
+			if !testcase.givenDeploymentExists {
 				require.Error(t, err)
 				require.True(t, kerrors.IsNotFound(err))
 			} else {
 				gotDeploy, err := kubeClient.GetDeployment(ctx, givenDeployment.Name, givenDeployment.Namespace)
 				require.NoError(t, err)
-				require.Equal(t, tc.givenNewDeploymentSpec, gotDeploy.Spec)
+				require.Equal(t, testcase.givenNewDeploymentSpec, gotDeploy.Spec)
 			}
 		})
 	}
@@ -282,14 +282,14 @@ func Test_DeleteResource(t *testing.T) {
 
 	// Run tests
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
 			var givenObjs []client.Object
-			if tc.givenDeploymentExists {
-				givenObjs = append(givenObjs, tc.givenDeployment)
+			if testcase.givenDeploymentExists {
+				givenObjs = append(givenObjs, testcase.givenDeployment)
 			}
 			fakeClient := fake.NewClientBuilder().WithObjects(givenObjs...).Build()
 			kubeClient := &KubeClient{
@@ -297,14 +297,14 @@ func Test_DeleteResource(t *testing.T) {
 			}
 
 			// when
-			err := kubeClient.DeleteDeployment(ctx, tc.givenDeployment.Name, tc.givenDeployment.Namespace)
+			err := kubeClient.DeleteDeployment(ctx, testcase.givenDeployment.Name, testcase.givenDeployment.Namespace)
 
 			// then
 			require.NoError(t, err)
 			// Check that the deployment must not exist.
 			err = fakeClient.Get(ctx, types.NamespacedName{
-				Name:      tc.givenDeployment.Name,
-				Namespace: tc.givenDeployment.Namespace,
+				Name:      testcase.givenDeployment.Name,
+				Namespace: testcase.givenDeployment.Namespace,
 			}, &kappsv1.Deployment{})
 			require.True(t, kerrors.IsNotFound(err), "DeleteResource did not delete deployment")
 		})
@@ -332,8 +332,8 @@ func Test_DeleteDeployment(t *testing.T) {
 
 	// Run tests
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
@@ -348,7 +348,7 @@ func Test_DeleteDeployment(t *testing.T) {
 				},
 			}
 			// Create the deployment if it should exist
-			if !tc.noDeployment {
+			if !testcase.noDeployment {
 				if err := fakeClient.Create(ctx, deployment); err != nil {
 					t.Fatalf("failed to create deployment: %v", err)
 				}
@@ -361,7 +361,7 @@ func Test_DeleteDeployment(t *testing.T) {
 			require.NoError(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
-				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &kappsv1.Deployment{})
+				types.NamespacedName{Name: "test-deployment", Namespace: testcase.namespace}, &kappsv1.Deployment{})
 			require.True(t, kerrors.IsNotFound(err), "DeleteDeployment did not delete deployment")
 		})
 	}
@@ -385,8 +385,8 @@ func Test_DeleteClusterRole(t *testing.T) {
 
 	// Run tests
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
@@ -401,7 +401,7 @@ func Test_DeleteClusterRole(t *testing.T) {
 				},
 			}
 			// Create the deployment if it should exist
-			if !tc.noDeployment {
+			if !testcase.noDeployment {
 				if err := fakeClient.Create(ctx, clusterRole); err != nil {
 					t.Fatalf("failed to create ClusterRole: %v", err)
 				}
@@ -438,8 +438,8 @@ func Test_DeleteClusterRoleBinding(t *testing.T) {
 
 	// Run tests
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
@@ -454,7 +454,7 @@ func Test_DeleteClusterRoleBinding(t *testing.T) {
 				},
 			}
 			// Create the deployment if it should exist
-			if !tc.noDeployment {
+			if !testcase.noDeployment {
 				if err := fakeClient.Create(ctx, clusterRoleBinding); err != nil {
 					t.Fatalf("failed to create ClusterRoleBinding: %v", err)
 				}
@@ -515,8 +515,8 @@ func Test_GetSecret(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
@@ -526,20 +526,20 @@ func Test_GetSecret(t *testing.T) {
 			}
 
 			// Create the secret if it should exist
-			if tc.wantSecret != nil {
-				require.NoError(t, fakeClient.Create(ctx, tc.wantSecret))
+			if testcase.wantSecret != nil {
+				require.NoError(t, fakeClient.Create(ctx, testcase.wantSecret))
 			}
 
 			// Call the GetSecret function with the test case's givenNamespacedName.
-			secret, err := kubeClient.GetSecret(context.Background(), tc.givenNamespacedName)
+			secret, err := kubeClient.GetSecret(context.Background(), testcase.givenNamespacedName)
 
 			// Assert that the function returned the expected secret and error.
-			if tc.wantNotFoundError {
+			if testcase.wantNotFoundError {
 				require.True(t, kerrors.IsNotFound(err))
 			} else {
-				require.ErrorIs(t, err, tc.wantError)
+				require.ErrorIs(t, err, testcase.wantError)
 			}
-			require.Equal(t, tc.wantSecret, secret)
+			require.Equal(t, testcase.wantSecret, secret)
 		})
 	}
 }
@@ -584,8 +584,8 @@ func Test_GetMutatingWebHookConfiguration(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
@@ -595,17 +595,17 @@ func Test_GetMutatingWebHookConfiguration(t *testing.T) {
 			}
 
 			// Create the MutatingWebHookConfiguration if it should exist
-			if tc.wantMutatingWebhook != nil {
-				require.NoError(t, fakeClient.Create(ctx, tc.wantMutatingWebhook))
+			if testcase.wantMutatingWebhook != nil {
+				require.NoError(t, fakeClient.Create(ctx, testcase.wantMutatingWebhook))
 			}
 
 			// when
-			gotWebhook, err := kubeClient.GetMutatingWebHookConfiguration(context.Background(), tc.givenName)
+			gotWebhook, err := kubeClient.GetMutatingWebHookConfiguration(context.Background(), testcase.givenName)
 
 			// then
-			if !tc.wantNotFoundError {
+			if !testcase.wantNotFoundError {
 				require.NoError(t, err)
-				require.Equal(t, tc.wantMutatingWebhook.Webhooks, gotWebhook.Webhooks)
+				require.Equal(t, testcase.wantMutatingWebhook.Webhooks, gotWebhook.Webhooks)
 			} else {
 				require.Error(t, err)
 				require.True(t, kerrors.IsNotFound(err))
@@ -654,8 +654,8 @@ func Test_GetValidatingWebHookConfiguration(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
@@ -665,17 +665,17 @@ func Test_GetValidatingWebHookConfiguration(t *testing.T) {
 			}
 
 			// Create the ValidatingWebhookConfiguration if it should exist
-			if tc.wantValidatingWebhook != nil {
-				require.NoError(t, fakeClient.Create(ctx, tc.wantValidatingWebhook))
+			if testcase.wantValidatingWebhook != nil {
+				require.NoError(t, fakeClient.Create(ctx, testcase.wantValidatingWebhook))
 			}
 
 			// when
-			gotWebhook, err := kubeClient.GetValidatingWebHookConfiguration(context.Background(), tc.givenName)
+			gotWebhook, err := kubeClient.GetValidatingWebHookConfiguration(context.Background(), testcase.givenName)
 
 			// then
-			if !tc.wantNotFoundError {
+			if !testcase.wantNotFoundError {
 				require.NoError(t, err)
-				require.Equal(t, tc.wantValidatingWebhook.Webhooks, gotWebhook.Webhooks)
+				require.Equal(t, testcase.wantValidatingWebhook.Webhooks, gotWebhook.Webhooks)
 			} else {
 				require.Error(t, err)
 				require.True(t, kerrors.IsNotFound(err))
@@ -707,14 +707,14 @@ func Test_GetCRD(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			sampleCRD := testutils.NewApplicationCRD()
 			var objs []runtime.Object
-			if !tc.wantNotFoundError {
+			if !testcase.wantNotFoundError {
 				objs = append(objs, sampleCRD)
 			}
 
@@ -722,10 +722,10 @@ func Test_GetCRD(t *testing.T) {
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
-			gotCRD, err := kubeClient.GetCRD(context.Background(), tc.givenCRDName)
+			gotCRD, err := kubeClient.GetCRD(context.Background(), testcase.givenCRDName)
 
 			// then
-			if tc.wantNotFoundError {
+			if testcase.wantNotFoundError {
 				require.Error(t, err)
 				require.True(t, kerrors.IsNotFound(err))
 			} else {
@@ -756,14 +756,14 @@ func Test_ApplicationCRDExists(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			sampleCRD := testutils.NewApplicationCRD()
 			var objs []runtime.Object
-			if tc.wantResult {
+			if testcase.wantResult {
 				objs = append(objs, sampleCRD)
 			}
 
@@ -775,7 +775,7 @@ func Test_ApplicationCRDExists(t *testing.T) {
 
 			// then
 			require.NoError(t, err)
-			require.Equal(t, tc.wantResult, gotResult)
+			require.Equal(t, testcase.wantResult, gotResult)
 		})
 	}
 }
@@ -800,15 +800,15 @@ func Test_PeerAuthenticationCRDExists(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			sampleCRD, err := testutils.NewPeerAuthenticationCRD()
 			require.NoError(t, err)
 			var objs []runtime.Object
-			if tc.wantResult {
+			if testcase.wantResult {
 				objs = append(objs, sampleCRD)
 			}
 
@@ -820,7 +820,7 @@ func Test_PeerAuthenticationCRDExists(t *testing.T) {
 
 			// then
 			require.NoError(t, err)
-			require.Equal(t, tc.wantResult, gotResult)
+			require.Equal(t, testcase.wantResult, gotResult)
 		})
 	}
 }
@@ -860,8 +860,8 @@ func TestGetSubscriptions(t *testing.T) {
 
 	// Iterate over test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
@@ -876,15 +876,15 @@ func TestGetSubscriptions(t *testing.T) {
 			}
 
 			// Create the secret if it should exist
-			if tc.wantSubscriptionList != nil && len(tc.wantSubscriptionList.Items) > 0 {
-				require.NoError(t, fakeClient.Create(ctx, &tc.wantSubscriptionList.Items[0]))
+			if testcase.wantSubscriptionList != nil && len(testcase.wantSubscriptionList.Items) > 0 {
+				require.NoError(t, fakeClient.Create(ctx, &testcase.wantSubscriptionList.Items[0]))
 			}
 
 			// Call the GetSubscriptions method
 			result, _ := kubeClient.GetSubscriptions(context.Background())
 
 			// Assert the result of the method
-			if tc.wantSubscriptionList != nil && len(tc.wantSubscriptionList.Items) > 0 {
+			if testcase.wantSubscriptionList != nil && len(testcase.wantSubscriptionList.Items) > 0 {
 				require.NotEmpty(t, result.Items)
 			} else {
 				require.Empty(t, result.Items)
@@ -917,23 +917,23 @@ func Test_GetConfigMap(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			ctx := context.Background()
 			kubeClient := &KubeClient{client: fake.NewClientBuilder().Build()}
-			givenCM := testutils.NewConfigMap(tc.givenName, tc.givenNamespace)
-			if !tc.wantNotFoundError {
+			givenCM := testutils.NewConfigMap(testcase.givenName, testcase.givenNamespace)
+			if !testcase.wantNotFoundError {
 				require.NoError(t, kubeClient.client.Create(ctx, givenCM))
 			}
 
 			// when
-			gotCM, err := kubeClient.GetConfigMap(context.Background(), tc.givenName, tc.givenNamespace)
+			gotCM, err := kubeClient.GetConfigMap(context.Background(), testcase.givenName, testcase.givenNamespace)
 
 			// then
-			if tc.wantNotFoundError {
+			if testcase.wantNotFoundError {
 				require.Error(t, err)
 				require.True(t, kerrors.IsNotFound(err))
 			} else {
@@ -964,13 +964,13 @@ func Test_APIRuleCRDExists(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			var objs []runtime.Object
-			if tc.wantResult {
+			if testcase.wantResult {
 				sampleCRD := testutils.NewAPIRuleCRD()
 				objs = append(objs, sampleCRD)
 			}
@@ -983,7 +983,7 @@ func Test_APIRuleCRDExists(t *testing.T) {
 
 			// then
 			require.NoError(t, err)
-			require.Equal(t, tc.wantResult, gotResult)
+			require.Equal(t, testcase.wantResult, gotResult)
 		})
 	}
 }

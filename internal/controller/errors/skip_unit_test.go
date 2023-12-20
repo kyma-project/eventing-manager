@@ -23,12 +23,13 @@ func Test_NewSkippable(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		skippableErr := controllererrors.NewSkippable(tc.error)
+		testcase := tc
+		skippableErr := controllererrors.NewSkippable(testcase.error)
 		if skippableErr == nil {
 			t.Errorf("test NewSkippable retuned nil error")
 			continue
 		}
-		require.ErrorIs(t, skippableErr, tc.error)
+		require.ErrorIs(t, skippableErr, testcase.error)
 	}
 }
 

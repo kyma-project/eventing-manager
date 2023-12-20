@@ -69,15 +69,15 @@ func Test_ArgumentError_Is(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// when
-			ok := errors.Is(tc.givenError(), errInvalidStorageType)
+			ok := errors.Is(testcase.givenError(), errInvalidStorageType)
 
 			// then
-			assert.Equal(t, tc.wantIsTrue, ok)
+			assert.Equal(t, testcase.wantIsTrue, ok)
 		})
 	}
 }

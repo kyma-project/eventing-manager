@@ -223,63 +223,63 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t, givenEventing)
 			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
 			// get mocks from test-case.
-			givenNATSSubManagerMock := tc.givenNATSSubManagerMock()
-			givenManagerFactoryMock := tc.givenManagerFactoryMock(givenNATSSubManagerMock)
-			givenEventingManagerMock := tc.givenEventingManagerMock()
-			givenNatConfigHandlerMock := tc.givenNatsConfigHandlerMock()
+			givenNATSSubManagerMock := testcase.givenNATSSubManagerMock()
+			givenManagerFactoryMock := testcase.givenManagerFactoryMock(givenNATSSubManagerMock)
+			givenEventingManagerMock := testcase.givenEventingManagerMock()
+			givenNatConfigHandlerMock := testcase.givenNatsConfigHandlerMock()
 
 			// connect mocks with reconciler.
-			testEnv.Reconciler.isNATSSubManagerStarted = tc.givenIsNATSSubManagerStarted
+			testEnv.Reconciler.isNATSSubManagerStarted = testcase.givenIsNATSSubManagerStarted
 			testEnv.Reconciler.eventingManager = givenEventingManagerMock
 			testEnv.Reconciler.natsConfigHandler = givenNatConfigHandlerMock
 			testEnv.Reconciler.subManagerFactory = givenManagerFactoryMock
 			testEnv.Reconciler.natsSubManager = nil
-			if givenManagerFactoryMock == nil || tc.givenUpdateTest {
+			if givenManagerFactoryMock == nil || testcase.givenUpdateTest {
 				testEnv.Reconciler.natsSubManager = givenNATSSubManagerMock
 			}
 
 			// set the backend hash before depending on test
-			givenEventing.Status.BackendConfigHash = tc.givenHashBefore
+			givenEventing.Status.BackendConfigHash = testcase.givenHashBefore
 
 			// when
 			err := testEnv.Reconciler.reconcileNATSSubManager(givenEventing, logger)
-			if err != nil && tc.givenShouldRetry {
+			if err != nil && testcase.givenShouldRetry {
 				// This is to test the scenario where initialization of natsSubManager was successful but
 				// starting the natsSubManager failed. So on next try it should again try to start the natsSubManager.
 				err = testEnv.Reconciler.reconcileNATSSubManager(givenEventing, logger)
 			}
-			if tc.givenUpdateTest {
+			if testcase.givenUpdateTest {
 				// Run reconcile again with newBackendConfig:
 				err = testEnv.Reconciler.reconcileNATSSubManager(givenEventing, logger)
 				require.NoError(t, err)
 			}
 
 			// check for backend hash after
-			require.Equal(t, tc.wantHashAfter, givenEventing.Status.BackendConfigHash)
+			require.Equal(t, testcase.wantHashAfter, givenEventing.Status.BackendConfigHash)
 
 			// then
-			if tc.wantError != nil {
+			if testcase.wantError != nil {
 				require.Error(t, err)
-				require.Equal(t, tc.wantError.Error(), err.Error())
+				require.Equal(t, testcase.wantError.Error(), err.Error())
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, testEnv.Reconciler.natsSubManager)
 				require.True(t, testEnv.Reconciler.isNATSSubManagerStarted)
 			}
 
-			if tc.wantAssertCheck {
+			if testcase.wantAssertCheck {
 				givenNATSSubManagerMock.AssertExpectations(t)
 				givenEventingManagerMock.AssertExpectations(t)
 				givenNatConfigHandlerMock.AssertExpectations(t)
 			}
-			if !tc.givenIsNATSSubManagerStarted {
+			if !testcase.givenIsNATSSubManagerStarted {
 				givenManagerFactoryMock.AssertExpectations(t)
 			}
 		})
@@ -331,8 +331,8 @@ func Test_stopNATSSubManager(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
@@ -340,24 +340,24 @@ func Test_stopNATSSubManager(t *testing.T) {
 			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
 			// get mocks from test-case.
-			givenNATSSubManagerMock := tc.givenNATSSubManagerMock()
+			givenNATSSubManagerMock := testcase.givenNATSSubManagerMock()
 
 			// connect mocks with reconciler.
 			testEnv.Reconciler.natsSubManager = givenNATSSubManagerMock
-			testEnv.Reconciler.isNATSSubManagerStarted = tc.givenIsNATSSubManagerStarted
+			testEnv.Reconciler.isNATSSubManagerStarted = testcase.givenIsNATSSubManagerStarted
 
 			// when
 			err := testEnv.Reconciler.stopNATSSubManager(true, logger)
 			// then
-			if tc.wantError == nil {
+			if testcase.wantError == nil {
 				require.NoError(t, err)
 				require.Nil(t, testEnv.Reconciler.natsSubManager)
 				require.False(t, testEnv.Reconciler.isNATSSubManagerStarted)
 			} else {
-				require.Equal(t, tc.wantError.Error(), err.Error())
+				require.Equal(t, testcase.wantError.Error(), err.Error())
 			}
 
-			if tc.wantAssertCheck {
+			if testcase.wantAssertCheck {
 				givenNATSSubManagerMock.AssertExpectations(t)
 			}
 		})
@@ -428,14 +428,14 @@ func Test_GetNatsConfig(t *testing.T) {
 	require.NoError(t, opts.Parse())
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			ctx := context.Background()
 			kubeClient := new(k8smocks.Client)
-			kubeClient.On("GetNATSResources", ctx, tc.eventing.Namespace).Return(&natsv1alpha1.NATSList{
-				Items: tc.givenNatsResources,
-			}, tc.expectedError)
+			kubeClient.On("GetNATSResources", ctx, testcase.eventing.Namespace).Return(&natsv1alpha1.NATSList{
+				Items: testcase.givenNatsResources,
+			}, testcase.expectedError)
 
 			natsConfigHandler := NatsConfigHandlerImpl{
 				kubeClient: kubeClient,
@@ -443,11 +443,11 @@ func Test_GetNatsConfig(t *testing.T) {
 			}
 
 			// when
-			natsConfig, err := natsConfigHandler.GetNatsConfig(ctx, *tc.eventing)
+			natsConfig, err := natsConfigHandler.GetNatsConfig(ctx, *testcase.eventing)
 
 			// then
-			require.Equal(t, tc.expectedError, err)
-			require.Equal(t, tc.expectedConfig, natsConfig)
+			require.Equal(t, testcase.expectedError, err)
+			require.Equal(t, testcase.expectedConfig, natsConfig)
 		})
 	}
 }
@@ -493,25 +493,25 @@ func Test_getNATSUrl(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			ctx := context.Background()
 			kubeClient := new(k8smocks.Client)
-			kubeClient.On("GetNATSResources", ctx, tc.givenNamespace).Return(&natsv1alpha1.NATSList{
-				Items: tc.givenNatsResources,
-			}, tc.getNATSResourcesErr)
+			kubeClient.On("GetNATSResources", ctx, testcase.givenNamespace).Return(&natsv1alpha1.NATSList{
+				Items: testcase.givenNatsResources,
+			}, testcase.getNATSResourcesErr)
 
 			natsConfigHandler := NatsConfigHandlerImpl{
 				kubeClient: kubeClient,
 			}
 
 			// when
-			url, err := natsConfigHandler.getNATSUrl(ctx, tc.givenNamespace)
+			url, err := natsConfigHandler.getNATSUrl(ctx, testcase.givenNamespace)
 
 			// then
-			require.Equal(t, tc.wantErr, err)
-			require.Equal(t, tc.want, url)
+			require.Equal(t, testcase.wantErr, err)
+			require.Equal(t, testcase.want, url)
 		})
 	}
 }
@@ -558,15 +558,15 @@ func Test_UpdateNatsConfig(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
 			kubeClient := new(k8smocks.Client)
-			kubeClient.On("GetNATSResources", ctx, tc.eventing.Namespace).Return(&natsv1alpha1.NATSList{
-				Items: tc.givenNatsResources,
-			}, tc.expectedError)
+			kubeClient.On("GetNATSResources", ctx, testcase.eventing.Namespace).Return(&natsv1alpha1.NATSList{
+				Items: testcase.givenNatsResources,
+			}, testcase.expectedError)
 
 			natsConfigHandler := NatsConfigHandlerImpl{
 				kubeClient: kubeClient,
@@ -574,11 +574,11 @@ func Test_UpdateNatsConfig(t *testing.T) {
 
 			// when
 			natsConfig := env.NATSConfig{}
-			err := natsConfigHandler.setURLToNatsConfig(ctx, tc.eventing, &natsConfig)
+			err := natsConfigHandler.setURLToNatsConfig(ctx, testcase.eventing, &natsConfig)
 
 			// then
-			require.Equal(t, tc.expectedError, err)
-			require.Equal(t, tc.expectedConfig, tc.expectedConfig)
+			require.Equal(t, testcase.expectedError, err)
+			require.Equal(t, testcase.expectedConfig, testcase.expectedConfig)
 		})
 	}
 }

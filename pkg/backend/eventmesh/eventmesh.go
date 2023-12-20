@@ -198,10 +198,10 @@ func (em *EventMesh) getProcessedEventTypes(kymaSubscription *eventingv1alpha2.S
 
 	// process types including cleaning, appending prefixes
 	result := make([]backendutils.EventTypeInfo, 0, len(uniqueTypes))
-	for _, t := range uniqueTypes {
+	for _, utype := range uniqueTypes {
 		if kymaSubscription.Spec.TypeMatching == eventingv1alpha2.TypeMatchingExact {
 			// not do any processing if TypeMatching is exact.
-			result = append(result, backendutils.EventTypeInfo{OriginalType: t, CleanType: t, ProcessedType: t})
+			result = append(result, backendutils.EventTypeInfo{OriginalType: utype, CleanType: utype, ProcessedType: utype})
 			continue
 		}
 
@@ -211,7 +211,7 @@ func (em *EventMesh) getProcessedEventTypes(kymaSubscription *eventingv1alpha2.S
 			return nil, err
 		}
 
-		cleanedType, err := cleaner.CleanEventType(t)
+		cleanedType, err := cleaner.CleanEventType(utype)
 		if err != nil {
 			return nil, err
 		}
@@ -223,7 +223,7 @@ func (em *EventMesh) getProcessedEventTypes(kymaSubscription *eventingv1alpha2.S
 		}
 
 		result = append(result, backendutils.EventTypeInfo{
-			OriginalType: t, CleanType: cleanedType,
+			OriginalType: utype, CleanType: cleanedType,
 			ProcessedType: eventMeshSubject,
 		})
 	}

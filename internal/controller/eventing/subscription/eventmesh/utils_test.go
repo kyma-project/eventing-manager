@@ -121,13 +121,14 @@ func Test_addFinalizer(t *testing.T) {
 		},
 	}
 
-	for _, tt := range testCases {
-		t.Run(tt.name, func(t *testing.T) {
-			sub := tt.givenSubscription
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			sub := testcase.givenSubscription
 			err := addFinalizer(sub, namedLogger)
 			require.NoError(t, err)
-			require.Len(t, sub.Finalizers, tt.wantFinalizersLen)
-			require.Equal(t, tt.wantFinalizers, sub.Finalizers)
+			require.Len(t, sub.Finalizers, testcase.wantFinalizersLen)
+			require.Equal(t, testcase.wantFinalizers, sub.Finalizers)
 		})
 	}
 }
@@ -155,13 +156,14 @@ func Test_getSvcNsAndName(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			namespace, name, err := getSvcNsAndName(tc.givenURL)
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			namespace, name, err := getSvcNsAndName(testcase.givenURL)
 
-			require.Equal(t, tc.wantError, err != nil)
-			if !tc.wantError {
-				require.Equal(t, tc.wantName, name)
-				require.Equal(t, tc.wantNamespace, namespace)
+			require.Equal(t, testcase.wantError, err != nil)
+			if !testcase.wantError {
+				require.Equal(t, testcase.wantName, name)
+				require.Equal(t, testcase.wantNamespace, namespace)
 			}
 		})
 	}
@@ -295,13 +297,14 @@ func Test_setSubscriptionStatusExternalSink(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			sub := tc.givenSubscription
-			err := setSubscriptionStatusExternalSink(sub, tc.givenAPIRule)
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			sub := testcase.givenSubscription
+			err := setSubscriptionStatusExternalSink(sub, testcase.givenAPIRule)
 
-			require.Equal(t, tc.wantError, err != nil)
-			if !tc.wantError {
-				require.Equal(t, tc.wantExternalSink, sub.Status.Backend.ExternalSink)
+			require.Equal(t, testcase.wantError, err != nil)
+			if !testcase.wantError {
+				require.Equal(t, testcase.wantExternalSink, sub.Status.Backend.ExternalSink)
 			}
 		})
 	}

@@ -3,7 +3,6 @@ package test
 import (
 	"fmt"
 	"math/rand"
-	"net"
 	"time"
 
 	"go.uber.org/zap"
@@ -68,31 +67,12 @@ func GetRandString(length int) string {
 	return string(b)
 }
 
-// GetFreePort determines a free port on the host. It does so by delegating the job to net.ListenTCP.
-// Then providing a port of 0 to net.ListenTCP, it will automatically choose a port for us.
-func GetFreePort() (int, error) {
-	a, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		return -1, err
-	}
-
-	var l *net.TCPListener
-	l, err = net.ListenTCP("tcp", a)
-	if err != nil {
-		return -1, err
-	}
-
-	port := l.Addr().(*net.TCPAddr).Port //nolint:forcetypeassert // will always return a TCPAddr according to documentation
-	err = l.Close()
-	return port, err
-}
-
 // findEnvVar returns the env variable which has `name == envVar.Name`,
 // or `nil` if there is no such env variable.
 func FindEnvVar(envVars []kcorev1.EnvVar, name string) *kcorev1.EnvVar {
-	for _, n := range envVars {
-		if name == n.Name {
-			return &n
+	for _, envvar := range envVars {
+		if name == envvar.Name {
+			return &envvar
 		}
 	}
 	return nil

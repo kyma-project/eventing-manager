@@ -249,63 +249,63 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t, givenEventing, givenOauthSecret)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig
 
 			// get mocks from test-case.
-			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
-			givenManagerFactoryMock := tc.givenManagerFactoryMock(givenEventMeshSubManagerMock)
-			givenEventingManagerMock := tc.givenEventingManagerMock()
+			givenEventMeshSubManagerMock := testcase.givenEventMeshSubManagerMock()
+			givenManagerFactoryMock := testcase.givenManagerFactoryMock(givenEventMeshSubManagerMock)
+			givenEventingManagerMock := testcase.givenEventingManagerMock()
 
 			// connect mocks with reconciler.
-			if tc.givenKubeClientMock != nil {
-				testEnv.Reconciler.kubeClient = tc.givenKubeClientMock()
+			if testcase.givenKubeClientMock != nil {
+				testEnv.Reconciler.kubeClient = testcase.givenKubeClientMock()
 			}
 
-			testEnv.Reconciler.isEventMeshSubManagerStarted = tc.givenIsEventMeshSubManagerStarted
+			testEnv.Reconciler.isEventMeshSubManagerStarted = testcase.givenIsEventMeshSubManagerStarted
 			testEnv.Reconciler.eventingManager = givenEventingManagerMock
 			testEnv.Reconciler.subManagerFactory = givenManagerFactoryMock
 			testEnv.Reconciler.eventMeshSubManager = nil
-			if givenManagerFactoryMock == nil || tc.givenUpdateTest {
+			if givenManagerFactoryMock == nil || testcase.givenUpdateTest {
 				testEnv.Reconciler.eventMeshSubManager = givenEventMeshSubManagerMock
 			}
 
 			// set the backend hash before depending on test
-			givenEventing.Status.BackendConfigHash = tc.givenHashBefore
+			givenEventing.Status.BackendConfigHash = testcase.givenHashBefore
 
 			// when
 
 			eventMeshSecret := utils.NewEventMeshSecret("eventing-backend", givenEventing.Namespace)
 
 			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret)
-			if err != nil && tc.givenShouldRetry {
+			if err != nil && testcase.givenShouldRetry {
 				// This is to test the scenario where initialization of eventMeshSubManager was successful but
 				// starting the eventMeshSubManager failed. So on next try it should again try to start the eventMeshSubManager.
 				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret)
 			}
-			if tc.givenUpdateTest {
+			if testcase.givenUpdateTest {
 				// Run reconcile again with newBackendConfig:
 				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret)
 				require.NoError(t, err)
 			}
 
 			// check for backend hash after
-			require.Equal(t, tc.wantHashAfter, givenEventing.Status.BackendConfigHash)
+			require.Equal(t, testcase.wantHashAfter, givenEventing.Status.BackendConfigHash)
 
 			// then
-			if tc.wantError != nil {
+			if testcase.wantError != nil {
 				require.Error(t, err)
-				require.ErrorAs(t, err, &tc.wantError)
+				require.ErrorAs(t, err, &testcase.wantError)
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, testEnv.Reconciler.eventMeshSubManager)
 				require.True(t, testEnv.Reconciler.isEventMeshSubManagerStarted)
 			}
 
-			if tc.wantAssertCheck {
+			if testcase.wantAssertCheck {
 				givenEventMeshSubManagerMock.AssertExpectations(t)
 				givenManagerFactoryMock.AssertExpectations(t)
 				givenEventingManagerMock.AssertExpectations(t)
@@ -407,19 +407,19 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			testEnv := NewMockedUnitTestEnvironment(t, tc.givenEventing, givenOauthSecret)
+			testEnv := NewMockedUnitTestEnvironment(t, testcase.givenEventing, givenOauthSecret)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig
 
-			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
-			givenManagerFactoryMock := tc.givenManagerFactoryMock(givenEventMeshSubManagerMock)
-			givenEventingManagerMock := tc.givenEventingManagerMock()
+			givenEventMeshSubManagerMock := testcase.givenEventMeshSubManagerMock()
+			givenManagerFactoryMock := testcase.givenManagerFactoryMock(givenEventMeshSubManagerMock)
+			givenEventingManagerMock := testcase.givenEventingManagerMock()
 
 			var mockClient *k8smocks.Client
-			if tc.givenKubeClientMock != nil {
-				testEnv.Reconciler.kubeClient, mockClient = tc.givenKubeClientMock()
+			if testcase.givenKubeClientMock != nil {
+				testEnv.Reconciler.kubeClient, mockClient = testcase.givenKubeClientMock()
 			}
 
 			testEnv.Reconciler.isEventMeshSubManagerStarted = true
@@ -428,8 +428,8 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 			testEnv.Reconciler.eventMeshSubManager = nil
 
 			// when
-			eventMeshSecret := utils.NewEventMeshSecret("test-secret", tc.givenEventing.Namespace)
-			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, tc.givenEventing, eventMeshSecret)
+			eventMeshSecret := utils.NewEventMeshSecret("test-secret", testcase.givenEventing.Namespace)
+			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, testcase.givenEventing, eventMeshSecret)
 
 			// then
 			require.NoError(t, err)
@@ -486,8 +486,8 @@ func Test_stopEventMeshSubManager(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
@@ -495,24 +495,24 @@ func Test_stopEventMeshSubManager(t *testing.T) {
 			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
 			// get mocks from test-case.
-			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
+			givenEventMeshSubManagerMock := testcase.givenEventMeshSubManagerMock()
 
 			// connect mocks with reconciler.
 			testEnv.Reconciler.eventMeshSubManager = givenEventMeshSubManagerMock
-			testEnv.Reconciler.isEventMeshSubManagerStarted = tc.givenIsEventMeshSubManagerStarted
+			testEnv.Reconciler.isEventMeshSubManagerStarted = testcase.givenIsEventMeshSubManagerStarted
 
 			// when
 			err := testEnv.Reconciler.stopEventMeshSubManager(true, logger)
 			// then
-			if tc.wantError == nil {
+			if testcase.wantError == nil {
 				require.NoError(t, err)
 				require.Nil(t, testEnv.Reconciler.eventMeshSubManager)
 				require.False(t, testEnv.Reconciler.isEventMeshSubManagerStarted)
 			} else {
-				require.Equal(t, tc.wantError.Error(), err.Error())
+				require.Equal(t, testcase.wantError.Error(), err.Error())
 			}
 
-			if tc.wantAssertCheck {
+			if testcase.wantAssertCheck {
 				givenEventMeshSubManagerMock.AssertExpectations(t)
 			}
 		})
@@ -680,17 +680,18 @@ func Test_GetSecretForPublisher(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			publisherSecret := secretFor(tc.messagingData, tc.namespaceData)
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			publisherSecret := secretFor(testcase.messagingData, testcase.namespaceData)
 
 			gotPublisherSecret, err := getSecretForPublisher(publisherSecret)
-			if tc.expectedError != nil {
+			if testcase.expectedError != nil {
 				require.Error(t, err)
-				require.ErrorContains(t, err, tc.expectedError.Error())
+				require.ErrorContains(t, err, testcase.expectedError.Error())
 				return
 			}
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedSecret, gotPublisherSecret, "invalid publisher secret")
+			require.Equal(t, testcase.expectedSecret, gotPublisherSecret, "invalid publisher secret")
 		})
 	}
 }
@@ -752,41 +753,41 @@ func Test_getOAuth2ClientCredentials(t *testing.T) {
 		},
 	}
 
-	l, e := logger.New("json", "info")
-	require.NoError(t, e)
+	infoLog, err := logger.New("json", "info")
+	require.NoError(t, err)
 
-	for _, testcase := range testCases {
-		tc := testcase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			ctx := context.Background()
-			r := Reconciler{
+			reconciler := Reconciler{
 				Client: fake.NewClientBuilder().WithObjects().Build(),
-				logger: l,
+				logger: infoLog,
 				backendConfig: env.BackendConfig{
 					EventingWebhookAuthSecretName:      defaultEventingWebhookAuthSecretName,
 					EventingWebhookAuthSecretNamespace: defaultEventingWebhookAuthSecretNamespace,
 				},
 			}
-			if len(tc.givenSecrets) > 0 {
-				for _, secret := range tc.givenSecrets {
-					err := r.Client.Create(ctx, secret)
+			if len(testcase.givenSecrets) > 0 {
+				for _, secret := range testcase.givenSecrets {
+					err := reconciler.Client.Create(ctx, secret)
 					require.NoError(t, err)
 				}
 			}
 
 			// when
-			credentials, err := r.getOAuth2ClientCredentials(ctx, defaultEventingWebhookAuthSecretNamespace)
+			credentials, err := reconciler.getOAuth2ClientCredentials(ctx, defaultEventingWebhookAuthSecretNamespace)
 
 			// then
-			if tc.wantError {
+			if testcase.wantError {
 				require.Error(t, err)
 				return
 			}
-			require.Equal(t, tc.wantClientID, credentials.clientID)
-			require.Equal(t, tc.wantClientSecret, credentials.clientSecret)
-			require.Equal(t, tc.wantTokenURL, credentials.tokenURL)
-			require.Equal(t, tc.wantCertsURL, credentials.certsURL)
+			require.Equal(t, testcase.wantClientID, credentials.clientID)
+			require.Equal(t, testcase.wantClientSecret, credentials.clientSecret)
+			require.Equal(t, testcase.wantTokenURL, credentials.tokenURL)
+			require.Equal(t, testcase.wantCertsURL, credentials.certsURL)
 		})
 	}
 }
@@ -843,19 +844,19 @@ func Test_isOauth2CredentialsInitialized(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			r := Reconciler{}
-			if tc.givenCredentials != nil {
-				r.oauth2credentials = *tc.givenCredentials
+			reconciler := Reconciler{}
+			if testcase.givenCredentials != nil {
+				reconciler.oauth2credentials = *testcase.givenCredentials
 			}
 
 			// when
-			result := r.isOauth2CredentialsInitialized()
+			result := reconciler.isOauth2CredentialsInitialized()
 
 			// then
-			require.Equal(t, tc.wantResult, result)
+			require.Equal(t, testcase.wantResult, result)
 		})
 	}
 }
@@ -911,18 +912,18 @@ func Test_SyncPublisherProxySecret(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			r := &Reconciler{
-				kubeClient: tc.mockKubeClient(),
+				kubeClient: testcase.mockKubeClient(),
 			}
 
 			// when
-			_, err := r.SyncPublisherProxySecret(context.Background(), tc.givenSecret)
+			_, err := r.SyncPublisherProxySecret(context.Background(), testcase.givenSecret)
 
 			// then
-			if tc.wantErr {
+			if testcase.wantErr {
 				require.Error(t, err)
 				return
 			}
@@ -1062,45 +1063,45 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			testEnv := NewMockedUnitTestEnvironment(t, tc.givenEventing)
+			testEnv := NewMockedUnitTestEnvironment(t, testcase.givenEventing)
 			testEnv.Reconciler.oauth2credentials = oauth2Credentials{}
 			eventMeshSubManagerMock := new(submgrmanagermocks.Manager)
 			eventMeshSubManagerMock.On("Stop", mock.Anything).Return(nil).Once()
 			testEnv.Reconciler.eventMeshSubManager = eventMeshSubManagerMock
 			testEnv.Reconciler.backendConfig = env.BackendConfig{
-				EventingWebhookAuthSecretNamespace: tc.givenEventing.Namespace,
+				EventingWebhookAuthSecretNamespace: testcase.givenEventing.Namespace,
 				EventingWebhookAuthSecretName:      defaultEventingWebhookAuthSecretName,
 			}
 			testEnv.Reconciler.isEventMeshSubManagerStarted = true
 
-			if tc.givenSecret != nil {
-				require.NoError(t, testEnv.Reconciler.Client.Create(ctx, tc.givenSecret))
+			if testcase.givenSecret != nil {
+				require.NoError(t, testEnv.Reconciler.Client.Create(ctx, testcase.givenSecret))
 			}
 
-			if tc.givenCredentials != nil {
-				testEnv.Reconciler.oauth2credentials.clientID = tc.givenCredentials.clientID
-				testEnv.Reconciler.oauth2credentials.clientSecret = tc.givenCredentials.clientSecret
-				testEnv.Reconciler.oauth2credentials.tokenURL = tc.givenCredentials.tokenURL
-				testEnv.Reconciler.oauth2credentials.certsURL = tc.givenCredentials.certsURL
+			if testcase.givenCredentials != nil {
+				testEnv.Reconciler.oauth2credentials.clientID = testcase.givenCredentials.clientID
+				testEnv.Reconciler.oauth2credentials.clientSecret = testcase.givenCredentials.clientSecret
+				testEnv.Reconciler.oauth2credentials.tokenURL = testcase.givenCredentials.tokenURL
+				testEnv.Reconciler.oauth2credentials.certsURL = testcase.givenCredentials.certsURL
 			}
 			// when
-			err := testEnv.Reconciler.syncOauth2ClientIDAndSecret(ctx, tc.givenEventing)
+			err := testEnv.Reconciler.syncOauth2ClientIDAndSecret(ctx, testcase.givenEventing)
 
 			// then
-			if tc.wantAssertCheck {
+			if testcase.wantAssertCheck {
 				eventMeshSubManagerMock.AssertExpectations(t)
 			}
-			if tc.wantErr {
+			if testcase.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
-			require.Equal(t, tc.givenSubManagerStarted, testEnv.Reconciler.isEventMeshSubManagerStarted)
-			require.Equal(t, tc.shouldEventMeshSubManagerExist, testEnv.Reconciler.eventMeshSubManager != nil)
-			require.Equal(t, *tc.wantCredentials, testEnv.Reconciler.oauth2credentials)
+			require.Equal(t, testcase.givenSubManagerStarted, testEnv.Reconciler.isEventMeshSubManagerStarted)
+			require.Equal(t, testcase.shouldEventMeshSubManagerExist, testEnv.Reconciler.eventMeshSubManager != nil)
+			require.Equal(t, *testcase.wantCredentials, testEnv.Reconciler.oauth2credentials)
 		})
 	}
 }

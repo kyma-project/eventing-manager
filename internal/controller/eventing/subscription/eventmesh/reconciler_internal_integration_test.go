@@ -90,18 +90,18 @@ func TestReconciler_Reconcile(t *testing.T) {
 			name:              "Return nil and default Result{} when there is no error from the reconciler dependencies",
 			givenSubscription: testSub,
 			givenReconcilerSetup: func() *Reconciler {
-				te := setupTestEnvironment(t, testSub)
-				te.backend.On("Initialize", mock.Anything).Return(nil)
-				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				testEnv := setupTestEnvironment(t, testSub)
+				testEnv.backend.On("Initialize", mock.Anything).Return(nil)
+				testEnv.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(
-					te.fakeClient,
-					te.logger,
-					te.recorder,
-					te.cfg,
-					te.cleaner,
-					te.backend,
-					te.credentials,
-					te.mapper,
+					testEnv.fakeClient,
+					testEnv.logger,
+					testEnv.recorder,
+					testEnv.cfg,
+					testEnv.cleaner,
+					testEnv.backend,
+					testEnv.credentials,
+					testEnv.mapper,
 					happyValidator,
 					col,
 					utils.Domain)
@@ -113,17 +113,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 			name:              "Return nil and default Result{} when the subscription does not exist on the cluster",
 			givenSubscription: testSub,
 			givenReconcilerSetup: func() *Reconciler {
-				te := setupTestEnvironment(t)
-				te.backend.On("Initialize", mock.Anything).Return(nil)
+				testenv := setupTestEnvironment(t)
+				testenv.backend.On("Initialize", mock.Anything).Return(nil)
 				return NewReconciler(
-					te.fakeClient,
-					te.logger,
-					te.recorder,
-					te.cfg,
-					te.cleaner,
-					te.backend,
-					te.credentials,
-					te.mapper,
+					testenv.fakeClient,
+					testenv.logger,
+					testenv.recorder,
+					testenv.cfg,
+					testenv.cleaner,
+					testenv.backend,
+					testenv.credentials,
+					testenv.mapper,
 					unhappyValidator,
 					col,
 					utils.Domain)
@@ -135,18 +135,18 @@ func TestReconciler_Reconcile(t *testing.T) {
 			name:              "Return error and default Result{} when backend sync returns error",
 			givenSubscription: testSub,
 			givenReconcilerSetup: func() *Reconciler {
-				te := setupTestEnvironment(t, testSub)
-				te.backend.On("Initialize", mock.Anything).Return(nil)
-				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(false, backendSyncErr)
+				testenv := setupTestEnvironment(t, testSub)
+				testenv.backend.On("Initialize", mock.Anything).Return(nil)
+				testenv.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(false, backendSyncErr)
 				return NewReconciler(
-					te.fakeClient,
-					te.logger,
-					te.recorder,
-					te.cfg,
-					te.cleaner,
-					te.backend,
-					te.credentials,
-					te.mapper,
+					testenv.fakeClient,
+					testenv.logger,
+					testenv.recorder,
+					testenv.cfg,
+					testenv.cleaner,
+					testenv.backend,
+					testenv.credentials,
+					testenv.mapper,
 					happyValidator,
 					col,
 					utils.Domain)
@@ -158,18 +158,18 @@ func TestReconciler_Reconcile(t *testing.T) {
 			name:              "Return error and default Result{} when backend delete returns error",
 			givenSubscription: testSubUnderDeletion,
 			givenReconcilerSetup: func() *Reconciler {
-				te := setupTestEnvironment(t, testSubUnderDeletion)
-				te.backend.On("Initialize", mock.Anything).Return(nil)
-				te.backend.On("DeleteSubscription", mock.Anything).Return(backendDeleteErr)
+				testenv := setupTestEnvironment(t, testSubUnderDeletion)
+				testenv.backend.On("Initialize", mock.Anything).Return(nil)
+				testenv.backend.On("DeleteSubscription", mock.Anything).Return(backendDeleteErr)
 				return NewReconciler(
-					te.fakeClient,
-					te.logger,
-					te.recorder,
-					te.cfg,
-					te.cleaner,
-					te.backend,
-					te.credentials,
-					te.mapper,
+					testenv.fakeClient,
+					testenv.logger,
+					testenv.recorder,
+					testenv.cfg,
+					testenv.cleaner,
+					testenv.backend,
+					testenv.credentials,
+					testenv.mapper,
 					happyValidator,
 					col,
 					utils.Domain)
@@ -181,17 +181,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 			name:              "Return error and default Result{} when validator returns error",
 			givenSubscription: testSub,
 			givenReconcilerSetup: func() *Reconciler {
-				te := setupTestEnvironment(t, testSub)
-				te.backend.On("Initialize", mock.Anything).Return(nil)
+				testenv := setupTestEnvironment(t, testSub)
+				testenv.backend.On("Initialize", mock.Anything).Return(nil)
 				return NewReconciler(
-					te.fakeClient,
-					te.logger,
-					te.recorder,
-					te.cfg,
-					te.cleaner,
-					te.backend,
-					te.credentials,
-					te.mapper,
+					testenv.fakeClient,
+					testenv.logger,
+					testenv.recorder,
+					testenv.cfg,
+					testenv.cleaner,
+					testenv.backend,
+					testenv.credentials,
+					testenv.mapper,
 					unhappyValidator,
 					col,
 					utils.Domain)
@@ -203,18 +203,18 @@ func TestReconciler_Reconcile(t *testing.T) {
 			name:              "Return nil and RequeueAfter when the EventMesh subscription is Paused",
 			givenSubscription: testSubPaused,
 			givenReconcilerSetup: func() *Reconciler {
-				te := setupTestEnvironment(t, testSubPaused)
-				te.backend.On("Initialize", mock.Anything).Return(nil)
-				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				testenv := setupTestEnvironment(t, testSubPaused)
+				testenv.backend.On("Initialize", mock.Anything).Return(nil)
+				testenv.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(
-					te.fakeClient,
-					te.logger,
-					te.recorder,
-					te.cfg,
-					te.cleaner,
-					te.backend,
-					te.credentials,
-					te.mapper,
+					testenv.fakeClient,
+					testenv.logger,
+					testenv.recorder,
+					testenv.cfg,
+					testenv.cleaner,
+					testenv.backend,
+					testenv.credentials,
+					testenv.mapper,
 					happyValidator,
 					col,
 					utils.Domain)
@@ -225,17 +225,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 			wantReconcileError: nil,
 		},
 	}
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
-			reconciler := tc.givenReconcilerSetup()
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			reconciler := testcase.givenReconcilerSetup()
 			r := kctrl.Request{NamespacedName: ktypes.NamespacedName{
-				Namespace: tc.givenSubscription.Namespace,
-				Name:      tc.givenSubscription.Name,
+				Namespace: testcase.givenSubscription.Namespace,
+				Name:      testcase.givenSubscription.Name,
 			}}
 			res, err := reconciler.Reconcile(context.Background(), r)
-			req.Equal(tc.wantReconcileResult, res)
-			req.Equal(tc.wantReconcileError, err)
+			req.Equal(testcase.wantReconcileResult, res)
+			req.Equal(testcase.wantReconcileError, err)
 		})
 	}
 }
@@ -275,23 +275,23 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			name:              "Eventing webhook auth is not enabled",
 			givenSubscription: subscription,
 			givenReconcilerSetup: func() (*Reconciler, client.Client) {
-				te := setupTestEnvironment(t, subscription)
-				te.credentials = credentials
-				te.backend.On("Initialize", mock.Anything).Return(nil)
-				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				testenv := setupTestEnvironment(t, subscription)
+				testenv.credentials = credentials
+				testenv.backend.On("Initialize", mock.Anything).Return(nil)
+				testenv.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(
-						te.fakeClient,
-						te.logger,
-						te.recorder,
-						te.cfg,
-						te.cleaner,
-						te.backend,
-						te.credentials,
-						te.mapper,
+						testenv.fakeClient,
+						testenv.logger,
+						testenv.recorder,
+						testenv.cfg,
+						testenv.cleaner,
+						testenv.backend,
+						testenv.credentials,
+						testenv.mapper,
 						validator,
 						col,
 						utils.Domain),
-					te.fakeClient
+					testenv.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: false,
 			wantReconcileResult:             kctrl.Result{},
@@ -305,23 +305,23 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			name:              "Eventing webhook auth is enabled",
 			givenSubscription: subscription,
 			givenReconcilerSetup: func() (*Reconciler, client.Client) {
-				te := setupTestEnvironment(t, subscription)
-				te.credentials = credentials
-				te.backend.On("Initialize", mock.Anything).Return(nil)
-				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				testenv := setupTestEnvironment(t, subscription)
+				testenv.credentials = credentials
+				testenv.backend.On("Initialize", mock.Anything).Return(nil)
+				testenv.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(
-						te.fakeClient,
-						te.logger,
-						te.recorder,
-						te.cfg,
-						te.cleaner,
-						te.backend,
-						te.credentials,
-						te.mapper,
+						testenv.fakeClient,
+						testenv.logger,
+						testenv.recorder,
+						testenv.cfg,
+						testenv.cleaner,
+						testenv.backend,
+						testenv.credentials,
+						testenv.mapper,
 						validator,
 						col,
 						utils.Domain),
-					te.fakeClient
+					testenv.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: true,
 			wantReconcileResult:             kctrl.Result{},
@@ -334,21 +334,21 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			},
 		},
 	}
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			featureflags.SetEventingWebhookAuthEnabled(tc.givenEventingWebhookAuthEnabled)
-			reconciler, cli := tc.givenReconcilerSetup()
+			featureflags.SetEventingWebhookAuthEnabled(testcase.givenEventingWebhookAuthEnabled)
+			reconciler, cli := testcase.givenReconcilerSetup()
 			namespacedName := ktypes.NamespacedName{
-				Namespace: tc.givenSubscription.Namespace,
-				Name:      tc.givenSubscription.Name,
+				Namespace: testcase.givenSubscription.Namespace,
+				Name:      testcase.givenSubscription.Name,
 			}
 
 			// when
 			res, err := reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
-			require.Equal(t, tc.wantReconcileResult, res)
-			require.Equal(t, tc.wantReconcileError, err)
+			require.Equal(t, testcase.wantReconcileResult, res)
+			require.Equal(t, testcase.wantReconcileError, err)
 
 			sub := &eventingv1alpha2.Subscription{}
 			err = cli.Get(ctx, namespacedName, sub)
@@ -364,8 +364,8 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			require.NoError(t, err)
 
 			// then
-			require.Equal(t, tc.wantHandler.Name, apiRule.Spec.Rules[0].AccessStrategies[0].Handler.Name)
-			require.Equal(t, tc.wantHandler.Config, apiRule.Spec.Rules[0].AccessStrategies[0].Handler.Config)
+			require.Equal(t, testcase.wantHandler.Name, apiRule.Spec.Rules[0].AccessStrategies[0].Handler.Name)
+			require.Equal(t, testcase.wantHandler.Config, apiRule.Spec.Rules[0].AccessStrategies[0].Handler.Config)
 		})
 	}
 }
@@ -405,23 +405,23 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			name:              "Eventing webhook auth is not enabled before the upgrade",
 			givenSubscription: subscription,
 			givenReconcilerSetup: func() (*Reconciler, client.Client) {
-				te := setupTestEnvironment(t, subscription)
-				te.credentials = credentials
-				te.backend.On("Initialize", mock.Anything).Return(nil)
-				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				testenv := setupTestEnvironment(t, subscription)
+				testenv.credentials = credentials
+				testenv.backend.On("Initialize", mock.Anything).Return(nil)
+				testenv.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(
-						te.fakeClient,
-						te.logger,
-						te.recorder,
-						te.cfg,
-						te.cleaner,
-						te.backend,
-						te.credentials,
-						te.mapper,
+						testenv.fakeClient,
+						testenv.logger,
+						testenv.recorder,
+						testenv.cfg,
+						testenv.cleaner,
+						testenv.backend,
+						testenv.credentials,
+						testenv.mapper,
 						validator,
 						col,
 						utils.Domain),
-					te.fakeClient
+					testenv.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: false,
 			wantReconcileResult:             kctrl.Result{},
@@ -441,23 +441,23 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			name:              "Eventing webhook auth is enabled before the upgrade",
 			givenSubscription: subscription,
 			givenReconcilerSetup: func() (*Reconciler, client.Client) {
-				te := setupTestEnvironment(t, subscription)
-				te.credentials = credentials
-				te.backend.On("Initialize", mock.Anything).Return(nil)
-				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+				testenv := setupTestEnvironment(t, subscription)
+				testenv.credentials = credentials
+				testenv.backend.On("Initialize", mock.Anything).Return(nil)
+				testenv.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(
-						te.fakeClient,
-						te.logger,
-						te.recorder,
-						te.cfg,
-						te.cleaner,
-						te.backend,
-						te.credentials,
-						te.mapper,
+						testenv.fakeClient,
+						testenv.logger,
+						testenv.recorder,
+						testenv.cfg,
+						testenv.cleaner,
+						testenv.backend,
+						testenv.credentials,
+						testenv.mapper,
 						validator,
 						col,
 						utils.Domain),
-					te.fakeClient
+					testenv.fakeClient
 			},
 			givenEventingWebhookAuthEnabled: true,
 			wantReconcileResult:             kctrl.Result{},
@@ -474,25 +474,25 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			},
 		},
 	}
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			////
 			// Before the upgrade
 			////
 
 			// given
-			featureflags.SetEventingWebhookAuthEnabled(tc.givenEventingWebhookAuthEnabled)
-			reconciler, cli := tc.givenReconcilerSetup()
+			featureflags.SetEventingWebhookAuthEnabled(testcase.givenEventingWebhookAuthEnabled)
+			reconciler, cli := testcase.givenReconcilerSetup()
 			namespacedName := ktypes.NamespacedName{
-				Namespace: tc.givenSubscription.Namespace,
-				Name:      tc.givenSubscription.Name,
+				Namespace: testcase.givenSubscription.Namespace,
+				Name:      testcase.givenSubscription.Name,
 			}
 
 			// when
 			res, err := reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
-			require.Equal(t, tc.wantReconcileResult, res)
-			require.Equal(t, tc.wantReconcileError, err)
+			require.Equal(t, testcase.wantReconcileResult, res)
+			require.Equal(t, testcase.wantReconcileError, err)
 
 			sub0 := &eventingv1alpha2.Subscription{}
 			err = cli.Get(ctx, namespacedName, sub0)
@@ -510,12 +510,12 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			// then
 			require.Equal(
 				t,
-				tc.wantHandlerBeforeUpgrade.Name,
+				testcase.wantHandlerBeforeUpgrade.Name,
 				apiRule0.Spec.Rules[0].AccessStrategies[0].Handler.Name,
 			)
 			require.Equal(
 				t,
-				tc.wantHandlerBeforeUpgrade.Config,
+				testcase.wantHandlerBeforeUpgrade.Config,
 				apiRule0.Spec.Rules[0].AccessStrategies[0].Handler.Config,
 			)
 
@@ -524,10 +524,10 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			////
 
 			// given
-			featureflags.SetEventingWebhookAuthEnabled(!tc.givenEventingWebhookAuthEnabled)
+			featureflags.SetEventingWebhookAuthEnabled(!testcase.givenEventingWebhookAuthEnabled)
 			namespacedName = ktypes.NamespacedName{
-				Namespace: tc.givenSubscription.Namespace,
-				Name:      tc.givenSubscription.Name,
+				Namespace: testcase.givenSubscription.Namespace,
+				Name:      testcase.givenSubscription.Name,
 			}
 
 			////
@@ -536,8 +536,8 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 
 			// when
 			res, err = reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
-			require.Equal(t, tc.wantReconcileResult, res)
-			require.Equal(t, tc.wantReconcileError, err)
+			require.Equal(t, testcase.wantReconcileResult, res)
+			require.Equal(t, testcase.wantReconcileError, err)
 
 			sub1 := &eventingv1alpha2.Subscription{}
 			err = cli.Get(ctx, namespacedName, sub1)
@@ -557,12 +557,12 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			require.Equal(t, apiRule0.Name, apiRule1.Name)
 			require.Equal(
 				t,
-				tc.wantHandlerAfterUpgrade.Name,
+				testcase.wantHandlerAfterUpgrade.Name,
 				apiRule1.Spec.Rules[0].AccessStrategies[0].Handler.Name,
 			)
 			require.Equal(
 				t,
-				tc.wantHandlerAfterUpgrade.Config,
+				testcase.wantHandlerAfterUpgrade.Config,
 				apiRule1.Spec.Rules[0].AccessStrategies[0].Handler.Config,
 			)
 		})
@@ -649,32 +649,32 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 		},
 	}
 	featureFlagValues := []bool{true, false}
-	for _, testCase := range testCases {
+	for _, tc := range testCases {
 		for _, value := range featureFlagValues {
-			tc := testCase
+			testcase := tc
 			flag := value
-			t.Run(fmt.Sprintf("%s [EventingWebhookAuthEnabled=%v]", tc.name, flag), func(t *testing.T) {
+			t.Run(fmt.Sprintf("%s [EventingWebhookAuthEnabled=%v]", testcase.name, flag), func(t *testing.T) {
 				// given
 				featureflags.SetEventingWebhookAuthEnabled(flag)
-				reconciler, cli := tc.givenReconcilerSetup(tc.givenSubscription)
+				reconciler, cli := testcase.givenReconcilerSetup(testcase.givenSubscription)
 				reconciler.syncConditionWebhookCallStatus = func(subscription *eventingv1alpha2.Subscription) {}
 				namespacedName := ktypes.NamespacedName{
-					Namespace: tc.givenSubscription.Namespace,
-					Name:      tc.givenSubscription.Name,
+					Namespace: testcase.givenSubscription.Namespace,
+					Name:      testcase.givenSubscription.Name,
 				}
 
 				// when
 				_, err := reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
-				require.Equal(t, tc.wantReconcileError, err)
+				require.Equal(t, testcase.wantReconcileError, err)
 
 				// then
 				sub := &eventingv1alpha2.Subscription{}
 				err = cli.Get(ctx, namespacedName, sub)
 				require.NoError(t, err)
-				require.Equal(t, tc.wantEv2Hash, sub.Status.Backend.Ev2hash)
-				require.Equal(t, tc.wantEventMeshHash, sub.Status.Backend.EventMeshHash)
-				require.Equal(t, tc.wantWebhookAuthHash, sub.Status.Backend.WebhookAuthHash)
-				require.Equal(t, tc.wantEventMeshLocalHash, sub.Status.Backend.EventMeshLocalHash)
+				require.Equal(t, testcase.wantEv2Hash, sub.Status.Backend.Ev2hash)
+				require.Equal(t, testcase.wantEventMeshHash, sub.Status.Backend.EventMeshHash)
+				require.Equal(t, testcase.wantWebhookAuthHash, sub.Status.Backend.WebhookAuthHash)
+				require.Equal(t, testcase.wantEventMeshLocalHash, sub.Status.Backend.EventMeshLocalHash)
 			})
 		}
 	}
@@ -737,14 +737,15 @@ func Test_replaceStatusCondition(t *testing.T) {
 		},
 	}
 
-	for _, tt := range testCases {
-		t.Run(tt.name, func(t *testing.T) {
-			sub := tt.giveSubscription
-			condition := tt.giveCondition
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			sub := testcase.giveSubscription
+			condition := testcase.giveCondition
 			statusChanged := replaceStatusCondition(sub, condition)
-			assert.Equal(t, tt.wantStatusChanged, statusChanged)
+			assert.Equal(t, testcase.wantStatusChanged, statusChanged)
 			assert.Contains(t, sub.Status.Conditions, condition)
-			assert.Equal(t, tt.wantReady, sub.Status.Ready)
+			assert.Equal(t, testcase.wantReady, sub.Status.Ready)
 		})
 	}
 }
@@ -889,7 +890,7 @@ func Test_syncConditionSubscribed(t *testing.T) {
 		},
 	}
 
-	r := Reconciler{
+	reconciler := Reconciler{
 		nameMapper: backendutils.NewBEBSubscriptionNameMapper(
 			utils.Domain,
 			eventmesh.MaxSubscriptionNameLength,
@@ -898,17 +899,18 @@ func Test_syncConditionSubscribed(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			sub := tc.givenSubscription
+			sub := testcase.givenSubscription
 
 			// when
-			r.syncConditionSubscribed(sub, tc.givenError)
+			reconciler.syncConditionSubscribed(sub, testcase.givenError)
 
 			// then
-			newCondition := sub.Status.FindCondition(tc.wantCondition.Type)
+			newCondition := sub.Status.FindCondition(testcase.wantCondition.Type)
 			assert.NotNil(t, newCondition)
-			assert.True(t, eventingv1alpha2.ConditionEquals(*newCondition, tc.wantCondition))
+			assert.True(t, eventingv1alpha2.ConditionEquals(*newCondition, testcase.wantCondition))
 		})
 	}
 }
@@ -994,24 +996,25 @@ func Test_syncConditionSubscriptionActive(t *testing.T) {
 		t.Fatalf(`failed to initiate logger, %v`, err)
 	}
 
-	r := Reconciler{
+	reconciler := Reconciler{
 		nameMapper: backendutils.NewBEBSubscriptionNameMapper(utils.Domain, eventmesh.MaxSubscriptionNameLength),
 		logger:     logger,
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			sub := tc.givenSubscription
-			log := backendutils.LoggerWithSubscription(r.namedLogger(), sub)
+			sub := testcase.givenSubscription
+			log := backendutils.LoggerWithSubscription(reconciler.namedLogger(), sub)
 
 			// when
-			r.syncConditionSubscriptionActive(sub, tc.givenIsSubscribed, log)
+			reconciler.syncConditionSubscriptionActive(sub, testcase.givenIsSubscribed, log)
 
 			// then
-			newCondition := sub.Status.FindCondition(tc.wantCondition.Type)
+			newCondition := sub.Status.FindCondition(testcase.wantCondition.Type)
 			assert.NotNil(t, newCondition)
-			assert.True(t, eventingv1alpha2.ConditionEquals(*newCondition, tc.wantCondition))
+			assert.True(t, eventingv1alpha2.ConditionEquals(*newCondition, testcase.wantCondition))
 		})
 	}
 }
@@ -1145,23 +1148,24 @@ func Test_syncConditionWebhookCallStatus(t *testing.T) {
 		t.Fatalf(`failed to initiate logger, %v`, err)
 	}
 
-	r := Reconciler{
+	reconciler := Reconciler{
 		logger:                         logger,
 		syncConditionWebhookCallStatus: syncConditionWebhookCallStatus,
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			sub := tc.givenSubscription
+			sub := testcase.givenSubscription
 
 			// when
-			r.syncConditionWebhookCallStatus(sub)
+			reconciler.syncConditionWebhookCallStatus(sub)
 
 			// then
-			newCondition := sub.Status.FindCondition(tc.wantCondition.Type)
+			newCondition := sub.Status.FindCondition(testcase.wantCondition.Type)
 			assert.NotNil(t, newCondition)
-			assert.True(t, eventingv1alpha2.ConditionEquals(*newCondition, tc.wantCondition))
+			assert.True(t, eventingv1alpha2.ConditionEquals(*newCondition, testcase.wantCondition))
 		})
 	}
 }
@@ -1246,13 +1250,14 @@ func Test_checkStatusActive(t *testing.T) {
 
 	r := Reconciler{}
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			gotStatus, err := r.checkStatusActive(tc.subscription)
-			require.Equal(t, tc.wantStatus, gotStatus)
-			if tc.wantError == nil {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			gotStatus, err := r.checkStatusActive(testcase.subscription)
+			require.Equal(t, testcase.wantStatus, gotStatus)
+			if testcase.wantError == nil {
 				require.NoError(t, err)
 			} else {
-				require.ErrorContains(t, err, tc.wantError.Error())
+				require.ErrorContains(t, err, testcase.wantError.Error())
 			}
 		})
 	}
@@ -1343,13 +1348,14 @@ func Test_checkLastFailedDelivery(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result, err := checkLastFailedDelivery(tc.givenSubscription)
-			require.Equal(t, tc.wantResult, result)
-			if tc.wantError == nil {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			result, err := checkLastFailedDelivery(testcase.givenSubscription)
+			require.Equal(t, testcase.wantResult, result)
+			if testcase.wantError == nil {
 				require.NoError(t, err)
 			} else {
-				require.ErrorContains(t, err, tc.wantError.Error())
+				require.ErrorContains(t, err, testcase.wantError.Error())
 			}
 		})
 	}

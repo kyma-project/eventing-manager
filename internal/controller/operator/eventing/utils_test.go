@@ -33,8 +33,8 @@ func Test_containsFinalizer(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
@@ -42,7 +42,7 @@ func Test_containsFinalizer(t *testing.T) {
 			reconciler := testEnv.Reconciler
 
 			// when, then
-			require.Equal(t, tc.wantResult, reconciler.containsFinalizer(tc.givenEventing))
+			require.Equal(t, testcase.wantResult, reconciler.containsFinalizer(testcase.givenEventing))
 		})
 	}
 }

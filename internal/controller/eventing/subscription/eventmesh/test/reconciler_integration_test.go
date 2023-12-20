@@ -113,9 +113,9 @@ func Test_ValidationWebhook(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
 
@@ -124,10 +124,10 @@ func Test_ValidationWebhook(t *testing.T) {
 			ensureNamespaceCreated(ctx, t, testNamespace)
 
 			// update namespace information in given test assets
-			givenSubscription := tc.givenSubscriptionFunc(testNamespace)
+			givenSubscription := testcase.givenSubscriptionFunc(testNamespace)
 
 			// attempt to create subscription
-			ensureK8sResourceNotCreated(ctx, t, givenSubscription, tc.wantError)
+			ensureK8sResourceNotCreated(ctx, t, givenSubscription, testcase.wantError)
 		})
 	}
 }
@@ -301,9 +301,9 @@ func Test_CreateSubscription(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			g := gomega.NewGomegaWithT(t)
 			ctx := context.Background()
 
@@ -312,7 +312,7 @@ func Test_CreateSubscription(t *testing.T) {
 			ensureNamespaceCreated(ctx, t, testNamespace)
 
 			// update namespace information in given test assets
-			givenSubscription := tc.givenSubscriptionFunc(testNamespace)
+			givenSubscription := testcase.givenSubscriptionFunc(testNamespace)
 
 			// create a subscriber service
 			subscriberSvc := eventingtesting.NewSubscriberSvc(givenSubscription.Name, testNamespace)
@@ -322,20 +322,20 @@ func Test_CreateSubscription(t *testing.T) {
 			ensureK8sResourceCreated(ctx, t, givenSubscription)
 
 			// check if the subscription is as required
-			getSubscriptionAssert(ctx, g, givenSubscription).Should(tc.wantSubscriptionMatchers)
+			getSubscriptionAssert(ctx, g, givenSubscription).Should(testcase.wantSubscriptionMatchers)
 
-			if tc.wantAPIRuleCheck {
+			if testcase.wantAPIRuleCheck {
 				// check if an APIRule was created for the subscription
 				getAPIRuleForASvcAssert(ctx, g, subscriberSvc).Should(eventingtesting.HaveNotEmptyAPIRule())
 			}
 
-			if tc.wantEventMeshSubCheck {
+			if testcase.wantEventMeshSubCheck {
 				emSub := getEventMeshSubFromMock(givenSubscription.Name, givenSubscription.Namespace)
 				g.Expect(emSub).ShouldNot(gomega.BeNil())
-				g.Expect(emSub).Should(tc.wantEventMeshSubMatchers)
+				g.Expect(emSub).Should(testcase.wantEventMeshSubMatchers)
 			}
 
-			if tc.wantSubCreatedEventCheck {
+			if testcase.wantSubCreatedEventCheck {
 				message := eventingv1alpha2.CreateMessageForConditionReasonSubscriptionCreated(
 					emTestEnsemble.nameMapper.MapSubscriptionName(givenSubscription.Name, givenSubscription.Namespace))
 				subscriptionCreatedEvent := kcorev1.Event{
@@ -346,7 +346,7 @@ func Test_CreateSubscription(t *testing.T) {
 				ensureK8sEventReceived(t, subscriptionCreatedEvent, givenSubscription.Namespace)
 			}
 
-			if tc.wantSubActiveEventCheck {
+			if testcase.wantSubActiveEventCheck {
 				subscriptionActiveEvent := kcorev1.Event{
 					Reason:  string(eventingv1alpha2.ConditionReasonSubscriptionActive),
 					Message: "",
@@ -508,9 +508,9 @@ func Test_UpdateSubscription(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			g := gomega.NewGomegaWithT(t)
@@ -521,8 +521,8 @@ func Test_UpdateSubscription(t *testing.T) {
 			ensureNamespaceCreated(ctx, t, testNamespace)
 
 			// update namespace information in given test assets
-			givenSubscription := tc.givenSubscriptionFunc(testNamespace)
-			givenUpdateSubscription := tc.givenUpdateSubscriptionFunc(testNamespace)
+			givenSubscription := testcase.givenSubscriptionFunc(testNamespace)
+			givenUpdateSubscription := testcase.givenUpdateSubscriptionFunc(testNamespace)
 
 			// create a subscriber service
 			subscriberSvc := eventingtesting.NewSubscriberSvc(givenSubscription.Name, testNamespace)
@@ -532,14 +532,14 @@ func Test_UpdateSubscription(t *testing.T) {
 			ensureK8sResourceCreated(ctx, t, givenSubscription)
 			createdSubscription := givenSubscription.DeepCopy()
 			// check if the created subscription is correct
-			getSubscriptionAssert(ctx, g, createdSubscription).Should(tc.wantSubscriptionMatchers)
+			getSubscriptionAssert(ctx, g, createdSubscription).Should(testcase.wantSubscriptionMatchers)
 
 			// update subscription
 			givenUpdateSubscription.ResourceVersion = createdSubscription.ResourceVersion
 			ensureK8sSubscriptionUpdated(ctx, t, givenUpdateSubscription)
 
 			// check if the updated subscription is correct
-			getSubscriptionAssert(ctx, g, givenSubscription).Should(tc.wantUpdateSubscriptionMatchers)
+			getSubscriptionAssert(ctx, g, givenSubscription).Should(testcase.wantUpdateSubscriptionMatchers)
 		})
 	}
 }
@@ -657,9 +657,9 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			g := gomega.NewGomegaWithT(t)
@@ -673,7 +673,7 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 
 			// update namespace information in given test assets
 			givenSubscription := givenSubscriptionWithoutSinkFunc(testNamespace, subName)
-			givenUpdateSubscription := givenUpdateSubscriptionWithSinkFunc(testNamespace, subName, tc.givenSinkFormat, sinkPath)
+			givenUpdateSubscription := givenUpdateSubscriptionWithSinkFunc(testNamespace, subName, testcase.givenSinkFormat, sinkPath)
 
 			// create a subscriber service
 			subscriberSvc := eventingtesting.NewSubscriberSvc(subName, testNamespace)
@@ -1221,9 +1221,9 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			g := gomega.NewGomegaWithT(t)
 			ctx := context.Background()
@@ -1238,7 +1238,7 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 
 			// override create request response in EventMesh mock
 			subKey := getEventMeshSubKeyForMock(givenSubscription.Name, givenSubscription.Namespace)
-			emTestEnsemble.eventMeshMock.AddCreateResponseOverride(subKey, tc.givenCreateResponseFunc)
+			emTestEnsemble.eventMeshMock.AddCreateResponseOverride(subKey, testcase.givenCreateResponseFunc)
 
 			// when
 			// create a subscriber service
@@ -1250,11 +1250,11 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 
 			// then
 			// wait until the subscription shows the condition with not-ready status
-			getSubscriptionAssert(ctx, g, createdSubscription).Should(tc.wantSubscriptionMatchers)
+			getSubscriptionAssert(ctx, g, createdSubscription).Should(testcase.wantSubscriptionMatchers)
 
 			// check subscription on EventMesh server
 			emSub := getEventMeshSubFromMock(createdSubscription.Name, createdSubscription.Namespace)
-			g.Expect(emSub).Should(tc.wantEventMeshSubMatchers)
+			g.Expect(emSub).Should(testcase.wantEventMeshSubMatchers)
 
 			// delete the subscription to not provoke more reconciliation requests
 			ensureK8sResourceDeleted(ctx, t, createdSubscription)

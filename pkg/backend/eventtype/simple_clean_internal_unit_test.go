@@ -102,15 +102,15 @@ func TestSimpleCleaner(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			cleaner := NewSimpleCleaner(tc.givenEventTypePrefix, defaultLogger)
-			eventType, err := cleaner.Clean(tc.givenEventType)
-			require.Equal(t, tc.wantError, err != nil)
-			if !tc.wantError {
-				require.Equal(t, tc.wantEventType, eventType)
+			cleaner := NewSimpleCleaner(testcase.givenEventTypePrefix, defaultLogger)
+			eventType, err := cleaner.Clean(testcase.givenEventType)
+			require.Equal(t, testcase.wantError, err != nil)
+			if !testcase.wantError {
+				require.Equal(t, testcase.wantEventType, eventType)
 			}
 		})
 	}

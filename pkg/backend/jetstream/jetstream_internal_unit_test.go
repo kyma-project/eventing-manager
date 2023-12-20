@@ -152,8 +152,8 @@ func Test_GetOrCreateConsumer(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := testCase
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			js := JetStream{
 				subscriptions: make(map[SubscriptionSubjectIdentifier]Subscriber),
@@ -167,8 +167,8 @@ func Test_GetOrCreateConsumer(t *testing.T) {
 			consumerInfo, err := js.getOrCreateConsumer(sub, eventType)
 
 			// then
-			assert.Equal(t, tc.wantConsumerInfo, consumerInfo)
-			require.ErrorIs(t, tc.wantError, err)
+			assert.Equal(t, testcase.wantConsumerInfo, consumerInfo)
+			require.ErrorIs(t, testcase.wantError, err)
 		})
 	}
 }
@@ -228,8 +228,8 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 	}
 
 	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := testCase
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			callback := func(m *nats.Msg) {}
 			jsCtxMock := &backendjetstreammocks.JetStreamContext{}
@@ -245,7 +245,7 @@ func Test_SyncConsumersAndSubscriptions_ForBindInvalidSubscriptions(t *testing.T
 				subWithOneType.Spec.TypeMatching,
 			)
 			jsSubKey := NewSubscriptionSubjectIdentifier(subWithOneType, jsSubject)
-			tc.mocks(subWithOneType, js, jsCtxMock, jsSubKey)
+			testcase.mocks(subWithOneType, js, jsCtxMock, jsSubKey)
 
 			// when
 			require.NoError(t, js.syncConsumerAndSubscription(subWithOneType, callback))
@@ -297,23 +297,23 @@ func Test_SyncConsumersAndSubscriptions_ForSyncConsumerMaxInFlight(t *testing.T)
 	}
 
 	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := testCase
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			jsCtxMock := &backendjetstreammocks.JetStreamContext{}
 			js := &JetStream{
 				jsCtx: jsCtxMock,
 			}
 			sub := eventingtesting.NewSubscription("test", "test",
-				eventingtesting.WithMaxInFlight(tc.givenSubMaxInFlight),
+				eventingtesting.WithMaxInFlight(testcase.givenSubMaxInFlight),
 			)
 
 			// setup the jetstreammocks
 			consumer := nats.ConsumerInfo{
 				Name:   "name",
-				Config: nats.ConsumerConfig{MaxAckPending: tc.givenConsumerMaxAckPending},
+				Config: nats.ConsumerConfig{MaxAckPending: testcase.givenConsumerMaxAckPending},
 			}
-			tc.givenjetstreammocks(js, jsCtxMock, tc.wantConfigToUpdate)
+			testcase.givenjetstreammocks(js, jsCtxMock, testcase.wantConfigToUpdate)
 
 			// when
 			err := js.syncConsumerMaxInFlight(sub, consumer)
@@ -617,24 +617,25 @@ func Test_DeleteInvalidConsumers(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			jsBackend.jsCtx = tc.jetStreamContext
+			jsBackend.jsCtx = testcase.jetStreamContext
 
 			// when
-			err := jsBackend.DeleteInvalidConsumers(tc.givenSubscriptions)
+			err := jsBackend.DeleteInvalidConsumers(testcase.givenSubscriptions)
 
 			// then
-			if tc.wantError != nil {
-				require.ErrorIs(t, err, tc.wantError)
+			if testcase.wantError != nil {
+				require.ErrorIs(t, err, testcase.wantError)
 			} else {
 				cons := jsBackend.jsCtx.Consumers("")
 				actualConsumers := []*nats.ConsumerInfo{}
 				for con := range cons {
 					actualConsumers = append(actualConsumers, con)
 				}
-				assert.Equal(t, len(tc.wantConsumers), len(actualConsumers))
-				assert.Equal(t, tc.wantConsumers, actualConsumers)
+				assert.Equal(t, len(testcase.wantConsumers), len(actualConsumers))
+				assert.Equal(t, testcase.wantConsumers, actualConsumers)
 			}
 		})
 	}
@@ -756,24 +757,24 @@ func Test_revertEventTypeToOriginal(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			ce := ceevent.New(ceevent.CloudEventsVersionV1)
-			ce.SetType(tc.givenType)
-			ce.SetSource(tc.givenSource)
-			if tc.givenOriginalType != "" {
-				ce.SetExtension(originalTypeHeaderName, tc.givenOriginalType)
+			event := ceevent.New(ceevent.CloudEventsVersionV1)
+			event.SetType(testcase.givenType)
+			event.SetSource(testcase.givenSource)
+			if testcase.givenOriginalType != "" {
+				event.SetExtension(originalTypeHeaderName, testcase.givenOriginalType)
 			}
 
-			ceLogger := jsBackend.namedLogger().With("id", ce.ID(), "source", ce.Source(), "type", ce.Type())
+			ceLogger := jsBackend.namedLogger().With("id", event.ID(), "source", event.Source(), "type", event.Type())
 
 			// when
-			jsBackend.revertEventTypeToOriginal(&ce, ceLogger)
+			jsBackend.revertEventTypeToOriginal(&event, ceLogger)
 
 			// then
-			require.Equal(t, tc.wantType, ce.Type())
+			require.Equal(t, testcase.wantType, event.Type())
 		})
 	}
 }

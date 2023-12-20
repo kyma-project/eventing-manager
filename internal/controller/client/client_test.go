@@ -37,12 +37,13 @@ func Test_disableCacheForObjects(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		testcase := tt
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			got := disableCacheForObjects(tt.args.options)
+			got := disableCacheForObjects(testcase.args.options)
 
 			// then
-			require.True(t, deepEqualOptions(tt.want, got))
+			require.True(t, deepEqualOptions(testcase.want, got))
 		})
 	}
 }

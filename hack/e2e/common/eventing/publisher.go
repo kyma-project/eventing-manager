@@ -114,7 +114,6 @@ func (p *Publisher) SendLegacyEvent(source, eventType, payload string) error {
 }
 
 func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.Encoding) error {
-	ce := *event
 	newCtx := context.Background()
 	ctx := cloudevents.ContextWithTarget(newCtx, p.PublishEndpoint())
 	//nolint:exhaustive // we only support the two checked encodings. Every other encoding will result in an error.
@@ -133,6 +132,7 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 		}
 	}
 
+	evnt := *event
 	p.logger.Debug(fmt.Sprintf("Publishing cloud event:"+
 		" URL: %s,"+
 		" Encoding: %s,"+
@@ -140,28 +140,28 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 		" EventSource: %s,"+
 		" EventType: %s,"+
 		" Payload: %s",
-		p.PublishEndpoint(), encoding.String(), ce.ID(), ce.Source(), ce.Type(), ce.Data()))
+		p.PublishEndpoint(), encoding.String(), evnt.ID(), evnt.Source(), evnt.Type(), evnt.Data()))
 
-	result := p.clientCE.Send(ctx, ce)
+	result := p.clientCE.Send(ctx, evnt)
 
 	//nolint:errorlint // this error is used in logs
 	switch {
 	case cloudevents.IsUndelivered(result):
 		{
-			return fmt.Errorf("%w: encoding:[%s] undelivered:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), ce.Type(), result)
+			return fmt.Errorf("%w: encoding:[%s] undelivered:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), evnt.Type(), result)
 		}
 	case cloudevents.IsNACK(result):
 		{
-			return fmt.Errorf("%w: encoding:[%s] nack:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), ce.Type(), result)
+			return fmt.Errorf("%w: encoding:[%s] nack:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), evnt.Type(), result)
 		}
 	case cloudevents.IsACK(result):
 		{
-			p.logger.Debug(fmt.Sprintf("successfully sent cloudevent-%s [%s]", encoding.String(), ce.Type()))
+			p.logger.Debug(fmt.Sprintf("successfully sent cloudevent-%s [%s]", encoding.String(), evnt.Type()))
 			return nil
 		}
 	default:
 		{
-			return fmt.Errorf("%w: encoding:[%s] unknown:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), ce.Type(), result)
+			return fmt.Errorf("%w: encoding:[%s] unknown:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), evnt.Type(), result)
 		}
 	}
 }

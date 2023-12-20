@@ -34,18 +34,18 @@ type Status struct {
 // NewHTTPClient creates a new client and ensures that the given baseURL ends with a trailing '/'.
 // The trailing '/' is required later for constructing the full URL using a relative path.
 func NewHTTPClient(baseURL string, client *http.Client) (*Client, error) {
-	u, err := url.Parse(baseURL)
+	parsedURL, err := url.Parse(baseURL)
 
 	// add trailing '/' to the url path, so that we can combine the url with other paths according to standards
-	if !strings.HasSuffix(u.Path, "/") {
-		u.Path += "/"
+	if !strings.HasSuffix(parsedURL.Path, "/") {
+		parsedURL.Path += "/"
 	}
 	if err != nil {
 		return nil, err
 	}
 	return &Client{
 		httpClient: client,
-		baseURL:    u,
+		baseURL:    parsedURL,
 	}, nil
 }
 

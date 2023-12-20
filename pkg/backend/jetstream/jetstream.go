@@ -201,15 +201,15 @@ func (js *JetStream) isConsumerUsedByKymaSub(consumerName string, subscriptions 
 	if len(subscriptions) == 0 {
 		return false
 	}
-	for ix := range subscriptions {
-		cleanedTypes := GetCleanEventTypes(&subscriptions[ix], js.cleaner)
+	for sub := range subscriptions {
+		cleanedTypes := GetCleanEventTypes(&subscriptions[sub], js.cleaner)
 		jsSubjects := js.GetJetStreamSubjects(
-			subscriptions[ix].Spec.Source,
+			subscriptions[sub].Spec.Source,
 			GetCleanEventTypesFromEventTypes(cleanedTypes),
-			subscriptions[ix].Spec.TypeMatching)
+			subscriptions[sub].Spec.TypeMatching)
 
 		for _, jsSubject := range jsSubjects {
-			computedConsumerNameFromSubject := computeConsumerName(&subscriptions[ix], jsSubject)
+			computedConsumerNameFromSubject := computeConsumerName(&subscriptions[sub], jsSubject)
 			if consumerName == computedConsumerNameFromSubject {
 				return true
 			}
@@ -505,12 +505,12 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 			js.namedLogger().Errorw("Failed to convert sink value to string", "sinkValue", sinkValue)
 			return
 		}
-		ci, err := msg.Sub.ConsumerInfo()
+		info, err := msg.Sub.ConsumerInfo()
 		if err != nil {
 			js.namedLogger().Errorw("Failed to extract consumer info", "error", err)
 			return
 		}
-		ce, err := backendutils.ConvertMsgToCE(msg)
+		event, err := backendutils.ConvertMsgToCE(msg)
 		if err != nil {
 			js.namedLogger().Errorw("Failed to convert JetStream message to CloudEvent", "error", err)
 			return
@@ -520,19 +520,19 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 		ctxWithCancel, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		ctxWithCE := cloudevents.ContextWithTarget(ctxWithCancel, sink)
-		traceCtxWithCE := tracing.AddTracingHeadersToContext(ctxWithCE, ce)
+		traceCtxWithCE := tracing.AddTracingHeadersToContext(ctxWithCE, event)
 
 		// decorate the logger with CloudEvent context
-		ceLogger := js.namedLogger().With("id", ce.ID(), "source", ce.Source(), "type", ce.Type(), "sink", sink)
+		ceLogger := js.namedLogger().With("id", event.ID(), "source", event.Source(), "type", event.Type(), "sink", sink)
 
 		// revert the event type to original form
-		js.revertEventTypeToOriginal(ce, ceLogger)
+		js.revertEventTypeToOriginal(event, ceLogger)
 
 		ceLogger.Debugw("Sending the CloudEvent")
 
 		// dispatch the event to sink
 		start := time.Now()
-		result := js.client.Send(traceCtxWithCE, *ce)
+		result := js.client.Send(traceCtxWithCE, *event)
 		duration := time.Since(start)
 		var res *cehttp.Result
 		if !ceprotocol.IsACK(result) {
@@ -541,8 +541,8 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 				status = res.StatusCode
 			}
 
-			js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, ce.Type(), ci.Config.Name, sink, status)
-			js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, subscriptionNamespace, ce.Type(), ci.Config.Name, sink, status)
+			js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, event.Type(), info.Config.Name, sink, status)
+			js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, subscriptionNamespace, event.Type(), info.Config.Name, sink, status)
 
 			// NAK the msg with a delay so it is redelivered after jsConsumerNakDelay period.
 			if err := msg.NakWithDelay(jsConsumerNakDelay); err != nil {
@@ -564,8 +564,8 @@ func (js *JetStream) getCallback(subKeyPrefix, subscriptionName, subscriptionNam
 			status = res.StatusCode
 		}
 
-		js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, ce.Type(), ci.Config.Name, sink, status)
-		js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, subscriptionNamespace, ce.Type(), ci.Config.Name, sink, status)
+		js.metricsCollector.RecordDeliveryPerSubscription(subscriptionName, subscriptionNamespace, event.Type(), info.Config.Name, sink, status)
+		js.metricsCollector.RecordLatencyPerSubscription(duration, subscriptionName, subscriptionNamespace, event.Type(), info.Config.Name, sink, status)
 		ceLogger.Debugw("CloudEvent was dispatched")
 	}
 }

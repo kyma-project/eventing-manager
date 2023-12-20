@@ -37,13 +37,13 @@ func Test_CleanEventType(t *testing.T) {
 	require.NoError(t, err1)
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			cleaner := NewEventMeshCleaner(defaultLogger)
-			eventType, err := cleaner.CleanEventType(tc.givenEventType)
+			eventType, err := cleaner.CleanEventType(testcase.givenEventType)
 			require.NoError(t, err)
-			require.Equal(t, tc.wantEventType, eventType)
+			require.Equal(t, testcase.wantEventType, eventType)
 		})
 	}
 }

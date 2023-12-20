@@ -123,14 +123,14 @@ func Test_PreventMultipleEventingCRs(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			g := gomega.NewGomegaWithT(t)
 
 			// given
 			// create unique namespace for this test run.
-			givenNamespace := tc.givenEventing.GetNamespace()
+			givenNamespace := testcase.givenEventing.GetNamespace()
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 			// create NATS CR with ready status.
 			givenNATS := natstestutils.NewNATSCR(
@@ -141,11 +141,11 @@ func Test_PreventMultipleEventingCRs(t *testing.T) {
 			testEnvironment.EnsureNATSResourceStateReady(t, givenNATS)
 
 			// when
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+			testEnvironment.EnsureK8sResourceCreated(t, testcase.givenEventing)
 
 			// then
 			// check Eventing CR status.
-			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
+			testEnvironment.GetEventingAssert(g, testcase.givenEventing).Should(testcase.wantMatches)
 		})
 	}
 }

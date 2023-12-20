@@ -703,25 +703,25 @@ func Test_Validate_CreateEventing(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
-			testEnvironment.EnsureNamespaceCreation(t, tc.givenUnstructuredEventing.GetNamespace())
+			testEnvironment.EnsureNamespaceCreation(t, testcase.givenUnstructuredEventing.GetNamespace())
 
 			// when
-			err := testEnvironment.CreateUnstructuredK8sResource(&tc.givenUnstructuredEventing)
+			err := testEnvironment.CreateUnstructuredK8sResource(&testcase.givenUnstructuredEventing)
 
 			// then
-			if tc.wantErrMsg == noError {
+			if testcase.wantErrMsg == noError {
 				require.NoError(t, err, "Expected error message to be empty but got error instead."+
 					" Check the validation rule of the eventing CR.")
 			} else {
 				require.Error(t, err, fmt.Sprintf("Expected the following error message: \n \" %s \" \n"+
-					" but got no error. Check the validation rules of the eventing CR.", tc.wantErrMsg))
+					" but got no error. Check the validation rules of the eventing CR.", testcase.wantErrMsg))
 
-				require.Contains(t, err.Error(), tc.wantErrMsg, "Expected a specific error message"+
+				require.Contains(t, err.Error(), testcase.wantErrMsg, "Expected a specific error message"+
 					" but messages do not match. Check the validation rules of the eventing CR.")
 			}
 		})
@@ -785,30 +785,30 @@ func Test_Validate_UpdateEventing(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
-			testEnvironment.EnsureNamespaceCreation(t, tc.givenOriginalUnstructuredEventing.GetNamespace())
+			testEnvironment.EnsureNamespaceCreation(t, testcase.givenOriginalUnstructuredEventing.GetNamespace())
 
 			// when
-			err := testEnvironment.CreateUnstructuredK8sResource(&tc.givenOriginalUnstructuredEventing)
+			err := testEnvironment.CreateUnstructuredK8sResource(&testcase.givenOriginalUnstructuredEventing)
 			require.NoError(t, err, "Expected error message to be empty but got error instead.")
 
-			tc.givenTargetUnstructuredEventing.SetResourceVersion(tc.givenOriginalUnstructuredEventing.GetResourceVersion())
+			testcase.givenTargetUnstructuredEventing.SetResourceVersion(testcase.givenOriginalUnstructuredEventing.GetResourceVersion())
 
-			err = testEnvironment.UpdateUnstructuredK8sResource(&tc.givenTargetUnstructuredEventing)
+			err = testEnvironment.UpdateUnstructuredK8sResource(&testcase.givenTargetUnstructuredEventing)
 
 			// then
-			if tc.wantErrMsg == noError {
+			if testcase.wantErrMsg == noError {
 				require.NoError(t, err, "Expected error message to be empty but got error instead."+
 					" Check the validation rule of the eventing CR.")
 			} else {
 				require.Error(t, err, fmt.Sprintf("Expected the following error message: \n \" %s \" \n"+
-					" but got no error. Check the validation rules of the eventing CR.", tc.wantErrMsg))
+					" but got no error. Check the validation rules of the eventing CR.", testcase.wantErrMsg))
 
-				require.Contains(t, err.Error(), tc.wantErrMsg, "Expected a specific error message"+
+				require.Contains(t, err.Error(), testcase.wantErrMsg, "Expected a specific error message"+
 					" but messages do not match. Check the validation rules of the eventing CR.")
 			}
 		})
@@ -988,24 +988,24 @@ func Test_Validate_Defaulting(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			g := gomega.NewGomegaWithT(t)
 
 			// given
-			testEnvironment.EnsureNamespaceCreation(t, tc.givenUnstructuredEventing.GetNamespace())
+			testEnvironment.EnsureNamespaceCreation(t, testcase.givenUnstructuredEventing.GetNamespace())
 
 			// when
-			testEnvironment.EnsureK8sUnStructResourceCreated(t, &tc.givenUnstructuredEventing)
+			testEnvironment.EnsureK8sUnStructResourceCreated(t, &testcase.givenUnstructuredEventing)
 
 			// then
 			testEnvironment.GetEventingAssert(g, &v1alpha1.Eventing{
 				ObjectMeta: kmetav1.ObjectMeta{
-					Name:      tc.givenUnstructuredEventing.GetName(),
-					Namespace: tc.givenUnstructuredEventing.GetNamespace(),
+					Name:      testcase.givenUnstructuredEventing.GetName(),
+					Namespace: testcase.givenUnstructuredEventing.GetNamespace(),
 				},
-			}).Should(tc.wantMatches)
+			}).Should(testcase.wantMatches)
 		})
 	}
 }

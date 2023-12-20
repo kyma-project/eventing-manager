@@ -59,34 +59,34 @@ var (
 )
 
 // toJetStreamStorageType converts a string to a nats.StorageType.
-func toJetStreamStorageType(s string) (nats.StorageType, error) {
-	switch s {
+func toJetStreamStorageType(storageType string) (nats.StorageType, error) {
+	switch storageType {
 	case StorageTypeMemory:
 		return nats.MemoryStorage, nil
 	case StorageTypeFile:
 		return nats.FileStorage, nil
 	}
-	return nats.MemoryStorage, ErrInvalidStorageType.WithArg(s)
+	return nats.MemoryStorage, ErrInvalidStorageType.WithArg(storageType)
 }
 
-func toJetStreamRetentionPolicy(s string) (nats.RetentionPolicy, error) {
-	switch s {
+func toJetStreamRetentionPolicy(retentionPolicy string) (nats.RetentionPolicy, error) {
+	switch retentionPolicy {
 	case RetentionPolicyLimits:
 		return nats.LimitsPolicy, nil
 	case RetentionPolicyInterest:
 		return nats.InterestPolicy, nil
 	}
-	return nats.LimitsPolicy, ErrInvalidRetentionPolicy.WithArg(s)
+	return nats.LimitsPolicy, ErrInvalidRetentionPolicy.WithArg(retentionPolicy)
 }
 
-func toJetStreamDiscardPolicy(s string) (nats.DiscardPolicy, error) {
-	switch s {
+func toJetStreamDiscardPolicy(discardPolicy string) (nats.DiscardPolicy, error) {
+	switch discardPolicy {
 	case DiscardPolicyOld:
 		return nats.DiscardOld, nil
 	case DiscardPolicyNew:
 		return nats.DiscardNew, nil
 	}
-	return nats.DiscardNew, ErrInvalidDiscardPolicy.WithArg(s)
+	return nats.DiscardNew, ErrInvalidDiscardPolicy.WithArg(discardPolicy)
 }
 
 // toJetStreamConsumerDeliverPolicyOpt returns a nats.DeliverPolicy opt based on the given deliver policy string value.

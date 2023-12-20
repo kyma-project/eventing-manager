@@ -35,16 +35,16 @@ func BeJetStreamSubscriptionWithSubject(source, subject string,
 		if err != nil {
 			return false, err
 		}
-		js := jetstream.JetStream{
+		jetstream := jetstream.JetStream{
 			Config: natsConfig,
 		}
-		result := info.Config.FilterSubject == js.GetJetStreamSubject(source, subject, typeMatching)
+		result := info.Config.FilterSubject == jetstream.GetJetStreamSubject(source, subject, typeMatching)
 		if !result {
 			//nolint: goerr113 // no production code, but test helper functionality
 			return false, fmt.Errorf(
 				"BeJetStreamSubscriptionWithSubject expected %v to be equal to %v",
 				info.Config.FilterSubject,
-				js.GetJetStreamSubject(source, subject, typeMatching),
+				jetstream.GetJetStreamSubject(source, subject, typeMatching),
 			)
 		}
 		return true, nil

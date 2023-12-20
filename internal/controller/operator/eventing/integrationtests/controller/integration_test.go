@@ -174,26 +174,26 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
 			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
-				return tc.givenDeploymentReady
+				return testcase.givenDeploymentReady
 			}
 			// create unique namespace for this test run.
-			givenNamespace := tc.givenEventing.Namespace
-			tc.givenNATS.SetNamespace(givenNamespace)
+			givenNamespace := testcase.givenEventing.Namespace
+			testcase.givenNATS.SetNamespace(givenNamespace)
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 			// when
 			// create NATS.
 			originalKubeClient := testEnvironment.KubeClient
-			if !tc.givenNATSCRDMissing {
-				testEnvironment.EnsureK8sResourceCreated(t, tc.givenNATS)
-				if tc.givenNATSReady {
-					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenNATS)
+			if !testcase.givenNATSCRDMissing {
+				testEnvironment.EnsureK8sResourceCreated(t, testcase.givenNATS)
+				if testcase.givenNATSReady {
+					testEnvironment.EnsureNATSResourceStateReady(t, testcase.givenNATS)
 				}
 			} else {
 				mockedKubeClient := &MockKubeClient{
@@ -203,39 +203,39 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 				testEnvironment.Reconciler.SetKubeClient(mockedKubeClient)
 			}
 			// create Eventing CR.
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+			testEnvironment.EnsureK8sResourceCreated(t, testcase.givenEventing)
 
 			defer func() {
 				testEnvironment.KubeClient = originalKubeClient
 				testEnvironment.Reconciler.SetKubeClient(originalKubeClient)
-				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
-				if tc.givenNATSReady && !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureEventingResourceDeletion(t, testcase.givenEventing.Name, givenNamespace)
+				if testcase.givenNATSReady && !*testEnvironment.EnvTestInstance.UseExistingCluster {
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*testcase.givenEventing), givenNamespace)
 				}
-				if !tc.givenNATSCRDMissing {
-					testEnvironment.EnsureK8sResourceDeleted(t, tc.givenNATS)
+				if !testcase.givenNATSCRDMissing {
+					testEnvironment.EnsureK8sResourceDeleted(t, testcase.givenNATS)
 				}
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
 			// then
 			// check Eventing CR status.
-			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
-			if tc.givenDeploymentReady && tc.givenEventing.Spec.Backend != nil {
+			testEnvironment.GetEventingAssert(g, testcase.givenEventing).Should(testcase.wantMatches)
+			if testcase.givenDeploymentReady && testcase.givenEventing.Spec.Backend != nil {
 				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
-				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
+				ensureEPPDeploymentAndHPAResources(t, testcase.givenEventing, testEnvironment)
 				//nolint:godox // TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
-			if tc.wantEnsureK8sObjects && tc.givenEventing.Spec.Backend != nil {
+			if testcase.wantEnsureK8sObjects && testcase.givenEventing.Spec.Backend != nil {
 				// check if EPP resources exists.
-				ensureK8sResources(t, tc.givenEventing, testEnvironment)
+				ensureK8sResources(t, testcase.givenEventing, testEnvironment)
 				// check if webhook configurations are updated with correct CABundle.
 				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
 
 			// check the publisher service in the Eventing CR status
-			testEnvironment.EnsurePublishServiceInEventingStatus(t, tc.givenEventing.Name, tc.givenEventing.Namespace)
+			testEnvironment.EnsurePublishServiceInEventingStatus(t, testcase.givenEventing.Name, testcase.givenEventing.Namespace)
 		})
 	}
 }
@@ -262,32 +262,32 @@ func Test_UpdateEventingCR(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 			// create unique namespace for this test run.
-			givenNamespace := tc.givenExistingEventing.GetNamespace()
+			givenNamespace := testcase.givenExistingEventing.GetNamespace()
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
 			// when
 			nats := natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRNamespace(tc.givenExistingEventing.Namespace),
+				natstestutils.WithNATSCRNamespace(testcase.givenExistingEventing.Namespace),
 				natstestutils.WithNATSCRDefaults(),
 				natstestutils.WithNATSStateReady(),
 			)
 			testEnvironment.EnsureK8sResourceCreated(t, nats)
 			testEnvironment.EnsureNATSResourceStateReady(t, nats)
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenExistingEventing)
-			givenEPPDeploymentName := eventing.GetPublisherDeploymentName(*tc.givenExistingEventing)
+			testEnvironment.EnsureK8sResourceCreated(t, testcase.givenExistingEventing)
+			givenEPPDeploymentName := eventing.GetPublisherDeploymentName(*testcase.givenExistingEventing)
 			testEnvironment.EnsureDeploymentExists(t, givenEPPDeploymentName, givenNamespace)
 			testEnvironment.EnsureHPAExists(t, givenEPPDeploymentName, givenNamespace)
 
 			defer func() {
-				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenExistingEventing.Name, givenNamespace)
+				testEnvironment.EnsureEventingResourceDeletion(t, testcase.givenExistingEventing.Name, givenNamespace)
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
 					testEnvironment.EnsureDeploymentDeletion(t, givenEPPDeploymentName, givenNamespace)
 				}
@@ -296,19 +296,19 @@ func Test_UpdateEventingCR(t *testing.T) {
 			}()
 
 			// get Eventing CR.
-			eventingCR, err := testEnvironment.GetEventingFromK8s(tc.givenExistingEventing.Name, givenNamespace)
+			eventingCR, err := testEnvironment.GetEventingFromK8s(testcase.givenExistingEventing.Name, givenNamespace)
 			require.NoError(t, err)
 
 			// when
 			// update NATS CR.
 			newEventing := eventingCR.DeepCopy()
-			newEventing.Spec = tc.givenNewEventingForUpdate.Spec
+			newEventing.Spec = testcase.givenNewEventingForUpdate.Spec
 			testEnvironment.EnsureK8sResourceUpdated(t, newEventing)
 
 			// then
 			testEnvironment.EnsureEventingSpecPublisherReflected(t, newEventing)
 			testEnvironment.EnsureEventingReplicasReflected(t, newEventing)
-			testEnvironment.EnsureDeploymentOwnerReferenceSet(t, tc.givenExistingEventing)
+			testEnvironment.EnsureDeploymentOwnerReferenceSet(t, testcase.givenExistingEventing)
 
 			// check the publisher service in the Eventing CR status
 			testEnvironment.EnsurePublishServiceInEventingStatus(t, eventingCR.Name, eventingCR.Namespace)
@@ -538,11 +538,11 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			if !*testEnvironment.EnvTestInstance.UseExistingCluster && tc.runForRealCluster {
+			if !*testEnvironment.EnvTestInstance.UseExistingCluster && testcase.runForRealCluster {
 				t.Skip("Skipping test case as it can only be run on real cluster")
 			}
 
@@ -553,11 +553,11 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			}
 
 			// create unique namespace for this test run.
-			givenNamespace := tc.givenEventing.GetNamespace()
+			givenNamespace := testcase.givenEventing.GetNamespace()
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
 			nats := natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRNamespace(tc.givenEventing.Namespace),
+				natstestutils.WithNATSCRNamespace(testcase.givenEventing.Namespace),
 				natstestutils.WithNATSCRDefaults(),
 				natstestutils.WithNATSStateReady(),
 			)
@@ -565,31 +565,31 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 			testEnvironment.EnsureNATSResourceStateReady(t, nats)
 
 			// create Eventing CR
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+			testEnvironment.EnsureK8sResourceCreated(t, testcase.givenEventing)
 
 			defer func() {
-				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+				testEnvironment.EnsureEventingResourceDeletion(t, testcase.givenEventing.Name, givenNamespace)
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*testcase.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureK8sResourceDeleted(t, nats)
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
 			// check Eventing CR status.
-			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(matchers.HaveStatusReady())
+			testEnvironment.GetEventingAssert(g, testcase.givenEventing).Should(matchers.HaveStatusReady())
 
 			// check if EPP resources exists.
-			testEnvironment.EnsureEPPK8sResourcesExists(t, *tc.givenEventing)
+			testEnvironment.EnsureEPPK8sResourcesExists(t, *testcase.givenEventing)
 
 			// when
-			for _, f := range tc.wantResourceDeletion {
-				require.NoError(t, f(testEnvironment, *tc.givenEventing))
+			for _, f := range testcase.wantResourceDeletion {
+				require.NoError(t, f(testEnvironment, *testcase.givenEventing))
 			}
 
 			// then
 			// ensure all k8s objects exists again.
-			testEnvironment.EnsureEPPK8sResourcesExists(t, *tc.givenEventing)
+			testEnvironment.EnsureEPPK8sResourcesExists(t, *testcase.givenEventing)
 		})
 	}
 }
@@ -669,30 +669,30 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			g := gomega.NewWithT(t)
 
 			// given
 			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
-				return tc.givenDeploymentReady
+				return testcase.givenDeploymentReady
 			}
 
 			// create unique namespace for this test run.
-			givenNamespace := tc.givenEventing.Namespace
+			givenNamespace := testcase.givenEventing.Namespace
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
 			// create eventing-webhook-auth secret.
-			testEnvironment.EnsureOAuthSecretCreated(t, tc.givenEventing)
+			testEnvironment.EnsureOAuthSecretCreated(t, testcase.givenEventing)
 
-			if !tc.shouldEventMeshSecretNotFound {
+			if !testcase.shouldEventMeshSecretNotFound {
 				// create EventMesh secret.
-				testEnvironment.EnsureEventMeshSecretCreated(t, tc.givenEventing)
+				testEnvironment.EnsureEventMeshSecretCreated(t, testcase.givenEventing)
 			}
 
 			originalKubeClient := testEnvironment.KubeClient
-			if tc.shouldFailSubManager {
+			if testcase.shouldFailSubManager {
 				mockedKubeClient := &MockKubeClient{
 					Client: originalKubeClient,
 				}
@@ -702,37 +702,37 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 
 			// when
 			// create Eventing CR.
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+			testEnvironment.EnsureK8sResourceCreated(t, testcase.givenEventing)
 
 			defer func() {
 				testEnvironment.KubeClient = originalKubeClient
 				testEnvironment.Reconciler.SetKubeClient(originalKubeClient)
 
-				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
-				if !*testEnvironment.EnvTestInstance.UseExistingCluster && !tc.shouldFailSubManager && !tc.shouldEventMeshSecretNotFound {
-					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+				testEnvironment.EnsureEventingResourceDeletion(t, testcase.givenEventing.Name, givenNamespace)
+				if !*testEnvironment.EnvTestInstance.UseExistingCluster && !testcase.shouldFailSubManager && !testcase.shouldEventMeshSecretNotFound {
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*testcase.givenEventing), givenNamespace)
 				}
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
 			// then
 			// check Eventing CR status.
-			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
-			if tc.givenDeploymentReady {
+			testEnvironment.GetEventingAssert(g, testcase.givenEventing).Should(testcase.wantMatches)
+			if testcase.givenDeploymentReady {
 				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
-				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
+				ensureEPPDeploymentAndHPAResources(t, testcase.givenEventing, testEnvironment)
 				//nolint:godox // TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
-			if tc.wantEnsureK8sObjects {
+			if testcase.wantEnsureK8sObjects {
 				// check if other EPP resources exists and values are reflected.
-				ensureK8sResources(t, tc.givenEventing, testEnvironment)
+				ensureK8sResources(t, testcase.givenEventing, testEnvironment)
 				// check if webhook configurations are updated with correct CABundle.
 				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
 
 			// check the publisher service in the Eventing CR status
-			testEnvironment.EnsurePublishServiceInEventingStatus(t, tc.givenEventing.Name, givenNamespace)
+			testEnvironment.EnsurePublishServiceInEventingStatus(t, testcase.givenEventing.Name, givenNamespace)
 		})
 	}
 }
@@ -793,8 +793,8 @@ func Test_DeleteEventingCR(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			g := gomega.NewWithT(t)
 
@@ -804,15 +804,15 @@ func Test_DeleteEventingCR(t *testing.T) {
 			}
 
 			// create unique namespace for this test run.
-			givenNamespace := tc.givenEventing.GetNamespace()
+			givenNamespace := testcase.givenEventing.GetNamespace()
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
 			// when
 			var nats *natsv1alpha1.NATS
-			if tc.givenEventing.Spec.Backend.Type == operatorv1alpha1.NatsBackendType {
+			if testcase.givenEventing.Spec.Backend.Type == operatorv1alpha1.NatsBackendType {
 				nats = natstestutils.NewNATSCR(
-					natstestutils.WithNATSCRNamespace(tc.givenEventing.Namespace),
+					natstestutils.WithNATSCRNamespace(testcase.givenEventing.Namespace),
 					natstestutils.WithNATSCRDefaults(),
 					natstestutils.WithNATSStateReady(),
 				)
@@ -821,64 +821,64 @@ func Test_DeleteEventingCR(t *testing.T) {
 				testEnvironment.EnsureNATSResourceStateReady(t, nats)
 			} else {
 				// create eventing-webhook-auth secret.
-				testEnvironment.EnsureOAuthSecretCreated(t, tc.givenEventing)
-				testEnvironment.EnsureEventMeshSecretCreated(t, tc.givenEventing)
+				testEnvironment.EnsureOAuthSecretCreated(t, testcase.givenEventing)
+				testEnvironment.EnsureEventMeshSecretCreated(t, testcase.givenEventing)
 			}
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+			testEnvironment.EnsureK8sResourceCreated(t, testcase.givenEventing)
 
 			defer func() {
-				if tc.givenSubscription != nil {
-					testEnvironment.EnsureSubscriptionResourceDeletion(t, tc.givenSubscription.Name, tc.givenSubscription.Namespace)
+				if testcase.givenSubscription != nil {
+					testEnvironment.EnsureSubscriptionResourceDeletion(t, testcase.givenSubscription.Name, testcase.givenSubscription.Namespace)
 				}
 
 				if !*testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*testcase.givenEventing), givenNamespace)
 				}
-				if tc.givenEventing.Spec.Backend.Type == operatorv1alpha1.NatsBackendType {
+				if testcase.givenEventing.Spec.Backend.Type == operatorv1alpha1.NatsBackendType {
 					testEnvironment.EnsureK8sResourceDeleted(t, nats)
 				}
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 			}()
 
-			testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-			testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+			testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*testcase.givenEventing), givenNamespace)
+			testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*testcase.givenEventing), givenNamespace)
 
-			if tc.givenSubscription != nil {
+			if testcase.givenSubscription != nil {
 				// create subscriptions if given.
-				testEnvironment.EnsureNamespaceCreation(t, tc.givenSubscription.Namespace)
-				testEnvironment.EnsureK8sResourceCreated(t, tc.givenSubscription)
-				testEnvironment.EnsureSubscriptionExists(t, tc.givenSubscription.Name, tc.givenSubscription.Namespace)
+				testEnvironment.EnsureNamespaceCreation(t, testcase.givenSubscription.Namespace)
+				testEnvironment.EnsureK8sResourceCreated(t, testcase.givenSubscription)
+				testEnvironment.EnsureSubscriptionExists(t, testcase.givenSubscription.Name, testcase.givenSubscription.Namespace)
 
 				// then
 				// givenSubscription existence means deletion of Eventing CR should be blocked.
-				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenEventing)
-				testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
+				testEnvironment.EnsureK8sResourceDeleted(t, testcase.givenEventing)
+				testEnvironment.GetEventingAssert(g, testcase.givenEventing).Should(testcase.wantMatches)
 			} else {
 				// then
 				// givenSubscription is nil means deletion of Eventing CR should be successful.
-				testEnvironment.EnsureEventingResourceDeletion(t, tc.givenEventing.Name, givenNamespace)
+				testEnvironment.EnsureEventingResourceDeletion(t, testcase.givenEventing.Name, givenNamespace)
 
 				// then
 				if *testEnvironment.EnvTestInstance.UseExistingCluster {
-					testEnvironment.EnsureDeploymentNotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
-					testEnvironment.EnsureHPANotFound(t, eventing.GetPublisherDeploymentName(*tc.givenEventing), givenNamespace)
+					testEnvironment.EnsureDeploymentNotFound(t, eventing.GetPublisherDeploymentName(*testcase.givenEventing), givenNamespace)
+					testEnvironment.EnsureHPANotFound(t, eventing.GetPublisherDeploymentName(*testcase.givenEventing), givenNamespace)
 					testEnvironment.EnsureK8sServiceNotFound(t,
-						eventing.GetPublisherPublishServiceName(*tc.givenEventing), givenNamespace)
+						eventing.GetPublisherPublishServiceName(*testcase.givenEventing), givenNamespace)
 					testEnvironment.EnsureK8sServiceNotFound(t,
-						eventing.GetPublisherMetricsServiceName(*tc.givenEventing), givenNamespace)
+						eventing.GetPublisherMetricsServiceName(*testcase.givenEventing), givenNamespace)
 					testEnvironment.EnsureK8sServiceNotFound(t,
-						eventing.GetPublisherHealthServiceName(*tc.givenEventing), givenNamespace)
+						eventing.GetPublisherHealthServiceName(*testcase.givenEventing), givenNamespace)
 					testEnvironment.EnsureK8sServiceAccountNotFound(t,
-						eventing.GetPublisherServiceAccountName(*tc.givenEventing), givenNamespace)
+						eventing.GetPublisherServiceAccountName(*testcase.givenEventing), givenNamespace)
 				} else {
 					// check if the owner reference is set.
 					// if owner reference is set then these resources would be garbage collected in real k8s cluster.
-					testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *tc.givenEventing)
+					testEnvironment.EnsureEPPK8sResourcesHaveOwnerReference(t, *testcase.givenEventing)
 				}
 				testEnvironment.EnsureK8sClusterRoleNotFound(t,
-					eventing.GetPublisherClusterRoleName(*tc.givenEventing), givenNamespace)
+					eventing.GetPublisherClusterRoleName(*testcase.givenEventing), givenNamespace)
 				testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
-					eventing.GetPublisherClusterRoleBindingName(*tc.givenEventing), givenNamespace)
+					eventing.GetPublisherClusterRoleBindingName(*testcase.givenEventing), givenNamespace)
 			}
 		})
 	}
@@ -970,8 +970,8 @@ func Test_WatcherNATSResource(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			g := gomega.NewWithT(t)
 
@@ -980,28 +980,28 @@ func Test_WatcherNATSResource(t *testing.T) {
 				return true
 			}
 
-			givenNamespace := tc.givenOriginalNATS.Namespace
-			if tc.givenTargetNATS != nil {
-				tc.givenTargetNATS.Namespace = givenNamespace
-				tc.givenTargetNATS.Name = tc.givenOriginalNATS.Name
+			givenNamespace := testcase.givenOriginalNATS.Namespace
+			if testcase.givenTargetNATS != nil {
+				testcase.givenTargetNATS.Namespace = givenNamespace
+				testcase.givenTargetNATS.Name = testcase.givenOriginalNATS.Name
 			}
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
 			// create original NATS CR.
-			originalNats := tc.givenOriginalNATS.DeepCopy()
+			originalNats := testcase.givenOriginalNATS.DeepCopy()
 			testEnvironment.EnsureK8sResourceCreated(t, originalNats)
 
-			testEnvironment.EnsureNATSResourceState(t, originalNats, tc.givenOriginalNATS.Status.State)
+			testEnvironment.EnsureNATSResourceState(t, originalNats, testcase.givenOriginalNATS.Status.State)
 
 			// create Eventing CR.
 			var eventingResource *operatorv1alpha1.Eventing
-			if tc.isEventMesh {
+			if testcase.isEventMesh {
 				eventingResource = utils.NewEventingCR(
 					utils.WithEventingCRNamespace(givenNamespace),
 					utils.WithEventMeshBackend("test-secret-name"),
 					utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
-					utils.WithStatusState(tc.wantedOriginalEventingState),
+					utils.WithStatusState(testcase.wantedOriginalEventingState),
 					utils.WithEventingDomain(utils.Domain),
 				)
 				// create necessary EventMesh secrets
@@ -1013,7 +1013,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 					utils.WithEventingCRMinimal(),
 					utils.WithEventingStreamData("Memory", "1M", 1, 1),
 					utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
-					utils.WithStatusState(tc.wantedOriginalEventingState),
+					utils.WithStatusState(testcase.wantedOriginalEventingState),
 					utils.WithEventingDomain(utils.Domain),
 				)
 			}
@@ -1025,35 +1025,35 @@ func Test_WatcherNATSResource(t *testing.T) {
 					testEnvironment.EnsureDeploymentDeletion(t, eventing.GetPublisherDeploymentName(*eventingResource), givenNamespace)
 				}
 
-				if tc.givenOriginalNATS != nil && tc.givenTargetNATS != nil {
-					testEnvironment.EnsureK8sResourceDeleted(t, tc.givenOriginalNATS)
+				if testcase.givenOriginalNATS != nil && testcase.givenTargetNATS != nil {
+					testEnvironment.EnsureK8sResourceDeleted(t, testcase.givenOriginalNATS)
 				}
 
 				testEnvironment.EnsureNamespaceDeleted(t, givenNamespace)
 
-				if tc.isEventMesh {
+				if testcase.isEventMesh {
 					testEnvironment.EnsureEventMeshSecretDeleted(t, eventingResource)
 				}
 			}()
 
 			// update target NATS CR to target NATS CR state
-			if tc.givenOriginalNATS != nil {
-				testEnvironment.EnsureNATSResourceState(t, tc.givenOriginalNATS, tc.givenOriginalNATS.Status.State)
+			if testcase.givenOriginalNATS != nil {
+				testEnvironment.EnsureNATSResourceState(t, testcase.givenOriginalNATS, testcase.givenOriginalNATS.Status.State)
 			}
 
 			// check Eventing CR status.
-			testEnvironment.GetEventingAssert(g, eventingResource).Should(tc.wantOriginalEventingMatches)
+			testEnvironment.GetEventingAssert(g, eventingResource).Should(testcase.wantOriginalEventingMatches)
 
 			// update target NATS CR to target NATS CR state
-			if tc.givenTargetNATS != nil {
-				testEnvironment.EnsureNATSResourceState(t, tc.givenTargetNATS, tc.givenTargetNATS.Status.State)
+			if testcase.givenTargetNATS != nil {
+				testEnvironment.EnsureNATSResourceState(t, testcase.givenTargetNATS, testcase.givenTargetNATS.Status.State)
 			} else {
 				// delete NATS CR
-				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenOriginalNATS)
+				testEnvironment.EnsureK8sResourceDeleted(t, testcase.givenOriginalNATS)
 			}
 
 			// check target Eventing CR status.
-			testEnvironment.GetEventingAssert(g, eventingResource).Should(tc.wantTargetEventingMatches)
+			testEnvironment.GetEventingAssert(g, eventingResource).Should(testcase.wantTargetEventingMatches)
 		})
 	}
 }

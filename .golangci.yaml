@@ -28,7 +28,6 @@ linters:
     - prealloc
     - testpackage
     - tparallel
-    - varnamelen
     - wrapcheck
 
 linters-settings:
@@ -202,6 +201,27 @@ linters-settings:
       - (or|er)$
   wrapcheck:
     ignorePackageGlobs:
+  varnamelen:
+    ignore-names:
+      - ok # Ignore "ok" variables as return values of functions
+      - g # Ignore "g" as it is commonly used for gomega
+      - a # Ignore as it is used in comparison functions
+      - b # Ignore as it is used in comparison functions
+    # Ignore "ok" variables that hold the bool return value of a type assertion. (defaults to false)
+    ignore-type-assert-ok: true
+    # Ignore "ok" variables that hold the bool return value of a map index. (defaults to false)
+    ignore-map-index-ok: true
+    # Ignore "ok" variables that hold the bool return value of a channel receive. (defaults to false)
+    ignore-chan-recv-ok: true
+    ignore-decls:
+      - i int
+      - g *gomega.WithT
+      - w http.ResponseWriter
+      - r *http.Request
+      - cm *v1.ConfigMap
+      - cm *kcorev1.ConfigMap
+      - js JetStream
+      - js *JetStream
 issues:
   exclude-rules:
     - path: "_test\\.go"

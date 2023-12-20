@@ -39,15 +39,15 @@ func TestSyncStatusActiveBackend(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// when
-			tc.givenEventing.SyncStatusActiveBackend()
+			testcase.givenEventing.SyncStatusActiveBackend()
 
 			// then
-			require.Equal(t, tc.wantActiveBackend, tc.givenEventing.Status.ActiveBackend)
+			require.Equal(t, testcase.wantActiveBackend, testcase.givenEventing.Status.ActiveBackend)
 		})
 	}
 }

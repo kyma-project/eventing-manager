@@ -198,16 +198,16 @@ func TestGetStreamConfig(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			streamConfig, err := getStreamConfig(tc.givenNATSConfig)
-			if tc.wantError {
+			streamConfig, err := getStreamConfig(testcase.givenNATSConfig)
+			if testcase.wantError {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
-			require.Equal(t, tc.wantStreamConfig, streamConfig)
+			require.Equal(t, testcase.wantStreamConfig, streamConfig)
 		})
 	}
 }
@@ -393,14 +393,14 @@ func TestGetBackendJetStreamTypes(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			jsTypes, err := GetBackendJetStreamTypes(tc.givenSubscription, tc.givenJSSubjects)
-			if tc.wantError {
+			jsTypes, err := GetBackendJetStreamTypes(testcase.givenSubscription, testcase.givenJSSubjects)
+			if testcase.wantError {
 				require.Error(t, err)
 			} else {
-				require.Equal(t, tc.wantJSTypes, jsTypes)
+				require.Equal(t, testcase.wantJSTypes, jsTypes)
 				require.NoError(t, err)
 			}
 		})
@@ -494,14 +494,14 @@ func TestSubscriptionSubjectIdentifierEqual(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			gotInstanceEqual := reflect.DeepEqual(tc.givenIdentifier1, tc.givenIdentifier2)
-			require.Equal(t, tc.wantEqual, gotInstanceEqual)
+			gotInstanceEqual := reflect.DeepEqual(testcase.givenIdentifier1, testcase.givenIdentifier2)
+			require.Equal(t, testcase.wantEqual, gotInstanceEqual)
 
-			gotConsumerNameEqual := tc.givenIdentifier1.ConsumerName() == tc.givenIdentifier2.ConsumerName()
-			require.Equal(t, tc.wantEqual, gotConsumerNameEqual)
+			gotConsumerNameEqual := testcase.givenIdentifier1.ConsumerName() == testcase.givenIdentifier2.ConsumerName()
+			require.Equal(t, testcase.wantEqual, gotConsumerNameEqual)
 		})
 	}
 }

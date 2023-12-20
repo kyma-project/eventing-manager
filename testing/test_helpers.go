@@ -359,7 +359,7 @@ func WithService(name, host string) APIRuleOption {
 }
 
 func WithPath() APIRuleOption {
-	return func(r *apigatewayv1beta1.APIRule) {
+	return func(rule *apigatewayv1beta1.APIRule) {
 		handlerOAuth := object.OAuthHandlerNameOAuth2Introspection
 		handler := apigatewayv1beta1.Handler{
 			Name: handlerOAuth,
@@ -367,7 +367,7 @@ func WithPath() APIRuleOption {
 		authenticator := &apigatewayv1beta1.Authenticator{
 			Handler: &handler,
 		}
-		r.Spec.Rules = []apigatewayv1beta1.Rule{
+		rule.Spec.Rules = []apigatewayv1beta1.Rule{
 			{
 				Path: "/path",
 				Methods: []string{
@@ -382,13 +382,13 @@ func WithPath() APIRuleOption {
 	}
 }
 
-func MarkReady(r *apigatewayv1beta1.APIRule) {
+func MarkReady(rule *apigatewayv1beta1.APIRule) {
 	statusOK := &apigatewayv1beta1.APIRuleResourceStatus{
 		Code:        apigatewayv1beta1.StatusOK,
 		Description: "",
 	}
 
-	r.Status = apigatewayv1beta1.APIRuleStatus{
+	rule.Status = apigatewayv1beta1.APIRuleStatus{
 		APIRuleStatus:        statusOK,
 		VirtualServiceStatus: statusOK,
 		AccessRuleStatus:     statusOK,
@@ -717,13 +717,13 @@ func ToSubscription(unstructuredSub *kunstructured.Unstructured) (*eventingv1alp
 
 // ToUnstructuredAPIRule converts an APIRule object into a unstructured APIRule.
 func ToUnstructuredAPIRule(obj interface{}) (*kunstructured.Unstructured, error) {
-	u := &kunstructured.Unstructured{}
+	unstrct := &kunstructured.Unstructured{}
 	unstructuredObj, err := kruntime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	if err != nil {
 		return nil, err
 	}
-	u.Object = unstructuredObj
-	return u, nil
+	unstrct.Object = unstructuredObj
+	return unstrct, nil
 }
 
 // SetupSchemeOrDie add a scheme to eventing API schemes.

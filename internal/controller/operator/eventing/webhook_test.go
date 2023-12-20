@@ -181,27 +181,27 @@ func Test_ReconcileWebhooksWithCABundle(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			testEnv := NewMockedUnitTestEnvironment(t, tc.givenObjects...)
+			testEnv := NewMockedUnitTestEnvironment(t, testcase.givenObjects...)
 			testEnv.Reconciler.backendConfig = getTestBackendConfig()
 
 			// when
 			err := testEnv.Reconciler.reconcileWebhooksWithCABundle(ctx)
 
 			// then
-			require.ErrorIs(t, err, tc.wantError)
-			if tc.wantError == nil {
+			require.ErrorIs(t, err, testcase.wantError)
+			if testcase.wantError == nil {
 				mutatingWH, newErr := testEnv.Reconciler.kubeClient.GetMutatingWebHookConfiguration(ctx,
 					testEnv.Reconciler.backendConfig.MutatingWebhookName)
 				require.NoError(t, newErr)
 				validatingWH, newErr := testEnv.Reconciler.kubeClient.GetValidatingWebHookConfiguration(ctx,
 					testEnv.Reconciler.backendConfig.ValidatingWebhookName)
 				require.NoError(t, newErr)
-				require.Equal(t, mutatingWH.Webhooks[0], tc.wantMutatingWH.Webhooks[0])
-				require.Equal(t, validatingWH.Webhooks[0], tc.wantValidatingWH.Webhooks[0])
+				require.Equal(t, mutatingWH.Webhooks[0], testcase.wantMutatingWH.Webhooks[0])
+				require.Equal(t, validatingWH.Webhooks[0], testcase.wantValidatingWH.Webhooks[0])
 			}
 		})
 	}

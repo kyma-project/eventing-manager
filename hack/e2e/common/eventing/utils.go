@@ -87,13 +87,13 @@ func NewLegacyEvent(eventSource, eventType string) (string, string, string, stri
 
 func NewCloudEvent(eventSource, eventType string, encoding binding.Encoding) (*cloudevents.Event, error) {
 	eventID := uuid.New().String()
-	ce := cloudevents.NewEvent()
+	evnt := cloudevents.NewEvent()
 	data := CloudEventData(eventSource, eventType, encoding)
-	ce.SetID(eventID)
-	ce.SetType(eventType)
-	ce.SetSource(eventSource)
-	if err := ce.SetData(cloudevents.ApplicationJSON, data); err != nil {
+	evnt.SetID(eventID)
+	evnt.SetType(eventType)
+	evnt.SetSource(eventSource)
+	if err := evnt.SetData(cloudevents.ApplicationJSON, data); err != nil {
 		return nil, fmt.Errorf("failed to set cloudevent-%s data with error:[%w]", encoding.String(), err)
 	}
-	return &ce, nil
+	return &evnt, nil
 }

@@ -58,15 +58,15 @@ func TestParser(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			applicationName, event, version, err := parse(tc.givenEventType, tc.givenPrefix)
-			require.Equal(t, tc.wantError, err != nil)
-			if !tc.wantError {
-				require.Equal(t, tc.wantApplicationName, applicationName)
-				require.Equal(t, tc.wantEvent, event)
-				require.Equal(t, tc.wantVersion, version)
+			applicationName, event, version, err := parse(testcase.givenEventType, testcase.givenPrefix)
+			require.Equal(t, testcase.wantError, err != nil)
+			if !testcase.wantError {
+				require.Equal(t, testcase.wantApplicationName, applicationName)
+				require.Equal(t, testcase.wantEvent, event)
+				require.Equal(t, testcase.wantVersion, version)
 			}
 		})
 	}

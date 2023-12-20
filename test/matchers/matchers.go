@@ -146,7 +146,7 @@ func HaveDeletionErrorCondition(message string) gomegatypes.GomegaMatcher {
 	})
 }
 
-func HaveBackendTypeNats(bc v1alpha1.BackendConfig) gomegatypes.GomegaMatcher {
+func HaveBackendTypeNats(config v1alpha1.BackendConfig) gomegatypes.GomegaMatcher {
 	return gomega.And(
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
@@ -155,36 +155,36 @@ func HaveBackendTypeNats(bc v1alpha1.BackendConfig) gomegatypes.GomegaMatcher {
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
 				return e.Spec.Backend.Config.NATSStreamStorageType
-			}, gomega.Equal(bc.NATSStreamStorageType)),
+			}, gomega.Equal(config.NATSStreamStorageType)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
 				return e.Spec.Backend.Config.NATSStreamReplicas
-			}, gomega.Equal(bc.NATSStreamReplicas)),
+			}, gomega.Equal(config.NATSStreamReplicas)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) resource.Quantity {
 				return e.Spec.Backend.Config.NATSStreamMaxSize
-			}, gomega.Equal(bc.NATSStreamMaxSize)),
+			}, gomega.Equal(config.NATSStreamMaxSize)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
 				return e.Spec.Backend.Config.NATSMaxMsgsPerTopic
-			}, gomega.Equal(bc.NATSMaxMsgsPerTopic)),
+			}, gomega.Equal(config.NATSMaxMsgsPerTopic)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
 				return e.Spec.Backend.Config.EventTypePrefix
-			}, gomega.Equal(bc.EventTypePrefix)),
+			}, gomega.Equal(config.EventTypePrefix)),
 	)
 }
 
-func HavePublisher(p v1alpha1.Publisher) gomegatypes.GomegaMatcher {
+func HavePublisher(publisher v1alpha1.Publisher) gomegatypes.GomegaMatcher {
 	return gomega.And(
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
 				return e.Spec.Publisher.Replicas.Min
-			}, gomega.Equal(p.Replicas.Min)),
+			}, gomega.Equal(publisher.Replicas.Min)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
 				return e.Spec.Publisher.Replicas.Max
-			}, gomega.Equal(p.Replicas.Max)))
+			}, gomega.Equal(publisher.Replicas.Max)))
 }
 
 func HavePublisherResources(res kcorev1.ResourceRequirements) gomegatypes.GomegaMatcher {

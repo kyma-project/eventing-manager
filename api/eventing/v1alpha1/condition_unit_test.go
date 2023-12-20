@@ -38,8 +38,8 @@ func Test_InitializeSubscriptionConditions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// given
 			g := NewGomegaWithT(t)
-			s := v1alpha1.SubscriptionStatus{}
-			s.Conditions = tt.givenConditions
+			subStatus := v1alpha1.SubscriptionStatus{}
+			subStatus.Conditions = tt.givenConditions
 			wantConditionTypes := []v1alpha1.ConditionType{
 				v1alpha1.ConditionSubscribed,
 				v1alpha1.ConditionSubscriptionActive,
@@ -48,12 +48,12 @@ func Test_InitializeSubscriptionConditions(t *testing.T) {
 			}
 
 			// when
-			s.InitializeConditions()
+			subStatus.InitializeConditions()
 
 			// then
-			g.Expect(s.Conditions).To(HaveLen(len(wantConditionTypes)))
+			g.Expect(subStatus.Conditions).To(HaveLen(len(wantConditionTypes)))
 			foundConditionTypes := make([]v1alpha1.ConditionType, 0)
-			for _, condition := range s.Conditions {
+			for _, condition := range subStatus.Conditions {
 				g.Expect(condition.Status).To(BeEquivalentTo(kcorev1.ConditionUnknown))
 				foundConditionTypes = append(foundConditionTypes, condition.Type)
 			}
@@ -199,12 +199,13 @@ func Test_FindCondition(t *testing.T) {
 
 	status := v1alpha1.SubscriptionStatus{}
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			status.Conditions = tc.givenConditions
-			gotCondition := status.FindCondition(tc.findConditionType)
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			status.Conditions = testcase.givenConditions
+			gotCondition := status.FindCondition(testcase.findConditionType)
 
-			if !reflect.DeepEqual(tc.wantCondition, gotCondition) {
-				t.Errorf("Subscription FindCondition failed, want: %v but got: %v", tc.wantCondition, gotCondition)
+			if !reflect.DeepEqual(testcase.wantCondition, gotCondition) {
+				t.Errorf("Subscription FindCondition failed, want: %v but got: %v", testcase.wantCondition, gotCondition)
 			}
 		})
 	}

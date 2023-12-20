@@ -22,13 +22,14 @@ func TestSelectorInstanceEventing(t *testing.T) {
 			),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range tests {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
 			got := SelectorInstanceEventing()
 
 			// then
-			require.Equal(t, tt.want, got)
+			require.Equal(t, testcase.want, got)
 		})
 	}
 }

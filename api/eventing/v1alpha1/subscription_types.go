@@ -109,14 +109,14 @@ func (bf *BEBFilters) Deduplicate() (*BEBFilters, error) {
 	result := &BEBFilters{
 		Dialect: bf.Dialect,
 	}
-	for _, f := range bf.Filters {
-		h, err := f.hash()
+	for _, filter := range bf.Filters {
+		hash, err := filter.hash()
 		if err != nil {
 			return nil, err
 		}
-		if _, exists := seen[h]; !exists {
-			result.Filters = append(result.Filters, f)
-			seen[h] = struct{}{}
+		if _, exists := seen[hash]; !exists {
+			result.Filters = append(result.Filters, filter)
+			seen[hash] = struct{}{}
 		}
 	}
 	return result, nil
