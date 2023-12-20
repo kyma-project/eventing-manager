@@ -31,10 +31,10 @@ const (
 )
 
 var (
-	ErrFailedToStart = errors.New("failed to start")
-	ErrFailedToStop  = errors.New("failed to stop")
+	ErrFailedToStart  = errors.New("failed to start")
+	ErrFailedToStop   = errors.New("failed to stop")
 	ErrFailedToRemove = errors.New("failed to remove")
-	errNotFound      = errors.New("secret not found")
+	errNotFound       = errors.New("secret not found")
 )
 
 //nolint:goerr113 // all tests here need to be fixed, as they use require.ErrorAs and use it wrongly
