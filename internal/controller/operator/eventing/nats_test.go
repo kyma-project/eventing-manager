@@ -286,6 +286,7 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 	}
 }
 
+//nolint:dupl // quite similar to the eventmesh test
 func Test_stopNATSSubManager(t *testing.T) {
 	t.Parallel()
 

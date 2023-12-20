@@ -1,3 +1,4 @@
+//nolint:dupl // these comparison functions all look very similar
 package object
 
 import (

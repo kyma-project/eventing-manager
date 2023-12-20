@@ -367,6 +367,7 @@ func Test_DeleteDeployment(t *testing.T) {
 	}
 }
 
+//nolint:dupl //not the same as ClusterRoleBinding
 func Test_DeleteClusterRole(t *testing.T) {
 	t.Parallel()
 	// Define test cases
@@ -420,6 +421,7 @@ func Test_DeleteClusterRole(t *testing.T) {
 	}
 }
 
+//nolint:dupl // not the same as ClusterRole
 func Test_DeleteClusterRoleBinding(t *testing.T) {
 	t.Parallel()
 	// Define test cases
@@ -544,6 +546,7 @@ func Test_GetSecret(t *testing.T) {
 	}
 }
 
+//nolint:dupl // not the same as validating webhook
 func Test_GetMutatingWebHookConfiguration(t *testing.T) {
 	t.Parallel()
 
@@ -614,6 +617,7 @@ func Test_GetMutatingWebHookConfiguration(t *testing.T) {
 	}
 }
 
+//nolint:dupl // not the same as mutating webhook
 func Test_GetValidatingWebHookConfiguration(t *testing.T) {
 	t.Parallel()
 

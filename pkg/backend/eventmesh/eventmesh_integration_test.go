@@ -157,6 +157,7 @@ func Test_getProcessedEventTypes(t *testing.T) {
 	}
 }
 
+//nolint:dupl // no duplicate as this tests the kyma side and not the eventmesh side
 func Test_handleKymaSubModified(t *testing.T) {
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
@@ -275,6 +276,7 @@ func Test_handleKymaSubModified(t *testing.T) {
 	}
 }
 
+//nolint:dupl // no duplicate as this tests the eventmesh side and not the kyma side
 func Test_handleEventMeshSubModified(t *testing.T) {
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))

@@ -441,6 +441,7 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 	}
 }
 
+//nolint:dupl // quite similar to the natsmanager test
 func Test_stopEventMeshSubManager(t *testing.T) {
 	t.Parallel()
 
