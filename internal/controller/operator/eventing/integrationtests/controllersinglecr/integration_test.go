@@ -19,11 +19,11 @@ const (
 	projectRootDir = "../../../../../../"
 )
 
-var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment
 
 // define allowed Eventing CR.
 //
-//nolint:gochecknoglobals // used in tests
+
 var givenAllowedEventingCR = testutils.NewEventingCR(
 	testutils.WithEventingCRName("eventing"),
 	testutils.WithEventingCRNamespace("kyma-system"),

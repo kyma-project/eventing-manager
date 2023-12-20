@@ -56,7 +56,6 @@ const (
 	MaxReconnects            = 10
 )
 
-//nolint:gochecknoglobals // these are required across the whole test package
 var (
 	k8sCancelFn    context.CancelFunc
 	jsTestEnsemble *jetStreamTestEnsemble

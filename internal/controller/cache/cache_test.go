@@ -65,7 +65,6 @@ func deepEqualOptions(a, b cache.Options) bool {
 	return deepEqualByObject(a.ByObject, b.ByObject)
 }
 
-//nolint:varnamelen
 func deepEqualByObject(a, b map[client.Object]cache.ByObject) bool {
 	if len(a) != len(b) {
 		return false

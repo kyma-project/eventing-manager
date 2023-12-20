@@ -23,7 +23,7 @@ const (
 	projectRootDir = "../../../../../../"
 )
 
-var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment
 
 // TestMain pre-hook and post-hook to run before and after all tests.
 func TestMain(m *testing.M) {

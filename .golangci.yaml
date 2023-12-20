@@ -22,7 +22,6 @@ linters:
     - gosec
     - ireturn
     - maintidx
-    - nolintlint
     - paralleltest
     - prealloc
     - testpackage

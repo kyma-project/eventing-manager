@@ -33,7 +33,7 @@ const (
 	projectRootDir = "../../../../../../"
 )
 
-var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment
 
 var ErrPatchApplyFailed = errors.New("patch apply failed")
 
@@ -224,7 +224,6 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			if testcase.givenDeploymentReady && testcase.givenEventing.Spec.Backend != nil {
 				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
 				ensureEPPDeploymentAndHPAResources(t, testcase.givenEventing, testEnvironment)
-				//nolint:godox // TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
 			if testcase.wantEnsureK8sObjects && testcase.givenEventing.Spec.Backend != nil {
@@ -721,7 +720,6 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			if testcase.givenDeploymentReady {
 				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
 				ensureEPPDeploymentAndHPAResources(t, testcase.givenEventing, testEnvironment)
-				//nolint:godox // TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
 			if testcase.wantEnsureK8sObjects {
