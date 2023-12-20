@@ -1,4 +1,4 @@
-// nolint: gomnd // used in tests
+//nolint: gomnd // used in tests
 package fixtures
 
 import (

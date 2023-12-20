@@ -61,9 +61,9 @@ const (
 	NatsServerNotAvailableMsg = "NATS server is not available"
 	natsClientPort            = 4222
 
-	PublisherSecretEMSHostKey = "ems-publish-host"
+	PublisherSecretEMSHostKey = "ems-publish-host" //nolint:gosec // no hardcoded secret, just the key where to find it
 
-	TokenEndpointFormat                   = "%s?grant_type=%s&response_type=token"
+	TokenEndpointFormat                   = "%s?grant_type=%s&response_type=token" //nolint:gosec // no hardcoded secret, just the format for specifying it in the URL
 	NamespacePrefix                       = "/"
 	EventMeshPublishEndpointForSubscriber = "/sap/ems/v1"
 	EventMeshPublishEndpointForPublisher  = "/sap/ems/v1/events"

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec // not used for cryptography, but just to create a checksum for lookups
 	"fmt"
 	"strings"
 	"testing"
@@ -429,7 +429,7 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 
 func TestShortenNameAndAppendHash(t *testing.T) {
 	g := NewGomegaWithT(t)
-	fakeHash := fmt.Sprintf("%x", sha1.Sum([]byte("myshootmynamespacemyname")))
+	fakeHash := fmt.Sprintf("%x", sha1.Sum([]byte("myshootmynamespacemyname"))) //nolint:gosec // strength of the algorithm is not important here
 
 	tests := []struct {
 		name   string
@@ -558,15 +558,16 @@ func TestIsEventMeshSubModified(t *testing.T) {
 			output: true,
 		},
 	}
-	for _, test := range tests {
+	for _, tc := range tests {
+		testcase := tc
 		g.Expect(err).ShouldNot(HaveOccurred())
 
 		// then
-		result, err := IsEventMeshSubModified(&test.sub, test.hash)
+		result, err := IsEventMeshSubModified(&testcase.sub, testcase.hash)
 
 		// when
 		g.Expect(err).ShouldNot(HaveOccurred())
-		g.Expect(result).To(Equal(test.output))
+		g.Expect(result).To(Equal(testcase.output))
 	}
 }
 
