@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -10,7 +11,6 @@ import (
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/internal/label"
@@ -31,9 +31,10 @@ const (
 )
 
 var (
-	ErrFailedToStart  = errors.New("failed to start")
-	ErrFailedToStop   = errors.New("failed to stop")
+	ErrFailedToStart = errors.New("failed to start")
+	ErrFailedToStop  = errors.New("failed to stop")
 	ErrFailedToRemove = errors.New("failed to remove")
+	errNotFound      = errors.New("secret not found")
 )
 
 //nolint:goerr113 // all tests here need to be fixed, as they use require.ErrorAs and use it wrongly
@@ -95,7 +96,13 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenManagerFactoryMock: func(_ *submgrmanagermocks.Manager) *submgrmocks.ManagerFactory {
 				return nil
 			},
-			wantError:     errors.New("failed to sync OAuth secret"),
+			givenKubeClientMock: func() k8s.Client {
+				mockKubeClient := new(k8smocks.Client)
+				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
+					nil, errNotFound).Once()
+				return mockKubeClient
+			},
+			wantError:     fmt.Errorf("failed to sync OAuth secret: %w", errNotFound),
 			wantHashAfter: int64(0),
 		},
 		{
@@ -116,11 +123,11 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenKubeClientMock: func() k8s.Client {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
+					utils.NewOAuthSecret("test-secret", givenEventing.Namespace), nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed to apply patch")).Once()
 				return mockKubeClient
 			},
-			wantError: errors.New("failed to sync Publisher Proxy secret"),
+			wantError: errors.New("failed to sync Publisher Proxy secret: failed to apply patch"),
 		},
 		{
 			name:                              "it should do nothing because subscription manager is already started",
@@ -144,7 +151,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
+					utils.NewOAuthSecret("test-secret", givenEventing.Namespace), nil).Once()
 				return mockKubeClient
 			},
 			wantHashAfter: int64(4922936597877296700),
@@ -175,7 +182,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
+					utils.NewOAuthSecret("test-secret", givenEventing.Namespace), nil).Once()
 				return mockKubeClient
 			},
 			wantAssertCheck: true,
@@ -206,7 +213,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Twice()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Twice()
+					utils.NewOAuthSecret("test-secret", givenEventing.Namespace), nil).Twice()
 				return mockKubeClient
 			},
 			wantAssertCheck:  true,
@@ -240,7 +247,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Twice()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Twice()
+					utils.NewOAuthSecret("test-secret", givenEventing.Namespace), nil).Twice()
 				return mockKubeClient
 			},
 			wantAssertCheck: true,
@@ -301,7 +308,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			// then
 			if tc.wantError != nil {
 				require.Error(t, err)
-				require.ErrorAs(t, err, &tc.wantError)
+				require.Equal(t, err.Error(), tc.wantError.Error())
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, testEnv.Reconciler.eventMeshSubManager)
@@ -372,6 +379,7 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 			},
 			givenKubeClientMock: func() (k8s.Client, *k8smocks.Client) {
 				mockKubeClient := new(k8smocks.Client)
+				mockKubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(givenOauthSecret, nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
 				return mockKubeClient, mockKubeClient
 			},
@@ -402,6 +410,7 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 			},
 			givenKubeClientMock: func() (k8s.Client, *k8smocks.Client) {
 				mockKubeClient := new(k8smocks.Client)
+				mockKubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(givenOauthSecret, nil).Once()
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
 				return mockKubeClient, mockKubeClient
@@ -703,7 +712,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 func Test_getOAuth2ClientCredentials(t *testing.T) {
 	testCases := []struct {
 		name             string
-		givenSecrets     []*kcorev1.Secret
+		givenSecret      *kcorev1.Secret
 		wantError        bool
 		wantClientID     []byte
 		wantClientSecret []byte
@@ -711,42 +720,36 @@ func Test_getOAuth2ClientCredentials(t *testing.T) {
 		wantCertsURL     []byte
 	}{
 		{
-			name:         "secret does not exist",
-			givenSecrets: nil,
-			wantError:    true,
+			name:        "secret does not exist",
+			givenSecret: nil,
+			wantError:   true,
 		},
 		{
 			name: "secret exists with missing data",
-			givenSecrets: []*kcorev1.Secret{
-				// required secret
-				{
-					ObjectMeta: kmetav1.ObjectMeta{
-						Name:      defaultEventingWebhookAuthSecretName,
-						Namespace: defaultEventingWebhookAuthSecretNamespace,
-					},
-					Data: map[string][]byte{
-						secretKeyClientID: []byte("test-client-id-0"),
-						// missing data
-					},
+			givenSecret: &kcorev1.Secret{
+				ObjectMeta: kmetav1.ObjectMeta{
+					Name:      defaultEventingWebhookAuthSecretName,
+					Namespace: defaultEventingWebhookAuthSecretNamespace,
+				},
+				Data: map[string][]byte{
+					secretKeyClientID: []byte("test-client-id-0"),
+					// missing data
 				},
 			},
 			wantError: true,
 		},
 		{
 			name: "secret exists with all data",
-			givenSecrets: []*kcorev1.Secret{
-				// required secret
-				{
-					ObjectMeta: kmetav1.ObjectMeta{
-						Name:      defaultEventingWebhookAuthSecretName,
-						Namespace: defaultEventingWebhookAuthSecretNamespace,
-					},
-					Data: map[string][]byte{
-						secretKeyClientID:     []byte("test-client-id-0"),
-						secretKeyClientSecret: []byte("test-client-secret-0"),
-						secretKeyTokenURL:     []byte("test-token-url-0"),
-						secretKeyCertsURL:     []byte("test-certs-url-0"),
-					},
+			givenSecret: &kcorev1.Secret{
+				ObjectMeta: kmetav1.ObjectMeta{
+					Name:      defaultEventingWebhookAuthSecretName,
+					Namespace: defaultEventingWebhookAuthSecretNamespace,
+				},
+				Data: map[string][]byte{
+					secretKeyClientID:     []byte("test-client-id-0"),
+					secretKeyClientSecret: []byte("test-client-secret-0"),
+					secretKeyTokenURL:     []byte("test-token-url-0"),
+					secretKeyCertsURL:     []byte("test-certs-url-0"),
 				},
 			},
 			wantError:        false,
@@ -765,19 +768,22 @@ func Test_getOAuth2ClientCredentials(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
 			ctx := context.Background()
+
+			kubeClient := new(k8smocks.Client)
+
+			if tc.givenSecret != nil {
+				kubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(tc.givenSecret, nil).Once()
+			} else {
+				kubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(nil, errNotFound).Once()
+			}
+
 			r := Reconciler{
-				Client: fake.NewClientBuilder().WithObjects().Build(),
-				logger: l,
+				kubeClient: kubeClient,
+				logger:     l,
 				backendConfig: env.BackendConfig{
 					EventingWebhookAuthSecretName:      defaultEventingWebhookAuthSecretName,
 					EventingWebhookAuthSecretNamespace: defaultEventingWebhookAuthSecretNamespace,
 				},
-			}
-			if len(tc.givenSecrets) > 0 {
-				for _, secret := range tc.givenSecrets {
-					err := r.Client.Create(ctx, secret)
-					require.NoError(t, err)
-				}
 			}
 
 			// when
