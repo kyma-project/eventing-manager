@@ -470,7 +470,7 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 
 	// handle switching of backend.
 	if eventing.Status.ActiveBackend != "" {
-		if err := r.handleBackendSwitching(eventing, log); err != nil {
+		if err := r.handleBackendSwitching(ctx, eventing, log); err != nil {
 			return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 		}
 	}
@@ -497,7 +497,7 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	}
 }
 
-func (r *Reconciler) handleBackendSwitching(
+func (r *Reconciler) handleBackendSwitching(ctx context.Context,
 	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
 ) error {
 	// check if the backend was changed.
@@ -521,6 +521,14 @@ func (r *Reconciler) handleBackendSwitching(
 	// update the Eventing CR status.
 	eventing.Status.SetStateProcessing()
 	eventing.Status.ClearConditions()
+
+	// delete publisher proxy resources.
+	log.Infof("deleting publisher proxy resources")
+	err := r.eventingManager.DeletePublisherProxyResources(ctx, eventing)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
