@@ -89,11 +89,11 @@ func TestIsSpecBackendTypeChanged(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			require.Equal(t, tc.wantResult, tc.givenEventing.IsSpecBackendTypeChanged())
+			require.Equal(t, testcase.wantResult, testcase.givenEventing.IsSpecBackendTypeChanged())
 		})
 	}
 }

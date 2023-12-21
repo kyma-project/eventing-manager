@@ -40,16 +40,9 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 	t.Parallel()
 
 	// given - common for all test cases.
-	givenEventing := utils.NewEventingCR(
-		utils.WithEventingCRName("eventing"),
-		utils.WithEventingCRNamespace("test-namespace"),
-		utils.WithEventMeshBackend("test-namespace/test-secret-name"),
-		utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
-		utils.WithEventingEventTypePrefix("test-prefix"),
-		utils.WithEventingDomain(utils.Domain),
-	)
 
-	givenOauthSecret := utils.NewOAuthSecret("eventing-webhook-auth", givenEventing.Namespace)
+	givenNamespace := "test-namespace"
+	givenOauthSecret := utils.NewOAuthSecret("eventing-webhook-auth", givenNamespace)
 
 	givenBackendConfig := &env.BackendConfig{
 		EventingWebhookAuthSecretName: "eventing-webhook-auth",
@@ -115,7 +108,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenKubeClientMock: func() k8s.Client {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
+					utils.NewEventMeshSecret("test-secret", givenNamespace), nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed to apply patch")).Once()
 				return mockKubeClient
 			},
@@ -143,7 +136,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
+					utils.NewEventMeshSecret("test-secret", givenNamespace), nil).Once()
 				return mockKubeClient
 			},
 			wantHashAfter: int64(4922936597877296700),
@@ -174,7 +167,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient.On("GetConfigMap", ctx, mock.Anything, mock.Anything).Return(givenConfigMap, nil).Once()
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Once()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Once()
+					utils.NewEventMeshSecret("test-secret", givenNamespace), nil).Once()
 				return mockKubeClient
 			},
 			wantAssertCheck: true,
@@ -205,7 +198,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Twice()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Twice()
+					utils.NewEventMeshSecret("test-secret", givenNamespace), nil).Twice()
 				return mockKubeClient
 			},
 			wantAssertCheck:  true,
@@ -239,7 +232,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(nil).Twice()
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
-					utils.NewEventMeshSecret("test-secret", givenEventing.Namespace), nil).Twice()
+					utils.NewEventMeshSecret("test-secret", givenNamespace), nil).Twice()
 				return mockKubeClient
 			},
 			wantAssertCheck: true,
@@ -251,6 +244,15 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
+			givenEventing := utils.NewEventingCR(
+				utils.WithEventingCRName("eventing"),
+				utils.WithEventingCRNamespace(givenNamespace),
+				utils.WithEventMeshBackend("test-namespace/test-secret-name"),
+				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
+			)
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t, givenEventing, givenOauthSecret)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig
@@ -409,6 +411,7 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t, testcase.givenEventing, givenOauthSecret)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig

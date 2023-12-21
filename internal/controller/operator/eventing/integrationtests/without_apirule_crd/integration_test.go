@@ -79,6 +79,7 @@ func Test_EventMesh_APIRule_Dependency_Check(t *testing.T) {
 	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
 			g := gomega.NewWithT(t)
 
 			// given

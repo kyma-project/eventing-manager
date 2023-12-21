@@ -24,7 +24,6 @@ linters:
     - paralleltest
     - prealloc
     - testpackage
-    - tparallel
     - wrapcheck
 
 linters-settings:

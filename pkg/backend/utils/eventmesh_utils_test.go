@@ -19,6 +19,7 @@ import (
 )
 
 func TestConvertKymaSubToEventMeshSub(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultProtocolSettings := &ProtocolSettings{
 		ContentMode: func() *string {
@@ -542,7 +543,7 @@ func TestIsEventMeshSubModified(t *testing.T) {
 	eventMeshSubscription2 := eventMeshSubscription1
 	eventMeshSubscription2.WebhookURL = "www.github.com"
 
-	tests := []struct {
+	testCases := []struct {
 		sub    types.Subscription
 		hash   int64
 		output bool
@@ -558,7 +559,7 @@ func TestIsEventMeshSubModified(t *testing.T) {
 			output: true,
 		},
 	}
-	for _, tc := range tests {
+	for _, tc := range testCases {
 		testcase := tc
 		g.Expect(err).ShouldNot(HaveOccurred())
 

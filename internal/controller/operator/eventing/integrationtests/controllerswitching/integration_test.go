@@ -57,6 +57,7 @@ func TestMain(m *testing.M) {
 }
 
 func Test_Switching(t *testing.T) {
+	t.Parallel()
 	// given - common for all test cases.
 	setEventMeshSecretConfig := func(eventingCR *operatorv1alpha1.Eventing, name, namespace string) {
 		eventingCR.Spec.Backend.Config.EventMeshSecret = fmt.Sprintf("%s/%s", namespace, name)

@@ -89,7 +89,7 @@ func Test_GetNATSConfig(t *testing.T) {
 		reconnectWait time.Duration
 		envs          map[string]string
 	}
-	tests := []struct {
+	testCases := []struct {
 		name    string
 		args    args
 		want    NATSConfig
@@ -155,7 +155,7 @@ func Test_GetNATSConfig(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	for _, tc := range tests {
+	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			// Store the current environ and restore it after this test.

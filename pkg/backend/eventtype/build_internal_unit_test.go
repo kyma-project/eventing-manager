@@ -25,11 +25,11 @@ func TestBuilder(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			eventType := build(tc.givenPrefix, tc.givenApplicationName, tc.givenEvent, tc.givenVersion)
-			assert.Equal(t, tc.wantEventType, eventType)
+			eventType := build(testcase.givenPrefix, testcase.givenApplicationName, testcase.givenEvent, testcase.givenVersion)
+			assert.Equal(t, testcase.wantEventType, eventType)
 		})
 	}
 }

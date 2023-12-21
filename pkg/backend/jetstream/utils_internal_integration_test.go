@@ -15,8 +15,8 @@ func TestJetStream_isJsSubAssociatedWithKymaSub(t *testing.T) {
 	// given
 	testEnvironment := setupTestEnvironment(t)
 	jsBackend := testEnvironment.jsBackend
-	defer testEnvironment.natsServer.Shutdown()
-	defer testEnvironment.jsClient.natsConn.Close()
+	t.Cleanup(testEnvironment.natsServer.Shutdown)
+	t.Cleanup(testEnvironment.jsClient.natsConn.Close)
 	initErr := jsBackend.Initialize(nil)
 	require.NoError(t, initErr)
 
@@ -63,11 +63,11 @@ func TestJetStream_isJsSubAssociatedWithKymaSub(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			gotResult := isJsSubAssociatedWithKymaSub(tc.givenJSSubKey, tc.givenKymaSubKey)
-			require.Equal(t, tc.wantResult, gotResult)
+			gotResult := isJsSubAssociatedWithKymaSub(testcase.givenJSSubKey, testcase.givenKymaSubKey)
+			require.Equal(t, testcase.wantResult, gotResult)
 		})
 	}
 }

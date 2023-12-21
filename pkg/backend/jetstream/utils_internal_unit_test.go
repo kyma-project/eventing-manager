@@ -52,12 +52,12 @@ func TestToJetStreamStorageType(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			storageType, err := toJetStreamStorageType(tc.givenStorageType)
-			require.Equal(t, tc.wantError, err != nil)
-			require.Equal(t, tc.wantStorageType, storageType)
+			storageType, err := toJetStreamStorageType(testcase.givenStorageType)
+			require.Equal(t, testcase.wantError, err != nil)
+			require.Equal(t, testcase.wantStorageType, storageType)
 		})
 	}
 }
@@ -90,12 +90,12 @@ func TestToJetStreamRetentionPolicy(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			retentionPolicy, err := toJetStreamRetentionPolicy(tc.givenRetentionPolicy)
-			require.Equal(t, tc.wantError, err != nil)
-			require.Equal(t, tc.wantSRetentionPolicy, retentionPolicy)
+			retentionPolicy, err := toJetStreamRetentionPolicy(testcase.givenRetentionPolicy)
+			require.Equal(t, testcase.wantError, err != nil)
+			require.Equal(t, testcase.wantSRetentionPolicy, retentionPolicy)
 		})
 	}
 }
@@ -296,11 +296,11 @@ func TestGetCleanEventTypes(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			eventTypes := GetCleanEventTypes(tc.givenSubscription, jscleaner)
-			require.Equal(t, tc.wantEventTypes, eventTypes)
+			eventTypes := GetCleanEventTypes(testcase.givenSubscription, jscleaner)
+			require.Equal(t, testcase.wantEventTypes, eventTypes)
 		})
 	}
 }
@@ -533,10 +533,10 @@ func TestSubscriptionSubjectIdentifierConsumerNameLength(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			require.Len(t, tc.givenIdentifier.ConsumerName(), tc.wantConsumerNameLength)
+			require.Len(t, testcase.givenIdentifier.ConsumerName(), testcase.wantConsumerNameLength)
 		})
 	}
 }
@@ -568,10 +568,10 @@ func TestSubscriptionSubjectIdentifierNamespacedName(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			require.Equal(t, tc.wantNamespacedName, tc.givenIdentifier.NamespacedName())
+			require.Equal(t, testcase.wantNamespacedName, testcase.givenIdentifier.NamespacedName())
 		})
 	}
 }

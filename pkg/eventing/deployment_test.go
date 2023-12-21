@@ -424,7 +424,7 @@ func Test_getSelector(t *testing.T) {
 	type args struct {
 		publisherName string
 	}
-	tests := []struct {
+	testCases := []struct {
 		name string
 		args args
 		want *kmetav1.LabelSelector
@@ -443,7 +443,7 @@ func Test_getSelector(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range tests {
+	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			// when

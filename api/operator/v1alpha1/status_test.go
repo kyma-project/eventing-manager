@@ -55,6 +55,7 @@ func TestClearPublisherService(t *testing.T) {
 	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
 			// when
 			testcase.givenStatus.ClearPublisherService()
 
@@ -89,6 +90,7 @@ func TestSetPublisherService(t *testing.T) {
 	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
 			// when
 			testcase.givenStatus.SetPublisherService(testcase.givenServiceName, testcase.givenServiceNamespace)
 

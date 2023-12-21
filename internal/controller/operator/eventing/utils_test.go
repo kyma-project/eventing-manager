@@ -48,45 +48,37 @@ func Test_containsFinalizer(t *testing.T) {
 }
 
 func Test_addFinalizer(t *testing.T) {
-	t.Parallel()
+	// given
+	givenEventing := utils.NewEventingCR()
 
-	t.Run("should add finalizer", func(t *testing.T) {
-		// given
-		givenEventing := utils.NewEventingCR()
+	testEnv := NewMockedUnitTestEnvironment(t, givenEventing)
+	reconciler := testEnv.Reconciler
 
-		testEnv := NewMockedUnitTestEnvironment(t, givenEventing)
-		reconciler := testEnv.Reconciler
+	// when
+	_, err := reconciler.addFinalizer(context.Background(), givenEventing)
 
-		// when
-		_, err := reconciler.addFinalizer(context.Background(), givenEventing)
-
-		// then
-		require.NoError(t, err)
-		gotEventing, err := testEnv.GetEventing(givenEventing.GetName(), givenEventing.GetNamespace())
-		require.NoError(t, err)
-		require.True(t, reconciler.containsFinalizer(&gotEventing))
-	})
+	// then
+	require.NoError(t, err)
+	gotEventing, err := testEnv.GetEventing(givenEventing.GetName(), givenEventing.GetNamespace())
+	require.NoError(t, err)
+	require.True(t, reconciler.containsFinalizer(&gotEventing))
 }
 
 func Test_removeFinalizer(t *testing.T) {
-	t.Parallel()
+	// given
+	givenEventing := utils.NewEventingCR(utils.WithEventingCRFinalizer(FinalizerName))
 
-	t.Run("should remove finalizer", func(t *testing.T) {
-		// given
-		givenEventing := utils.NewEventingCR(utils.WithEventingCRFinalizer(FinalizerName))
+	testEnv := NewMockedUnitTestEnvironment(t, givenEventing)
+	reconciler := testEnv.Reconciler
 
-		testEnv := NewMockedUnitTestEnvironment(t, givenEventing)
-		reconciler := testEnv.Reconciler
+	// when
+	_, err := reconciler.removeFinalizer(context.Background(), givenEventing)
 
-		// when
-		_, err := reconciler.removeFinalizer(context.Background(), givenEventing)
-
-		// then
-		require.NoError(t, err)
-		gotEventing, err := testEnv.GetEventing(givenEventing.GetName(), givenEventing.GetNamespace())
-		require.NoError(t, err)
-		require.False(t, reconciler.containsFinalizer(&gotEventing))
-	})
+	// then
+	require.NoError(t, err)
+	gotEventing, err := testEnv.GetEventing(givenEventing.GetName(), givenEventing.GetNamespace())
+	require.NoError(t, err)
+	require.False(t, reconciler.containsFinalizer(&gotEventing))
 }
 
 func TestReconciler_getEventMeshBackendConfigHash(t *testing.T) {

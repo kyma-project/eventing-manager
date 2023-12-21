@@ -830,6 +830,7 @@ func Test_PeerAuthenticationCRDExists(t *testing.T) {
 }
 
 func TestGetSubscriptions(t *testing.T) {
+	t.Parallel()
 	// Define test cases
 	testCases := []struct {
 		name                 string

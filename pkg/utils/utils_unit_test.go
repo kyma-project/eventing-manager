@@ -170,12 +170,12 @@ func TestIsValidScheme(t *testing.T) {
 			wantValid: true,
 		},
 	}
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			gotValid := IsValidScheme(tc.givenSink)
-			require.Equal(t, tc.wantValid, gotValid)
+			gotValid := IsValidScheme(testcase.givenSink)
+			require.Equal(t, testcase.wantValid, gotValid)
 		})
 	}
 }

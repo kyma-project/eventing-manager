@@ -87,13 +87,13 @@ func ProcMountTypePtr(p kcorev1.ProcMountType) *kcorev1.ProcMountType {
 }
 
 // for Random string generation.
-const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec,gochecknoglobals
 
 // GetRandString returns a random string of the given length.
 func GetRandString(length int) string {
-	b := make([]byte, length)
+	charset := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	b := make([]rune, length)
 	for i := range b {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}

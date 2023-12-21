@@ -38,7 +38,7 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 		givenDst *apigatewayv1beta1.APIRule
 		wantDst  *apigatewayv1beta1.APIRule
 	}
-	tests := []struct {
+	testCases := []struct {
 		name string
 		args args
 	}{
@@ -75,7 +75,7 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range tests {
+	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			// when
@@ -245,7 +245,7 @@ func TestWithGateway(t *testing.T) {
 		givenGateway string
 		givenObject  *apigatewayv1beta1.APIRule
 	}
-	tests := []struct {
+	testCases := []struct {
 		name       string
 		args       args
 		wantObject *apigatewayv1beta1.APIRule
@@ -263,7 +263,7 @@ func TestWithGateway(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range tests {
+	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			// when
@@ -281,7 +281,7 @@ func TestWithLabels(t *testing.T) {
 		givenLabels map[string]string
 		givenObject *apigatewayv1beta1.APIRule
 	}
-	tests := []struct {
+	testCases := []struct {
 		name       string
 		args       args
 		wantObject *apigatewayv1beta1.APIRule
@@ -350,7 +350,7 @@ func TestWithLabels(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range tests {
+	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			// when

@@ -47,7 +47,7 @@ func TestBEBFilters_Deduplicate(t *testing.T) {
 			Value:    orderCreatedEventType,
 		},
 	}
-	tests := []struct {
+	testCases := []struct {
 		caseName  string
 		input     *v1alpha1.BEBFilters
 		expected  *v1alpha1.BEBFilters
@@ -88,7 +88,7 @@ func TestBEBFilters_Deduplicate(t *testing.T) {
 			expectErr: false,
 		},
 	}
-	for _, tc := range tests {
+	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.caseName, func(t *testing.T) {
 			got, err := testcase.input.Deduplicate()

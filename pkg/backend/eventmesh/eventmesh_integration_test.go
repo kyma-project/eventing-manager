@@ -19,6 +19,7 @@ import (
 )
 
 func Test_getProcessedEventTypes(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	require.NoError(t, err)
@@ -159,6 +160,7 @@ func Test_getProcessedEventTypes(t *testing.T) {
 
 //nolint:dupl // no duplicate as this tests the kyma side and not the eventmesh side
 func Test_handleKymaSubModified(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	require.NoError(t, err)
@@ -278,6 +280,7 @@ func Test_handleKymaSubModified(t *testing.T) {
 
 //nolint:dupl // no duplicate as this tests the eventmesh side and not the kyma side
 func Test_handleEventMeshSubModified(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	require.NoError(t, err)
@@ -396,6 +399,7 @@ func Test_handleEventMeshSubModified(t *testing.T) {
 }
 
 func Test_handleCreateEventMeshSub(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	require.NoError(t, err)
@@ -496,6 +500,7 @@ func Test_handleCreateEventMeshSub(t *testing.T) {
 }
 
 func Test_handleKymaSubStatusUpdate(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	require.NoError(t, err)
@@ -689,9 +694,9 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			wantPutCount:    0,
 		},
 	}
-	for _, test := range tests {
-		test := test
-		t.Run(test.name, func(t *testing.T) {
+	for _, tc := range tests {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			mock.Reset()
 
 			// given
@@ -718,7 +723,7 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, emSub)
 
-			if test.givenSameHash {
+			if testcase.givenSameHash {
 				hash, hashErr := backendutils.GetWebhookAuthHash(emSub.WebhookAuth)
 				require.NoError(t, hashErr)
 				require.NotEqual(t, 0, hash)
@@ -740,9 +745,9 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			putURI := fmt.Sprintf("/messaging/events/subscriptions/%s/state", emSubName)
 
 			// then
-			require.Equal(t, test.wantDeleteCount, mock.CountRequests(http.MethodDelete, deleteURI))
-			require.Equal(t, test.wantPatchCount, mock.CountRequests(http.MethodPatch, patchURI))
-			require.Equal(t, test.wantPutCount, mock.CountRequests(http.MethodPut, putURI))
+			require.Equal(t, testcase.wantDeleteCount, mock.CountRequests(http.MethodDelete, deleteURI))
+			require.Equal(t, testcase.wantPatchCount, mock.CountRequests(http.MethodPatch, patchURI))
+			require.Equal(t, testcase.wantPutCount, mock.CountRequests(http.MethodPut, putURI))
 		})
 	}
 }

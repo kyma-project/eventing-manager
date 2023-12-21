@@ -28,12 +28,6 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 	t.Parallel()
 
 	// given - common for all test cases.
-	givenEventing := utils.NewEventingCR(
-		utils.WithEventingCRName("eventing"),
-		utils.WithEventingCRNamespace("kyma-system"),
-		utils.WithEventingStreamData("Memory", "650M", 99, 98),
-		utils.WithEventingEventTypePrefix("one.two.three"),
-	)
 
 	givenNATSConfig := &env.NATSConfig{
 		URL:                     "http://eventing-nats.svc.cluster.local",
@@ -225,7 +219,14 @@ func Test_reconcileNATSSubManager(t *testing.T) {
 	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
 			// given
+			givenEventing := utils.NewEventingCR(
+				utils.WithEventingCRName("eventing"),
+				utils.WithEventingCRNamespace("kyma-system"),
+				utils.WithEventingStreamData("Memory", "650M", 99, 98),
+				utils.WithEventingEventTypePrefix("one.two.three"),
+			)
 			testEnv := NewMockedUnitTestEnvironment(t, givenEventing)
 			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
