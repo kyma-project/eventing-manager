@@ -14,6 +14,7 @@ import (
 )
 
 func Test_InitializeSubscriptionConditions(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name            string
 		givenConditions []v1alpha1.Condition
@@ -35,11 +36,13 @@ func Test_InitializeSubscriptionConditions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		testcase := tt
+		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
 			// given
 			g := NewGomegaWithT(t)
 			subStatus := v1alpha1.SubscriptionStatus{}
-			subStatus.Conditions = tt.givenConditions
+			subStatus.Conditions = testcase.givenConditions
 			wantConditionTypes := []v1alpha1.ConditionType{
 				v1alpha1.ConditionSubscribed,
 				v1alpha1.ConditionSubscriptionActive,
@@ -63,6 +66,7 @@ func Test_InitializeSubscriptionConditions(t *testing.T) {
 }
 
 func Test_IsReady(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name            string
 		givenConditions []v1alpha1.Condition
@@ -132,6 +136,7 @@ func Test_IsReady(t *testing.T) {
 	status := v1alpha1.SubscriptionStatus{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			status.Conditions = tc.givenConditions
 			if gotReadyStatus := status.IsReady(); tc.wantReadyStatus != gotReadyStatus {
 				t.Errorf("Subscription status is not valid, want: %v but got: %v", tc.wantReadyStatus, gotReadyStatus)
@@ -141,6 +146,7 @@ func Test_IsReady(t *testing.T) {
 }
 
 func Test_FindCondition(t *testing.T) {
+	t.Parallel()
 	currentTime := kmetav1.NewTime(time.Now())
 
 	testCases := []struct {
@@ -201,6 +207,7 @@ func Test_FindCondition(t *testing.T) {
 	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
 			status.Conditions = testcase.givenConditions
 			gotCondition := status.FindCondition(testcase.findConditionType)
 
@@ -212,6 +219,7 @@ func Test_FindCondition(t *testing.T) {
 }
 
 func Test_ShouldUpdateReadyStatus(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name                   string
 		subscriptionReady      bool
@@ -293,17 +301,20 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 
 	status := v1alpha1.SubscriptionStatus{}
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			status.Conditions = tc.subscriptionConditions
-			status.Ready = tc.subscriptionReady
-			if gotStatus := status.ShouldUpdateReadyStatus(); tc.wantStatus != gotStatus {
-				t.Errorf("ShouldUpdateReadyStatus is not valid, want: %v but got: %v", tc.wantStatus, gotStatus)
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
+			status.Conditions = testcase.subscriptionConditions
+			status.Ready = testcase.subscriptionReady
+			if gotStatus := status.ShouldUpdateReadyStatus(); testcase.wantStatus != gotStatus {
+				t.Errorf("ShouldUpdateReadyStatus is not valid, want: %v but got: %v", testcase.wantStatus, gotStatus)
 			}
 		})
 	}
 }
 
 func Test_conditionsEquals(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name            string
 		conditionsSet1  []v1alpha1.Condition
@@ -379,6 +390,7 @@ func Test_conditionsEquals(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			want := tc.wantEqualStatus
 			actual := v1alpha1.ConditionsEquals(tc.conditionsSet1, tc.conditionsSet2)
 			if actual != want {
