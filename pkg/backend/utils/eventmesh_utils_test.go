@@ -222,10 +222,9 @@ func Test_setEventMeshProtocolSettings(t *testing.T) {
 			eventMeshSubscription := tc.givenEventMeshSubscription
 
 			// when
-			err := setEventMeshProtocolSettings(tc.givenSubscription, eventMeshSubscription)
+			setEventMeshProtocolSettings(tc.givenSubscription, eventMeshSubscription)
 
 			// then
-			require.NoError(t, err)
 			require.Equal(t, tc.wantEventMeshSubscription, eventMeshSubscription)
 		})
 	}
@@ -283,10 +282,9 @@ func Test_getEventMeshWebhookAuth(t *testing.T) {
 			// given
 
 			// when
-			webhookAuth, err := getEventMeshWebhookAuth(tc.givenSubscription, defaultWebhookAuth)
+			webhookAuth := getEventMeshWebhookAuth(tc.givenSubscription, defaultWebhookAuth)
 
 			// then
-			require.NoError(t, err)
 			require.Equal(t, tc.wantWebhook, webhookAuth)
 		})
 	}
@@ -327,7 +325,6 @@ func TestGetCleanedEventMeshSubscription(t *testing.T) {
 			Type:   eventingtesting.OrderCreatedEventTypeNotClean,
 		},
 	}))
-	g.Expect(eventMeshSubscription)
 }
 
 func TestEventMeshSubscriptionNameMapper(t *testing.T) {
@@ -417,7 +414,7 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 		g.Expect(strings.HasSuffix(s, test.outputHash)).To(BeTrue())
 		// and have the first 10 char of the name
 		prefixLen := minFunc(len(test.inputSub.Name), test.maxLen-hashLength)
-		g.Expect(strings.HasPrefix(s, test.inputSub.Name[:prefixLen]))
+		g.Expect(s).To(HavePrefix(test.inputSub.Name[:prefixLen]))
 	}
 
 	// Same domain and subscription name/namespace should map to the same name

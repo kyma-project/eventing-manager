@@ -44,9 +44,7 @@ type oauth2Credentials struct {
 	certsURL     []byte
 }
 
-func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing,
-	eventMeshSecret *kcorev1.Secret, log *zap.SugaredLogger,
-) error {
+func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing, eventMeshSecret *kcorev1.Secret) error {
 	// gets oauth2ClientID and secret and stops the EventMesh subscription manager if changed
 	err := r.syncOauth2ClientIDAndSecret(ctx, eventing)
 	if err != nil {
@@ -67,18 +65,10 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 
 	// Read the cluster domain from the Eventing CR, or
 	// read it from the configmap managed by gardener
-	domain := eventing.Spec.Backend.Config.Domain
-	if utils.IsEmpty(domain) {
-		r.namedLogger().Infof(
-			`Domain is not configured in the Eventing CR, reading it from the ConfigMap %s/%s`,
-			shootInfoConfigMapNamespace, shootInfoConfigMapName,
-		)
-		domain, err = r.readDomainFromConfigMap(ctx)
-		if err != nil || utils.IsEmpty(domain) {
-			return domainMissingError(err)
-		}
+	domain, err := r.checkDomain(ctx, eventing.Spec.Backend.Config.Domain)
+	if err != nil {
+		return err
 	}
-	r.namedLogger().Infof(`Domain is %s`, domain)
 
 	// get the subscription config
 	defaultSubsConfig := r.getDefaultSubscriptionConfig()
@@ -134,6 +124,23 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	r.namedLogger().Info(fmt.Sprintf("EventMesh subscription-manager has been updated, new hash: %d", specHash))
 
 	return nil
+}
+
+func (r *Reconciler) checkDomain(ctx context.Context, domain string) (string, error) {
+	ret := domain
+	if utils.IsEmpty(ret) {
+		r.namedLogger().Infof(
+			`Domain is not configured in the Eventing CR, reading it from the ConfigMap %s/%s`,
+			shootInfoConfigMapNamespace, shootInfoConfigMapName,
+		)
+		cmDomain, err := r.readDomainFromConfigMap(ctx)
+		if err != nil || utils.IsEmpty(cmDomain) {
+			return "", domainMissingError(err)
+		}
+		ret = cmDomain
+	}
+	r.namedLogger().Infof(`Domain is %s`, ret)
+	return ret, nil
 }
 
 func (r *Reconciler) getEventMeshSubManagerParams() submgrmanager.Params {

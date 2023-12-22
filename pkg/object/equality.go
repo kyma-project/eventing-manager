@@ -16,6 +16,8 @@ import (
 
 // Semantic can do semantic deep equality checks for API objects. Fields which
 // are not relevant for the reconciliation logic are intentionally omitted.
+//
+//nolint:gochecknoglobals // same pattern as in apimachinery
 var Semantic = conversion.EqualitiesOrDie(
 	apiRuleEqual,
 	publisherProxyDeploymentEqual,

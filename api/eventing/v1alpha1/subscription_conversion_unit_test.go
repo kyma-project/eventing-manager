@@ -236,6 +236,7 @@ func Test_Conversion(t *testing.T) {
 
 // Test_CleanupInV1ToV2Conversion test the cleaning from non-alphanumeric characters
 // and also merging of segments in event types if they exceed the limit.
+// nolint:goconst // the event types used here in tests do not get more readable by extracting them to constants
 func Test_CleanupInV1ToV2Conversion(t *testing.T) {
 	type TestCase struct {
 		name           string
@@ -365,6 +366,7 @@ func Test_CleanupInV1ToV2Conversion(t *testing.T) {
 }
 
 func v1ToV2Assertions(t *testing.T, wantSub, convertedSub *v1alpha2.Subscription) {
+	t.Helper()
 	assert.Equal(t, wantSub.ObjectMeta, convertedSub.ObjectMeta)
 
 	// Spec
@@ -377,6 +379,7 @@ func v1ToV2Assertions(t *testing.T, wantSub, convertedSub *v1alpha2.Subscription
 }
 
 func v2ToV1Assertions(t *testing.T, wantSub, convertedSub *v1alpha1.Subscription) {
+	t.Helper()
 	assert.Equal(t, wantSub.ObjectMeta, convertedSub.ObjectMeta)
 
 	// Spec

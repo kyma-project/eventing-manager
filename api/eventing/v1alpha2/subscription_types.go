@@ -14,6 +14,7 @@ import (
 
 type TypeMatching string
 
+//nolint:gochecknoglobals // required for consistency
 var Finalizer = GroupVersion.Group
 
 // Defines the desired state of the Subscription.

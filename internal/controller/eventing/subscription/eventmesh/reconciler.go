@@ -136,7 +136,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	// sync Finalizers, ensure the finalizer is set
 	if err := r.syncFinalizer(sub, log); err != nil {
 		if updateErr := r.updateSubscription(ctx, sub, log); updateErr != nil {
-			return kctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
+			return kctrl.Result{}, fmt.Errorf("%w: %w", updateErr, err)
 		}
 		return kctrl.Result{}, xerrors.Errorf("failed to sync finalizer: %v", err)
 	}
@@ -147,7 +147,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	sub.Status.SetConditionAPIRuleStatus(err)
 	if !controllererrors.IsSkippable(err) {
 		if updateErr := r.updateSubscription(ctx, sub, log); updateErr != nil {
-			return kctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
+			return kctrl.Result{}, fmt.Errorf("%w: %w", updateErr, err)
 		}
 		return kctrl.Result{}, err
 	}
@@ -156,7 +156,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	ready, err := r.syncEventMeshSubscription(sub, apiRule, log)
 	if err != nil {
 		if updateErr := r.updateSubscription(ctx, sub, log); updateErr != nil {
-			return kctrl.Result{}, xerrors.Errorf(updateErr.Error()+": %v", err)
+			return kctrl.Result{}, fmt.Errorf("%w: %w", updateErr, err)
 		}
 		return kctrl.Result{}, err
 	}

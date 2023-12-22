@@ -117,19 +117,7 @@ func setupSuite() error {
 	// +kubebuilder:scaffold:scheme
 
 	// start eventMesh manager instance
-	syncPeriod := syncPeriodSeconds * time.Second
-	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
-	k8sManager, err := kctrl.NewManager(cfg, kctrl.Options{
-		Scheme:                 scheme.Scheme,
-		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
-		Metrics:                server.Options{BindAddress: "0"}, // disable
-		HealthProbeBindAddress: "0",                              // disable
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Host:    webhookInstallOptions.LocalServingHost,
-			Port:    webhookInstallOptions.LocalServingPort,
-			CertDir: webhookInstallOptions.LocalServingCertDir,
-		}),
-	})
+	k8sManager, webhookInstallOptions, err := setupManager(cfg)
 	if err != nil {
 		return err
 	}
@@ -175,6 +163,23 @@ func setupSuite() error {
 	emTestEnsemble.k8sClient = k8sManager.GetClient()
 
 	return startAndWaitForWebhookServer(k8sManager, webhookInstallOptions)
+}
+
+func setupManager(cfg *rest.Config) (manager.Manager, *envtest.WebhookInstallOptions, error) {
+	syncPeriod := syncPeriodSeconds * time.Second
+	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
+	k8sManager, err := kctrl.NewManager(cfg, kctrl.Options{
+		Scheme:                 scheme.Scheme,
+		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
+		Metrics:                server.Options{BindAddress: "0"}, // disable
+		HealthProbeBindAddress: "0",                              // disable
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host:    webhookInstallOptions.LocalServingHost,
+			Port:    webhookInstallOptions.LocalServingPort,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
+	})
+	return k8sManager, webhookInstallOptions, err
 }
 
 func startAndWaitForWebhookServer(manager manager.Manager, installOpts *envtest.WebhookInstallOptions) error {
@@ -265,6 +270,7 @@ func getTestNamespace() string {
 }
 
 func ensureNamespaceCreated(ctx context.Context, t *testing.T, namespace string) {
+	t.Helper()
 	if namespace == "default" {
 		return
 	}
@@ -290,10 +296,12 @@ func fixtureNamespace(name string) *kcorev1.Namespace {
 }
 
 func ensureK8sResourceCreated(ctx context.Context, t *testing.T, obj client.Object) {
+	t.Helper()
 	require.NoError(t, emTestEnsemble.k8sClient.Create(ctx, obj))
 }
 
 func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscription *eventingv1alpha2.Subscription) {
+	t.Helper()
 	require.Eventually(t, func() bool {
 		latestSubscription := &eventingv1alpha2.Subscription{}
 		lookupKey := types.NamespacedName{
@@ -311,6 +319,7 @@ func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscriptio
 
 // ensureAPIRuleStatusUpdatedWithStatusReady updates the status fof the APIRule (mocking APIGateway controller).
 func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
+	t.Helper()
 	require.Eventually(t, func() bool {
 		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
 		if err != nil {

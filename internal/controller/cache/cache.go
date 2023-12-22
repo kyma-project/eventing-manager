@@ -19,7 +19,7 @@ func New(config *rest.Config, options cache.Options) (cache.Cache, error) {
 
 // applySelectors applies label selectors to runtime objects created by the EventingManager.
 func applySelectors(options cache.Options) cache.Options {
-	// TODO(marcobebway) filter by label "app.kubernetes.io/created-by=eventing-manager" when it is released
+	//nolint:godox // TODO(marcobebway) filter by label "app.kubernetes.io/created-by=eventing-manager" when it is released
 	instanceEventing := fromLabelSelector(label.SelectorInstanceEventing())
 	options.ByObject = map[client.Object]cache.ByObject{
 		&kappsv1.Deployment{}:                     instanceEventing,

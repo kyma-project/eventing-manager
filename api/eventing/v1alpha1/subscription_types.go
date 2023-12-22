@@ -1,3 +1,4 @@
+//nolint:godox // this package will be removed soon
 package v1alpha1
 
 import (
@@ -15,8 +16,6 @@ const (
 	BEBBackendType  BackendType = "BEB"
 	NatsBackendType BackendType = "NATS"
 )
-
-var Finalizer = GroupVersion.Group
 
 // WebhookAuth defines the Webhook called by an active subscription in BEB.
 // TODO: Remove it when depreciating code of v1alpha1.

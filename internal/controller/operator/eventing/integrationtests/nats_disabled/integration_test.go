@@ -98,7 +98,7 @@ func Test_DeletionOfPublisherResourcesWhenNATSNotEnabled(t *testing.T) {
 	// check if EPP resources exists.
 	ensureK8sResources(t, givenEventing, testEnvironment)
 
-	natsCRD, err := testEnvironment.KubeClient.GetCRD(context.TODO(), k8s.NatsGVK.GroupResource().String())
+	natsCRD, err := testEnvironment.KubeClient.GetCRD(context.TODO(), k8s.NatsGVK().GroupResource().String())
 	require.NoError(t, err)
 
 	// define cleanup.
@@ -135,6 +135,7 @@ func Test_DeletionOfPublisherResourcesWhenNATSNotEnabled(t *testing.T) {
 }
 
 func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
+	t.Helper()
 	testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
@@ -144,6 +145,7 @@ func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1a
 }
 
 func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
+	t.Helper()
 	testEnvironment.EnsureEPPK8sResourcesExists(t, *givenEventing)
 
 	// check if the owner reference is set.

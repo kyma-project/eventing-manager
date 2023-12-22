@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -24,6 +25,7 @@ const (
 	checkEndpoint         = "/check"
 	internalErrorEndpoint = "/return500"
 	checkRetriesEndpoint  = "/check_retries"
+	notFoundTimeout       = 500 * time.Millisecond
 )
 
 var (
@@ -104,7 +106,7 @@ func getCloudEventServeMux() *http.ServeMux {
 		select {
 		case m := <-store:
 			msg = m
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(notFoundTimeout):
 			msg = ""
 		}
 		_, err := w.Write([]byte(msg))
@@ -160,7 +162,7 @@ func getDataServeMux() *http.ServeMux {
 		select {
 		case m := <-store:
 			msg = m
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(notFoundTimeout):
 			msg = ""
 		}
 		_, err := w.Write([]byte(msg))
@@ -211,7 +213,12 @@ func (s Subscriber) CheckEvent(expectedData string) error {
 	err := retry.Do(
 		func() error {
 			// check if a response was received and that it's code is in 2xx-range
-			resp, err := http.Get(s.checkURL)
+			ctx := context.Background()
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.checkURL, nil)
+			if err != nil {
+				return err
+			}
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				return fmt.Errorf("get HTTP request failed: %w", err)
 			}
@@ -252,7 +259,12 @@ func (s Subscriber) CheckRetries(expectedNoOfRetries int, expectedData string) e
 	delay := time.Second
 	err := retry.Do(
 		func() error {
-			resp, err := http.Get(s.checkRetriesURL)
+			ctx := context.Background()
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.checkRetriesURL, nil)
+			if err != nil {
+				return err
+			}
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				return fmt.Errorf("get HTTP request failed: %w", err)
 			}

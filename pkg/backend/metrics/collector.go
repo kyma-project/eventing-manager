@@ -56,6 +56,12 @@ type Collector struct {
 
 // NewCollector a new instance of Collector.
 func NewCollector() *Collector {
+	const (
+		// for the latency we want 10 exponential Buckets starting at 0.002
+		bucketMin    = 0.002
+		bucketFactor = 2
+		bucketCount  = 10
+	)
 	return &Collector{
 		deliveryPerSubscription: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -68,7 +74,7 @@ func NewCollector() *Collector {
 			prometheus.HistogramOpts{
 				Name:    latencyMetricKey,
 				Help:    latencyMetricHelp,
-				Buckets: prometheus.ExponentialBuckets(0.002, 2, 10),
+				Buckets: prometheus.ExponentialBuckets(bucketMin, bucketFactor, bucketCount),
 			},
 			[]string{subscriptionNameLabel, subscriptionNamespaceLabel, eventTypeLabel, sinkLabel, responseCodeLabel, consumerNameLabel},
 		),

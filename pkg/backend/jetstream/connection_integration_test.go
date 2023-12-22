@@ -96,6 +96,7 @@ func Test_ConnectionBuilder_IsConnected(t *testing.T) {
 // startManagedNATSServer starts a NATS server and shuts the server down as soon as the test is
 // completed (also when it failed!).
 func startManagedNATSServer(t *testing.T) *server.Server {
+	t.Helper()
 	natsServer, _, err := jetstream.StartNATSServer(eventingtesting.WithJetStreamEnabled())
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -106,6 +107,7 @@ func startManagedNATSServer(t *testing.T) *server.Server {
 
 // fixtureUnusedLocalhostUrl provides a localhost URL with an unused port.
 func fixtureUnusedLocalhostURL(t *testing.T) string {
+	t.Helper()
 	port, err := eventingtesting.GetFreePort()
 	require.NoError(t, err)
 	url := fmt.Sprintf("http://localhost:%d", port)

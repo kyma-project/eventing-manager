@@ -24,10 +24,12 @@ import (
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
 
-var NatsGVK = schema.GroupVersionResource{
-	Group:    natsv1alpha1.GroupVersion.Group,
-	Version:  natsv1alpha1.GroupVersion.Version,
-	Resource: "nats",
+func NatsGVK() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    natsv1alpha1.GroupVersion.Group,
+		Version:  natsv1alpha1.GroupVersion.Version,
+		Resource: "nats",
+	}
 }
 
 var ErrSecretRefInvalid = errors.New("invalid namespaced name. It must be in the format of 'namespace/name'")
@@ -158,7 +160,7 @@ func (c *KubeClient) DeleteResource(ctx context.Context, object client.Object) e
 }
 
 func (c *KubeClient) GetNATSResources(ctx context.Context, namespace string) (*natsv1alpha1.NATSList, error) {
-	unstructuredList, err := c.dynamicClient.Resource(NatsGVK).Namespace(namespace).List(ctx, kmetav1.ListOptions{})
+	unstructuredList, err := c.dynamicClient.Resource(NatsGVK()).Namespace(namespace).List(ctx, kmetav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -194,8 +196,9 @@ func (c *KubeClient) PatchApply(ctx context.Context, object client.Object) error
 // GetSecret returns the secret with the given namespaced name.
 // namespacedName is in the format of "namespace/name".
 func (c *KubeClient) GetSecret(ctx context.Context, namespacedName string) (*kcorev1.Secret, error) {
+	const nameNamespace = 2
 	substrings := strings.Split(namespacedName, "/")
-	if len(substrings) != 2 {
+	if len(substrings) != nameNamespace {
 		return nil, ErrSecretRefInvalid
 	}
 	secret := &kcorev1.Secret{}

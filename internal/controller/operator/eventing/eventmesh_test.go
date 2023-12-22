@@ -263,8 +263,6 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			testEnv := NewMockedUnitTestEnvironment(t, givenEventing, givenOauthSecret)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig
 
-			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
-
 			// get mocks from test-case.
 			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
 			givenManagerFactoryMock := tc.givenManagerFactoryMock(givenEventMeshSubManagerMock)
@@ -290,15 +288,15 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 
 			eventMeshSecret := utils.NewEventMeshSecret("eventing-backend", givenEventing.Namespace)
 
-			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret, logger)
+			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret)
 			if err != nil && tc.givenShouldRetry {
 				// This is to test the scenario where initialization of eventMeshSubManager was successful but
 				// starting the eventMeshSubManager failed. So on next try it should again try to start the eventMeshSubManager.
-				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret, logger)
+				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret)
 			}
 			if tc.givenUpdateTest {
 				// Run reconcile again with newBackendConfig:
-				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret, logger)
+				err = testEnv.Reconciler.reconcileEventMeshSubManager(ctx, givenEventing, eventMeshSecret)
 				require.NoError(t, err)
 			}
 
@@ -425,8 +423,6 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 			testEnv := NewMockedUnitTestEnvironment(t, tc.givenEventing, givenOauthSecret)
 			testEnv.Reconciler.backendConfig = *givenBackendConfig
 
-			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
-
 			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
 			givenManagerFactoryMock := tc.givenManagerFactoryMock(givenEventMeshSubManagerMock)
 			givenEventingManagerMock := tc.givenEventingManagerMock()
@@ -443,7 +439,7 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 
 			// when
 			eventMeshSecret := utils.NewEventMeshSecret("test-secret", tc.givenEventing.Namespace)
-			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, tc.givenEventing, eventMeshSecret, logger)
+			err := testEnv.Reconciler.reconcileEventMeshSubManager(ctx, tc.givenEventing, eventMeshSecret)
 
 			// then
 			require.NoError(t, err)

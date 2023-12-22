@@ -100,9 +100,7 @@ func getWebHookAuth(credentials *OAuth2ClientCredentials) *types.WebhookAuth {
 
 // SyncSubscription synchronize the EV2 subscription with the EMS subscription.
 // It returns true, if the EV2 subscription status was changed.
-func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner,
-	apiRule *apigatewayv1beta1.APIRule,
-) (bool, error) { //nolint:funlen,gocognit
+func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner, apiRule *apigatewayv1beta1.APIRule) (bool, error) {
 	// Format logger
 	log := backendutils.LoggerWithSubscription(em.namedLogger(), subscription)
 

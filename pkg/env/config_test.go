@@ -37,5 +37,5 @@ func Test_GetConfig(t *testing.T) {
 	webhookActivationTimeout, err := time.ParseDuration(envs["WEBHOOK_ACTIVATION_TIMEOUT"])
 	g.Expect(err).ShouldNot(HaveOccurred())
 	g.Expect(config.WebhookActivationTimeout).To(Equal(webhookActivationTimeout))
-	g.Expect(config.NATSProvisioningEnabled).To(Equal(true))
+	g.Expect(config.NATSProvisioningEnabled).To(BeTrue())
 }

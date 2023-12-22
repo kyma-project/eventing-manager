@@ -19,8 +19,6 @@ const (
 	ConditionControllerReady     ConditionType = "Subscription Controller Ready"
 )
 
-var allSubscriptionConditions = MakeSubscriptionConditions()
-
 type Condition struct {
 	// Short description of the condition.
 	Type ConditionType `json:"type,omitempty"`
@@ -81,7 +79,7 @@ func (s *SubscriptionStatus) InitializeConditions() {
 }
 
 func (s SubscriptionStatus) IsReady() bool {
-	if !ContainSameConditionTypes(allSubscriptionConditions, s.Conditions) {
+	if !ContainSameConditionTypes(MakeSubscriptionConditions(), s.Conditions) {
 		return false
 	}
 

@@ -289,6 +289,7 @@ func TestJetStreamSubAfterSync_DeleteOldFilterConsumerForTypeChangeWhileNatsDown
 // HELPER functions
 
 func prepareTestEnvironment(t *testing.T) *TestEnvironment {
+	t.Helper()
 	testEnvironment := setupTestEnvironment(t)
 	testEnvironment.jsBackend.Config.JSStreamStorageType = StorageTypeFile
 	testEnvironment.jsBackend.Config.MaxReconnects = 0
@@ -297,10 +298,8 @@ func prepareTestEnvironment(t *testing.T) *TestEnvironment {
 	return testEnvironment
 }
 
-func createSubscriptionAndAssert(t *testing.T,
-	testEnv *TestEnvironment,
-	subscriber *eventingtesting.Subscriber,
-) (SubscriptionSubjectIdentifier, *eventingv1alpha2.Subscription) {
+func createSubscriptionAndAssert(t *testing.T, testEnv *TestEnvironment, subscriber *eventingtesting.Subscriber) (SubscriptionSubjectIdentifier, *eventingv1alpha2.Subscription) {
+	t.Helper()
 	sub := eventingtesting.NewSubscription("sub", "foo",
 		eventingtesting.WithCleanEventSourceAndType(),
 		eventingtesting.WithNotCleanEventSourceAndType(),
@@ -325,6 +324,7 @@ func createSubscriptionAndAssert(t *testing.T,
 }
 
 func shutdownJetStream(t *testing.T, testEnv *TestEnvironment) {
+	t.Helper()
 	testEnv.natsServer.Shutdown()
 	require.Eventually(t, func() bool {
 		return !testEnv.jsBackend.Conn.IsConnected()
@@ -337,6 +337,7 @@ func deleteSecondFilter(testEnv *TestEnvironment, sub *eventingv1alpha2.Subscrip
 }
 
 func startJetStream(t *testing.T, testEnv *TestEnvironment) {
+	t.Helper()
 	_ = eventingtesting.RunNatsServerOnPort(
 		eventingtesting.WithPort(testEnv.natsPort),
 		eventingtesting.WithJetStreamEnabled())
@@ -347,10 +348,8 @@ func startJetStream(t *testing.T, testEnv *TestEnvironment) {
 	}, 60*time.Second, 5*time.Second)
 }
 
-func assertNewSubscriptionReturnItsKey(t *testing.T,
-	testEnv *TestEnvironment,
-	sub *eventingv1alpha2.Subscription,
-) SubscriptionSubjectIdentifier {
+func assertNewSubscriptionReturnItsKey(t *testing.T, testEnv *TestEnvironment, sub *eventingv1alpha2.Subscription) SubscriptionSubjectIdentifier {
+	t.Helper()
 	firstSubject, err := testEnv.cleaner.CleanEventType(sub.Spec.Types[0])
 	require.NoError(t, err)
 	require.NotEmpty(t, firstSubject)
@@ -696,6 +695,8 @@ func defaultNATSConfig(url string, port int) env.NATSConfig {
 
 // getJetStreamClient creates a client with JetStream context, or fails the caller test.
 func getJetStreamClient(t *testing.T, serverURL string) *jetStreamClient {
+	t.Helper()
+
 	conn, err := nats.Connect(serverURL)
 	if err != nil {
 		t.Error(err.Error())
@@ -713,6 +714,7 @@ func getJetStreamClient(t *testing.T, serverURL string) *jetStreamClient {
 
 // setupTestEnvironment is a TestEnvironment constructor.
 func setupTestEnvironment(t *testing.T) *TestEnvironment {
+	t.Helper()
 	natsServer, natsPort, err := StartNATSServer(eventingtesting.WithJetStreamEnabled())
 	require.NoError(t, err)
 	natsConfig := defaultNATSConfig(natsServer.ClientURL(), natsPort)

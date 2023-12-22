@@ -48,7 +48,7 @@ func (es *EventingStatus) UpdateConditionWebhookReady(status kmetav1.ConditionSt
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
-func (sm *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1.ConditionStatus, reason ConditionReason,
+func (es *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1.ConditionStatus, reason ConditionReason,
 	message string,
 ) {
 	condition := kmetav1.Condition{
@@ -58,7 +58,7 @@ func (sm *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1
 		Reason:             string(reason),
 		Message:            message,
 	}
-	meta.SetStatusCondition(&sm.Conditions, condition)
+	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
 func (es *EventingStatus) UpdateConditionDeletion(status kmetav1.ConditionStatus, reason ConditionReason,
@@ -85,8 +85,8 @@ func (es *EventingStatus) SetStateReady() {
 	es.UpdateConditionPublisherProxyReady(kmetav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)
 }
 
-func (ns *EventingStatus) SetStateWarning() {
-	ns.State = StateWarning
+func (es *EventingStatus) SetStateWarning() {
+	es.State = StateWarning
 }
 
 func (es *EventingStatus) SetNATSAvailableConditionToTrue() {

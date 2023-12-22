@@ -56,7 +56,8 @@ func removeFinalizer(sub *eventingv1alpha2.Subscription) {
 // getSvcNsAndName returns namespace and name of the svc from the URL.
 func getSvcNsAndName(url string) (string, string, error) {
 	parts := strings.Split(url, ".")
-	if len(parts) < 2 {
+	const minSegments = 2
+	if len(parts) < minSegments {
 		return "", "", fmt.Errorf("%w url: %s", ErrInvalidSink, url)
 	}
 	return parts[1], parts[0], nil

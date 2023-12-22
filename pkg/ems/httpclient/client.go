@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -37,7 +38,7 @@ func NewHTTPClient(baseURL string, client *http.Client) (*Client, error) {
 
 	// add trailing '/' to the url path, so that we can combine the url with other paths according to standards
 	if !strings.HasSuffix(u.Path, "/") {
-		u.Path = u.Path + "/"
+		u.Path += "/"
 	}
 	if err != nil {
 		return nil, err
@@ -66,7 +67,8 @@ func (c Client) NewRequest(method, path string, body interface{}) (*http.Request
 		return nil, NewError(err)
 	}
 	u := resolveReferenceAsRelative(c.baseURL, pu)
-	req, err := http.NewRequest(method, u.String(), jsonBody)
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), jsonBody)
 	if err != nil {
 		return nil, NewError(err)
 	}

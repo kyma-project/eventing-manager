@@ -11,13 +11,16 @@ import (
 
 var (
 	// onlyOneSignalHandler to make sure that only one signal handler is registered.
+	//nolint:gochecknoglobals // needs to be global so that the application is always closed on second signal
 	onlyOneSignalHandler = make(chan struct{})
-
-	// shutdownSignals array of system signals to cause shutdown.
-	shutdownSignals = []os.Signal{syscall.SIGINT, syscall.SIGTERM}
 
 	ErrTerminationRequested = errors.New("received a termination signal")
 )
+
+// shutdownSignals array of system signals to cause shutdown.
+func shutdownSignals() []os.Signal {
+	return []os.Signal{syscall.SIGINT, syscall.SIGTERM}
+}
 
 // SetupSignalHandler registered for SIGTERM and SIGINT. A stop channel is returned
 // which is closed on one of these signals. If a second signal is caught, the program
@@ -29,9 +32,10 @@ func SetupSignalHandler() <-chan struct{} {
 }
 
 func setupStopChannel() <-chan struct{} {
+	const chanSize = 2 // we want to be able to read twice
 	stop := make(chan struct{})
-	osSignal := make(chan os.Signal, 2)
-	signal.Notify(osSignal, shutdownSignals...)
+	osSignal := make(chan os.Signal, chanSize)
+	signal.Notify(osSignal, shutdownSignals()...)
 	go func() {
 		<-osSignal
 		close(stop)

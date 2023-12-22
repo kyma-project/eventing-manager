@@ -20,35 +20,19 @@ linters:
     - wsl # too strict and mostly code is not more readable
     ### disabled for now... will be enabled 1 by 1
     - dupl
-    - errorlint
     - forcetypeassert
-    - funlen
-    - ginkgolinter
-    - gochecknoglobals
-    - gochecknoinits
-    - gocognit
-    - goconst
-    - gocritic
-    - godox
-    - gomnd
     - gosec
     - inamedparam
     - ireturn
     - maintidx
-    - noctx
     - nolintlint
     - paralleltest
     - prealloc
-    - stylecheck
     - testpackage
-    - thelper
     - tparallel
     - unconvert
-    - unparam
     - varnamelen
     - wrapcheck
-    - godot
-    - tagalign
 
 linters-settings:
   stylecheck:
@@ -226,6 +210,9 @@ issues:
     - path: "_test\\.go"
       linters:
         - wrapcheck
+        - gochecknoglobals
+        - funlen # Table driven unit and integration tests exceed function length by design
+        - maintidx # Table driven unit and integration tests exceed maintainability index by design
     - linters:
       - importas
       text: has alias "" which is not part of config # Ignore false positives that emerged due to https://github.com/julz/importas/issues/15.

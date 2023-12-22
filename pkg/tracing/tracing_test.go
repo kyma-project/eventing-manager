@@ -64,7 +64,7 @@ func TestAddTracingHeadersToContext(t *testing.T) {
 			ctx := context.Background()
 			gotContext := AddTracingHeadersToContext(ctx, tc.event)
 			g.Expect(cehttp.HeaderFrom(gotContext)).To(Equal(tc.expectedHeaders))
-			g.Expect(len(getTracingExtensions(tc.event))).To(Equal(0))
+			g.Expect(getTracingExtensions(tc.event)).To(BeEmpty())
 		})
 	}
 }

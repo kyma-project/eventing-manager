@@ -54,20 +54,11 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/jetstream"
 )
 
-var (
-	scheme   = runtime.NewScheme()
-	setupLog = kctrl.Log.WithName("setup")
-)
-
-func init() {
+func registerSchemas(scheme *runtime.Scheme) {
 	kutilruntime.Must(kkubernetesscheme.AddToScheme(scheme))
-
 	kutilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
-
 	kutilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
-
 	kutilruntime.Must(kapiextensionsv1.AddToScheme(scheme))
-
 	kutilruntime.Must(jetstream.AddToScheme(scheme))
 	kutilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
 	kutilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
@@ -75,12 +66,25 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-const defaultMetricsPort = 9443
+const (
+	defaultMetricsPort = 9443
+	webhookServerPort  = 9443
+)
+
+func syncLogger(logger *logger.Logger) {
+	if err := logger.WithContext().Sync(); err != nil {
+		log.Printf("Failed to flush logger, error: %v", err)
+	}
+}
 
 func main() { //nolint:funlen // main function needs to initialize many object
+	scheme := runtime.NewScheme()
+	registerSchemas(scheme)
+
 	var enableLeaderElection bool
 	var leaderElectionID string
 	var metricsPort int
+	setupLog := kctrl.Log.WithName("setup")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -97,12 +101,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	if err != nil {
 		log.Fatalf("Failed to initialize logger, error: %v", err)
 	}
-	defer func() {
-		if err = ctrLogger.WithContext().Sync(); err != nil {
-			log.Printf("Failed to flush logger, error: %v", err)
-		}
-	}()
-
 	// Set controller core logger.
 	kctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 
@@ -114,7 +112,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		HealthProbeBindAddress: opts.ProbeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       leaderElectionID,
-		WebhookServer:          webhook.NewServer(webhook.Options{Port: 9443}),
+		WebhookServer:          webhook.NewServer(webhook.Options{Port: webhookServerPort}),
 		Cache:                  cache.Options{SyncPeriod: &opts.ReconcilePeriod},
 		Metrics:                server.Options{BindAddress: opts.MetricsAddr},
 		NewCache:               controllercache.New,
@@ -122,6 +120,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 
@@ -129,6 +128,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	k8sClient := mgr.GetClient()
 	dynamicClient, err := dynamic.NewForConfig(k8sRestCfg)
 	if err != nil {
+		syncLogger(ctrLogger)
 		panic(err.Error())
 	}
 
@@ -136,6 +136,8 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	apiClientSet, err := kapixclientset.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		setupLog.Error(err, "failed to create new k8s clientset")
+		syncLogger(ctrLogger)
+
 		os.Exit(1)
 	}
 
@@ -191,11 +193,13 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	// Setup webhooks.
 	if err = (&eventingv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 
 	if err = (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 
@@ -203,21 +207,26 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	err = peerauthentication.SyncPeerAuthentications(ctx, kubeClient, ctrLogger.WithContext().Named("main"))
 	if err != nil {
 		setupLog.Error(err, "unable to sync PeerAuthentication")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
 
 	setupLog.Info("starting manager")
 	if err = mgr.Start(kctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
+		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
+	syncLogger(ctrLogger)
 }

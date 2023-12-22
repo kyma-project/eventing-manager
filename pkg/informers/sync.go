@@ -20,12 +20,13 @@ func WaitForCacheSyncOrDie(ctx context.Context, dc dynamicinformer.DynamicShared
 	dc.Start(ctx.Done())
 
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultResyncPeriod)
-	defer cancel()
 
 	err := hasSynced(ctx, dc.WaitForCacheSync)
 	if err != nil {
 		log.Fatalf("Failed to sync informer caches: %v", err)
 	}
+	// no need to defer cancel, as we either end the program or cancel here
+	cancel()
 }
 
 func hasSynced(ctx context.Context, fn waitForCacheSyncFunc) error {
