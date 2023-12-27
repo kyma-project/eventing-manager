@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-project/api-gateway v0.0.0-20231219125807-3eb98237c138
-	github.com/kyma-project/kyma/common/logging v0.0.0-20231219124408-e2f66abc2d9a
+	github.com/kyma-project/kyma/common/logging v0.0.0-20231220133808-e2c22b79a28b
 	github.com/kyma-project/nats-manager v1.0.3-0.20231219150808-13159cfea47c
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/nats-io/nats-server/v2 v2.10.7
