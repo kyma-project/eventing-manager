@@ -580,8 +580,8 @@ func TestWithRules(t *testing.T) {
 			Spec: eventingv1alpha2.SubscriptionSpec{Sink: sink1},
 		}
 
-		methods = []apigatewayv1beta1.HttpMethod{
-			apigatewayv1beta1.HttpMethod(http.MethodGet),
+		methods = []string{
+			http.MethodGet,
 		}
 	)
 
@@ -589,7 +589,7 @@ func TestWithRules(t *testing.T) {
 		givenCertsURL string
 		givenSubs     []eventingv1alpha2.Subscription
 		givenSvc      apigatewayv1beta1.Service
-		givenMethods  []apigatewayv1beta1.HttpMethod
+		givenMethods  []string
 		givenObject   *apigatewayv1beta1.APIRule
 	}
 	tests := []struct {
@@ -623,7 +623,7 @@ func TestWithRules(t *testing.T) {
 								Port:       ptr.To(port),
 								IsExternal: ptr.To(external),
 							},
-							Methods: methods,
+							Methods: StringsToMethods(methods),
 							AccessStrategies: []*apigatewayv1beta1.Authenticator{
 								{
 									Handler: &apigatewayv1beta1.Handler{
@@ -642,7 +642,7 @@ func TestWithRules(t *testing.T) {
 								Port:       ptr.To(port),
 								IsExternal: ptr.To(external),
 							},
-							Methods: methods,
+							Methods: StringsToMethods(methods),
 							AccessStrategies: []*apigatewayv1beta1.Authenticator{
 								{
 									Handler: &apigatewayv1beta1.Handler{

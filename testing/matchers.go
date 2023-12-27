@@ -49,20 +49,12 @@ func HaveAPIRuleSpecRules(ruleMethods []string, accessStrategy, certsURL, path s
 		return a.Spec.Rules
 	}, ContainElement(
 		MatchFields(IgnoreExtras|IgnoreMissing, Fields{
-			"Methods":          ConsistOf(stringsToMethods(ruleMethods)),
+			"Methods":          ConsistOf(object.StringsToMethods(ruleMethods)),
 			"AccessStrategies": ConsistOf(haveAPIRuleAccessStrategies(authenticator)),
 			"Gateway":          Equal(constants.ClusterLocalAPIGateway),
 			"Path":             Equal(path),
 		}),
 	))
-}
-
-func stringsToMethods(methods []string) []apigatewayv1beta1.HttpMethod {
-	httpMethodes := []apigatewayv1beta1.HttpMethod{}
-	for _, m := range methods {
-		httpMethodes = append(httpMethodes, apigatewayv1beta1.HttpMethod(m))
-	}
-	return httpMethodes
 }
 
 func haveAPIRuleAccessStrategies(authenticator *apigatewayv1beta1.Authenticator) gomegatypes.GomegaMatcher {
@@ -76,7 +68,7 @@ func HaveAPIRuleSpecRulesWithOry(ruleMethods []string, accessStrategy, path stri
 		return a.Spec.Rules
 	}, ContainElement(
 		MatchFields(IgnoreExtras|IgnoreMissing, Fields{
-			"Methods":          ConsistOf(stringsToMethods(ruleMethods)),
+			"Methods":          ConsistOf(object.StringsToMethods(ruleMethods)),
 			"AccessStrategies": ConsistOf(haveAPIRuleAccessStrategiesWithOry(accessStrategy)),
 			"Gateway":          Equal(constants.ClusterLocalAPIGateway),
 			"Path":             Equal(path),

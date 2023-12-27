@@ -121,7 +121,7 @@ func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
 
 // WithRules sets the rules of an APIRule for all Subscriptions for a subscriber.
 func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigatewayv1beta1.Service,
-	methods ...apigatewayv1beta1.HttpMethod,
+	methods ...string,
 ) Option {
 	return func(r *apigatewayv1beta1.APIRule) {
 		var handler apigatewayv1beta1.Handler
@@ -157,7 +157,7 @@ func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigat
 		for _, path := range uniquePaths {
 			rule := apigatewayv1beta1.Rule{
 				Path:             path,
-				Methods:          methods,
+				Methods:          StringsToMethods(methods),
 				AccessStrategies: accessStrategies,
 				Service:          &svc,
 			}
@@ -165,4 +165,13 @@ func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigat
 		}
 		r.Spec.Rules = rules
 	}
+}
+
+// StringsToMethods converts a slice of strings into a slice of HttpMethod as defined by api-gateway.
+func StringsToMethods(methods []string) []apigatewayv1beta1.HttpMethod {
+	httpMethodes := []apigatewayv1beta1.HttpMethod{}
+	for _, m := range methods {
+		httpMethodes = append(httpMethodes, apigatewayv1beta1.HttpMethod(m))
+	}
+	return httpMethodes
 }
