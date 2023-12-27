@@ -370,9 +370,9 @@ func WithPath() APIRuleOption {
 		r.Spec.Rules = []apigatewayv1beta1.Rule{
 			{
 				Path: "/path",
-				Methods: []string{
-					http.MethodPost,
-					http.MethodOptions,
+				Methods: []apigatewayv1beta1.HttpMethod{
+					apigatewayv1beta1.HttpMethod(http.MethodPost),
+					apigatewayv1beta1.HttpMethod(http.MethodOptions),
 				},
 				AccessStrategies: []*apigatewayv1beta1.Authenticator{
 					authenticator,

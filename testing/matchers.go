@@ -49,7 +49,7 @@ func HaveAPIRuleSpecRules(ruleMethods []string, accessStrategy, certsURL, path s
 		return a.Spec.Rules
 	}, ContainElement(
 		MatchFields(IgnoreExtras|IgnoreMissing, Fields{
-			"Methods":          ConsistOf(ruleMethods),
+			"Methods":          ConsistOf(object.StringsToMethods(ruleMethods)),
 			"AccessStrategies": ConsistOf(haveAPIRuleAccessStrategies(authenticator)),
 			"Gateway":          Equal(constants.ClusterLocalAPIGateway),
 			"Path":             Equal(path),
@@ -68,7 +68,7 @@ func HaveAPIRuleSpecRulesWithOry(ruleMethods []string, accessStrategy, path stri
 		return a.Spec.Rules
 	}, ContainElement(
 		MatchFields(IgnoreExtras|IgnoreMissing, Fields{
-			"Methods":          ConsistOf(ruleMethods),
+			"Methods":          ConsistOf(object.StringsToMethods(ruleMethods)),
 			"AccessStrategies": ConsistOf(haveAPIRuleAccessStrategiesWithOry(accessStrategy)),
 			"Gateway":          Equal(constants.ClusterLocalAPIGateway),
 			"Path":             Equal(path),

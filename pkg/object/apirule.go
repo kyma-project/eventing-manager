@@ -144,7 +144,7 @@ func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigat
 		for _, sub := range subs {
 			hostURL, err := url.ParseRequestURI(sub.Spec.Sink)
 			if err != nil {
-				// It's ok as the relevant subscription will have a valid cluster local URL in the same namespace
+				// It's ok as the relevant subscription will have a valid cluster local URL in the same namespace.
 				continue
 			}
 			if hostURL.Path == "" {
@@ -157,7 +157,7 @@ func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigat
 		for _, path := range uniquePaths {
 			rule := apigatewayv1beta1.Rule{
 				Path:             path,
-				Methods:          methods,
+				Methods:          StringsToMethods(methods),
 				AccessStrategies: accessStrategies,
 				Service:          &svc,
 			}
@@ -165,4 +165,13 @@ func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigat
 		}
 		r.Spec.Rules = rules
 	}
+}
+
+// StringsToMethods converts a slice of strings into a slice of HttpMethod as defined by api-gateway.
+func StringsToMethods(methods []string) []apigatewayv1beta1.HttpMethod {
+	httpMethodes := []apigatewayv1beta1.HttpMethod{}
+	for _, m := range methods {
+		httpMethodes = append(httpMethodes, apigatewayv1beta1.HttpMethod(m))
+	}
+	return httpMethodes
 }
