@@ -21,7 +21,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
 	github.com/stretchr/testify v1.8.4
-	github.com/vektra/mockery/v2 v2.38.0
+	github.com/vektra/mockery/v2 v2.39.1
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/oauth2 v0.15.0
@@ -39,7 +39,7 @@ require (
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/chigopher/pathlib v0.15.0 // indirect
+	github.com/chigopher/pathlib v0.19.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
