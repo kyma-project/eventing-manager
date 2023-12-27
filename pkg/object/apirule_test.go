@@ -2,6 +2,7 @@ package object
 
 import (
 	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -579,14 +580,16 @@ func TestWithRules(t *testing.T) {
 			Spec: eventingv1alpha2.SubscriptionSpec{Sink: sink1},
 		}
 
-		methods = []string{"some.method"}
+		methods = []apigatewayv1beta1.HttpMethod{
+			apigatewayv1beta1.HttpMethod(http.MethodGet),
+		}
 	)
 
 	type args struct {
 		givenCertsURL string
 		givenSubs     []eventingv1alpha2.Subscription
 		givenSvc      apigatewayv1beta1.Service
-		givenMethods  []string
+		givenMethods  []apigatewayv1beta1.HttpMethod
 		givenObject   *apigatewayv1beta1.APIRule
 	}
 	tests := []struct {

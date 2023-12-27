@@ -121,7 +121,7 @@ func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
 
 // WithRules sets the rules of an APIRule for all Subscriptions for a subscriber.
 func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigatewayv1beta1.Service,
-	methods ...string,
+	methods ...apigatewayv1beta1.HttpMethod,
 ) Option {
 	return func(r *apigatewayv1beta1.APIRule) {
 		var handler apigatewayv1beta1.Handler
@@ -144,7 +144,7 @@ func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigat
 		for _, sub := range subs {
 			hostURL, err := url.ParseRequestURI(sub.Spec.Sink)
 			if err != nil {
-				// It's ok as the relevant subscription will have a valid cluster local URL in the same namespace
+				// It's ok as the relevant subscription will have a valid cluster local URL in the same namespace.
 				continue
 			}
 			if hostURL.Path == "" {

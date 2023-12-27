@@ -10,7 +10,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.5.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/api-gateway v0.0.0-20231219125807-3eb98237c138
+	github.com/kyma-project/api-gateway v0.0.0-20231222161810-7e09cec0147d
 	github.com/kyma-project/kyma/common/logging v0.0.0-20231220133808-e2c22b79a28b
 	github.com/kyma-project/nats-manager v1.0.3-0.20231219150808-13159cfea47c
 	github.com/mitchellh/hashstructure/v2 v2.0.2
@@ -107,7 +107,7 @@ require (
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231002182017-d307bd883b97 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230920204549-e6e6cdab5c13 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
