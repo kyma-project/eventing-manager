@@ -82,6 +82,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	registerSchemas(scheme)
 
 	var enableLeaderElection bool
+
 	var leaderElectionID string
 	var metricsPort int
 	setupLog := kctrl.Log.WithName("setup")
