@@ -37,7 +37,6 @@ var (
 	errNotFound       = errors.New("secret not found")
 )
 
-//nolint:goerr113 // all tests here need to be fixed, as they use require.ErrorAs and use it wrongly
 func Test_reconcileEventMeshSubManager(t *testing.T) {
 	t.Parallel()
 
