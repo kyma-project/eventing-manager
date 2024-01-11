@@ -209,6 +209,93 @@ func (m *EventMeshMock) Start() string {
 	return uri
 }
 
+func (m *EventMeshMock) handleToken() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			m.AuthResponse(w)
+		}
+	}
+}
+
+func (m *EventMeshMock) handleList() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			m.ListResponse(w)
+		}
+	}
+}
+
+func (m *EventMeshMock) handleMessaging() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodDelete:
+			key := r.URL.Path
+			m.Subscriptions.DeleteSubscription(key)
+			m.DeleteResponse(w)
+		case http.MethodPost:
+			var subscription emstypes.Subscription
+			_ = json.NewDecoder(r.Body).Decode(&subscription)
+			key := r.URL.Path + "/" + subscription.Name
+			// check if any response override defined for this subscription
+			if overrideFunc, ok := m.ResponseOverrides.CreateResponse[key]; ok {
+				overrideFunc(w, subscription)
+				return
+			}
+
+			// otherwise, use default flow
+			m.Requests.PutSubscription(r, subscription)
+			m.Subscriptions.PutSubscription(key, &subscription)
+			m.CreateResponse(w)
+		case http.MethodPatch: // mock update WebhookAuth config
+			var subscription emstypes.Subscription
+			err := json.NewDecoder(r.Body).Decode(&subscription)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			key := r.URL.Path // i.e. Path will be `/messaging/events/subscriptions/<name>`
+			// save request.
+			m.Requests.PutSubscription(r, subscription)
+			m.UpdateResponse(w, key, subscription.WebhookAuth)
+		case http.MethodPut: // mock pause/resume EventMesh subscription
+			var state emstypes.State
+			if err := json.NewDecoder(r.Body).Decode(&state); err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			// extract get request key from /messaging/events/subscriptions/%s/state
+			key := strings.TrimSuffix(r.URL.Path, "/state")
+			for i := 0; i < 3; i++ {
+				err := m.UpdateStateResponse(w, key, state)
+				if err == nil {
+					break
+				}
+				two := 2
+				three := 3
+				if i < two { // Don't sleep after the last attempt
+					time.Sleep(time.Duration(three) * time.Second)
+				} else {
+					panic(err)
+				}
+			}
+		case http.MethodGet:
+			key := r.URL.Path
+			// check if any response override defined for this subscription
+			if overrideFunc, ok := m.ResponseOverrides.GetResponse[key]; ok {
+				overrideFunc(w, key)
+				return
+			}
+
+			// otherwise, use default flow
+			m.GetResponse(w, key)
+		default:
+			w.WriteHeader(http.StatusNotImplemented)
+		}
+	}
+}
+
 func (m *EventMeshMock) Stop() {
 	m.server.Close()
 }

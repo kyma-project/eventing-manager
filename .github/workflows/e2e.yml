@@ -57,7 +57,7 @@ jobs:
 
       - name: Setup NATS
         run: |
-          make -C hack/ci/ get-nats-via-lifecycle-manager
+          make -C hack/ci/ install-nats-module
 
       - name: Setup and test the eventing-manager
         run: |
