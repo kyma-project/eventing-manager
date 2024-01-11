@@ -210,8 +210,10 @@ func (m *EventMeshMock) handleMessaging() func(w http.ResponseWriter, r *http.Re
 				if err == nil {
 					break
 				}
-				if i < 2 { // Don't sleep after the last attempt
-					time.Sleep(3 * time.Second)
+				two := 2
+				three := 3
+				if i < two { // Don't sleep after the last attempt
+					time.Sleep(time.Duration(three) * time.Second)
 				} else {
 					panic(err)
 				}
