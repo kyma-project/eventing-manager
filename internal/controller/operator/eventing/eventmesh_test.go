@@ -31,12 +31,12 @@ const (
 )
 
 var (
-	ErrFailedToStart         = errors.New("failed to start")
-	ErrFailedToStop          = errors.New("failed to stop")
-	ErrFailedToRemove        = errors.New("failed to remove")
-	errNotFound              = errors.New("secret not found")
-	ErrFailedToApplyPatch    = errors.New("failed to apply patch")
-	ErrFailedToSyncEPPSecret = errors.New("failed to sync Publisher Proxy secret: failed to apply patch")
+	ErrFailedToStart        = errors.New("failed to start")
+	ErrFailedToStop         = errors.New("failed to stop")
+	ErrFailedToRemove       = errors.New("failed to remove")
+	errNotFound             = errors.New("secret not found")
+	ErrFailedToApplyPatch   = errors.New("failed to apply patch")
+	ErrFailedToSyncPPSecret = errors.New("failed to sync Publisher Proxy secret: failed to apply patch")
 )
 
 func Test_reconcileEventMeshSubManager(t *testing.T) {
@@ -128,7 +128,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(ErrFailedToApplyPatch).Once()
 				return mockKubeClient
 			},
-			wantError: ErrFailedToSyncEPPSecret,
+			wantError: ErrFailedToSyncPPSecret,
 		},
 		{
 			name:                              "it should do nothing because subscription manager is already started",
