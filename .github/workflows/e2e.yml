@@ -1,4 +1,4 @@
-name: e2e-without-lifecycle-manager
+name: e2e-test
 
 env:
   KYMA_STABILITY: "unstable"
