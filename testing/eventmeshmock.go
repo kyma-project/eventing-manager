@@ -215,7 +215,9 @@ func (m *EventMeshMock) handleMessaging() func(w http.ResponseWriter, r *http.Re
 				if i < two { // Don't sleep after the last attempt
 					time.Sleep(time.Duration(three) * time.Second)
 				} else {
-					panic(err)
+					m.log.Error(err, "failed to update state response")
+					w.WriteHeader(http.StatusBadRequest)
+					return
 				}
 			}
 		case http.MethodGet:
