@@ -164,7 +164,6 @@ jobs:
           export GARDENER_DIR="${HOME}/.gardener"
           mkdir -p "/home/runner/.gardener"
           echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_DIR}/kubeconfig
-          cat ${GARDENER_DIR}/kubeconfig
 
       - name: Provision Gardener cluster
         env:
@@ -176,7 +175,6 @@ jobs:
           GARDENER_CLUSTER_VERSION: "1.26.9"
         run: |
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-          cat ${GARDENER_KUBECONFIG}
           make -C hack/ci/ provision-gardener-cluster
           kubectl version
           kubectl cluster-info
