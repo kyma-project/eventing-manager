@@ -35,7 +35,7 @@ gardener::provision_cluster() {
     fi
 
     # decreasing attempts to 2 because we will try to create new cluster from scratch on exit code other than 0
-    kyma provision gardener aws \
+    ${KYMA_CLI} provision gardener aws \
       --secret "${GARDENER_PROVIDER_SECRET_NAME}" \
       --name "${CLUSTER_NAME}" \
       --project "${GARDENER_PROJECT_NAME}" \
