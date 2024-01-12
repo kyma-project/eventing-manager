@@ -162,7 +162,7 @@ jobs:
           GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
           GARDENER_DIR: "${HOME}/.gardener"
         run: |
-          mkdir -p "${GARDENER_DIR}"
+          mkdir -p "/home/runner/.gardener"
           echo ${GARDENER_KYMATUNAS} | base64 --decode > /home/runner/.gardener/kubeconfig
           echo ${GARDENER_KYMATUNAS} | base64 --decode
           cat ${HOME}/.gardener/kubeconfig
