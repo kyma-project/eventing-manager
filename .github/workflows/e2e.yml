@@ -160,29 +160,22 @@ jobs:
       - name: Setup secrets
         env:
           GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
-          GARDENER_DIR: "${HOME}/.gardener"
         run: |
+          export GARDENER_DIR="${HOME}/.gardener"
           mkdir -p "/home/runner/.gardener"
-          echo ${GARDENER_KYMATUNAS} | base64 --decode > /home/runner/.gardener/kubeconfig
-          echo ${GARDENER_KYMATUNAS} | base64 --decode
-          cat ${HOME}/.gardener/kubeconfig
-          ls -l ${GARDENER_DIR}
+          echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_DIR}/kubeconfig
+          cat ${GARDENER_DIR}/kubeconfig
 
       - name: Provision Gardener cluster
         env:
           CLUSTER_NAME: "fzn-g1"
-          GARDENER_DIR: "${HOME}/.gardener"
-          GARDENER_KUBECONFIG: "${HOME}/.gardener/kubeconfig"
           GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
           GARDENER_REGION: "eu-west-1"
           GARDENER_ZONES: "eu-west-1a"
           GARDENER_PROJECT_NAME: "kymatunas"
           GARDENER_CLUSTER_VERSION: "1.26.9"
         run: |
-          ls -l ${GARDENER_DIR}
-          echo ${HOME}
-          echo ${GARDENER_KUBECONFIG}
-          cat ${HOME}/.gardener/kubeconfig
+          export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
           cat ${GARDENER_KUBECONFIG}
           make -C hack/ci/ provision-gardener-cluster
           kubectl version
