@@ -177,7 +177,21 @@ jobs:
         run: |
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
           echo ${TEST_ENV_STEP1}
-          make -C hack/ci/ provision-gardener-cluster
-          kubectl version
-          kubectl cluster-info
-          kubectl get nodes -o wide
+#          make -C hack/ci/ provision-gardener-cluster
+#          kubectl version
+#          kubectl cluster-info
+#          kubectl get nodes -o wide
+
+      - name: Dummy fail step
+        run: |
+          cat non-exists.txt
+
+      - name: Delete Gardener cluster
+        if: ${{ always() }}
+        env:
+          CLUSTER_NAME: "fzn-g1"
+          GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
+          GARDENER_PROJECT_NAME: "kymatunas"
+        run: |
+          export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
+          make -C hack/ci/ deprovision-gardener-cluster

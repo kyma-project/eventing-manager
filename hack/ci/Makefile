@@ -105,4 +105,8 @@ wait-eventing-cr-ready-with-backend:
 
 .PHONY: provision-gardener-cluster
 provision-gardener-cluster:
-	PROJECT_ROOT="${PROJECT_ROOT}" KYMA_CLI="${KYMA_CLI}" ${PROJECT_ROOT}/scripts/provision-gardener-aws.sh
+	PROJECT_ROOT="${PROJECT_ROOT}" KYMA_CLI="${KYMA_CLI}" ${PROJECT_ROOT}/scripts/gardener/aws/provision.sh
+
+.PHONY: deprovision-gardener-cluster
+deprovision-gardener-cluster:
+	PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/gardener/aws/deprovision.sh

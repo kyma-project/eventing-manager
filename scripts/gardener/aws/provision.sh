@@ -10,7 +10,7 @@
 source "${PROJECT_ROOT}/scripts/utils/log.sh"
 source "${PROJECT_ROOT}/scripts/utils/utils.sh"
 
-gardener::init() {
+gardener::validate_and_default() {
     requiredVars=(
         GARDENER_REGION
         GARDENER_ZONES
@@ -51,62 +51,8 @@ gardener::provision_cluster() {
       --hibernation-start ""
 }
 
-gardener::cleanup() {
-    log::info "Deprovision cluster: \"${CLUSTER_NAME}\""
-        gardener::deprovision_cluster \
-            -p "${GARDENER_PROJECT_NAME}" \
-            -c "${CLUSTER_NAME}" \
-            -f "${GARDENER_KUBECONFIG}"
-}
+## MAIN Logic
 
-# gardener::deprovision_cluster removes a Gardener cluster
-#
-# Arguments:
-#
-# required:
-# p - project name
-# c - cluster name
-# f - kubeconfig file path
-function gardener::deprovision_cluster() {
-  local OPTIND
-  local projectName
-  local clusterName
-  local kubeconfigFile
-  local namespace
-  local wait="false"
+gardener::validate_and_default
 
-  while getopts ":p:c:f:w:" opt; do
-      case $opt in
-          p)
-            projectName="$OPTARG" ;;
-          c)
-            clusterName="$OPTARG" ;;
-          f)
-            kubeconfigFile="$OPTARG" ;;
-          w)
-            wait=${OPTARG:-$wait} ;;
-          \?)
-              echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
-          :)
-              echo "Option -$OPTARG argument not provided" >&2 ;;
-      esac
-  done
-
-
-  utils::check_empty_arg "$projectName" "Project name is empty. Exiting..."
-  utils::check_empty_arg "$clusterName" "Cluster name is empty. Exiting..."
-  utils::check_empty_arg "$kubeconfigFile" "Kubeconfig file path is empty. Exiting..."
-
-  log::info "Deprovision cluster: ${clusterName}"
-
-  namespace="garden-${projectName}"
-
-  kubectl annotate shoot "${clusterName}" confirmation.gardener.cloud/deletion=true \
-    --overwrite \
-    -n "${namespace}" \
-    --kubeconfig "${kubeconfigFile}"
-  kubectl delete shoot "${clusterName}" \
-    --wait="${wait}" \
-    --kubeconfig "${kubeconfigFile}" \
-    -n "${namespace}"
-}
+gardener::provision_cluster
