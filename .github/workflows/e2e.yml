@@ -192,6 +192,7 @@ jobs:
           CLUSTER_NAME: "fzn-g1"
           GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
           GARDENER_PROJECT_NAME: "kymatunas"
+          WAIT_FOR_DELETE_COMPLETION: "false"
         run: |
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
           make -C hack/ci/ deprovision-gardener-cluster
