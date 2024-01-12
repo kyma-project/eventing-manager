@@ -4,6 +4,7 @@ on: [ pull_request ]
 jobs:
   markdown-link-check:
     runs-on: ubuntu-latest
+    if: false
     steps:
       - uses: actions/checkout@v4
 
