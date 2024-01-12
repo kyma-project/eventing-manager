@@ -101,7 +101,7 @@ func Test_PatchApply(t *testing.T) {
 			gotSTS, err := kubeClient.GetDeployment(context.Background(),
 				tc.givenUpdateDeployment.GetName(), tc.givenUpdateDeployment.GetNamespace())
 			require.NoError(t, err)
-			require.Empty(t, tc.givenUpdateDeployment.GetName())
+			require.Equal(t, tc.givenUpdateDeployment.GetName(), gotSTS.Name)
 			require.Equal(t, tc.givenUpdateDeployment.GetNamespace(), gotSTS.Namespace)
 			require.Equal(t, *tc.givenUpdateDeployment.Spec.Replicas, *gotSTS.Spec.Replicas)
 		})

@@ -14,18 +14,9 @@ on:
       - "docs/**"
       - "**.md"
       - "sec-scanners-config.yaml"
-  pull_request_target:
-    branches:
-      - main
-      - "release-*"
-    paths-ignore:
-      - "docs/**"
-      - "**.md"
-      - "sec-scanners-config.yaml"
 
 jobs:
   wait-until-build-succeeds:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
@@ -43,7 +34,6 @@ jobs:
 
   nats:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     needs: wait-until-build-succeeds
 
     steps:
@@ -109,7 +99,6 @@ jobs:
 
   PeerAuthentication:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     needs: wait-until-build-succeeds
 
     steps:
@@ -147,23 +136,3 @@ jobs:
         if: failure()
         run: |
           kubectl get peerauthentications.security.istio.io -A -o yaml
-
-  backend-switching:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request_target'
-    needs: wait-until-build-succeeds
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache Binaries
-        id: cache-binaries
-        uses: actions/cache@v3
-        with:
-          path: bin
-          key: ${{ runner.os }}-bin
-
-      - name: Install Kyma CLI
-        run: |
-          echo ${TUNAS_TEST_1} > hello.txt
-          cat hello.txt
