@@ -18,7 +18,6 @@ on:
 jobs:
   backend-switching:
     runs-on: ubuntu-latest
-    needs: wait-until-build-succeeds
 
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +30,8 @@ jobs:
           key: ${{ runner.os }}-bin
 
       - name: Install Kyma CLI
+        env:
+          TUNAS_TEST_1: ${{ secrets.TUNAS_TEST_1 }}
         run: |
           echo ${TUNAS_TEST_1} > hello.txt
           cat hello.txt
