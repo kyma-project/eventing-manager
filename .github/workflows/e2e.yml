@@ -177,6 +177,8 @@ jobs:
           GARDENER_PROJECT_NAME: "kymatunas"
           GARDENER_CLUSTER_VERSION: "1.26.9"
         run: |
+          ls -l ${GARDENER_DIR}
+          echo ${GARDENER_KUBECONFIG}
           make -C hack/ci/ provision-gardener-cluster
           kubectl version
           kubectl cluster-info
