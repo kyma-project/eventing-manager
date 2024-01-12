@@ -12,7 +12,6 @@ source "${PROJECT_ROOT}/scripts/utils/utils.sh"
 
 gardener::init() {
     requiredVars=(
-        GARDENER_KYMATUNAS
         GARDENER_REGION
         GARDENER_ZONES
         GARDENER_KUBECONFIG
