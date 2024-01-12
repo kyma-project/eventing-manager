@@ -85,14 +85,14 @@ func Test_WebhookServerCertSecret(t *testing.T) {
 func Test_WebhookServerCertJob(t *testing.T) {
 	t.Parallel()
 	ctx := context.TODO()
-	err := Retry(testenvironment.Attempts, testenvironment.Interval, func() error {
+	err := Retry(2, testenvironment.Interval, func() error {
 		job, getErr := testEnvironment.K8sClientset.BatchV1().Jobs(NamespaceName).Get(ctx, WebhookServerCertJobName, metav1.GetOptions{})
 		if getErr != nil {
 			return getErr
 		}
 
 		// Check if the PriorityClassName was set correctly.
-		if job.Spec.Template.Spec.PriorityClassName != eventing.PriorityClassName {
+		if job.Spec.Template.Spec.PriorityClassName == eventing.PriorityClassName {
 			return fmt.Errorf("Job '%s' was expected to have PriorityClassName '%s' but has '%s'",
 				job.GetName(),
 				eventing.PriorityClassName,

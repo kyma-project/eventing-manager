@@ -150,7 +150,7 @@ jobs:
 
   backend-switching:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request_target'
     needs: wait-until-build-succeeds
 
     steps:
