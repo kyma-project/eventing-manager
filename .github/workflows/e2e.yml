@@ -170,7 +170,7 @@ jobs:
         env:
           CLUSTER_NAME: "fzn-g1"
           GARDENER_DIR: "${HOME}/.gardener"
-          GARDENER_KUBECONFIG: "${GARDENER_DIR}/kubeconfig"
+          GARDENER_KUBECONFIG: ${GARDENER_DIR}/kubeconfig
           GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
           GARDENER_REGION: "eu-west-1"
           GARDENER_ZONES: "eu-west-1a"
