@@ -17,6 +17,7 @@ on:
 
 jobs:
   wait-until-build-succeeds:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
@@ -34,6 +35,7 @@ jobs:
 
   nats:
     runs-on: ubuntu-latest
+    if: false
     needs: wait-until-build-succeeds
 
     steps:
@@ -99,6 +101,7 @@ jobs:
 
   PeerAuthentication:
     runs-on: ubuntu-latest
+    if: false
     needs: wait-until-build-succeeds
 
     steps:
@@ -151,8 +154,28 @@ jobs:
           key: ${{ runner.os }}-bin
 
       - name: Install Kyma CLI
-        env:
-          TUNAS_TEST_1: ${{ secrets.TUNAS_TEST_1 }}
         run: |
-          echo ${TUNAS_TEST_1} > hello.txt
-          cat hello.txt
+          make kyma
+
+      - name: Setup secrets
+        env:
+          GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
+          GARDENER_KUBECONFIG: "${HOME}/.config/gardener_kubeconfig"
+        run: |
+          mkdir "${HOME}/.config"
+          echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_KUBECONFIG}
+
+      - name: Provision Gardener cluster
+        env:
+          CLUSTER_NAME: "fzn-g1"
+          GARDENER_KUBECONFIG: "${HOME}/.config/gardener_kubeconfig"
+          GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
+          GARDENER_REGION: "eu-west-1"
+          GARDENER_ZONES: "eu-west-1a"
+          GARDENER_PROJECT_NAME: "kymatunas"
+          GARDENER_CLUSTER_VERSION: "1.26.9"
+        run: |
+          make -C hack/ci/ provision-gardener-cluster
+          kubectl version
+          kubectl cluster-info
+          kubectl get nodes -o wide

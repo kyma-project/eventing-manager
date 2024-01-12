@@ -74,6 +74,8 @@ get-nats-via-lifecycle-manager: install-lifecycle-manager install-latest-nats-mo
 
 .PHONY: install-nats-module
 install-nats-module:
+	$(eval LATEST_NATS_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/nats-manager/releases/latest | jq -r '.tag_name'))
+    @echo "Deploying NATS Manager: ${LATEST_NATS_VERSION}"
 	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-manager.yaml
 	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-default-cr.yaml
 
@@ -88,3 +90,19 @@ install-k3d-tools: ## Create k3d with kyma CRDs.
 .PHONY: apply-peerauthentication-crd
 apply-peerauthentication-crd:
 	kubectl apply -f ../../config/crd/for-tests/security.istio.io_peerauthentication.yaml
+
+.PHONY: wait-nats-cr-ready
+wait-nats-cr-ready:
+	kubectl wait nats.operator.kyma-project.io -n kyma-system eventing-nats --timeout=300s --for=jsonpath='{.status.state}'=Ready
+
+.PHONY: wait-eventing-cr-ready
+wait-eventing-cr-ready:
+	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=300s --for=jsonpath='{.status.state}'=Ready
+
+.PHONY: wait-eventing-cr-ready-with-backend
+wait-eventing-cr-ready-with-backend:
+	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=300s --for=jsonpath='{.status.state}'=Ready --for=jsonpath='{.status.activeBackend}'=${ACTIVE_BACKEND}
+
+.PHONY: provision-gardener-cluster
+provision-gardener-cluster:
+	PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/provision-gardener-aws.sh
