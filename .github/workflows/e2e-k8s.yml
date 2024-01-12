@@ -18,7 +18,6 @@ on:
 jobs:
   backend-switching:
     runs-on: ubuntu-latest
-    needs: wait-until-build-succeeds
 
     steps:
       - uses: actions/checkout@v4
