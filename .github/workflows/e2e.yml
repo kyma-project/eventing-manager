@@ -163,8 +163,9 @@ jobs:
           GARDENER_DIR: "${HOME}/.gardener"
         run: |
           mkdir -p "${GARDENER_DIR}"
-          echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_DIR}/kubeconfig
+          echo ${GARDENER_KYMATUNAS} | base64 --decode > /home/runner/.gardener/kubeconfig
           echo ${GARDENER_KYMATUNAS} | base64 --decode
+          cat ${HOME}/.gardener/kubeconfig
           ls -l ${GARDENER_DIR}
 
       - name: Provision Gardener cluster
