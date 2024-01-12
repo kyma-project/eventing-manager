@@ -164,7 +164,7 @@ jobs:
         run: |
           mkdir -p "${GARDENER_DIR}"
           echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_DIR}/kubeconfig
-          ls ${GARDENER_DIR}
+          ls -l ${GARDENER_DIR}
 
       - name: Provision Gardener cluster
         env:
