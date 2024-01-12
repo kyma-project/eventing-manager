@@ -16,8 +16,25 @@ on:
       - "sec-scanners-config.yaml"
 
 jobs:
+  wait-until-build-succeeds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for the 'pull-eventing-manager-build' job to succeed
+        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
+        with:
+          context: "pull-eventing-manager-build"
+          commit_ref: "${{ github.event.pull_request.head.sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
+          timeout: 600000 # 10 minutes in milliseconds
+          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
+          check_interval: 60000 # 1 minute in milliseconds
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_OWNER: "${{ github.repository_owner }}"
+          GITHUB_REPO: "eventing-manager"
+
   nats:
     runs-on: ubuntu-latest
+    needs: wait-until-build-succeeds
 
     steps:
       - uses: actions/checkout@v4
@@ -44,19 +61,6 @@ jobs:
       - name: Install eventing-manager
         run: |
           make install IMG=$MANAGER_IMAGE
-
-      - name: Wait for the 'pull-eventing-manager-build' job to succeed
-        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
-        with:
-          context: "pull-eventing-manager-build"
-          commit_ref: "${{ github.event.pull_request.head.sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
-          timeout: 600000 # 10 minutes in milliseconds
-          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
-          check_interval: 60000 # 1 minute in milliseconds
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          GITHUB_OWNER: "${{ github.repository_owner }}"
-          GITHUB_REPO: "eventing-manager"
 
       - name: Deploy the controller to the cluster
         run: |
@@ -95,6 +99,7 @@ jobs:
 
   PeerAuthentication:
     runs-on: ubuntu-latest
+    needs: wait-until-build-succeeds
 
     steps:
       - uses: actions/checkout@v4
@@ -118,19 +123,6 @@ jobs:
         run: |
           make install IMG=$MANAGER_IMAGE
 
-      - name: Wait for the 'pull-eventing-manager-build' job to succeed
-        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
-        with:
-          context: "pull-eventing-manager-build"
-          commit_ref: "${{ github.event.pull_request.head.sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
-          timeout: 600000 # 10 minutes in milliseconds
-          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
-          check_interval: 60000 # 1 minute in milliseconds
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          GITHUB_OWNER: "${{ github.repository_owner }}"
-          GITHUB_REPO: "eventing-manager"
-
       - name: Deploy the controller to the cluster
         run: |
           kubectl create ns kyma-system || true
@@ -144,3 +136,30 @@ jobs:
         if: failure()
         run: |
           kubectl get peerauthentications.security.istio.io -A -o yaml
+
+  backend-switching:
+    runs-on: ubuntu-latest
+    needs: wait-until-build-succeeds
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Binaries
+        id: cache-binaries
+        uses: actions/cache@v3
+        with:
+          path: bin
+          key: ${{ runner.os }}-bin
+
+      - name: Install Kyma CLI
+        run: |
+          make kyma
+
+      - name: Provision Gardener Cluster
+        run: |
+          make -C hack/ci/ provision-gardener-cluster
+          kubectl version
+          kubectl cluster-info
+          kubectl get nodes -o wide
+
+      
