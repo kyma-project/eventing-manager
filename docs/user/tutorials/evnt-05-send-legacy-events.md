@@ -15,11 +15,9 @@ Kyma Eventing also supports sending and receiving of legacy events. In this tuto
 
 To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). We're going to subscribe to events of the type `order.received.v1`.
 
-<div tabs name="Create a Subscription" group="trigger-workload">
-  <details open>
-  <summary label="Kyma Dashboard">
-  Kyma Dashboard
-  </summary>
+<!-- tabs:start -->
+
+#### Kyma Dashboard
 
 1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
@@ -33,11 +31,7 @@ To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscripti
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-  </details>
-  <details>
-  <summary label="kubectl">
-  kubectl
-  </summary>
+#### curl
 
 Run:
 
@@ -64,8 +58,7 @@ kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"
 
 The operation was successful if the command returns `true`.
 
-  </details>
-</div>
+<!-- tabs:end -->
 
 ## Publish a Legacy Event To Trigger the Workload
 
