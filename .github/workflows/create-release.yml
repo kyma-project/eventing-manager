@@ -26,7 +26,7 @@ jobs:
       - name: Check image Tag
         env:
           VERSION: ${{ steps.gen-version.outputs.VERSION }}
-        run: ./scripts/check_tag_info.sh $VERSION
+        run: ./scripts/check_sec-scanners-config.sh $VERSION
 
   create-draft:
     name: Create draft release
