@@ -75,9 +75,24 @@ get-nats-via-lifecycle-manager: install-lifecycle-manager install-latest-nats-mo
 .PHONY: install-nats-module
 install-nats-module:
 	$(eval LATEST_NATS_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/nats-manager/releases/latest | jq -r '.tag_name'))
-    @echo "Deploying NATS Manager: ${LATEST_NATS_VERSION}"
+	@echo "Deploying NATS Manager: ${LATEST_NATS_VERSION}"
 	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-manager.yaml
 	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-default-cr.yaml
+
+.PHONY: install-istio-module
+install-istio-module:
+	$(eval LATEST_ISTIO_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/istio-manager/releases/latest | jq -r '.tag_name'))
+	@echo "Deploying Istio Manager: ${LATEST_ISTIO_VERSION}"
+	kubectl label namespace kyma-system istio-injection=enabled --overwrite
+	kubectl apply -f https://github.com/kyma-project/istio/releases/latest/download/istio-manager.yaml
+	kubectl apply -f https://github.com/kyma-project/istio/releases/latest/download/istio-default-cr.yaml
+
+.PHONY: install-api-gateway-module
+install-api-gateway-module:
+	$(eval LATEST_API_GATEWAY_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/api-gateway/releases/latest | jq -r '.tag_name'))
+	@echo "Deploying API Gateway module: ${LATEST_API_GATEWAY_VERSION}"
+	kubectl apply -f https://github.com/kyma-project/api-gateway/releases/latest/download/api-gateway-manager.yaml
+	kubectl apply -f https://github.com/kyma-project/api-gateway/releases/latest/download/apigateway-default-cr.yaml
 
 .PHONY: verify-kyma
 verify-kyma: ## Wait for Kyma CR to be in Ready state.
@@ -103,6 +118,14 @@ wait-eventing-cr-ready:
 wait-eventing-cr-ready-with-backend:
 	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=300s --for=jsonpath='{.status.state}'=Ready --for=jsonpath='{.status.activeBackend}'=${ACTIVE_BACKEND}
 
+.PHONY: wait-istio-cr-ready
+wait-istio-cr-ready:
+	kubectl wait istios.operator.kyma-project.io -n kyma-system default --timeout=300s --for=jsonpath='{.status.state}'=Ready
+
+.PHONY: wait-api-gateway-cr-ready
+wait-api-gateway-cr-ready:
+	kubectl wait apigateways.operator.kyma-project.io -n kyma-system default --timeout=300s --for=jsonpath='{.status.state}'=Ready
+
 .PHONY: provision-gardener-cluster
 provision-gardener-cluster:
 	PROJECT_ROOT="${PROJECT_ROOT}" KYMA_CLI="${KYMA_CLI}" ${PROJECT_ROOT}/scripts/gardener/aws/provision.sh
@@ -110,3 +133,11 @@ provision-gardener-cluster:
 .PHONY: deprovision-gardener-cluster
 deprovision-gardener-cluster:
 	PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/gardener/aws/deprovision.sh
+
+.PHONY: create-ias-app
+create-ias-app:
+	PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/ias/create-ias-app.sh
+
+.PHONY: delete-ias-app
+delete-ias-app:
+	PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/ias/delete-ias-app.sh
