@@ -170,7 +170,6 @@ jobs:
           SCALER_MAX: "2"
           RETRY_ATTEMPTS: "1"
           GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
-          TUNAS_TEST_1: ${{ secrets.TUNAS_TEST_1 }}
         run: |
           : # setup Gardener kubeconfig.
           mkdir -p "${HOME}/.gardener"
@@ -180,8 +179,7 @@ jobs:
           export CLUSTER_NAME="${CLUSTER_PREFIX}$(openssl rand -hex 2)"
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
           : # provision gardener cluster.
-          mkdir -p "${HOME}/.kube"
-          echo ${TUNAS_TEST_1} | base64 --decode > "${HOME}/.kube/config"
+          make -C hack/ci/ provision-gardener-cluster
           kubectl version
           kubectl cluster-info
           kubectl get nodes
@@ -195,9 +193,9 @@ jobs:
         env:
           EVENTMESH_K8S_SECRET: ${{ secrets.EVENTMESH_K8S_SECRET }}
         run: |
-          kubectl create cm config5 --from-literal=var5=${EVENTMESH_K8S_SECRET}
           echo "${EVENTMESH_K8S_SECRET}" | base64 --decode > k8s-em.yaml
           kubectl apply -n kyma-system -f k8s-em.yaml
+          rm k8s-em.yaml
 
       - name: Create IAS application for EventMesh
         env:
@@ -298,4 +296,4 @@ jobs:
           WAIT_FOR_DELETE_COMPLETION: "false"
         run: |
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-#          make -C hack/ci/ deprovision-gardener-cluster
+          make -C hack/ci/ deprovision-gardener-cluster
