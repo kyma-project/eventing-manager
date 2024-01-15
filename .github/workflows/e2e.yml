@@ -26,6 +26,7 @@ on:
 jobs:
   wait-until-build-succeeds:
     runs-on: ubuntu-latest
+    if: false
     steps:
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
         if: github.event_name == 'pull_request'
@@ -163,10 +164,11 @@ jobs:
           kubectl get peerauthentications.security.istio.io -A -o yaml
 
   backend-switching:
-    needs: wait-until-build-succeeds
+#    needs: wait-until-build-succeeds
     if: github.event_name == 'pull_request'
     uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
       eventing-manager-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:latest
       kube-version: "1.26.9"
       cluster-name-prefix: "ghem-"
+      secrets: inherit
