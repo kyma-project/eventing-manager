@@ -6,10 +6,18 @@ env:
   MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
 
 on:
+  push:
+    branches:
+      - main
+      - "release-**"
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - "sec-scanners-config.yaml"
   pull_request:
     branches:
       - main
-      - "release-*"
+      - "release-**"
     paths-ignore:
       - "docs/**"
       - "**.md"
@@ -21,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
+        if: github.event_name == 'pull_request'
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
           context: "pull-eventing-manager-build"
@@ -33,9 +42,23 @@ jobs:
           GITHUB_OWNER: "${{ github.repository_owner }}"
           GITHUB_REPO: "eventing-manager"
 
+      - name: Wait for the 'post-eventing-manager-build' job to succeed
+        if: github.event_name == 'push'
+        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
+        with:
+          context: "post-eventing-manager-build"
+          commit_ref: "${{ github.sha }}"
+          timeout: 600000 # 10 minutes in milliseconds
+          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
+          check_interval: 60000 # 1 minute in milliseconds
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_OWNER: "${{ github.repository_owner }}"
+          GITHUB_REPO: "eventing-manager"
+
   nats:
     runs-on: ubuntu-latest
-    if: false
+    if: github.event_name == 'pull_request'
     needs: wait-until-build-succeeds
 
     steps:
@@ -101,7 +124,7 @@ jobs:
 
   PeerAuthentication:
     runs-on: ubuntu-latest
-    if: false
+    if: github.event_name == 'pull_request'
     needs: wait-until-build-succeeds
 
     steps:
@@ -142,158 +165,12 @@ jobs:
 
   backend-switching:
     runs-on: ubuntu-latest
+    needs: wait-until-build-succeeds
+    if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache Binaries
-        id: cache-binaries
-        uses: actions/cache@v3
+      - uses: "./.github/workflows/run-e2e-tests-reusable.yaml"
         with:
-          path: bin
-          key: ${{ runner.os }}-bin
-
-      - name: Install Kyma CLI
-        run: |
-          make kyma
-
-      - name: Provision Gardener cluster
-        env:
-          GARDENER_CLUSTER_VERSION: "1.26.9"
-          CLUSTER_PREFIX: "ghem-"
-          GARDENER_REGION: "eu-west-1"
-          GARDENER_ZONES: "eu-west-1a"
-          GARDENER_PROJECT_NAME: "kymatunas"
-          GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
-          MACHINE_TYPE: "c4.xlarge"
-          SCALER_MIN: "1"
-          SCALER_MAX: "2"
-          RETRY_ATTEMPTS: "1"
-          GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
-        run: |
-          : # setup Gardener kubeconfig.
-          mkdir -p "${HOME}/.gardener"
-          export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-          echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_KUBECONFIG}
-          : # generate cluster name and export it to Github env for cleanup step to access it.
-          export CLUSTER_NAME="${CLUSTER_PREFIX}$(openssl rand -hex 2)"
-          echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
-          : # provision gardener cluster.
-          make -C hack/ci/ provision-gardener-cluster
-          kubectl version
-          kubectl cluster-info
-          kubectl get nodes
-          kubectl get ns
-
-      - name: Create kyma-system namespace
-        run: |
-          kubectl create ns kyma-system || true
-
-      - name: Create EventMesh secret
-        env:
-          EVENTMESH_K8S_SECRET: ${{ secrets.EVENTMESH_K8S_SECRET }}
-        run: |
-          echo "${EVENTMESH_K8S_SECRET}" | base64 --decode > k8s-em.yaml
-          kubectl apply -n kyma-system -f k8s-em.yaml
-          rm k8s-em.yaml
-
-      - name: Create IAS application for EventMesh
-        env:
-          TEST_EVENTING_AUTH_IAS_URL: ${{ vars.EVENTING_AUTH_IAS_URL }}
-          TEST_EVENTING_AUTH_IAS_USER: ${{ vars.EVENTING_AUTH_IAS_USER }}
-          TEST_EVENTING_AUTH_IAS_PASSWORD: ${{ secrets.EVENTING_AUTH_IAS_PASSWORD }}
-        run: |
-          export DISPLAY_NAME=${CLUSTER_NAME}
-          make -C hack/ci/ create-ias-app
-
-      - name: Install latest released Istio Module
-        run: |
-          make -C hack/ci/ install-istio-module
-
-      - name: Install latest released API Gateway Manager
-        run: |
-          make -C hack/ci/ install-api-gateway-module
-
-      - name: Install latest released NATS Manager
-        run: |
-          make -C hack/ci/ install-nats-module
-
-      - name: Deploy eventing-manager
-        run: |
-          make install
-          make deploy IMG=$MANAGER_IMAGE
-          kubectl apply -f config/samples/default.yaml
-
-      - name: Wait for Installed modules to be ready
-        run: |
-          make -C hack/ci/ wait-istio-cr-ready
-          make -C hack/ci/ wait-api-gateway-cr-ready
-          make -C hack/ci/ wait-nats-cr-ready
-          make -C hack/ci/ wait-eventing-cr-ready-with-backend ACTIVE_BACKEND=NATS
-
-      - name: Setup eventing tests
-        run: |
-          make e2e-eventing-setup
-
-      - name: Test eventing with NATS
-        run: |
-          make e2e-eventing
-
-      - name: Switch to EventMesh backend
-        run: |
-          kubectl apply -f config/samples/default_eventmesh.yaml
-          make -C hack/ci/ wait-eventing-cr-ready-with-backend ACTIVE_BACKEND=EventMesh         
-
-      - name: Test eventing with EventMesh
-        env:
-          BACKEND_TYPE: "EventMesh"
-        run: |
-          : # wait for subscriptions to be ready.
-          make e2e-eventing-setup
-          : # run tests.
-          make e2e-eventing
-
-      - name: Switch back to NATS backend
-        run: |
-          kubectl apply -f config/samples/default.yaml
-          make -C hack/ci/ wait-eventing-cr-ready-with-backend ACTIVE_BACKEND=NATS
-
-      # Run make e2e-eventing again with NATS backend
-      - name: Test eventing again with NATS
-        run: |
-          : # wait for subscriptions to be ready.
-          make e2e-eventing-setup
-          : # run tests.
-          make e2e-eventing
-
-      - name: Test eventing cleanup
-        run: |
-          make e2e-cleanup
-
-      - name: On error, fetch module CRs
-        if: failure()
-        run: |
-          kubectl get nats.operator.kyma-project.io -n kyma-system -o yaml
-          kubectl get eventing.operator.kyma-project.io -n kyma-system -o yaml
-          kubectl get istios.operator.kyma-project.io -n kyma-system -o yaml
-          kubectl get apigateways.operator.kyma-project.io -n kyma-system -o yaml
-
-      - name: Delete IAS application
-        if: ${{ always() }}
-        env:
-          TEST_EVENTING_AUTH_IAS_URL: ${{ vars.EVENTING_AUTH_IAS_URL }}
-          TEST_EVENTING_AUTH_IAS_USER: ${{ vars.EVENTING_AUTH_IAS_USER }}
-          TEST_EVENTING_AUTH_IAS_PASSWORD: ${{ secrets.EVENTING_AUTH_IAS_PASSWORD }}
-        run: |
-          export IAS_APPLICATION_LOCATION=$(cat ~/.ias_location)
-          make -C hack/ci/ delete-ias-app
-
-      - name: Delete Gardener cluster
-        if: ${{ always() }}
-        env:
-          GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
-          GARDENER_PROJECT_NAME: "kymatunas"
-          WAIT_FOR_DELETE_COMPLETION: "false"
-        run: |
-          export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-          make -C hack/ci/ deprovision-gardener-cluster
+          eventing-manager-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:latest
+          kube-version: "1.26.9"
+          cluster-name-prefix: "ghem-"
