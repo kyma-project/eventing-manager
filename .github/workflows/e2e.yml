@@ -180,7 +180,6 @@ jobs:
           export CLUSTER_NAME="${CLUSTER_PREFIX}$(openssl rand -hex 2)"
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
           : # provision gardener cluster.
-#          make -C hack/ci/ provision-gardener-cluster
           mkdir -p "${HOME}/.kube"
           echo ${TUNAS_TEST_1} | base64 --decode > "${HOME}/.kube/config"
           kubectl version
