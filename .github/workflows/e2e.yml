@@ -196,7 +196,8 @@ jobs:
           EVENTMESH_K8S_SECRET: ${{ secrets.EVENTMESH_K8S_SECRET }}
         run: |
           kubectl create cm config5 --from-literal=var5=${EVENTMESH_K8S_SECRET}
-          echo "${EVENTMESH_K8S_SECRET}" | base64 --decode > kubectl apply -n kyma-system -f -
+          echo "${EVENTMESH_K8S_SECRET}" | base64 --decode > k8s-em.yaml
+          kubectl apply -n kyma-system -f k8s-em.yaml
 
       - name: Create IAS application for EventMesh
         env:
