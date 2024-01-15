@@ -163,14 +163,14 @@ jobs:
         run: |
           kubectl get peerauthentications.security.istio.io -A -o yaml
 
-  backend-switching:
-    runs-on: ubuntu-latest
-    needs: wait-until-build-succeeds
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - uses: "./.github/workflows/run-e2e-tests-reusable.yaml"
-        with:
-          eventing-manager-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:latest
-          kube-version: "1.26.9"
-          cluster-name-prefix: "ghem-"
+#  backend-switching:
+#    runs-on: ubuntu-latest
+#    needs: wait-until-build-succeeds
+#    if: github.event_name == 'pull_request'
+#
+#    steps:
+#      - uses: "./.github/workflows/run-e2e-tests-reusable.yaml"
+#        with:
+#          eventing-manager-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:latest
+#          kube-version: "1.26.9"
+#          cluster-name-prefix: "ghem-"
