@@ -59,7 +59,7 @@ kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"
 
 The operation was successful if the returned status says `true`.
 
-<!-- tabs:start -->
+<!-- tabs:end -->
 
 ## Trigger the workload with an event
 
