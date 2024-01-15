@@ -13,7 +13,7 @@ The "in-flight messages" config defines the number of events that Kyma Eventing 
 
 <!-- tabs:start -->
 
-#### Kyma Dashboard
+#### **Kyma Dashboard**
 
 ```js
 module.exports = {
@@ -27,7 +27,7 @@ module.exports = {
 }
 ```
 
-#### kubectl
+#### **kubectl**
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -67,7 +67,7 @@ Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (C
 
 <!-- tabs:start -->
 
-#### Kyma Dashboard
+#### **Kyma Dashboard**
 
 1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
@@ -82,7 +82,7 @@ Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (C
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-#### kubectl
+#### **kubectl**
 
 Run:
 
@@ -128,7 +128,7 @@ Next, publish 15 events at once and see how Kyma Eventing triggers the workload.
 
 <!-- tabs:start -->
 
-#### CloudEvents Conformance Tool
+#### **CloudEvents Conformance Tool**
 
 ```bash
 for i in {1..15}
@@ -143,7 +143,7 @@ do
 done
 ```
 
-#### curl
+#### **curl**
 
 ```bash
 for i in {1..15}

@@ -13,11 +13,9 @@ The [Subscription](../resources/evnt-cr-subscription.md) CustomResourceDefinitio
 
 To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). In the following example, you learn how to subscribe to events of two types: `order.received.v1` and `order.changed.v1`.
 
-<div tabs name="Create a Subscription" group="create-subscription">
-  <details open>
-  <summary label="Kyma Dashboard">
-  Kyma Dashboard
-  </summary>
+<!-- tabs:start -->
+
+#### **Kyma Dashboard**
 
 1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
@@ -33,11 +31,7 @@ To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-  </details>
-  <details>
-  <summary label="kubectl">
-  kubectl
-  </summary>
+#### **kubectl**
 
 Run:
 
@@ -65,8 +59,7 @@ kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"
 
 The operation was successful if the returned status says `true`.
 
-  </details>
-</div>
+<!-- tabs:end -->
 
 ## Trigger the workload with an event
 
@@ -83,7 +76,7 @@ In the following example, you port-forward the [Event Publisher Proxy](../evnt-a
 
 <!-- tabs:start -->
 
-#### CloudEvents Conformance Tool
+#### **CloudEvents Conformance Tool**
 
 ```bash
 cloudevents send http://localhost:3000/publish \
@@ -95,7 +88,7 @@ cloudevents send http://localhost:3000/publish \
    --yaml
 ```
 
-#### curl
+#### **curl**
 
 ```bash
 curl -v -X POST \
@@ -115,7 +108,7 @@ curl -v -X POST \
 
 <!-- tabs:start -->
 
-#### CloudEvents Conformance Tool
+#### **CloudEvents Conformance Tool**
 
 ```bash
 cloudevents send http://localhost:3000/publish \
@@ -127,7 +120,7 @@ cloudevents send http://localhost:3000/publish \
    --yaml
 ```
 
-#### curl
+#### **curl**
 
 ```bash
 curl -v -X POST \

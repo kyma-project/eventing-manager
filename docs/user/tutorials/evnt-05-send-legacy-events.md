@@ -17,7 +17,7 @@ To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscripti
 
 <!-- tabs:start -->
 
-#### Kyma Dashboard
+#### **Kyma Dashboard**
 
 1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
@@ -31,7 +31,7 @@ To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscripti
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-#### curl
+#### **curl**
 
 Run:
 
