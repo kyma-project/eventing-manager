@@ -71,8 +71,8 @@ gardener::provision_cluster() {
       --region "${GARDENER_REGION}" \
       --zones "${GARDENER_ZONES}" \
       --type "${MACHINE_TYPE}" \
-      --scaler-max ${SCALER_MIN} \
-      --scaler-min ${SCALER_MAX} \
+      --scaler-min ${SCALER_MIN} \
+      --scaler-max ${SCALER_MAX} \
       --kube-version="${GARDENER_CLUSTER_VERSION}" \
       --attempts ${RETRY_ATTEMPTS} \
       --verbose \
