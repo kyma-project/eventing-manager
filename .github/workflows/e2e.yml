@@ -157,33 +157,33 @@ jobs:
         run: |
           make kyma
 
-      - name: Setup secrets
-        env:
-          GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
-        run: |
-          export GARDENER_DIR="${HOME}/.gardener"
-          mkdir -p "/home/runner/.gardener"
-          echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_DIR}/kubeconfig
-          export TEST_ENV_STEP1="this was set in previous step"
-
       - name: Provision Gardener cluster
         env:
+          GARDENER_CLUSTER_VERSION: "1.26.9"
           CLUSTER_PREFIX: "ghem-"
-          GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
           GARDENER_REGION: "eu-west-1"
           GARDENER_ZONES: "eu-west-1a"
           GARDENER_PROJECT_NAME: "kymatunas"
-          GARDENER_CLUSTER_VERSION: "1.26.9"
+          GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
+          MACHINE_TYPE: "c4.xlarge"
+          SCALER_MIN: "1"
+          SCALER_MAX: "2"
+          RETRY_ATTEMPTS: "1"
+          GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
         run: |
+          : # setup Gardener kubeconfig.
+          mkdir -p "${HOME}/.gardener"
+          export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
+          echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_KUBECONFIG}
+          : # generate cluster name and export it to Github env for other steps to access it.
           export CLUSTER_NAME="${CLUSTER_PREFIX}$(openssl rand -hex 2)"
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
-          export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-          echo ${CLUSTER_NAME}
-#          make -C hack/ci/ provision-gardener-cluster
-#          kubectl version
-#          kubectl cluster-info
-#          kubectl get nodes
-#          kubectl get ns
+          : # provision gardener cluster.
+          make -C hack/ci/ provision-gardener-cluster
+          kubectl version
+          kubectl cluster-info
+          kubectl get nodes
+          kubectl get ns
 
       - name: Delete Gardener cluster
         if: ${{ always() }}
@@ -193,5 +193,4 @@ jobs:
           WAIT_FOR_DELETE_COMPLETION: "false"
         run: |
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-          echo ${CLUSTER_NAME}
 #          make -C hack/ci/ deprovision-gardener-cluster

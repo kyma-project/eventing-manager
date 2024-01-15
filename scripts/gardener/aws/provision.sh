@@ -35,30 +35,32 @@ gardener::validate_and_default() {
     )
     utils::check_required_vars "${requiredVars[@]}"
 
+    # validations
+    if [ "${#CLUSTER_NAME}" -gt 9 ]; then
+        log::error "Provided cluster name is too long"
+        return 1
+    fi
+
     # set default values
     if [ -z "$MACHINE_TYPE" ]; then
         export MACHINE_TYPE="m5.xlarge"
     fi
 
     if [ -z "$SCALER_MIN" ]; then
-        export SCALER_MIN=1
+        export SCALER_MIN="1"
     fi
 
     if [ -z "$SCALER_MAX" ]; then
-        export SCALER_MAX=2
+        export SCALER_MAX="2"
     fi
 
     if [ -z "$RETRY_ATTEMPTS" ]; then
-        export RETRY_ATTEMPTS=1
+        export RETRY_ATTEMPTS="1"
     fi
 }
 
 gardener::provision_cluster() {
     log::info "Provision cluster: \"${CLUSTER_NAME}\""
-    if [ "${#CLUSTER_NAME}" -gt 9 ]; then
-        log::error "Provided cluster name is too long"
-        return 1
-    fi
 
     # decreasing attempts to 2 because we will try to create new cluster from scratch on exit code other than 0
     ${KYMA_CLI} provision gardener aws \
