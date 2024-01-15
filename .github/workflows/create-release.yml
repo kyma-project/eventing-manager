@@ -7,6 +7,8 @@ jobs:
   verify-release:
     name: Verify release
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.gen-version.outputs.VERSION }}
 
     steps:
       - name: Checkout code
@@ -15,13 +17,16 @@ jobs:
           fetch-depth: 0
 
       - name: Generate version number
-        id: version
+        id: gen-version
         run: |
-          GET_VERSION=$(mktemp /tmp/get-version-from-branch.sh)
+          # get script
+          GET_VERSION=$(mktemp /tmp/get-version-from-branch.XXXXX)
           curl -L https://raw.githubusercontent.com/kyma-project/eventing-tools/main/hack/scripts/get-version-from-branch.sh -o "${GET_VERSION}"
           chmod +x "${GET_VERSION}"
-          VERSION="${GET_VERSION}"
-          echo "::set-output name=version::$version"
+          # get version via script
+          VERSION=$("${GET_VERSION}")
+          # push version to output environment file
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Check image Tag
         env:
