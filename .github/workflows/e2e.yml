@@ -171,4 +171,4 @@ jobs:
       eventing-manager-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:latest
       kube-version: "1.26.9"
       cluster-name-prefix: "ghem-"
-      secrets: inherit
+    secrets: inherit
