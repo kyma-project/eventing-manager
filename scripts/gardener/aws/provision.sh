@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
 
+#Usage: To run this script, set the following environment variables and run this script.
+#  CLUSTER_NAME
+#  GARDENER_REGION
+#  GARDENER_ZONES
+#  GARDENER_PROJECT_NAME
+#  GARDENER_PROVIDER_SECRET_NAME
+#  GARDENER_CLUSTER_VERSION
+#  GARDENER_KUBECONFIG - Path to kubeconfig for Gardener.
+#  MACHINE_TYPE - default: "m5.xlarge"
+#  SCALER_MIN - default: 1
+#  SCALER_MAX - default: 2
+#  RETRY_ATTEMPTS - default: 1
+
 #Permissions: In order to run this script you need to use a service account with permissions equivalent to the following GCP roles:
 # - Compute Admin
 # - Service Account User
@@ -12,6 +25,7 @@ source "${PROJECT_ROOT}/scripts/utils/utils.sh"
 
 gardener::validate_and_default() {
     requiredVars=(
+        CLUSTER_NAME
         GARDENER_REGION
         GARDENER_ZONES
         GARDENER_KUBECONFIG
@@ -24,6 +38,18 @@ gardener::validate_and_default() {
     # set default values
     if [ -z "$MACHINE_TYPE" ]; then
         export MACHINE_TYPE="m5.xlarge"
+    fi
+
+    if [ -z "$SCALER_MIN" ]; then
+        export SCALER_MIN=1
+    fi
+
+    if [ -z "$SCALER_MAX" ]; then
+        export SCALER_MAX=2
+    fi
+
+    if [ -z "$RETRY_ATTEMPTS" ]; then
+        export RETRY_ATTEMPTS=1
     fi
 }
 
@@ -43,10 +69,10 @@ gardener::provision_cluster() {
       --region "${GARDENER_REGION}" \
       --zones "${GARDENER_ZONES}" \
       --type "${MACHINE_TYPE}" \
-      --scaler-max 4 \
-      --scaler-min 2 \
+      --scaler-max ${SCALER_MIN} \
+      --scaler-min ${SCALER_MAX} \
       --kube-version="${GARDENER_CLUSTER_VERSION}" \
-      --attempts 1 \
+      --attempts ${RETRY_ATTEMPTS} \
       --verbose \
       --hibernation-start ""
 }

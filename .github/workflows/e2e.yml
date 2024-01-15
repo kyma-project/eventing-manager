@@ -168,30 +168,29 @@ jobs:
 
       - name: Provision Gardener cluster
         env:
-          CLUSTER_NAME: "fzn-g2"
+          CLUSTER_PREFIX: "ghem-"
           GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
           GARDENER_REGION: "eu-west-1"
           GARDENER_ZONES: "eu-west-1a"
           GARDENER_PROJECT_NAME: "kymatunas"
           GARDENER_CLUSTER_VERSION: "1.26.9"
         run: |
+          echo "CLUSTER_NAME=${CLUSTER_PREFIX}$(openssl rand -hex 2)" >> $GITHUB_ENV
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-          echo ${TEST_ENV_STEP1}
-          make -C hack/ci/ provision-gardener-cluster
-          kubectl version
-          kubectl cluster-info
-          kubectl get nodes
-          kubectl get ns
-          kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-manager.yaml
-          kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-default-cr.yaml
+          echo ${CLUSTER_NAME}
+#          make -C hack/ci/ provision-gardener-cluster
+#          kubectl version
+#          kubectl cluster-info
+#          kubectl get nodes
+#          kubectl get ns
 
       - name: Delete Gardener cluster
         if: ${{ always() }}
         env:
-          CLUSTER_NAME: "fzn-g2"
           GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
           GARDENER_PROJECT_NAME: "kymatunas"
           WAIT_FOR_DELETE_COMPLETION: "false"
         run: |
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-          make -C hack/ci/ deprovision-gardener-cluster
+          echo ${CLUSTER_NAME}
+#          make -C hack/ci/ deprovision-gardener-cluster
