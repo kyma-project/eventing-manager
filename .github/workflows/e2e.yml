@@ -294,4 +294,4 @@ jobs:
           WAIT_FOR_DELETE_COMPLETION: "false"
         run: |
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-          make -C hack/ci/ deprovision-gardener-cluster
+#          make -C hack/ci/ deprovision-gardener-cluster
