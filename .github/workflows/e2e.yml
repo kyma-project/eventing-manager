@@ -175,7 +175,8 @@ jobs:
           GARDENER_PROJECT_NAME: "kymatunas"
           GARDENER_CLUSTER_VERSION: "1.26.9"
         run: |
-          echo "CLUSTER_NAME=${CLUSTER_PREFIX}$(openssl rand -hex 2)" >> $GITHUB_ENV
+          export CLUSTER_NAME="${CLUSTER_PREFIX}$(openssl rand -hex 2)"
+          echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
           echo ${CLUSTER_NAME}
 #          make -C hack/ci/ provision-gardener-cluster
