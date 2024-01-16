@@ -25,37 +25,21 @@ if [[ -z "${COMMIT_STATUS_JSON}" ]]; then
   exit 1
 fi
 
-if [[ -z "${BUILD_JOB_NAME}" ]]; then
-  echo "ERROR: BUILD_JOB_NAME is not set!"
-  exit 1
-fi
+## download the html of prow page.
+curl -s -L -o prow-html.html $(echo ${COMMIT_STATUS_JSON} | jq -r '.target_url')
 
-# set links for artifacts of pull requests.
-ARTIFACTS_BASE_URL="https://gcsweb.build.kyma-project.io/gcs/kyma-prow-logs/pr-logs/pull/kyma-project_eventing-manager"
-TEMPLATE_FILE_BASE_URL="${ARTIFACTS_BASE_URL}/${PR_NUMBER}/${BUILD_JOB_NAME}"
-# if PR_NUMBER is not set, then set links for artifacts of main branch.
-if [[ -z "${PR_NUMBER}" ]]; then
-  ARTIFACTS_BASE_URL="https://gcsweb.build.kyma-project.io/gcs/kyma-prow-logs/logs/${BUILD_JOB_NAME}"
-  TEMPLATE_FILE_BASE_URL="${ARTIFACTS_BASE_URL}"
-fi
+## define the log file url.
+LOGS_FILE_URL="$(cat prow-html.html | grep ">Artifacts</a>" | awk -F'"' '{print $2}')/build-log.txt"
 
-## Extract the prow job ID.
-echo "Extracting prow job Id from: ${COMMIT_STATUS_JSON}"
-TARGET_URL=$(echo ${COMMIT_STATUS_JSON} | jq -r '.target_url')
-PROW_JOB_ID=$(echo ${TARGET_URL##*/})
-echo "Prow Job ID: ${PROW_JOB_ID}, Link: ${TARGET_URL}"
-
-## Download the build logs.
-LOGS_FILE_NAME="${BUILD_JOB_NAME}-logs.txt"
-LOGS_FILE_URL="${TEMPLATE_FILE_BASE_URL}/${PROW_JOB_ID}/build-log.txt"
+### Download the build logs.
 echo "Downloading build logs from: ${LOGS_FILE_URL}"
-curl -s -L -o ${LOGS_FILE_NAME}  ${LOGS_FILE_URL}
+curl -s -L -o build-log.txt  ${LOGS_FILE_URL}
 
 ## extract the image name from build logs.
 export IMAGE_NAME=$(cat ${LOGS_FILE_NAME} | grep "Successfully built image:" | awk -F " " '{print $NF}')
 
 ## validate if image exists
-echo "Validate that image: ${IMAGE_NAME} exists!"
+echo "Validate that image: ${IMAGE_NAME} exists.."
 docker pull ${IMAGE_NAME}
 
 echo ${IMAGE_NAME} > image.name

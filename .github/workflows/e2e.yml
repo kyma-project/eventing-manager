@@ -66,8 +66,6 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           COMMIT_STATUS_JSON: "${{ steps.pull-wait-build.outputs.json }}"
-          BUILD_JOB_NAME: "pull-eventing-manager-build"
-          PR_NUMBER: "${{ github.event.number }}"
         run: |
           ./scripts/extract_image_from_build_logs.sh
           export IMAGE_NAME="$(cat image.name)"
