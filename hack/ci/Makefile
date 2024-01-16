@@ -72,8 +72,8 @@ enable-nats-module:
 get-nats-via-lifecycle-manager: install-lifecycle-manager install-latest-nats-module-template-fast enable-nats-module
 	./check-k8s-resource-is-ready.sh 180 nats kyma-system
 
-.PHONY: install-nats-module
-install-nats-module:
+.PHONY: install-nats-manager
+install-nats-manager:
 	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-manager.yaml
 	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-default-cr.yaml
 
