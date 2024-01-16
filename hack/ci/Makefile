@@ -11,8 +11,8 @@ create-kyma-system-ns: ## Create kyma-system namespace.
 create-k3d: ## Create k3d with kyma CRDs.
 	"${KYMA_CLI}" provision k3d -p 8081:80@loadbalancer -p 8443:443@loadbalancer --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
 
-.PHONY: install-nats-manager
-install-nats-manager:
+.PHONY: install-nats-module
+install-nats-module:
 	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-manager.yaml
 	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-default-cr.yaml
 
