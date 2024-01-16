@@ -2,8 +2,6 @@
 
 ## This script requires the following env variables:
 # COMMIT_STATUS_JSON (required, json)
-# BUILD_JOB_NAME (required, string)
-# PR_NUMBER (optional, int, If not set then will run for main branch. e.g. 82)
 
 # Example of `COMMIT_STATUS_JSON`
 # {
@@ -18,6 +16,12 @@
 # "created_at": "2023-07-18T11:39:23Z",
 # "updated_at": "2023-07-18T11:39:23Z"
 # }
+
+# standard bash error handling
+set -o nounset  # treat unset variables as an error and exit immediately.
+set -o errexit  # exit immediately when a command fails.
+set -E          # needs to be set if we want the ERR trap
+set -o pipefail # prevents errors in a pipeline from being masked
 
 ## check if required ENVs are provided.
 if [[ -z "${COMMIT_STATUS_JSON}" ]]; then
