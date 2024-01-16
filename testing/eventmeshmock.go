@@ -29,6 +29,9 @@ import (
 const (
 	TokenURLPath     = "/auth"
 	MessagingURLPath = "/messaging"
+
+	fewAttempts   = 2
+	smallInterval = 3
 )
 
 // EventMeshMock implements a programmable mock for EventMesh.
@@ -210,9 +213,8 @@ func (m *EventMeshMock) handleMessaging() func(w http.ResponseWriter, r *http.Re
 				if err == nil {
 					break
 				}
-				attempts, duration := 2, 3
-				if i < attempts { // Don't sleep after the last attempt.
-					time.Sleep(time.Duration(duration) * time.Second)
+				if i < fewAttempts { // Don't sleep after the last attempt.
+					time.Sleep(time.Duration(smallInterval) * time.Second)
 				} else {
 					m.log.Error(err, "failed to update state response")
 					w.WriteHeader(http.StatusBadRequest)
