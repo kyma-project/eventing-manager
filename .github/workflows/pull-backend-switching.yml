@@ -1,0 +1,19 @@
+name: pull-backend-switching
+
+# Reference: https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+on:
+  workflow_run:
+    workflows: ["e2e-without-lifecycle-manager"]
+    types:
+      - completed
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: 'hello'
+        run: |
+          echo "hello world"
