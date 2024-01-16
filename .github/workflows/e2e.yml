@@ -28,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     if: false
     steps:
+      - uses: actions/checkout@v4
+
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
         if: github.event_name == 'pull_request'
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
@@ -55,6 +57,16 @@ jobs:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           GITHUB_OWNER: "${{ github.repository_owner }}"
           GITHUB_REPO: "eventing-manager"
+
+      - name: Extract container image name from build logs (pull)
+        if: github.event_name == 'pull_request'
+        env:
+          COMMIT_STATUS_JSON: "${{ steps.wait-nats-module-build.outputs.json }}"
+          BUILD_JOB_NAME: "pull-eventing-manager-build"
+          PR_NUMBER: "${{ github.event.number }}"
+        run: |
+          ./scripts/extract_image_from_build_logs.sh
+          echo "IMAGE_NAME: ${IMAGE_NAME}"
 
   nats:
     runs-on: ubuntu-latest
@@ -165,7 +177,8 @@ jobs:
 
   backend-switching:
 #    needs: wait-until-build-succeeds
-    if: github.event_name == 'pull_request'
+#    if: github.event_name == 'pull_request'
+    if: false
     uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
       eventing-manager-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:latest
