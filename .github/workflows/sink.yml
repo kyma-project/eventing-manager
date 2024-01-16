@@ -27,7 +27,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: false
     permissions: write-all
 
     defaults:

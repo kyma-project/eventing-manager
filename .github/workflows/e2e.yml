@@ -3,7 +3,6 @@ name: e2e-without-lifecycle-manager
 env:
   KYMA_STABILITY: "unstable"
   KYMA: "./hack/kyma"
-  MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
 
 on:
   push:
@@ -27,7 +26,7 @@ jobs:
   wait-until-build-succeeds:
     runs-on: ubuntu-latest
     outputs:
-      image-name: ${{ steps.pull-extract-image.outputs.image_name }}
+      image-name: ${{ steps.extract-image.outputs.image_name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -62,7 +61,7 @@ jobs:
           GITHUB_REPO: "eventing-manager"
 
       - name: Extract container image name from build logs (pull)
-        id: pull-extract-image
+        id: extract-image
         env:
           # Refernce: https://docs.github.com/en/actions/learn-github-actions/expressions#example
           COMMIT_STATUS_JSON: "${{ github.event_name == 'push' && steps.push-wait-build.outputs.json || steps.pull-wait-build.outputs.json }}"
@@ -75,8 +74,9 @@ jobs:
 
   nats:
     runs-on: ubuntu-latest
-    if: false
     needs: wait-until-build-succeeds
+    env:
+      MANAGER_IMAGE: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -141,8 +141,9 @@ jobs:
 
   PeerAuthentication:
     runs-on: ubuntu-latest
-    if: false
     needs: wait-until-build-succeeds
+    env:
+      MANAGER_IMAGE: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -182,11 +183,10 @@ jobs:
 
   backend-switching:
     needs: wait-until-build-succeeds
-    if: false
-#    if: github.event_name == 'pull_request'
+    if: github.event_name == 'push'
     uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
-      eventing-manager-image: ${{needs.wait-until-build-succeeds.outputs.image-name}}
+      eventing-manager-image: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
       kube-version: "1.26.9"
       cluster-name-prefix: "ghem-"
     secrets: inherit
