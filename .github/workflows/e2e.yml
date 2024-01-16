@@ -3,13 +3,20 @@ name: e2e-without-lifecycle-manager
 env:
   KYMA_STABILITY: "unstable"
   KYMA: "./hack/kyma"
-  MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
 
 on:
+  push:
+    branches:
+      - main
+      - "release-**"
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - "sec-scanners-config.yaml"
   pull_request:
     branches:
       - main
-      - "release-*"
+      - "release-**"
     paths-ignore:
       - "docs/**"
       - "**.md"
@@ -18,8 +25,14 @@ on:
 jobs:
   wait-until-build-succeeds:
     runs-on: ubuntu-latest
+    outputs:
+      image-name: ${{ steps.extract-image.outputs.image_name }}
     steps:
+      - uses: actions/checkout@v4
+
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
+        id: pull-wait-build
+        if: github.event_name == 'pull_request'
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
           context: "pull-eventing-manager-build"
@@ -32,9 +45,38 @@ jobs:
           GITHUB_OWNER: "${{ github.repository_owner }}"
           GITHUB_REPO: "eventing-manager"
 
+      - name: Wait for the 'post-eventing-manager-build' job to succeed
+        id: push-wait-build
+        if: github.event_name == 'push'
+        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
+        with:
+          context: "post-eventing-manager-build"
+          commit_ref: "${{ github.sha }}"
+          timeout: 600000 # 10 minutes in milliseconds
+          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
+          check_interval: 60000 # 1 minute in milliseconds
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_OWNER: "${{ github.repository_owner }}"
+          GITHUB_REPO: "eventing-manager"
+
+      - name: Extract container image name from build logs (pull)
+        id: extract-image
+        env:
+          # Refernce: https://docs.github.com/en/actions/learn-github-actions/expressions#example
+          COMMIT_STATUS_JSON: "${{ github.event_name == 'push' && steps.push-wait-build.outputs.json || steps.pull-wait-build.outputs.json }}"
+        run: |
+          ./scripts/extract_image_from_build_logs.sh
+          # export value to job output
+          export IMAGE_NAME="$(cat image.name)"
+          echo "IMAGE_NAME: ${IMAGE_NAME}"
+          echo "image_name=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+
   nats:
     runs-on: ubuntu-latest
     needs: wait-until-build-succeeds
+    env:
+      MANAGER_IMAGE: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -100,6 +142,8 @@ jobs:
   PeerAuthentication:
     runs-on: ubuntu-latest
     needs: wait-until-build-succeeds
+    env:
+      MANAGER_IMAGE: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -136,3 +180,13 @@ jobs:
         if: failure()
         run: |
           kubectl get peerauthentications.security.istio.io -A -o yaml
+
+  backend-switching:
+    needs: wait-until-build-succeeds
+    if: github.event_name == 'push'
+    uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
+    with:
+      eventing-manager-image: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
+      kube-version: "1.26.9"
+      cluster-name-prefix: "ghem-"
+    secrets: inherit
