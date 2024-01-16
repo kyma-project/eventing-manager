@@ -66,6 +66,7 @@ jobs:
           PR_NUMBER: "${{ github.event.number }}"
         run: |
           ./scripts/extract_image_from_build_logs.sh
+          export IMAGE_NAME="$(cat image.name)"
           echo "IMAGE_NAME: ${IMAGE_NAME}"
 
   nats:

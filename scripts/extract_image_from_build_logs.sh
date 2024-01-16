@@ -53,3 +53,5 @@ curl -s -L -o ${LOGS_FILE_NAME}  ${LOGS_FILE_URL}
 
 ## extract the image name from build logs.
 export IMAGE_NAME=$(cat ${LOGS_FILE_NAME} | grep "Successfully built image:" | awk -F " " '{print $NF}')
+echo "IMAGE_NAME: ${IMAGE_NAME}"
+echo ${IMAGE_NAME} > image.name
