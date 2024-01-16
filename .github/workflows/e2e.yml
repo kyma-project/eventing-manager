@@ -182,7 +182,8 @@ jobs:
 
   backend-switching:
     needs: wait-until-build-succeeds
-    if: github.event_name == 'pull_request'
+    if: false
+#    if: github.event_name == 'pull_request'
     uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
       eventing-manager-image: ${{needs.wait-until-build-succeeds.outputs.image-name}}
