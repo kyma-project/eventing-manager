@@ -36,10 +36,17 @@ echo "Downloading build logs from: ${LOGS_FILE_URL}"
 curl -s -L -o build-log.txt  ${LOGS_FILE_URL}
 
 ## extract the image name from build logs.
-export IMAGE_NAME=$(cat ${LOGS_FILE_NAME} | grep "Successfully built image:" | awk -F " " '{print $NF}')
+export IMAGE_NAME=$(cat build-log1.txt | grep "Successfully built image:" | awk -F " " '{print $NF}')
 
 ## validate if image exists
 echo "Validate that image: ${IMAGE_NAME} exists.."
 docker pull ${IMAGE_NAME}
+if [ $? -eq 0 ]
+then
+  echo "Image exists!"
+else
+  echo "Failed to validate image"
+  exit 1
+fi
 
 echo ${IMAGE_NAME} > image.name
