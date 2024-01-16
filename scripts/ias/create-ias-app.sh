@@ -1,20 +1,23 @@
 #!/usr/bin/env bash
 
+# This script will create an IAS application and will also create a secret in the Kubernetes cluster
+# with name: `eventing-webhook-auth` in namespace `kyma-system`.
+#
+# Usage: To run this script, set the following environment variables and run this script.
+# - TEST_EVENTING_AUTH_IAS_PASSWORD
+# - TEST_EVENTING_AUTH_IAS_USER
+# - TEST_EVENTING_AUTH_IAS_URL
+
 source "${PROJECT_ROOT}/scripts/utils/utils.sh"
 
 ias::validate_and_default() {
+    # validations
     requiredVars=(
         TEST_EVENTING_AUTH_IAS_PASSWORD
         TEST_EVENTING_AUTH_IAS_USER
         TEST_EVENTING_AUTH_IAS_URL
     )
     utils::check_required_vars "${requiredVars[@]}"
-
-    # validations
-    if [ "${#CLUSTER_NAME}" -gt 9 ]; then
-        log::error "Provided cluster name is too long"
-        return 1
-    fi
 
     # set default values
     if [[ ! -n ${DISPLAY_NAME} ]]; then

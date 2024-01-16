@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 
+# This script will delete the provided IAS application.
+#
+# Usage: To run this script, set the following environment variables and run this script.
+# - TEST_EVENTING_AUTH_IAS_PASSWORD
+# - TEST_EVENTING_AUTH_IAS_USER
+# - TEST_EVENTING_AUTH_IAS_URL
+# - IAS_APPLICATION_LOCATION
+
 source "${PROJECT_ROOT}/scripts/utils/utils.sh"
 
 ias::validate_and_default() {
+    # validations
     requiredVars=(
         TEST_EVENTING_AUTH_IAS_PASSWORD
         TEST_EVENTING_AUTH_IAS_USER
@@ -10,19 +19,6 @@ ias::validate_and_default() {
         IAS_APPLICATION_LOCATION
     )
     utils::check_required_vars "${requiredVars[@]}"
-
-    # validations
-    if [ "${#CLUSTER_NAME}" -gt 9 ]; then
-        log::error "Provided cluster name is too long"
-        return 1
-    fi
-
-    # set default values
-    if [[ ! -n ${DISPLAY_NAME} ]]; then
-        DATE=$(date +'-%d-%m-%Y-%T')
-        DISPLAY_NAME="${USER}""${DATE}"
-        echo "INFO: no display name given, using the default display name: $DISPLAY_NAME"
-    fi
 }
 
 ias::delete-ias-app() {
