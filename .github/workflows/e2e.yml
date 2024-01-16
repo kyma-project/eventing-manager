@@ -26,11 +26,13 @@ on:
 jobs:
   wait-until-build-succeeds:
     runs-on: ubuntu-latest
+    outputs:
+      image-name: ${{ steps.pull-extract-image.outputs.image_name }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
-        id: pr-wait-build
+        id: pull-wait-build
         if: github.event_name == 'pull_request'
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
@@ -45,6 +47,7 @@ jobs:
           GITHUB_REPO: "eventing-manager"
 
       - name: Wait for the 'post-eventing-manager-build' job to succeed
+        id: push-wait-build
         if: github.event_name == 'push'
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
@@ -59,16 +62,18 @@ jobs:
           GITHUB_REPO: "eventing-manager"
 
       - name: Extract container image name from build logs (pull)
+        id: pull-extract-image
         if: github.event_name == 'pull_request'
         env:
-          COMMIT_STATUS_JSON: "${{ steps.pr-wait-build.outputs.json }}"
+          COMMIT_STATUS_JSON: "${{ steps.pull-wait-build.outputs.json }}"
           BUILD_JOB_NAME: "pull-eventing-manager-build"
           PR_NUMBER: "${{ github.event.number }}"
         run: |
           ./scripts/extract_image_from_build_logs.sh
+          export IMAGE_NAME="$(cat image.name)"
           echo "IMAGE_NAME: ${IMAGE_NAME}"
-          echo "Validate that the image exists:"
-          docker pull ${IMAGE_NAME}
+          : ### export value to job output
+          echo "image_name=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
 
   nats:
     runs-on: ubuntu-latest
@@ -178,12 +183,11 @@ jobs:
           kubectl get peerauthentications.security.istio.io -A -o yaml
 
   backend-switching:
-#    needs: wait-until-build-succeeds
-#    if: github.event_name == 'pull_request'
-    if: false
+    needs: wait-until-build-succeeds
+    if: github.event_name == 'pull_request'
     uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
-      eventing-manager-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:latest
+      eventing-manager-image: ${{needs.wait-until-build-succeeds.outputs.image-name}}
       kube-version: "1.26.9"
       cluster-name-prefix: "ghem-"
     secrets: inherit

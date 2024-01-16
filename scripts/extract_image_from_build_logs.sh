@@ -19,6 +19,11 @@
 # "updated_at": "2023-07-18T11:39:23Z"
 # }
 
+COMMIT_STATUS_JSON=${PULL_COMMIT_STATUS_JSON}
+if [[ -z "${PR_NUMBER}" ]]; then
+  COMMIT_STATUS_JSON=${PUSH_COMMIT_STATUS_JSON}
+fi
+
 ## check if required ENVs are provided.
 if [[ -z "${COMMIT_STATUS_JSON}" ]]; then
   echo "ERROR: COMMIT_STATUS_JSON is not set!"
@@ -53,5 +58,9 @@ curl -s -L -o ${LOGS_FILE_NAME}  ${LOGS_FILE_URL}
 
 ## extract the image name from build logs.
 export IMAGE_NAME=$(cat ${LOGS_FILE_NAME} | grep "Successfully built image:" | awk -F " " '{print $NF}')
-echo "IMAGE_NAME: ${IMAGE_NAME}"
-echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+
+## validate if image exists
+echo "Validate that image: ${IMAGE_NAME} exists!"
+docker pull ${IMAGE_NAME}
+
+echo ${IMAGE_NAME} > image.name
