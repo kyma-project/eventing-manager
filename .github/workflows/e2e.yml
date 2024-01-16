@@ -92,7 +92,6 @@ jobs:
         run: |
           make -C hack/ci/ install-k3d-tools
 
-
       - name: Install Kyma CLI & setup k3d cluster using kyma CLI
         run: |
           make kyma
