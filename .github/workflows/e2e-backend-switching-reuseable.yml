@@ -53,14 +53,14 @@ jobs:
           RETRY_ATTEMPTS: "2"
           GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
         run: |
-          : ### setup Gardener kubeconfig.
+          # setup Gardener kubeconfig.
           mkdir -p "${HOME}/.gardener"
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
           echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_KUBECONFIG}
-          : ### generate cluster name and export it to Github env for cleanup step to access it.
+          # generate cluster name and export it to Github env for cleanup step to access it.
           export CLUSTER_NAME="${CLUSTER_PREFIX}$(openssl rand -hex 2)"
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
-          : ### provision gardener cluster.
+          # provision gardener cluster.
           make -C hack/ci/ provision-gardener-cluster
           kubectl version
           kubectl cluster-info
@@ -130,9 +130,9 @@ jobs:
         env:
           BACKEND_TYPE: "EventMesh"
         run: |
-          : # wait for subscriptions to be ready.
+          # wait for subscriptions to be ready.
           make e2e-eventing-setup
-          : # run tests.
+          # run tests.
           make e2e-eventing
 
       - name: Switch back to NATS backend
@@ -142,9 +142,9 @@ jobs:
 
       - name: Test eventing again with NATS
         run: |
-          : # wait for subscriptions to be ready.
+          # wait for subscriptions to be ready.
           make e2e-eventing-setup
-          : # run tests.
+          # run tests.
           make e2e-eventing
 
       - name: Test eventing cleanup

@@ -67,7 +67,7 @@ jobs:
           COMMIT_STATUS_JSON: "${{ github.event_name == 'push' && steps.push-wait-build.outputs.json || steps.pull-wait-build.outputs.json }}"
         run: |
           ./scripts/extract_image_from_build_logs.sh
-          : ### export value to job output
+          # export value to job output
           export IMAGE_NAME="$(cat image.name)"
           echo "IMAGE_NAME: ${IMAGE_NAME}"
           echo "image_name=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
