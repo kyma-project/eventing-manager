@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#Usage: To run this script, set the following environment variables and run this script.
+# Usage: To run this script, set the following environment variables and run this script.
 #  CLUSTER_NAME
 #  GARDENER_REGION
 #  GARDENER_ZONES
@@ -13,7 +13,7 @@
 #  SCALER_MAX - default: 2
 #  RETRY_ATTEMPTS - default: 1
 
-#Permissions: In order to run this script you need to use a service account with permissions equivalent to the following GCP roles:
+# Permissions: In order to run this script you need to use a service account with permissions equivalent to the following GCP roles:
 # - Compute Admin
 # - Service Account User
 # - Service Account Admin

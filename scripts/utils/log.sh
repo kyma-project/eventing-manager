@@ -6,7 +6,6 @@ function log::date {
 }
 
 # log::dump_trace prints stacktrace when an error occurs.
-#
 log::dump_trace() {
     local frame=1 line func source n=0
     while caller "$frame"; do
