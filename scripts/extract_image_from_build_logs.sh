@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## This script requires the following env variables:
+# Usage: To run this script, set the following environment variables and run this script.
 # COMMIT_STATUS_JSON (required, json)
 
 # Example of `COMMIT_STATUS_JSON`
