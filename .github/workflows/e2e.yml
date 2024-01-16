@@ -26,7 +26,6 @@ on:
 jobs:
   wait-until-build-succeeds:
     runs-on: ubuntu-latest
-    if: false
     steps:
       - uses: actions/checkout@v4
 
