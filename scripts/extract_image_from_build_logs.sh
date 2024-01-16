@@ -19,11 +19,6 @@
 # "updated_at": "2023-07-18T11:39:23Z"
 # }
 
-COMMIT_STATUS_JSON=${PULL_COMMIT_STATUS_JSON}
-if [[ -z "${PR_NUMBER}" ]]; then
-  COMMIT_STATUS_JSON=${PUSH_COMMIT_STATUS_JSON}
-fi
-
 ## check if required ENVs are provided.
 if [[ -z "${COMMIT_STATUS_JSON}" ]]; then
   echo "ERROR: COMMIT_STATUS_JSON is not set!"
