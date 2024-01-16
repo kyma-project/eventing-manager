@@ -31,7 +31,7 @@ if [[ -z "${BUILD_JOB_NAME}" ]]; then
 fi
 
 # set links for artifacts of pull requests.
-ARTIFACTS_BASE_URL="https://gcsweb.build.kyma-project.io/gcs/kyma-prow-logs/pr-logs/pull/${BUILD_JOB_NAME}"
+ARTIFACTS_BASE_URL="https://gcsweb.build.kyma-project.io/gcs/kyma-prow-logs/pr-logs/pull/kyma-project_eventing-manager"
 TEMPLATE_FILE_BASE_URL="${ARTIFACTS_BASE_URL}/${PR_NUMBER}/${BUILD_JOB_NAME}"
 # if PR_NUMBER is not set, then set links for artifacts of main branch.
 if [[ -z "${PR_NUMBER}" ]]; then
