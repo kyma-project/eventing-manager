@@ -210,10 +210,9 @@ func (m *EventMeshMock) handleMessaging() func(w http.ResponseWriter, r *http.Re
 				if err == nil {
 					break
 				}
-				two := 2
-				three := 3
-				if i < two { // Don't sleep after the last attempt
-					time.Sleep(time.Duration(three) * time.Second)
+				attempts, duration := 2, 3
+				if i < attempts { // Don't sleep after the last attempt.
+					time.Sleep(time.Duration(duration) * time.Second)
 				} else {
 					m.log.Error(err, "failed to update state response")
 					w.WriteHeader(http.StatusBadRequest)
