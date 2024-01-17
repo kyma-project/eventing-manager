@@ -177,6 +177,11 @@ jobs:
         run: |
           kubectl get apigateways.operator.kyma-project.io -n kyma-system -o yaml
 
+      - name: Cleanup modules
+        if: ${{ always() }}
+        run: |
+          ./scripts/cleanup_modules.sh
+
       - name: Delete IAS application
         if: ${{ always() }}
         env:

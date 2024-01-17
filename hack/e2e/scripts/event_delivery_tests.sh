@@ -12,10 +12,19 @@ PID2=$!
 # This will kill all the port-forwarding. We need this to be in a function so we can even call it, if our tests fails
 # since `set -e` would stop the script in case of an failing test.
 function kill_port_forward() {
+  # save exit code of callee.
+  EXIT_CODE=$(echo $?)
+
+  # ignore if fails to kill port-forward ports,
+  set +o errexit  # continue when a command fails.
   echo "Killing the port-forwarding for port: 38081"
   kill ${PID1}
   echo "Killing the port-forwarding for port: 38071"
   kill ${PID2}
+  set -o errexit  # exit immediately when a command fails.
+
+  # exit with exit code of callee
+  exit ${EXIT_CODE}
 }
 # This kills the port-forwards even if the test fails.
 trap kill_port_forward ERR
