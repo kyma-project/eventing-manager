@@ -1,7 +1,8 @@
 name: pull-e2e-upgrade-test
 
 env:
-  DOCKER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
+  DOCKER_IMAGE_LATEST_MAIN: europe-docker.pkg.dev/kyma-project/prod/eventing-manager:latest
+  DOCKER_IMAGE_PR: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
   E2E_LOG_LEVEL: debug
   KYMA_STABILITY: "unstable"
   KYMA: "./hack/kyma"
@@ -18,7 +19,6 @@ jobs:
   e2e-upgrade: # This job tests the upgrade of Eventing module from latest image of the main branch to the current commit.
     runs-on: ubuntu-latest
     env:
-      MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
       BACKEND_TYPE: NATS
     steps:
       - name: Checkout
@@ -54,10 +54,11 @@ jobs:
 
       - name: Install latest Eventing manager from main branch
         run: |
-          make deploy IMG=europe-docker.pkg.dev/kyma-project/prod/eventing-manager:latest
+          make deploy IMG=${DOCKER_IMAGE_LATEST_MAIN}
 
       - name: Setup & test Eventing CR
         run: |
+          export MANAGER_IMAGE=${DOCKER_IMAGE_LATEST_MAIN}
           make e2e-setup
 
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
@@ -75,11 +76,13 @@ jobs:
 
       - name: Install the new Eventing manager from current commit
         run: |
-          make deploy IMG=${DOCKER_IMAGE}
+          make deploy IMG=${DOCKER_IMAGE_PR}
 
       - name: Wait for new changes to be reflected and create test resources
         # Waits for eventing-manager image to be updated and Eventing CR readiness.
+        # Creates Subscription CRs for testing too.
         run: |
+          export MANAGER_IMAGE=${DOCKER_IMAGE_PR}
           make e2e-setup
           make e2e-eventing-setup
             
