@@ -1,11 +1,5 @@
 name: e2e-on-k8s
 
-env:
-  KYMA_STABILITY: "unstable"
-  KYMA: "./hack/kyma"
-  MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
-  K8S_VERSION: "1.26.9"
-
 on:
   pull_request:
     branches:
@@ -19,12 +13,9 @@ on:
 jobs:
   wait-until-build-succeeds:
     runs-on: ubuntu-latest
-    outputs:
-      image-name: ${{ steps.extract-image.outputs.image_name }}
     steps:
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
         id: pull-wait-build
-        if: github.event_name == 'pull_request'
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
           context: "pull-eventing-manager-build"
@@ -41,7 +32,6 @@ jobs:
     needs: wait-until-build-succeeds
     uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
-      eventing-manager-image: ${{ env.KYMA_STABILITY }}
-      kube-version: ${{ env.K8S_VERSION }}
+      eventing-manager-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
       cluster-name-prefix: "ghem-"
     secrets: inherit
