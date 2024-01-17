@@ -5,7 +5,7 @@
 #  GARDENER_REGION - (required)
 #  GARDENER_ZONES - (required)
 #  GARDENER_PROJECT_NAME - (required)
-#  GARDENER_PROJECT_NAME - (required)
+#  GARDENER_PROVIDER_SECRET_NAME - (required)
 #  GARDENER_KUBECONFIG - (required, description: Path to kubeconfig for Gardener.)
 #  MACHINE_TYPE - (optional, default: "m5.xlarge")
 #  SCALER_MIN - (optional, default: 1)
