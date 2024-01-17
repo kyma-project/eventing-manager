@@ -12,6 +12,7 @@ on:
 
 jobs:
   wait-until-build-succeeds:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
