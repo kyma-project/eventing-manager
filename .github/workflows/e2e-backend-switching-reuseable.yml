@@ -9,7 +9,7 @@ on:
         type: string
       kube-version:
         description: Kubernetes version for the Gardener cluster.
-        required: true
+        required: false
         type: string
       cluster-name-prefix:
         description: Prefix to use as prefix for name of Gardener cluster.

@@ -1,4 +1,4 @@
-name: e2e-without-lifecycle-manager
+name: e2e
 
 env:
   KYMA_STABILITY: "unstable"
@@ -186,6 +186,5 @@ jobs:
     uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
       eventing-manager-image: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
-      kube-version: "1.26.9"
       cluster-name-prefix: "ghem-"
     secrets: inherit
