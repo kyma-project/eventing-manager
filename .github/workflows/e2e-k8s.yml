@@ -4,34 +4,44 @@ env:
   KYMA_STABILITY: "unstable"
   KYMA: "./hack/kyma"
   MANAGER_IMAGE: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
+  K8S_VERSION: "1.26.9"
 
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - main
-      - "release-*"
+      - "release-**"
     paths-ignore:
       - "docs/**"
       - "**.md"
       - "sec-scanners-config.yaml"
 
 jobs:
-  backend-switching:
+  wait-until-build-succeeds:
     runs-on: ubuntu-latest
-
+    outputs:
+      image-name: ${{ steps.extract-image.outputs.image_name }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache Binaries
-        id: cache-binaries
-        uses: actions/cache@v3
+      - name: Wait for the 'pull-eventing-manager-build' job to succeed
+        id: pull-wait-build
+        if: github.event_name == 'pull_request'
+        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
-          path: bin
-          key: ${{ runner.os }}-bin
-
-      - name: Install Kyma CLI
+          context: "pull-eventing-manager-build"
+          commit_ref: "${{ github.event.pull_request.head.sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
+          timeout: 600000 # 10 minutes in milliseconds
+          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
+          check_interval: 60000 # 1 minute in milliseconds
         env:
-          TUNAS_TEST_1: ${{ secrets.TUNAS_TEST_1 }}
-        run: |
-          echo ${TUNAS_TEST_1} > hello.txt
-          cat hello.txt
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_OWNER: "${{ github.repository_owner }}"
+          GITHUB_REPO: "eventing-manager"
+
+  backend-switching:
+    needs: wait-until-build-succeeds
+    uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
+    with:
+      eventing-manager-image: ${{ env.KYMA_STABILITY }}
+      kube-version: ${{ env.K8S_VERSION }}
+      cluster-name-prefix: "ghem-"
+    secrets: inherit
