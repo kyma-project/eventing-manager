@@ -83,7 +83,7 @@ jobs:
 
       - name: Cache Binaries
         id: cache-binaries
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: bin
           key: ${{ runner.os }}-bin
