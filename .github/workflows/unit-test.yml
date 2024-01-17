@@ -24,4 +24,5 @@ on:
 
 jobs:
   unit-test:
+    name: "Run unit tests"
     uses: kyma-project/eventing-tools/.github/workflows/unit-test-reusable.yml@main
