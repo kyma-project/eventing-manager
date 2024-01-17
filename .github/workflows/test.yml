@@ -1,4 +1,4 @@
-name: test
+name: unit-test
 
 env:
   KYMA_STABILITY: "unstable"
@@ -8,7 +8,7 @@ on:
   push:
     branches:
       - main
-      - "release-*"
+      - "release-**"
     paths-ignore:
       - "docs/**"
       - "**.md"
@@ -16,26 +16,12 @@ on:
   pull_request:
     branches:
       - main
-      - "release-*"
+      - "release-**"
     paths-ignore:
       - "docs/**"
       - "**.md"
       - "sec-scanners-config.yaml"
 
 jobs:
-  unit:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.21"
-          cache: false
-      - name: Sync GO dependencies
-        run: |
-          go mod tidy
-          go mod vendor
-      - name: Run tests
-        run: |
-          make test
+  unit-test:
+    uses: kyma-project/eventing-tools/.github/workflows/reusable-unti-test.yml@main
