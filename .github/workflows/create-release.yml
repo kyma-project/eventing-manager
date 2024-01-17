@@ -33,6 +33,10 @@ jobs:
           VERSION: ${{ steps.gen-version.outputs.VERSION }}
         run: ./scripts/check_sec-scanners-config.sh $VERSION
 
+  unit-test:
+    name: "Run unit tests"
+    uses: kyma-project/eventing-tools/.github/workflows/unit-test-reusable.yml@main
+
   create-draft:
     name: Create draft release
     needs: verify-head-status
