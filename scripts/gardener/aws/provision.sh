@@ -11,7 +11,7 @@
 #  SCALER_MIN - default: 1
 #  SCALER_MAX - default: 2
 #  RETRY_ATTEMPTS - default: 1
-#  GARDENER_CLUSTER_VERSION - default as defined in kyma CLI.
+#  GARDENER_CLUSTER_VERSION - default as defined in kyma CLI!.
 
 # Permissions: In order to run this script you need to use a service account with permissions equivalent to the following GCP roles:
 # - Compute Admin
