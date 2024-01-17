@@ -6,12 +6,12 @@
 #  GARDENER_ZONES
 #  GARDENER_PROJECT_NAME
 #  GARDENER_PROVIDER_SECRET_NAME
-#  GARDENER_CLUSTER_VERSION
 #  GARDENER_KUBECONFIG - Path to kubeconfig for Gardener.
 #  MACHINE_TYPE - default: "m5.xlarge"
 #  SCALER_MIN - default: 1
 #  SCALER_MAX - default: 2
 #  RETRY_ATTEMPTS - default: 1
+#  GARDENER_CLUSTER_VERSION - default as defined in kyma CLI.
 
 # Permissions: In order to run this script you need to use a service account with permissions equivalent to the following GCP roles:
 # - Compute Admin
@@ -31,7 +31,6 @@ gardener::validate_and_default() {
         GARDENER_KUBECONFIG
         GARDENER_PROJECT_NAME
         GARDENER_PROVIDER_SECRET_NAME
-        GARDENER_CLUSTER_VERSION
     )
     utils::check_required_vars "${requiredVars[@]}"
 
@@ -56,6 +55,12 @@ gardener::validate_and_default() {
 
     if [ -z "$RETRY_ATTEMPTS" ]; then
         export RETRY_ATTEMPTS="1"
+    fi
+
+    if [ -z "$GARDENER_CLUSTER_VERSION" ]; then
+        # grep the default kube-version defined in kyma CLI.
+        export GARDENER_CLUSTER_VERSION="$(${KYMA_CLI} provision gardener aws --help | grep "kube-version string" | awk -F "\"" '{print $2}')"
+        log::info "Using GARDENER_CLUSTER_VERSION=${GARDENER_CLUSTER_VERSION}"
     fi
 }
 
