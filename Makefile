@@ -309,8 +309,6 @@ e2e-eventing:
 # e2e-eventing-cleanup will delete all subscriptions and other resources created for event delivery tests.
 .PHONY: e2e-eventing-cleanup
 e2e-eventing-cleanup:
-	kubectl delete --ignore-not-found --wait=false -n default apirules.gateway.kyma-project.io epp-e2e-tests
-	kubectl delete --ignore-not-found --wait=false -n default apirules.gateway.kyma-project.io sink-e2e-tests
 	go test -v ./hack/e2e/eventing/cleanup/cleanup_test.go --tags=e2e
 
 # e2e-eventing-peerauthentications will check if the peerauthentications are created as intended.
