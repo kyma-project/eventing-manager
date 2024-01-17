@@ -24,4 +24,4 @@ on:
 
 jobs:
   unit-test:
-    uses: kyma-project/eventing-tools/.github/workflows/reusable-unti-test.yml@main
+    uses: kyma-project/eventing-tools/.github/workflows/unit-test-reusable.yml@main
