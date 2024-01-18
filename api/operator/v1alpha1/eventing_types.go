@@ -27,6 +27,14 @@ type ConditionReason string
 
 type ConditionType string
 
+var supportedConditionsTypes = map[ConditionType]interface{}{
+	ConditionBackendAvailable:         nil,
+	ConditionPublisherProxyReady:      nil,
+	ConditionWebhookReady:             nil,
+	ConditionSubscriptionManagerReady: nil,
+	ConditionDeleted:                  nil,
+}
+
 const (
 	StateReady      string = "Ready"
 	StateError      string = "Error"

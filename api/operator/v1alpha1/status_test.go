@@ -1,10 +1,10 @@
 package v1alpha1
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/require"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"testing"
+	"time"
 )
 
 func TestClearConditions(t *testing.T) {
@@ -94,6 +94,191 @@ func TestSetPublisherService(t *testing.T) {
 
 			// then
 			require.Equal(t, tc.wantStatus, tc.givenStatus)
+		})
+	}
+}
+
+func TestRemoveUnsupportedConditions(t *testing.T) {
+	t.Parallel()
+
+	// given
+	var (
+		// supported conditions
+		backendAvailableCondition = kmetav1.Condition{
+			Type:               "BackendAvailable",
+			Status:             kmetav1.ConditionStatus("BackendAvailableStatus"),
+			ObservedGeneration: int64(1),
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2001, 01, 01, 01, 01, 01, 000000001, time.UTC)},
+			Reason:             "BackendAvailableReason",
+			Message:            "BackendAvailableMessage",
+		}
+		publisherProxyReadyCondition = kmetav1.Condition{
+			Type:               "PublisherProxyReady",
+			Status:             kmetav1.ConditionStatus("PublisherProxyReadyStatus"),
+			ObservedGeneration: int64(2),
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2002, 02, 02, 02, 02, 02, 000000002, time.UTC)},
+			Reason:             "PublisherProxyReadyReason",
+			Message:            "PublisherProxyReadyMessage",
+		}
+		webhookReadyCondition = kmetav1.Condition{
+			Type:               "WebhookReady",
+			Status:             kmetav1.ConditionStatus("WebhookReadyStatus"),
+			ObservedGeneration: int64(3),
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2003, 03, 03, 03, 03, 03, 000000003, time.UTC)},
+			Reason:             "WebhookReadyReason",
+			Message:            "WebhookReadyMessage",
+		}
+		subscriptionManagerReadyCondition = kmetav1.Condition{
+			Type:               "SubscriptionManagerReady",
+			Status:             kmetav1.ConditionStatus("SubscriptionManagerReadyStatus"),
+			ObservedGeneration: int64(4),
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2004, 04, 04, 04, 04, 04, 000000004, time.UTC)},
+			Reason:             "SubscriptionManagerReadyReason",
+			Message:            "SubscriptionManagerReadyMessage",
+		}
+		deletedCondition = kmetav1.Condition{
+			Type:               "Deleted",
+			Status:             kmetav1.ConditionStatus("DeletedStatus"),
+			ObservedGeneration: int64(5),
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2005, 05, 05, 05, 05, 05, 000000005, time.UTC)},
+			Reason:             "DeletedReason",
+			Message:            "DeletedMessage",
+		}
+
+		// unsupported conditions
+		unsupportedTypeCondition1 = kmetav1.Condition{
+			Type:               "Unsupported1",
+			Status:             kmetav1.ConditionStatus("UnsupportedStatus1"),
+			ObservedGeneration: int64(-1),
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2011, 11, 11, 11, 11, 11, 000000011, time.UTC)},
+			Reason:             "UnsupportedReason1",
+			Message:            "UnsupportedMessage1",
+		}
+		unsupportedTypeCondition2 = kmetav1.Condition{
+			Type:               "Unsupported2",
+			Status:             kmetav1.ConditionStatus("UnsupportedStatus2"),
+			ObservedGeneration: int64(-2),
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2012, 12, 12, 12, 12, 12, 000000012, time.UTC)},
+			Reason:             "UnsupportedReason2",
+			Message:            "UnsupportedMessage2",
+		}
+		unsupportedTypeCondition3 = kmetav1.Condition{
+			Type:               "Unsupported3",
+			Status:             kmetav1.ConditionStatus("UnsupportedStatus3"),
+			ObservedGeneration: int64(-3),
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2013, 13, 13, 13, 13, 13, 000000013, time.UTC)},
+			Reason:             "UnsupportedReason3",
+			Message:            "UnsupportedMessage3",
+		}
+	)
+
+	tests := []struct {
+		name        string
+		givenStatus *EventingStatus
+		wantStatus  *EventingStatus
+	}{
+		{
+			name: "given nil conditions",
+			givenStatus: &EventingStatus{
+				Conditions: nil,
+			},
+			wantStatus: &EventingStatus{
+				Conditions: nil,
+			},
+		},
+		{
+			name: "given empty conditions",
+			givenStatus: &EventingStatus{
+				Conditions: []kmetav1.Condition{},
+			},
+			wantStatus: &EventingStatus{
+				Conditions: []kmetav1.Condition{},
+			},
+		},
+		{
+			name: "given few supported condition",
+			givenStatus: &EventingStatus{
+				Conditions: []kmetav1.Condition{
+					backendAvailableCondition,
+					subscriptionManagerReadyCondition,
+				},
+			},
+			wantStatus: &EventingStatus{
+				Conditions: []kmetav1.Condition{
+					backendAvailableCondition,
+					subscriptionManagerReadyCondition,
+				},
+			},
+		},
+		{
+			name: "given all supported conditions",
+			givenStatus: &EventingStatus{
+				Conditions: []kmetav1.Condition{
+					backendAvailableCondition,
+					publisherProxyReadyCondition,
+					webhookReadyCondition,
+					subscriptionManagerReadyCondition,
+					deletedCondition,
+				},
+			},
+			wantStatus: &EventingStatus{
+				Conditions: []kmetav1.Condition{
+					backendAvailableCondition,
+					publisherProxyReadyCondition,
+					webhookReadyCondition,
+					subscriptionManagerReadyCondition,
+					deletedCondition,
+				},
+			},
+		},
+		{
+			name: "given all unsupported conditions",
+			givenStatus: &EventingStatus{
+				Conditions: []kmetav1.Condition{
+					unsupportedTypeCondition1,
+					unsupportedTypeCondition2,
+					unsupportedTypeCondition3,
+				},
+			},
+			wantStatus: &EventingStatus{
+				Conditions: []kmetav1.Condition{},
+			},
+		},
+		{
+			name: "given supported and unsupported conditions",
+			givenStatus: &EventingStatus{
+				Conditions: []kmetav1.Condition{
+					unsupportedTypeCondition1,
+					unsupportedTypeCondition2,
+					unsupportedTypeCondition3,
+					backendAvailableCondition,
+					publisherProxyReadyCondition,
+					webhookReadyCondition,
+					subscriptionManagerReadyCondition,
+					deletedCondition,
+				},
+			},
+			wantStatus: &EventingStatus{
+				Conditions: []kmetav1.Condition{
+					backendAvailableCondition,
+					publisherProxyReadyCondition,
+					webhookReadyCondition,
+					subscriptionManagerReadyCondition,
+					deletedCondition,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		ttc := tt
+		t.Run(ttc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// when
+			ttc.givenStatus.RemoveUnsupportedConditions()
+
+			// then
+			require.Equal(t, ttc.wantStatus, ttc.givenStatus)
 		})
 	}
 }

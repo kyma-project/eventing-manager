@@ -169,6 +169,9 @@ func (r *Reconciler) syncEventingStatus(ctx context.Context,
 func (r *Reconciler) updateStatus(ctx context.Context, oldEventing, newEventing *operatorv1alpha1.Eventing,
 	logger *zap.SugaredLogger,
 ) error {
+	// Preserve only supported conditions.
+	newEventing.Status.RemoveUnsupportedConditions()
+
 	// Compare the status taking into consideration lastTransitionTime in conditions
 	if oldEventing.Status.IsEqual(newEventing.Status) {
 		return nil

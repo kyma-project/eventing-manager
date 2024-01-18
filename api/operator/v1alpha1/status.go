@@ -145,3 +145,18 @@ func (es *EventingStatus) ClearPublisherService() {
 func (es *EventingStatus) SetPublisherService(name, namespace string) {
 	es.PublisherService = fmt.Sprintf("%s.%s", name, namespace)
 }
+
+// RemoveUnsupportedConditions removes unsupported conditions from the status and keeps only the supported ones.
+func (es *EventingStatus) RemoveUnsupportedConditions() {
+	if len(es.Conditions) == 0 {
+		return
+	}
+
+	supported := make([]kmetav1.Condition, 0, len(es.Conditions))
+	for _, c := range es.Conditions {
+		if _, ok := supportedConditionsTypes[ConditionType(c.Type)]; ok {
+			supported = append(supported, c)
+		}
+	}
+	es.Conditions = supported
+}
