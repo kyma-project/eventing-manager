@@ -152,11 +152,12 @@ func (es *EventingStatus) RemoveUnsupportedConditions() {
 		return
 	}
 
-	supported := make([]kmetav1.Condition, 0, len(es.Conditions))
-	for _, c := range es.Conditions {
-		if _, ok := supportedConditionsTypes[ConditionType(c.Type)]; ok {
-			supported = append(supported, c)
+	supportedConditionsTypes := getSupportedConditionsTypes()
+	supportedConditions := make([]kmetav1.Condition, 0, len(es.Conditions))
+	for _, condition := range es.Conditions {
+		if _, ok := supportedConditionsTypes[ConditionType(condition.Type)]; ok {
+			supportedConditions = append(supportedConditions, condition)
 		}
 	}
-	es.Conditions = supported
+	es.Conditions = supportedConditions
 }

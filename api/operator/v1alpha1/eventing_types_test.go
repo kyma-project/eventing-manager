@@ -97,3 +97,15 @@ func TestIsSpecBackendTypeChanged(t *testing.T) {
 		})
 	}
 }
+
+func Test_getSupportedConditionsTypes(t *testing.T) {
+	want := map[ConditionType]interface{}{
+		ConditionBackendAvailable:         nil,
+		ConditionPublisherProxyReady:      nil,
+		ConditionWebhookReady:             nil,
+		ConditionSubscriptionManagerReady: nil,
+		ConditionDeleted:                  nil,
+	}
+	got := getSupportedConditionsTypes()
+	require.Equal(t, want, got)
+}

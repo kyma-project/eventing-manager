@@ -27,14 +27,6 @@ type ConditionReason string
 
 type ConditionType string
 
-var supportedConditionsTypes = map[ConditionType]interface{}{
-	ConditionBackendAvailable:         nil,
-	ConditionPublisherProxyReady:      nil,
-	ConditionWebhookReady:             nil,
-	ConditionSubscriptionManagerReady: nil,
-	ConditionDeleted:                  nil,
-}
-
 const (
 	StateReady      string = "Ready"
 	StateError      string = "Error"
@@ -79,6 +71,17 @@ const (
 	ConditionReasonEventMeshSubManagerFailed     ConditionReason = "EventMeshSubscriptionManagerFailed"
 	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
 )
+
+// getSupportedConditionsTypes returns a map of supported condition types.
+func getSupportedConditionsTypes() map[ConditionType]interface{} {
+	return map[ConditionType]interface{}{
+		ConditionBackendAvailable:         nil,
+		ConditionPublisherProxyReady:      nil,
+		ConditionWebhookReady:             nil,
+		ConditionSubscriptionManagerReady: nil,
+		ConditionDeleted:                  nil,
+	}
+}
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 

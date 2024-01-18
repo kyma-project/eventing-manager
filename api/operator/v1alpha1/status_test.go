@@ -1,10 +1,11 @@
 package v1alpha1
 
 import (
-	"github.com/stretchr/testify/require"
-	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestClearConditions(t *testing.T) {
@@ -108,7 +109,7 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 			Type:               "BackendAvailable",
 			Status:             kmetav1.ConditionStatus("BackendAvailableStatus"),
 			ObservedGeneration: int64(1),
-			LastTransitionTime: kmetav1.Time{Time: time.Date(2001, 01, 01, 01, 01, 01, 000000001, time.UTC)},
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2001, 0o1, 0o1, 0o1, 0o1, 0o1, 0o00000001, time.UTC)},
 			Reason:             "BackendAvailableReason",
 			Message:            "BackendAvailableMessage",
 		}
@@ -116,7 +117,7 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 			Type:               "PublisherProxyReady",
 			Status:             kmetav1.ConditionStatus("PublisherProxyReadyStatus"),
 			ObservedGeneration: int64(2),
-			LastTransitionTime: kmetav1.Time{Time: time.Date(2002, 02, 02, 02, 02, 02, 000000002, time.UTC)},
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2002, 0o2, 0o2, 0o2, 0o2, 0o2, 0o00000002, time.UTC)},
 			Reason:             "PublisherProxyReadyReason",
 			Message:            "PublisherProxyReadyMessage",
 		}
@@ -124,7 +125,7 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 			Type:               "WebhookReady",
 			Status:             kmetav1.ConditionStatus("WebhookReadyStatus"),
 			ObservedGeneration: int64(3),
-			LastTransitionTime: kmetav1.Time{Time: time.Date(2003, 03, 03, 03, 03, 03, 000000003, time.UTC)},
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2003, 0o3, 0o3, 0o3, 0o3, 0o3, 0o00000003, time.UTC)},
 			Reason:             "WebhookReadyReason",
 			Message:            "WebhookReadyMessage",
 		}
@@ -132,7 +133,7 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 			Type:               "SubscriptionManagerReady",
 			Status:             kmetav1.ConditionStatus("SubscriptionManagerReadyStatus"),
 			ObservedGeneration: int64(4),
-			LastTransitionTime: kmetav1.Time{Time: time.Date(2004, 04, 04, 04, 04, 04, 000000004, time.UTC)},
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2004, 0o4, 0o4, 0o4, 0o4, 0o4, 0o00000004, time.UTC)},
 			Reason:             "SubscriptionManagerReadyReason",
 			Message:            "SubscriptionManagerReadyMessage",
 		}
@@ -140,7 +141,7 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 			Type:               "Deleted",
 			Status:             kmetav1.ConditionStatus("DeletedStatus"),
 			ObservedGeneration: int64(5),
-			LastTransitionTime: kmetav1.Time{Time: time.Date(2005, 05, 05, 05, 05, 05, 000000005, time.UTC)},
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2005, 0o5, 0o5, 0o5, 0o5, 0o5, 0o00000005, time.UTC)},
 			Reason:             "DeletedReason",
 			Message:            "DeletedMessage",
 		}
@@ -150,7 +151,7 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 			Type:               "Unsupported1",
 			Status:             kmetav1.ConditionStatus("UnsupportedStatus1"),
 			ObservedGeneration: int64(-1),
-			LastTransitionTime: kmetav1.Time{Time: time.Date(2011, 11, 11, 11, 11, 11, 000000011, time.UTC)},
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2011, 11, 11, 11, 11, 11, 0o00000011, time.UTC)},
 			Reason:             "UnsupportedReason1",
 			Message:            "UnsupportedMessage1",
 		}
@@ -158,7 +159,7 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 			Type:               "Unsupported2",
 			Status:             kmetav1.ConditionStatus("UnsupportedStatus2"),
 			ObservedGeneration: int64(-2),
-			LastTransitionTime: kmetav1.Time{Time: time.Date(2012, 12, 12, 12, 12, 12, 000000012, time.UTC)},
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2012, 12, 12, 12, 12, 12, 0o00000012, time.UTC)},
 			Reason:             "UnsupportedReason2",
 			Message:            "UnsupportedMessage2",
 		}
@@ -166,7 +167,7 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 			Type:               "Unsupported3",
 			Status:             kmetav1.ConditionStatus("UnsupportedStatus3"),
 			ObservedGeneration: int64(-3),
-			LastTransitionTime: kmetav1.Time{Time: time.Date(2013, 13, 13, 13, 13, 13, 000000013, time.UTC)},
+			LastTransitionTime: kmetav1.Time{Time: time.Date(2013, 13, 13, 13, 13, 13, 0o00000013, time.UTC)},
 			Reason:             "UnsupportedReason3",
 			Message:            "UnsupportedMessage3",
 		}
