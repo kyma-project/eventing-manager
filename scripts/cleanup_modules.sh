@@ -19,7 +19,7 @@ log::banner "Deleting all API Rules"
 kubectl delete --timeout=120s --wait=false -A apirules.gateway.kyma-project.io --all
 
 log::banner "Uninstalling Eventing module"
-kubectl delete --timeout=120s --ignore-not-found -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing_default_cr.yaml
+kubectl delete --timeout=120s --ignore-not-found -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing-default-cr.yaml
 make undeploy
 
 log::banner "Uninstalling NATS module"
