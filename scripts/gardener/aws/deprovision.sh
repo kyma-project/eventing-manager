@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# Usage: To run this script, set the following environment variables and run this script.
-#  CLUSTER_NAME
-#  GARDENER_PROJECT_NAME
-#  GARDENER_KUBECONFIG - Path to kubeconfig for Gardener.
-#  WAIT_FOR_DELETE_COMPLETION - "true" | "false"
+# Usage: To run this script, set the required environment variables and run this script.
+#  CLUSTER_NAME - (required)
+#  GARDENER_PROJECT_NAME - (required)
+#  GARDENER_KUBECONFIG - (required, description: Path to kubeconfig for Gardener.)
+#  WAIT_FOR_DELETE_COMPLETION - (optional, default: "false")
 
 # Permissions: In order to run this script you need to use a service account with permissions equivalent to the following GCP roles:
 # - Compute Admin

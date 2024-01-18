@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
-# Usage: To run this script, set the following environment variables and run this script.
-#  CLUSTER_NAME
-#  GARDENER_REGION
-#  GARDENER_ZONES
-#  GARDENER_PROJECT_NAME
-#  GARDENER_PROVIDER_SECRET_NAME
-#  GARDENER_KUBECONFIG - Path to kubeconfig for Gardener.
-#  MACHINE_TYPE - default: "m5.xlarge"
-#  SCALER_MIN - default: 1
-#  SCALER_MAX - default: 2
-#  RETRY_ATTEMPTS - default: 1
-#  GARDENER_CLUSTER_VERSION - default as defined in kyma CLI.
+# Usage: To run this script, set the required environment variables and run this script.
+#  CLUSTER_NAME - (required)
+#  GARDENER_REGION - (required)
+#  GARDENER_ZONES - (required)
+#  GARDENER_PROJECT_NAME - (required)
+#  GARDENER_PROVIDER_SECRET_NAME - (required)
+#  GARDENER_KUBECONFIG - (required, description: Path to kubeconfig for Gardener.)
+#  MACHINE_TYPE - (optional, default: "m5.xlarge")
+#  SCALER_MIN - (optional, default: 1)
+#  SCALER_MAX - (optional, default: 2)
+#  RETRY_ATTEMPTS - (optional, default: 1)
+#  GARDENER_CLUSTER_VERSION - (optional, default: kyma CLI default value for kube-version.)
 
 # Permissions: In order to run this script you need to use a service account with permissions equivalent to the following GCP roles:
 # - Compute Admin

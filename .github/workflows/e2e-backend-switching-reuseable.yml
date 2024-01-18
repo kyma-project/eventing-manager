@@ -50,7 +50,7 @@ jobs:
           MACHINE_TYPE: "c4.xlarge"
           SCALER_MIN: "1"
           SCALER_MAX: "2"
-          RETRY_ATTEMPTS: "2"
+          RETRY_ATTEMPTS: "1"
           GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
         run: |
           # setup Gardener kubeconfig.
