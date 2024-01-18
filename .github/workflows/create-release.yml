@@ -71,7 +71,7 @@ jobs:
 
       - name: Create and upload eventing-manager.yaml and eventing-default-cr.yaml
         env:
-          PULL_BASE_REF: $VERSION
+          PULL_BASE_REF: ${{ needs.verify-release.outputs.VERSION }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMG: "europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${VERSION}"
           MODULE_REGISTRY: "europe-docker.pkg.dev/kyma-project/prod/unsigned"
