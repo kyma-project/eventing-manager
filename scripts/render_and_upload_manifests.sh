@@ -68,4 +68,4 @@ UPLOAD_URL="https://uploads.github.com/repos/kyma-project/eventing-manager/relea
 uploadFile "eventing-manager.yaml" "${UPLOAD_URL}?name=eventing-manager.yaml"
 # TODO completly remove the rendering of the module-template from the repository.
 # uploadFile "module-template.yaml" "${UPLOAD_URL}?name=module-template.yaml"
-uploadFile "config/samples/default.yaml" "${UPLOAD_URL}?name=eventing_default_cr.yaml"
+uploadFile "config/samples/default.yaml" "${UPLOAD_URL}?name=eventing-default-cr.yaml"

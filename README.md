@@ -28,7 +28,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 2. To install the latest version of the default Eventing custom resource (CR) on your cluster, run:
 
    ```bash
-   kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing_default_cr.yaml
+   kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing-default-cr.yaml
    ```
 
 ## Development
