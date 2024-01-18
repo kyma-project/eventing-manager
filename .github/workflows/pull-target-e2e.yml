@@ -17,8 +17,19 @@ on:
       - "sec-scanners-config.yaml"
 
 jobs:
+  is-pr-approved:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR approved
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: https://github.com/kyma-project/eventing-manager/pull/${{ github.event.number }}
+        run: |
+          ./scripts/is_pr_approved.sh
+
   wait-until-build-succeeds:
     runs-on: ubuntu-latest
+    needs: is-pr-approved
     steps:
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
         id: pull-wait-build
