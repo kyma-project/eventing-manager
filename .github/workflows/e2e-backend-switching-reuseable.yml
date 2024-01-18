@@ -43,8 +43,6 @@ jobs:
         env:
           GARDENER_CLUSTER_VERSION: ${{ inputs.kube-version }}
           CLUSTER_PREFIX: ${{ inputs.cluster-name-prefix }}
-          GARDENER_REGION: "eu-west-1"
-          GARDENER_ZONES: "eu-west-1a"
           GARDENER_PROJECT_NAME: ${{ vars.GARDENER_PROJECT_NAME }}
           GARDENER_PROVIDER_SECRET_NAME: ${{ vars.GARDENER_PROVIDER_SECRET_NAME_AWS }}
           MACHINE_TYPE: "c4.xlarge"
@@ -60,8 +58,11 @@ jobs:
           # generate cluster name and export it to Github env for cleanup step to access it.
           export CLUSTER_NAME="${CLUSTER_PREFIX}$(openssl rand -hex 2)"
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
+          # set random region and zone information.
+          export GARDENER_REGION=$(./scripts/gardener/aws/get_random_region.sh)
+          export GARDENER_ZONES="${GARDENER_REGION}a"
           # provision gardener cluster.
-          make -C hack/ci/ provision-gardener-cluster
+          # make -C hack/ci/ provision-gardener-cluster
           kubectl version
           kubectl cluster-info
           kubectl get nodes
