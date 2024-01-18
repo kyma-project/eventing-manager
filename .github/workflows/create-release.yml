@@ -35,11 +35,17 @@ jobs:
 
   unit-test:
     name: "Run unit tests"
+    needs: verify-release
     uses: kyma-project/eventing-tools/.github/workflows/unit-test-reusable.yml@main
+
+  lint-golang:
+    name: "Run golangci-lint"
+    needs: verify-release
+    uses: kyma-project/eventing-tools/.github/workflows/lint-reusable.yml@main
 
   create-draft:
     name: Create draft release
-    needs: verify-head-status
+    needs: [verify-release, lint-golang, unit-test]
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.verify-release.outputs.VERSION }}
@@ -85,7 +91,7 @@ jobs:
 
   publish-release:
     name: Publish release
-    needs: [verify-head-status, create-draft]
+    needs: [verify-release, create-draft]
     runs-on: ubuntu-latest
 
     steps:
