@@ -1,0 +1,21 @@
+name: golangci-lint
+
+on:
+  pull_request:
+    branches:
+      - main
+      - "release-**"
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - "sec-scanners-config.yaml"
+
+permissions:
+  contents: read
+  # Optional: allow read access to pull request. Use with `only-new-issues` option.
+  pull-requests: read
+
+jobs:
+  unit-test:
+    name: "Run unit tests"
+    uses: kyma-project/eventing-tools/.github/workflows/lint-reusable.yml@main
