@@ -61,8 +61,10 @@ jobs:
           # set random region and zone information.
           export GARDENER_REGION=$(./scripts/gardener/aws/get_random_region.sh)
           export GARDENER_ZONES="${GARDENER_REGION}a"
+          echo "GARDENER_REGION: ${GARDENER_REGION}"
+          echo "GARDENER_ZONES: ${GARDENER_ZONES}"
           # provision gardener cluster.
-          # make -C hack/ci/ provision-gardener-cluster
+          make -C hack/ci/ provision-gardener-cluster
           kubectl version
           kubectl cluster-info
           kubectl get nodes
