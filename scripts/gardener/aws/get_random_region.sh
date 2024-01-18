@@ -11,21 +11,14 @@ set -E          # needs to be set if we want the ERR trap.
 set -o pipefail # prevents errors in a pipeline from being masked.
 set -o errexit  # exit immediately when a command fails.
 
+# only lists the regions where machine type: `c1.xlarge` is available.
 AWS_REGIONS=(
   "eu-west-1"
-  "eu-west-2"
-  "eu-west-3"
-  "eu-central-1"
-  "eu-north-1"
   "us-east-1"
-  "us-east-2"
   "us-west-1"
   "us-west-2"
-  "ca-central-1"
   "sa-east-1"
   "ap-northeast-1"
-  "ap-northeast-2"
-  "ap-northeast-3"
 )
 
 ## MAIN Logic
