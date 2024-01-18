@@ -17,5 +17,5 @@ permissions:
 
 jobs:
   unit-test:
-    name: "Run unit tests"
+    name: "Run golangci-lint"
     uses: kyma-project/eventing-tools/.github/workflows/lint-reusable.yml@main
