@@ -9,6 +9,14 @@ metadata:
   name: eventing
   namespace: kyma-system
 spec:
+  backend:
+    type: NATS
+    config:
+      eventTypePrefix: "sap.kyma.custom"
+      natsStreamStorageType: File
+      natsStreamReplicas: 3
+      natsStreamMaxSize: 700M
+      natsMaxMsgsPerTopic: 1000000
   publisher:
     replicas:
       min: 2
