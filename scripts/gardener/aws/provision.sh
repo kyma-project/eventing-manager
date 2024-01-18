@@ -64,7 +64,7 @@ gardener::validate_and_default() {
 
     # print configurations for debugging purposes:
     log::banner "Configurations:"
-    echo "CLUSTER_NAME${CLUSTER_NAME}"
+    echo "CLUSTER_NAME: ${CLUSTER_NAME}"
     echo "GARDENER_REGION: ${GARDENER_REGION}"
     echo "GARDENER_ZONES: ${GARDENER_ZONES}"
     echo "MACHINE_TYPE: ${MACHINE_TYPE}"

@@ -30,6 +30,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check if PR approved
+        env:
+          PR_URL: https://github.com/kyma-project/eventing-manager/pull/${{ github.event.number }}
+        run: |
+          echo "PR: ${PR_URL}"
+          gh pr view ${PR_URL} --json=reviewDecision
+
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
         id: pull-wait-build
         if: github.event_name == 'pull_request'
@@ -182,7 +189,7 @@ jobs:
 
   backend-switching:
     needs: wait-until-build-succeeds
-#    if: github.event_name == 'push'
+    if: github.event_name == 'push'
     uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
       eventing-manager-image: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
