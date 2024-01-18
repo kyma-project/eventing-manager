@@ -9,8 +9,8 @@ source "$(dirname "$0")/utils/log.sh"
 set -o nounset  # treat unset variables as an error and exit immediately.
 set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
-
-set +o errexit  # exit immediately when a command fails.
+# NOTE: This script will continue on errors and will always return exit code 0.
+set +o errexit  # continue immediately when a command fails.
 
 log::banner "Deleting all Subscriptions"
 kubectl delete --timeout=120s --wait=false -A subscriptions --all

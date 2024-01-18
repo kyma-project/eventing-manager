@@ -1,4 +1,4 @@
-name: e2e-without-lifecycle-manager
+name: e2e
 
 env:
   KYMA_STABILITY: "unstable"
@@ -50,7 +50,7 @@ jobs:
         if: github.event_name == 'push'
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
-          context: ${{ github.ref == 'main' && 'post-eventing-manager-build' || 'release-eventing-manager-build' }}
+          context: "post-eventing-manager-build"
           commit_ref: "${{ github.sha }}"
           timeout: 600000 # 10 minutes in milliseconds
           # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
@@ -71,3 +71,120 @@ jobs:
           export IMAGE_NAME="$(cat image.name)"
           echo "IMAGE_NAME: ${IMAGE_NAME}"
           echo "image_name=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+
+  nats:
+    runs-on: ubuntu-latest
+    needs: wait-until-build-succeeds
+    env:
+      MANAGER_IMAGE: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Binaries
+        id: cache-binaries
+        uses: actions/cache@v3
+        with:
+          path: bin
+          key: ${{ runner.os }}-bin
+
+      - name: Install k3d tools
+        run: |
+          make -C hack/ci/ install-k3d-tools
+
+      - name: Install Kyma CLI & setup k3d cluster using kyma CLI
+        run: |
+          make kyma
+          make -C hack/ci/ create-k3d
+          kubectl version
+          kubectl cluster-info
+
+      - name: Install eventing-manager
+        run: |
+          make install IMG=$MANAGER_IMAGE
+
+      - name: Deploy the controller to the cluster
+        run: |
+          kubectl create ns kyma-system || true
+          make deploy IMG=$MANAGER_IMAGE
+
+      - name: Setup NATS
+        run: |
+          make -C hack/ci/ install-nats-module
+
+      - name: Setup and test the eventing-manager
+        run: |
+          make e2e-setup
+
+      - name: Setup eventing
+        run: |
+          make e2e-eventing-setup
+
+      - name: Test eventing
+        run: |
+          make e2e-eventing
+
+      - name: Test eventing cleanup
+        run: |
+          make e2e-cleanup
+
+      - name: On error get NATS CR
+        if: failure()
+        run: |
+          kubectl get nats -n kyma-system -o yaml
+
+      - name: On error get eventing CR
+        if: failure()
+        run: |
+          kubectl get eventing -n kyma-system -o yaml
+
+  PeerAuthentication:
+    runs-on: ubuntu-latest
+    needs: wait-until-build-succeeds
+    env:
+      MANAGER_IMAGE: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install k3d tools
+        run: |
+          make -C hack/ci/ install-k3d-tools
+
+      - name: Install Kyma CLI & setup k3d cluster using kyma CLI
+        run: |
+          make kyma
+          make -C hack/ci/ create-k3d
+          kubectl version
+          kubectl cluster-info
+
+      - name: Install PeerAuthentication CRD
+        run: |
+          make -C hack/ci/ apply-peerauthentication-crd
+
+      - name: Install eventing-manager
+        run: |
+          make install IMG=$MANAGER_IMAGE
+
+      - name: Deploy the controller to the cluster
+        run: |
+          kubectl create ns kyma-system || true
+          make deploy IMG=$MANAGER_IMAGE
+
+      - name: Test if the PeerAuthentications are created correctly
+        run: |
+          make e2e-eventing-peerauthentications
+
+      - name: On error get all PeerAuthentications
+        if: failure()
+        run: |
+          kubectl get peerauthentications.security.istio.io -A -o yaml
+
+  backend-switching:
+    needs: wait-until-build-succeeds
+    if: github.event_name == 'push'
+    uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
+    with:
+      eventing-manager-image: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
+      cluster-name-prefix: "ghem-"
+    secrets: inherit
