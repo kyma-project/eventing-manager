@@ -35,7 +35,7 @@ jobs:
 
   create-draft:
     name: Create draft release
-    needs: verify-head-status
+    needs: verify-release
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.verify-release.outputs.VERSION }}
@@ -81,7 +81,7 @@ jobs:
 
   publish-release:
     name: Publish release
-    needs: [verify-head-status, create-draft]
+    needs: [verify-release, create-draft]
     runs-on: ubuntu-latest
 
     steps:
