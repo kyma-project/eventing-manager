@@ -35,8 +35,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_URL: https://github.com/kyma-project/eventing-manager/pull/${{ github.event.number }}
         run: |
-          echo "PR: ${PR_URL}"
-          gh pr view ${PR_URL} --json=reviewDecision
+          ./scripts/is_pr_approved.sh
 
       - name: Wait for the 'pull-eventing-manager-build' job to succeed
         id: pull-wait-build
