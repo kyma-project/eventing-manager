@@ -60,12 +60,22 @@ gardener::validate_and_default() {
     if [ -z "$GARDENER_CLUSTER_VERSION" ]; then
         # grep the default kube-version defined in kyma CLI.
         export GARDENER_CLUSTER_VERSION="$(${KYMA_CLI} provision gardener aws --help | grep "kube-version string" | awk -F "\"" '{print $2}')"
-        log::info "Using GARDENER_CLUSTER_VERSION=${GARDENER_CLUSTER_VERSION}"
     fi
+
+    # print configurations for debugging purposes:
+    log::banner "Configurations:"
+    echo "CLUSTER_NAME: ${CLUSTER_NAME}"
+    echo "GARDENER_REGION: ${GARDENER_REGION}"
+    echo "GARDENER_ZONES: ${GARDENER_ZONES}"
+    echo "MACHINE_TYPE: ${MACHINE_TYPE}"
+    echo "SCALER_MIN: ${SCALER_MIN}"
+    echo "SCALER_MAX: ${SCALER_MAX}"
+    echo "GARDENER_CLUSTER_VERSION: ${GARDENER_CLUSTER_VERSION}"
+    echo "RETRY_ATTEMPTS ${RETRY_ATTEMPTS}"
 }
 
 gardener::provision_cluster() {
-    log::info "Provision cluster: \"${CLUSTER_NAME}\""
+    log::banner "Provision cluster: \"${CLUSTER_NAME}\""
 
     # decreasing attempts to 2 because we will try to create new cluster from scratch on exit code other than 0
     ${KYMA_CLI} provision gardener aws \
