@@ -20,6 +20,7 @@ jobs:
   is-pr-approved:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Check if PR approved
         env:
           GH_TOKEN: ${{ github.token }}
