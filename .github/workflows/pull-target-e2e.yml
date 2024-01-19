@@ -1,7 +1,7 @@
 name: pull-target-e2e
 
 ## NOTE: This workflow uses the GitHub event `pull_request_target`, which uses the base commit instead of the head.
-# Therefore, the source for the e2e tests and `make deploy` will be from base.
+# Therefore, the source for the e2e tests and `make deploy` will be from base..
 # Reference(s):
 # - https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
 # - https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
