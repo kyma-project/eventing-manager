@@ -16,13 +16,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        # checkout the current branch
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Get latest release tag
         id: get-latest-release-tag
         run: |
-          export latest-rel-tag=$(make -C hack/ci/ get-latest-release-tag)
-          echo "Output [$latest-rel-tag]"
-          echo "latest_release_tag=$latest-rel-tag" >> "$GITHUB_OUTPUT"
+          export latest_rel_tag=$(make -C hack/ci/ get-latest-release-tag)
+          echo "Output [$latest_rel_tag]"
+          echo "latest_release_tag=$latest_rel_tag" >> "$GITHUB_OUTPUT"
   
 
   second_job:
