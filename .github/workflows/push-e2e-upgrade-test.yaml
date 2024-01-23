@@ -23,9 +23,7 @@ jobs:
       - name: Get latest release tag
         id: get-latest-release-tag
         run: |
-          export latest_rel_tag=$(make -C hack/ci/ get-latest-release-tag)
-          echo "Output [$latest_rel_tag]"
-          echo "latest_release_tag=$latest_rel_tag" >> "$GITHUB_OUTPUT"
+          echo "latest_release_tag=$(curl -s https://api.github.com/repos/kyma-project/eventing-manager/releases/latest | jq -r '.tag_name')" >> "$GITHUB_OUTPUT"
   
 
   second_job:
