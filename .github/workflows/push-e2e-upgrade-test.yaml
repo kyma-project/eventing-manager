@@ -19,7 +19,18 @@ jobs:
 
       - name: Get latest release tag
         id: get-latest-release-tag
-        run: echo "latest_release_tag=$(make -C hack/ci/ get-latest-release-tag)" >> "$GITHUB_OUTPUT"
+        run: |
+          export latest-rel-tag=$(make -C hack/ci/ get-latest-release-tag)
+          echo "Output [$latest-rel-tag]"
+          echo "latest_release_tag=$latest-rel-tag" >> "$GITHUB_OUTPUT"
+  
+
+  second_job:
+    needs: get-latest-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print latest release tag
+        run: echo "latest_release_tag=${{ needs.get-latest-release.outputs.latest_release_tag }}"
 
   upgrade-test:
     uses: ./.github/workflows/run-upgrade-tests-reusable.yaml
