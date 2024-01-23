@@ -80,3 +80,7 @@ create-ias-app:
 .PHONY: delete-ias-app
 delete-ias-app:
 	PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/ias/delete-ias-app.sh
+
+.PHONY: get-latest-release-tag
+get-latest-release-tag:
+	@echo $(shell curl -s https://api.github.com/repos/kyma-project/eventing-manager/releases/latest | jq -r '.tag_name')

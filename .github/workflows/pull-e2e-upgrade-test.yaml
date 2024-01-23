@@ -9,7 +9,7 @@ on:
       - 'sec-scanners-config.yaml'
 
 jobs:
-  call-run-upgrade-tests-reusable:
+  upgrade-test:
     uses: ./.github/workflows/run-upgrade-tests-reusable.yaml
     with:
       pre-upgrade-image: europe-docker.pkg.dev/kyma-project/prod/eventing-manager:main
