@@ -1,7 +1,7 @@
 name: post-e2e-upgrade-test
 
 on:
-  push:
+  pull_request:
     branches: [ "main" ]
     paths-ignore:
       - 'docs/**'
@@ -19,16 +19,16 @@ jobs:
 
       - name: Get latest release tag
         id: get-latest-release-tag
-        run: |
-          echo latest_release_tag=$(make -C hack/ci/ get-latest-release-tag) >> $GITHUB_OUTPUT
+        run: echo "latest_release_tag=$(make -C hack/ci/ get-latest-release-tag)" >> "$GITHUB_OUTPUT"
 
   upgrade-test:
     uses: ./.github/workflows/run-upgrade-tests-reusable.yaml
+    needs: get-latest-release
     with:
       pre-upgrade-image: europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${{ needs.get-latest-release.outputs.latest_release_tag }}
       post-upgrade-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:main
       pre-upgrade-branch: ${{ needs.get-latest-release.outputs.latest_release_tag }}
       post-upgrade-branch: main
-      build-job-name: push-eventing-manager-build
-      commit-sha: ${{ github.sha }}
+      build-job-name: pull-eventing-manager-build
+      commit-sha: ${{ github.event.pull_request.head.sha }}
     secrets: inherit
