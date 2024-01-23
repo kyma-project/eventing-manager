@@ -1,0 +1,109 @@
+name: Upgrade Tests Reusable Workflow
+
+env:
+  E2E_LOG_LEVEL: debug
+  KYMA_STABILITY: "unstable"
+  KYMA: "./hack/kyma"
+
+on:
+  workflow_call:
+    inputs:
+      pre-upgrade-image:
+        required: true
+        type: string
+      post-upgrade-image:
+        required: true
+        type: string
+      pre-upgrade-branch:
+        required: true
+        type: string
+      post-upgrade-branch:
+        required: true
+        type: string
+      build-job-name:
+        required: true
+        type: string
+      commit-sha:
+        required: true
+        type: string
+
+jobs:
+  e2e-upgrade: # This job tests the upgrade of Eventing module from latest image of the main branch to the current commit.
+    runs-on: ubuntu-latest
+    env:
+      BACKEND_TYPE: NATS
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.pre-upgrade-branch  }}
+
+      - name: Install k3d tools
+        run: make -C hack/ci/ install-k3d-tools
+
+      - name: Install Kyma CLI & setup k3d cluster using kyma CLI
+        run: |
+          make kyma
+          make -C hack/ci/ create-k3d
+          kubectl version
+          kubectl cluster-info
+
+      - name: Create kyma-system namespace
+        run: |
+          make -C hack/ci/ create-kyma-system-ns
+
+      - name: Install the latest released NATS manager
+        run: |
+          kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-manager.yaml
+          kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-default-cr.yaml
+
+      - name: Wait for NATS module to be ready
+        run: |
+          make -C hack/ci/ wait-nats-cr-ready
+
+      - name: Install Eventing Manager before Upgrade
+        run: |
+            make deploy IMG=${{ inputs.pre-upgrade-image }}
+
+      - name: Create test resources and waits for eventing CR readiness
+        run: |
+          export MANAGER_IMAGE=${{ inputs.pre-upgrade-image }}
+          make e2e-setup
+          make e2e-eventing-setup
+
+      - name: Wait for the ${{ inputs.build-job-name }} job to succeed
+        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
+        with:
+          context: ${{ inputs.build-job-name }}
+          commit_ref: "${{ github.event.pull_request.head.sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
+          timeout: 600000 # 10 minutes in milliseconds
+          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
+          check_interval: 60000 # 1 minute in milliseconds
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_OWNER: "${{ github.repository_owner }}"
+          GITHUB_REPO: "eventing-manager"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.post-upgrade-branch }}          
+
+      - name: Install Eventing manager after Upgrade
+        run: |
+          make deploy IMG=${{ inputs.post-upgrade-image }}
+
+      - name: Create test resources and waits for eventing CR readiness
+        run: |
+          export MANAGER_IMAGE=${{ inputs.post-upgrade-image }}
+          make e2e-setup
+            
+      - name: Run e2e tests
+        run: |
+          make e2e-eventing
+
+      - name: Cleanup Test Resources
+        run: |
+          make e2e-eventing-cleanup
+          make e2e-cleanup
+
