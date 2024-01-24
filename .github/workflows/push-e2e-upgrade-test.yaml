@@ -24,23 +24,13 @@ jobs:
         id: get-latest-release-tag
         run: |
           echo "latest_release_tag=$(curl -s https://api.github.com/repos/kyma-project/eventing-manager/releases/latest | jq -r '.tag_name')" >> "$GITHUB_OUTPUT"
-  
-
-  second_job:
-    needs: get-latest-release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Print latest release tag
-        run: echo "latest_release_tag=${{ needs.get-latest-release.outputs.latest_release_tag }}"
 
   upgrade-test:
     uses: ./.github/workflows/run-upgrade-tests-reusable.yaml
     needs: get-latest-release
     with:
-      pre-upgrade-image: europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${{ needs.get-latest-release.outputs.latest_release_tag }}
-      post-upgrade-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:main
-      pre-upgrade-branch: ${{ needs.get-latest-release.outputs.latest_release_tag }}
-      post-upgrade-branch: main
+      pre-upgrade-image-tag: ${{ needs.get-latest-release.outputs.latest_release_tag }}
+      post-upgrade-image-tag: main
       build-job-name: pull-eventing-manager-build
-      commit-sha: ${{ github.event.pull_request.head.sha }}
+      build-job-commit-sha: ${{ github.event.pull_request.head.sha }}
     secrets: inherit

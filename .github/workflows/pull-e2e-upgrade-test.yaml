@@ -12,11 +12,9 @@ jobs:
   upgrade-test:
     uses: ./.github/workflows/run-upgrade-tests-reusable.yaml
     with:
-      pre-upgrade-image: europe-docker.pkg.dev/kyma-project/prod/eventing-manager:main
-      post-upgrade-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
-      pre-upgrade-branch: main
-      # set current branch name as post-upgrade-branch
+      pre-upgrade-image-tag: main
+      post-upgrade-image-tag: PR-${{ github.event.number }}
       post-upgrade-branch: ${{ github.head_ref }}
       build-job-name: pull-eventing-manager-build
-      commit-sha: ${{ github.event.pull_request.head.sha }}
+      build-job-commit-sha: ${{ github.event.pull_request.head.sha }}
     secrets: inherit

@@ -8,23 +8,21 @@ env:
 on:
   workflow_call:
     inputs:
-      pre-upgrade-image:
+      pre-upgrade-image-tag:
         required: true
         type: string
-      post-upgrade-image:
+      post-upgrade-image-tag:
         required: true
         type: string
       pre-upgrade-branch:
-        required: true
         type: string
+        default: ${{ inputs.pre-upgrade-image-tag }}
       post-upgrade-branch:
-        required: true
         type: string
+        default: ${{ inputs.post-upgrade-image-tag }}
       build-job-name:
-        required: true
         type: string
-      commit-sha:
-        required: true
+      build-job-commit-sha:
         type: string
 
 jobs:
@@ -33,7 +31,7 @@ jobs:
     env:
       BACKEND_TYPE: NATS
     steps:
-      - name: Checkout
+      - name: Pre-upgrade checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.pre-upgrade-branch  }}
@@ -63,19 +61,22 @@ jobs:
 
       - name: Install Eventing Manager before Upgrade
         run: |
-            make deploy IMG=${{ inputs.pre-upgrade-image }}
+          pre_upgrade_image=$(./hack/ci/build-full-image-path.sh ${{ inputs.pre-upgrade-image-tag }})
+          echo "Pre-upgrade image: $pre_upgrade_image"
+          make deploy IMG=$pre_upgrade_image
 
       - name: Create test resources and waits for eventing CR readiness
         run: |
-          export MANAGER_IMAGE=${{ inputs.pre-upgrade-image }}
+          export MANAGER_IMAGE=$(./hack/ci/build-full-image-path.sh ${{ inputs.pre-upgrade-image-tag }})
           make e2e-setup
           make e2e-eventing-setup
 
       - name: Wait for the ${{ inputs.build-job-name }} job to succeed
+        if: ${{ inputs.build-job-name != '' }}
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
           context: ${{ inputs.build-job-name }}
-          commit_ref: "${{ github.event.pull_request.head.sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
+          commit_ref: "${{ inputs.build-job-commit-sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
           timeout: 600000 # 10 minutes in milliseconds
           # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
           check_interval: 60000 # 1 minute in milliseconds
@@ -84,18 +85,20 @@ jobs:
           GITHUB_OWNER: "${{ github.repository_owner }}"
           GITHUB_REPO: "eventing-manager"
 
-      - name: Checkout
+      - name: Post-upgrade checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.post-upgrade-branch }}          
+          ref: ${{ inputs.post-upgrade-branch }}          
 
       - name: Install Eventing manager after Upgrade
         run: |
-          make deploy IMG=${{ inputs.post-upgrade-image }}
+          post_upgrade_image=$(./hack/ci/build-full-image-path.sh ${{ inputs.post-upgrade-image-tag }})
+          echo "Post-upgrade image: $post_upgrade_image"
+          make deploy IMG=$post_upgrade_image
 
       - name: Create test resources and waits for eventing CR readiness
         run: |
-          export MANAGER_IMAGE=${{ inputs.post-upgrade-image }}
+          export MANAGER_IMAGE=$(./hack/ci/build-full-image-path.sh ${{ inputs.post-upgrade-image-tag }})
           make e2e-setup
             
       - name: Run e2e tests
