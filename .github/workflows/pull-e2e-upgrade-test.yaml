@@ -14,7 +14,6 @@ jobs:
     with:
       pre-upgrade-image-tag: main
       post-upgrade-image-tag: PR-${{ github.event.number }}
-      post-upgrade-branch: ${{ github.event.pull_request.head.ref }}
       build-job-name: pull-eventing-manager-build
       build-job-commit-sha: ${{ github.event.pull_request.head.sha }}
     secrets: inherit

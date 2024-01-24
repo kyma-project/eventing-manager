@@ -98,9 +98,7 @@ jobs:
           # uses post-upgrade-image-tag if post-upgrade-branch is not provided
           if [ -z "${{ inputs.post-upgrade-branch }}" ]; then
             git checkout -b ${{ inputs.post-upgrade-image-tag }}
-          else
-            git checkout ${{ inputs.post-upgrade-branch }}
-          fi        
+          fi   
 
       - name: Install Eventing manager after Upgrade
         run: |
