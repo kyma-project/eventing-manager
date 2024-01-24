@@ -11,8 +11,8 @@
 # "node_id": "SC_kwDOJBeAG123456789",
 # "state": "success",
 # "description": "Job succeeded.",
-# "target_url": "https://status.build.kyma-project.io/view/gs/kyma-prow-logs/pr-logs/pull/kyma-project_nats-manager/81/pull-nats-module-build/123456789",
-# "context": "pull-nats-module-build",
+# "target_url": "https://status.build.kyma-project.io/view/gs/kyma-prow-logs/post/kyma-project_nats-manager/81/post-nats-module-build/123456789",
+# "context": "post-nats-module-build",
 # "created_at": "2023-07-18T11:39:23Z",
 # "updated_at": "2023-07-18T11:39:23Z"
 # }
