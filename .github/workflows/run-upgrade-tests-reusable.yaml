@@ -34,13 +34,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Pre-upgrade checkout
-        run: |
-          # uses pre-upgrade-image-tag if pre-upgrade-branch is not provided
-          if [ -z "${{ inputs.pre-upgrade-branch }}" ]; then
-            git checkout -b ${{ inputs.pre-upgrade-image-tag }}
-          else
-            git checkout ${{ inputs.pre-upgrade-branch }}
-          fi
+        run: git checkout -b ${{ inputs.pre-upgrade-image-tag }}
 
       - name: Install k3d tools
         run: make -C hack/ci/ install-k3d-tools
@@ -94,11 +88,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Post-upgrade checkout
-        run: |
-          # uses post-upgrade-image-tag if post-upgrade-branch is not provided
-          if [ -z "${{ inputs.post-upgrade-branch }}" ]; then
-            git checkout -b ${{ inputs.post-upgrade-image-tag }}
-          fi   
+        run: git checkout -b ${{ inputs.post-upgrade-image-tag }}
 
       - name: Install Eventing manager after Upgrade
         run: |
