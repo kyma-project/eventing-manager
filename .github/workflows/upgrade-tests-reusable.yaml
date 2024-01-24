@@ -14,12 +14,6 @@ on:
       post-upgrade-image-tag:
         required: true
         type: string
-      pre-upgrade-branch:
-        type: string
-        default: ${{ inputs.pre-upgrade-image-tag }}
-      post-upgrade-branch:
-        type: string
-        default: ${{ inputs.post-upgrade-image-tag }}
       build-job-name:
         type: string
       build-job-commit-sha:

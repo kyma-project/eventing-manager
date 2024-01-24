@@ -1,7 +1,7 @@
 name: post-e2e-upgrade-test
 
 on:
-  pull_request:
+  push:
     branches: [ "main" ]
     paths-ignore:
       - 'docs/**'
@@ -16,9 +16,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        # checkout the current branch
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Get latest release tag
         id: get-latest-release-tag
@@ -26,11 +23,11 @@ jobs:
           echo "latest_release_tag=$(curl -s https://api.github.com/repos/kyma-project/eventing-manager/releases/latest | jq -r '.tag_name')" >> "$GITHUB_OUTPUT"
 
   upgrade-test:
-    uses: ./.github/workflows/run-upgrade-tests-reusable.yaml
+    uses: ./.github/workflows/upgrade-tests-reusable.yaml
     needs: get-latest-release
     with:
       pre-upgrade-image-tag: ${{ needs.get-latest-release.outputs.latest_release_tag }}
       post-upgrade-image-tag: main
-      build-job-name: pull-eventing-manager-build
-      build-job-commit-sha: ${{ github.event.pull_request.head.sha }}
+      build-job-name: push-eventing-manager-build
+      build-job-commit-sha: ${{ github.sha }}
     secrets: inherit

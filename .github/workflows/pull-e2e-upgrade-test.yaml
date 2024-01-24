@@ -10,7 +10,7 @@ on:
 
 jobs:
   upgrade-test:
-    uses: ./.github/workflows/run-upgrade-tests-reusable.yaml
+    uses: ./.github/workflows/upgrade-tests-reusable.yaml
     with:
       pre-upgrade-image-tag: main
       post-upgrade-image-tag: PR-${{ github.event.number }}
