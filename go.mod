@@ -4,11 +4,11 @@ go 1.21
 
 require (
 	github.com/avast/retry-go/v3 v3.1.1
-	github.com/cloudevents/sdk-go/protocol/nats/v2 v2.14.0
-	github.com/cloudevents/sdk-go/v2 v2.14.0
+	github.com/cloudevents/sdk-go/protocol/nats/v2 v2.15.0
+	github.com/cloudevents/sdk-go/v2 v2.15.0
 	github.com/go-logr/logr v1.4.1
 	github.com/go-logr/zapr v1.3.0
-	github.com/google/uuid v1.5.0
+	github.com/google/uuid v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-project/api-gateway v0.0.0-20231222161810-7e09cec0147d
 	github.com/kyma-project/kyma/common/logging v0.0.0-20231220133808-e2c22b79a28b
@@ -17,7 +17,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.10.9
 	github.com/nats-io/nats.go v1.32.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.30.0
+	github.com/onsi/gomega v1.31.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.18.0
 	github.com/stretchr/testify v1.8.4
