@@ -31,10 +31,10 @@ func Test_NATSConnection(t *testing.T) {
 			name: "Eventing CR should be in ready state if connected to NATS",
 			givenNATSConnectionMock: func() *natsconnectionmocks.Connection {
 				conn := &natsconnectionmocks.Connection{}
-				conn.On("Connect").Return(nil)
+				conn.On("Connect", mock.Anything, mock.Anything).Return(nil)
 				conn.On("IsConnected").Return(true)
-				conn.On("RegisterReconnectHandlerIfNotRegistered", mock.Anything).Return()
-				conn.On("RegisterDisconnectErrHandlerIfNotRegistered", mock.Anything).Return()
+				conn.On("RegisterReconnectHandler", mock.Anything).Return()
+				conn.On("RegisterDisconnectErrHandler", mock.Anything).Return()
 				return conn
 			},
 			wantMatches: gomega.And(
@@ -48,10 +48,10 @@ func Test_NATSConnection(t *testing.T) {
 			name: "Eventing CR should be in error state if not connected to NATS",
 			givenNATSConnectionMock: func() *natsconnectionmocks.Connection {
 				conn := &natsconnectionmocks.Connection{}
-				conn.On("Connect").Return(natsconnectionerrors.ErrCannotConnect)
+				conn.On("Connect", mock.Anything, mock.Anything).Return(natsconnectionerrors.ErrCannotConnect)
 				conn.On("IsConnected").Return(false)
-				conn.On("RegisterReconnectHandlerIfNotRegistered", mock.Anything).Return()
-				conn.On("RegisterDisconnectErrHandlerIfNotRegistered", mock.Anything).Return()
+				conn.On("RegisterReconnectHandler", mock.Anything).Return()
+				conn.On("RegisterDisconnectErrHandler", mock.Anything).Return()
 				return conn
 			},
 			wantMatches: gomega.And(

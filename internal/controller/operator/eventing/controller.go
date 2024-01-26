@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	natsio "github.com/nats-io/nats.go"
@@ -76,11 +75,10 @@ const (
 )
 
 var (
-	ErrSubscriptionExists       = errors.New(SubscriptionExistsErrMessage)
-	ErrUnsupportedBackedType    = errors.New("backend type not supported")
-	ErrNatsModuleMissing        = errors.New("NATS module has to be installed")
-	ErrAPIGatewayModuleMissing  = errors.New("API-Gateway module is needed for EventMesh backend. APIRules CRD is not installed")
-	ErrNilNATSConnectionBuilder = errors.New("connection builder for NATS backend is nil")
+	ErrSubscriptionExists      = errors.New(SubscriptionExistsErrMessage)
+	ErrUnsupportedBackedType   = errors.New("backend type not supported")
+	ErrNatsModuleMissing       = errors.New("NATS module has to be installed")
+	ErrAPIGatewayModuleMissing = errors.New("API-Gateway module is needed for EventMesh backend. APIRules CRD is not installed")
 )
 
 // Reconciler reconciles an Eventing object
@@ -575,11 +573,6 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context,
 	}
 
 	if connErr := r.connectToNATS(eventingCR); connErr != nil {
-		if errors.Is(connErr, ErrNilNATSConnectionBuilder) {
-			r.namedLogger().Error(connErr)
-			os.Exit(1)
-		}
-
 		if errors.Is(connErr, natsconnectionerrors.ErrCannotConnect) {
 			return kctrl.Result{}, reconcile.TerminalError(
 				r.syncStatusWithNATSErr(ctx, eventingCR, connErr, log),
@@ -608,34 +601,21 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context,
 // connectToNATS connects to NATS and returns an error if it failed.
 // It also registers handlers for reconnection and disconnection.
 func (r *Reconciler) connectToNATS(eventingCR *operatorv1alpha1.Eventing) error {
-	if r.natsConnectionBuilder == nil {
-		return ErrNilNATSConnectionBuilder
-	}
-
 	if r.natsConnection == nil {
 		r.natsConnection = r.natsConnectionBuilder.Build()
 	}
 
-	if err := r.natsConnection.Connect(); err != nil {
-		return err
+	connHandler := func(_ *natsio.Conn) {
+		r.namedLogger().Debug("Handle NATS reconnection")
+		r.genericEvents <- event.GenericEvent{Object: eventingCR}
 	}
 
-	// At this point, it is safe to register handlers
-	// because the internal nats connection is initialized.
-	r.natsConnection.RegisterReconnectHandlerIfNotRegistered(
-		func(_ *natsio.Conn) {
-			r.namedLogger().Debug("Handle NATS reconnection")
-			r.genericEvents <- event.GenericEvent{Object: eventingCR}
-		},
-	)
-	r.natsConnection.RegisterDisconnectErrHandlerIfNotRegistered(
-		func(_ *natsio.Conn, _ error) {
-			r.namedLogger().Debug("Handle NATS disconnection")
-			r.genericEvents <- event.GenericEvent{Object: eventingCR}
-		},
-	)
+	connErrHandler := func(_ *natsio.Conn, _ error) {
+		r.namedLogger().Debug("Handle NATS disconnection")
+		r.genericEvents <- event.GenericEvent{Object: eventingCR}
+	}
 
-	return nil
+	return r.natsConnection.Connect(connHandler, connErrHandler)
 }
 
 func (r *Reconciler) handlePublisherProxy(

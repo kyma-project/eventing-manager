@@ -196,11 +196,11 @@ func NewTestEnvironment(config TestEnvironmentConfig, connMock *natsconnectionmo
 	// setup default mock
 	if connMock == nil {
 		connMock = &natsconnectionmocks.Connection{}
-		connMock.On("Connect").Return(nil)
+		connMock.On("Connect", mock.Anything, mock.Anything).Return(nil)
 		connMock.On("IsConnected").Return(true)
 		connMock.On("Disconnect").Return()
-		connMock.On("RegisterReconnectHandlerIfNotRegistered", mock.Anything).Return()
-		connMock.On("RegisterDisconnectErrHandlerIfNotRegistered", mock.Anything).Return()
+		connMock.On("RegisterReconnectHandler", mock.Anything).Return()
+		connMock.On("RegisterDisconnectErrHandler", mock.Anything).Return()
 	}
 
 	// create a new watcher

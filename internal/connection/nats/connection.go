@@ -18,7 +18,7 @@ type connection struct {
 	disconnectErrHandlerRegistered bool
 }
 
-func (c *connection) Connect() error {
+func (c *connection) Connect(connHandler natsio.ConnHandler, connErrHandler natsio.ConnErrHandler) error {
 	if c.isConnected() {
 		return nil
 	}
@@ -27,6 +27,10 @@ func (c *connection) Connect() error {
 	if c.conn, err = natsio.Connect(c.url, c.opts...); err != nil {
 		return err
 	}
+
+	// register handlers
+	c.registerReconnectHandler(connHandler)
+	c.registerDisconnectErrHandler(connErrHandler)
 
 	if c.isConnected() {
 		return nil
@@ -49,7 +53,7 @@ func (c *connection) isConnected() bool {
 	return c.conn.IsConnected()
 }
 
-func (c *connection) RegisterReconnectHandlerIfNotRegistered(handler natsio.ConnHandler) {
+func (c *connection) registerReconnectHandler(handler natsio.ConnHandler) {
 	if c.conn == nil || c.reconnectHandlerRegistered {
 		return
 	}
@@ -57,7 +61,7 @@ func (c *connection) RegisterReconnectHandlerIfNotRegistered(handler natsio.Conn
 	c.reconnectHandlerRegistered = true
 }
 
-func (c *connection) RegisterDisconnectErrHandlerIfNotRegistered(handler natsio.ConnErrHandler) {
+func (c *connection) registerDisconnectErrHandler(handler natsio.ConnErrHandler) {
 	if c.conn == nil || c.disconnectErrHandlerRegistered {
 		return
 	}
