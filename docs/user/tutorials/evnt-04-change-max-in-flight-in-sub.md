@@ -163,7 +163,29 @@ done
 
 ## Verify the Event Delivery
 
-To verify that the events ware properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
+To verify that the event was properly delivered, check the logs of the Function:
+
+<!-- tabs:start -->
+
+#### **Kyma Dashboard**
+
+1. In Kyma Dashboard, return to the view of your `lastorder` Function.
+2. In the **Code** view, find the **Replicas of the Function** section.
+3. Click the name of your replica.
+4. Locate the **Containers** section and click on **View Logs**.
+
+#### **kubectl**
+
+Run:
+
+```bash
+kubectl logs \
+  -n default \
+  -l serverless.kyma-project.io/function-name=lastorder,serverless.kyma-project.io/resource=deployment \
+  -c function
+```
+
+<!-- tabs:end -->
 
 You will see the received events in the logs as:
 
