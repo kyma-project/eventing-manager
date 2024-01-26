@@ -105,7 +105,7 @@ jobs:
         run: |
           make install
           make deploy IMG=$MANAGER_IMAGE
-          kubectl apply -f config/samples/default.yaml
+          kubectl apply -f config/samples/default_nats.yaml
 
       - name: Wait for Installed modules to be ready
         run: |
@@ -146,7 +146,7 @@ jobs:
 
       - name: Switch back to NATS backend
         run: |
-          kubectl apply -f config/samples/default.yaml
+          kubectl apply -f config/samples/default_nats.yaml
           make -C hack/ci/ wait-eventing-cr-ready-with-backend ACTIVE_BACKEND=NATS
 
       - name: Test eventing again with NATS
