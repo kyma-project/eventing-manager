@@ -72,6 +72,17 @@ const (
 	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
 )
 
+// getSupportedConditionsTypes returns a map of supported condition types.
+func getSupportedConditionsTypes() map[ConditionType]interface{} {
+	return map[ConditionType]interface{}{
+		ConditionBackendAvailable:         nil,
+		ConditionPublisherProxyReady:      nil,
+		ConditionWebhookReady:             nil,
+		ConditionSubscriptionManagerReady: nil,
+		ConditionDeleted:                  nil,
+	}
+}
+
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // Eventing is the Schema for the eventing API.
@@ -223,6 +234,10 @@ func init() {
 
 func (e *Eventing) SyncStatusActiveBackend() {
 	e.Status.ActiveBackend = e.Spec.Backend.Type
+}
+
+func (e *Eventing) IsPreviousBackendEmpty() bool {
+	return e.Status.ActiveBackend == ""
 }
 
 func (e *Eventing) IsSpecBackendTypeChanged() bool {

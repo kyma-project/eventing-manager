@@ -151,6 +151,8 @@ linters-settings:
         alias: istio$1$2
       - pkg: github.com/nats-io/nats-server/v2/(\w+)$
         alias: natsio$1
+      - pkg: github.com/nats-io/nats.go
+        alias: natsio
       - pkg: github.com/kyma-project/eventing-manager/internal/controller/(\w+)$
         alias: controller$1
       - pkg: github.com/kyma-project/kyma/common/logging/logger
@@ -159,6 +161,12 @@ linters-settings:
         alias: natsv1alpha1
       - pkg: github.com/kyma-project/nats-manager/testutils
         alias: natstestutils
+      - pkg: github.com/kyma-project/eventing-manager/internal/connection/nats
+        alias: natsconnection
+      - pkg: github.com/kyma-project/eventing-manager/internal/connection/nats/errors
+        alias: natsconnectionerrors
+      - pkg: github.com/kyma-project/eventing-manager/internal/connection/nats/mocks
+        alias: natsconnectionmocks
       - pkg: github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/(\w+)$
         alias: subscriptioncontroller$1
       - pkg: github.com/kyma-project/eventing-manager/internal/controller/operator/eventing
