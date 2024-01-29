@@ -8,19 +8,23 @@ env:
 on:
   workflow_call:
     inputs:
+      # image tag before upgrade
       pre-upgrade-image-tag:
         required: true
         type: string
+      # image tag after upgrade
       post-upgrade-image-tag:
         required: true
         type: string
+      # job name of the prow build job
       build-job-name:
         type: string
+      # commit sha of the PR or main branch commit
       build-job-commit-sha:
         type: string
 
 jobs:
-  e2e-upgrade: # This job tests the upgrade of Eventing module from latest image of the main branch to the current commit.
+  e2e-upgrade: # This job tests the upgrade of Eventing module from the latest image of the main branch to the current commit.
     runs-on: ubuntu-latest
     env:
       BACKEND_TYPE: NATS
@@ -33,7 +37,7 @@ jobs:
       - name: Install k3d tools
         run: make -C hack/ci/ install-k3d-tools
 
-      - name: Install Kyma CLI & setup k3d cluster using kyma CLI
+      - name: Install Kyma CLI & setup k3d cluster using Kyma CLI 
         run: |
           make kyma
           make -C hack/ci/ create-k3d
@@ -53,13 +57,13 @@ jobs:
         run: |
           make -C hack/ci/ wait-nats-cr-ready
 
-      - name: Install Eventing Manager before Upgrade
+      - name: Install Eventing manager before upgrade 
         run: |
           pre_upgrade_image=$(./hack/ci/build-full-image-path.sh ${{ inputs.pre-upgrade-image-tag }})
           echo "Pre-upgrade image: $pre_upgrade_image"
           make deploy IMG=$pre_upgrade_image
 
-      - name: Create test resources and waits for eventing CR readiness
+      - name: Create test resources and wait for eventing CR readiness 
         run: |
           export MANAGER_IMAGE=$(./hack/ci/build-full-image-path.sh ${{ inputs.pre-upgrade-image-tag }})
           make e2e-setup
@@ -84,7 +88,7 @@ jobs:
       - name: Post-upgrade checkout
         run: git checkout -b ${{ inputs.post-upgrade-image-tag }}
 
-      - name: Install Eventing manager after Upgrade
+      - name: Install Eventing manager after upgrade  
         run: |
           post_upgrade_image=$(./hack/ci/build-full-image-path.sh ${{ inputs.post-upgrade-image-tag }})
           echo "Post-upgrade image: $post_upgrade_image"
@@ -99,7 +103,7 @@ jobs:
         run: |
           make e2e-eventing
 
-      - name: Cleanup Test Resources
+      - name: Cleanup test resources
         run: |
           make e2e-eventing-cleanup
           make e2e-cleanup
