@@ -1,4 +1,4 @@
-# Create Subscription subscribing to multiple event types
+# Create Subscription Subscribing to Multiple Event Types
 
 The [Subscription](../resources/evnt-cr-subscription.md) CustomResourceDefinition (CRD) is used to subscribe to events. In this tutorial, you learn how to subscribe to one or more event types using the Kyma Subscription.
 
@@ -9,7 +9,7 @@ The [Subscription](../resources/evnt-cr-subscription.md) CustomResourceDefinitio
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
 2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event#create-a-function).
 
-## Create a Subscription with multiple event types
+## Create a Subscription With Multiple Event Types
 
 To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). In the following example, you learn how to subscribe to events of two types: `order.received.v1` and `order.changed.v1`.
 
@@ -61,7 +61,7 @@ The operation was successful if the returned status says `true`.
 
 <!-- tabs:end -->
 
-## Trigger the workload with an event
+## Trigger the Workload With an Event
 
 You created the `lastorder` Function, and subscribed to the `order.received.v1` and `order.changed.v1` events by creating a Subscription CR. Now it's time to publish the events and trigger the Function.
 In the following example, you port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost.
@@ -133,7 +133,7 @@ In the following example, you port-forward the [Event Publisher Proxy](../evnt-a
    ```
 <!-- tabs:end -->
 
-## Verify the event delivery
+## Verify the Event Delivery
 
 To verify that the events were properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
 

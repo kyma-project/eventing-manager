@@ -1,8 +1,8 @@
-# Eventing architecture
+# Eventing Architecture
 
 Eventing uses Event Publisher Proxy and Eventing Manager to connect to the default NATS JetStream backend. They work together to process and deliver events in Kyma.
 
-## Event processing and delivery
+## Event Processing and Delivery
 
 The event processing and delivery flow uses the NATS server to process events and send them to subscribers.
 This diagram explains the event flow in Kyma, from the moment an event source sends an event, to the point when the event triggers the Function.

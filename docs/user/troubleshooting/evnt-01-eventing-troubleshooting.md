@@ -1,4 +1,4 @@
-# Kyma Eventing - basic diagnostics
+# Kyma Eventing - Basic Diagnostics
 
 ## Symptom
 

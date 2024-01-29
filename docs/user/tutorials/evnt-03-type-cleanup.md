@@ -1,4 +1,4 @@
-# Event name cleanup in Subscriptions
+# Event Name Cleanup in Subscriptions
 
 To conform to Cloud Event specifications, sometimes Eventing must modify the event names to filter out prohibited characters. This tutorial presents one example of event name cleanup.
 You learn how Eventing behaves when you create a [Subscription](../resources/evnt-cr-subscription.md) having prohibited characters in the event names. Read more about [Event name format and cleanup](../evnt-event-names.md).
@@ -54,7 +54,7 @@ You learn how Eventing behaves when you create a [Subscription](../resources/evn
 
    <!-- tabs:end -->
 
-## Create a Subscription with Event type consisting of alphanumeric characters
+## Create a Subscription With Event Type Consisting of Alphanumeric Characters
 
 Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR) and subscribe for events of the type: `order.payment*success.v1`. Note that `order.payment*success.v1` contains a prohibited character, the asterisk `*`.
 
@@ -102,7 +102,7 @@ The operation was successful if the returned status says `true`.
   </details>
 </div>
 
-## Check the Subscription cleaned Event type
+## Check the Subscription Cleaned Event Type
 
 To check the Subscription cleaned Event type, run:
 
@@ -112,7 +112,7 @@ kubectl get subscriptions lastorder-payment-sub -o=jsonpath="{.status.types}"
 
 Note that the returned event type `["order.paymentsuccess.v1"]` does not contain the asterisk `*` in the `payment*success` part. That's because Kyma Eventing cleans out the prohibited characters from the event name and uses the cleaned event name in the underlying Eventing backend.
 
-## Trigger the workload with an event
+## Trigger the Workload With an Event
 
 You created the `lastorder` Function, and subscribed to the `order.payment*success.v1` events by creating a Subscription CR. 
 Next, you see that you can still publish events with the original Event name (i.e. `order.payment*success.v1`) even though it contains the prohibited character, and it triggers the Function.
@@ -153,7 +153,7 @@ Next, you see that you can still publish events with the original Event name (i.
    ```
    <!-- tabs:end -->
 
-## Verify the event delivery
+## Verify the Event Delivery
 
 To verify that the event was properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
 

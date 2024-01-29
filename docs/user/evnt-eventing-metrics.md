@@ -1,9 +1,9 @@
-# Kyma Eventing metrics
+# Kyma Eventing Metrics
 
 Kyma Eventing provides various metrics, so you can monitor statistics and other information in real time.
 The metrics follow the [Prometheus naming convention](https://prometheus.io/docs/practices/naming/).
 
-## Metrics emitted by Eventing Publisher Proxy
+## Metrics Emitted by Eventing Publisher Proxy
 
 | Metric                                         | Description                                                                      |
 | ---------------------------------------------- | :------------------------------------------------------------------------------- |
@@ -13,7 +13,7 @@ The metrics follow the [Prometheus naming convention](https://prometheus.io/docs
 | **eventing_epp_requests_duration_seconds**     | The duration of processing an incoming request (includes sending to the backend) |
 | **eventing_epp_requests_total**                | The total number of requests                                                     |
 
-## Metrics emitted by Eventing Manager
+## Metrics Emitted by Eventing Manager
 
 | Metric                                                    | Description                                                                                                                 |
 | --------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
@@ -23,6 +23,6 @@ The metrics follow the [Prometheus naming convention](https://prometheus.io/docs
 | **eventing_ec_nats_subscriber_dispatch_duration_seconds** | The duration of sending an incoming NATS message to the subscriber (not including processing the message in the dispatcher) |
 | **eventing_ec_subscription_status**                       | The status of a subscription. `1` indicates the subscription is marked as ready                                             |
 
-### Metrics emitted by NATS Exporter:
+### Metrics Emitted by NATS Exporter
 
 The [Prometheus NATS Exporter](https://github.com/nats-io/prometheus-nats-exporter) also emits metrics that you can monitor. Learn more about [NATS Monitoring](https://docs.nats.io/running-a-nats-service/configuration/monitoring#jetstream-information).

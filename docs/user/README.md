@@ -1,4 +1,4 @@
-# Eventing module
+# Eventing Module
 
 This module ships Eventing Manager, which is a standard Kubernetes operator that observes the state of Eventing resources and reconciles them according to the desired state.
 
@@ -12,7 +12,7 @@ Kyma Eventing uses the following technology:
 - [HTTP POST](https://www.w3schools.com/tags/ref_httpmethods.asp) requests to simplify sending and receiving events
 - Declarative [Subscription custom resource (CR)](./resources/evnt-cr-subscription.md) to subscribe to events
 
-## Kyma Eventing flow
+## Kyma Eventing Flow
 
 Kyma Eventing follows the PubSub messaging pattern: Kyma publishes messages to a messaging backend, which filters these messages and sends them to interested subscribers. Kyma does not send messages directly to the subscribers as shown below:
 
@@ -40,7 +40,7 @@ For more information, read [Eventing architecture](evnt-architecture.md).
   - `at least once` delivery: With NATS JetStream, Kyma ensures that for each event published, all the subscribers subscribed to that event receive the event at least once.
   - `max bytes and discard policy`: NATS JetStream uses these configurations to ensure that no messages are lost when the storage is almost full. By default, Kyma ensures that no new messages are accepted when the storage reaches 90% capacity.  
 
-## Documentation overview
+## Documentation Overview
 
 To learn more about how Eventing works, see:
 
@@ -53,6 +53,7 @@ To learn more about how Eventing works, see:
 - [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) - provides more information about the backend technology behind Eventing in Kyma. [Eventing Architecture](evnt-architecture.md#jet-stream) provides details on the functionalities and higher qualities of service on top of Core NATS.
 
 To learn more about technical details aimed at possible contributors, check out the following documents:
+
 - [Development](../contributor/development.md) - provides general information about the setup
 - [Governance](../contributor/governance.md) - provides information about the rules and norms of this project
 - [Installation guide](../contributor/installation.md) - contains information about the different ways to install the Eventing module

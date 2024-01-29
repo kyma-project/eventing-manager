@@ -4,7 +4,7 @@ The `subscriptions.eventing.kyma-project.io` CustomResourceDefinition (CRD) is a
 
 `kubectl get crd subscriptions.eventing.kyma-project.io -o yaml`
 
-## Sample custom resource
+## Sample Custom Resource
 
 This sample Subscription custom resource (CR) subscribes to an event called `order.created.v1`.
 
@@ -28,7 +28,7 @@ spec:
     maxInFlightMessages: "10"
 ```
 
-## Custom resource parameters
+## Custom Resource Parameters
 
 This table lists all the possible parameters of a given resource together with their descriptions:
 
