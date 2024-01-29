@@ -63,7 +63,7 @@ The operation was successful if the command returns `true`.
 
 You created the `lastorder` Function, and subscribed to the `order.received.v1` events by creating a Subscription CR. Now it's time to send an event and trigger the Function.
 
-1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
 
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80

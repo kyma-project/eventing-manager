@@ -1,6 +1,6 @@
 # Eventing Architecture
 
-Eventing uses Event Publisher Proxy and Eventing Manager to connect to the default NATS JetStream backend. They work together to process and deliver events in Kyma.
+Eventing uses Eventing Publisher Proxy and Eventing Manager to connect to the default NATS JetStream backend. They work together to process and deliver events in Kyma.
 
 ## Event Processing and Delivery
 
@@ -13,17 +13,17 @@ This diagram explains the event flow in Kyma, from the moment an event source se
 
 2. The Eventing Manager creates an infrastructure for the NATS server.
 
-3. An event source publishes events to the Event Publisher Proxy.
+3. An event source publishes events to the Eventing Publisher Proxy.
 
-4. The Event Publisher Proxy sends events to the NATS server.
+4. The Eventing Publisher Proxy sends events to the NATS server.
 
 5. The NATS server dispatches events to the Eventing Manager.
 
 6. The Eventing Manager dispatches events to subscribers (microservices or Functions).
 
-## Event Publisher Proxy
+## Eventing Publisher Proxy
 
-Event Publisher Proxy receives legacy and CloudEvents, and publishes them to the configured Eventing backend. All the legacy events are automatically converted to CloudEvents.
+Eventing Publisher Proxy receives legacy and CloudEvents, and publishes them to the configured Eventing backend. All the legacy events are automatically converted to CloudEvents.
 
 ## Eventing Manager
 

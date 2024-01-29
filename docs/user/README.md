@@ -22,7 +22,7 @@ Eventing in Kyma from a user’s perspective works as follows:
 
 - Offer an HTTP end point, for example a Function to receive the events.
 - Specify the events the user is interested in using the Kyma [Subscription CR](./resources/evnt-cr-subscription.md).
-- Send [CloudEvents](https://cloudevents.io/) or legacy events (deprecated) to the following HTTP end points on our [Event Publisher Proxy](https://github.com/kyma-project/kyma/tree/main/components/event-publisher-proxy) service.
+- Send [CloudEvents](https://cloudevents.io/) or legacy events (deprecated) to the following HTTP end points on our [Eventing Publisher Proxy](https://github.com/kyma-project/kyma/tree/main/components/event-publisher-proxy) service.
   - `/publish` for CloudEvents.
   - `<application_name>/v1/events` for legacy events.
 
@@ -46,7 +46,7 @@ To learn more about how Eventing works, see:
 
 - [Eventing module](01-manager.md) - provides a general overview of the Eventing module
 - [Eventing module configuration](02-configuration.md) - contains information about configuring the Eventing module
-- [Eventing architecture](evnt-architecture.md) - describes how Eventing works and the main actors involved, such as Eventing Manager and Event Publisher Proxy.
+- [Eventing architecture](evnt-architecture.md) - describes how Eventing works and the main actors involved, such as Eventing Manager and Eventing Publisher Proxy.
 - [Event names](evnt-event-names.md) - contains information about event names and event name cleanup.
 - [Subscription CR](./resources/evnt-cr-subscription.md) - describes the Subscription custom resource, which you need to subscribe to events.
 - [CloudEvents](https://cloudevents.io/) - provides information about the CloudEvents specification used in Kyma.

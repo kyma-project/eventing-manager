@@ -117,7 +117,7 @@ Note that the returned event type `["order.paymentsuccess.v1"]` does not contain
 You created the `lastorder` Function, and subscribed to the `order.payment*success.v1` events by creating a Subscription CR. 
 Next, you see that you can still publish events with the original Event name (i.e. `order.payment*success.v1`) even though it contains the prohibited character, and it triggers the Function.
 
-1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
 
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
