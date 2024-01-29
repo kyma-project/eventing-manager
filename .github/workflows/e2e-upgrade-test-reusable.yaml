@@ -1,4 +1,4 @@
-name: Upgrade Tests Reusable Workflow
+name: Upgrade Tests Workflow (reusable)
 
 env:
   E2E_LOG_LEVEL: debug

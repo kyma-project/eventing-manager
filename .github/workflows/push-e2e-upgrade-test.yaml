@@ -23,7 +23,7 @@ jobs:
           echo "latest_release_tag=$(curl -s https://api.github.com/repos/kyma-project/eventing-manager/releases/latest | jq -r '.tag_name')" >> "$GITHUB_OUTPUT"
 
   upgrade-test:
-    uses: ./.github/workflows/upgrade-tests-reusable.yaml
+    uses: ./.github/workflows/e2e-upgrade-test-reusable.yaml
     needs: get-latest-release
     with:
       pre-upgrade-image-tag: ${{ needs.get-latest-release.outputs.latest_release_tag }}
