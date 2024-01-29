@@ -13,11 +13,9 @@ The [Subscription](../resources/evnt-cr-subscription.md) CustomResourceDefinitio
 
 To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). In the following example, you learn how to subscribe to events of two types: `order.received.v1` and `order.changed.v1`.
 
-<div tabs name="Create a Subscription" group="create-subscription">
-  <details open>
-  <summary label="Kyma Dashboard">
-  Kyma Dashboard
-  </summary>
+<!-- tabs:start -->
+
+#### **Kyma Dashboard**
 
 1. Go to **Namespaces** and select the default Namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
@@ -33,13 +31,10 @@ To subscribe to multiple events, you need a [Subscription](../resources/evnt-cr-
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-  </details>
-  <details>
-  <summary label="kubectl">
-  kubectl
-  </summary>
+#### **kubectl**
 
 Run:
+
 ```bash
 cat <<EOF | kubectl apply -f -
     apiVersion: eventing.kyma-project.io/v1alpha2
@@ -57,14 +52,14 @@ EOF
 ```
 
 To check that the Subscription was created and is ready, run:
+
 ```bash
 kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"
 ```
 
 The operation was successful if the returned status says `true`.
 
-  </details>
-</div>
+<!-- tabs:end -->
 
 ## Trigger the workload with an event
 
@@ -72,91 +67,79 @@ You created the `lastorder` Function, and subscribed to the `order.received.v1` 
 In the following example, you port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost.
 
 1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
    ```
+
 2. Publish an event of type `order.received.v1` to trigger your Function. In another terminal window, run:
 
-    <div tabs name="Publish an event" group="trigger-workload">
-      <details open>
-      <summary label="CloudEvents Conformance Tool">
-      CloudEvents Conformance Tool
-      </summary>
-    
-       ```bash
-       cloudevents send http://localhost:3000/publish \
-          --type order.received.v1 \
-          --id cc99dcdd-6f6d-43d6-afef-d024eb276584 \
-          --source myapp \
-          --datacontenttype application/json \
-          --data "{\"orderCode\":\"3211213\", \"orderStatus\":\"received\"}" \
-          --yaml
-       ```
-    
-      </details>
-      <details>
-      <summary label="curl">
-      curl
-      </summary>
-    
-       ```bash
-       curl -v -X POST \
-            -H "ce-specversion: 1.0" \
-            -H "ce-type: order.received.v1" \
-            -H "ce-source: myapp" \
-            -H "ce-eventtypeversion: v1" \
-            -H "ce-id: cc99dcdd-6f6d-43d6-afef-d024eb276584" \
-            -H "content-type: application/json" \
-            -d "{\"orderCode\":\"3211213\", \"orderStatus\":\"received\"}" \
-            http://localhost:3000/publish
-       ```
-      </details>
-    </div>
+<!-- tabs:start -->
+   #### **CloudEvents Conformance Tool**
 
-3. Now, publish an event of type `order.changed.v1` to trigger your Function.
+   ```bash
+   cloudevents send http://localhost:3000/publish \
+      --type order.received.v1 \
+      --id cc99dcdd-6f6d-43d6-afef-d024eb276584 \
+      --source myapp \
+      --datacontenttype application/json \
+      --data "{\"orderCode\":\"3211213\", \"orderStatus\":\"received\"}" \
+      --yaml
+   ```
 
-    <div tabs name="Publish an event" group="trigger-workload2">
-      <details open>
-      <summary label="CloudEvents Conformance Tool">
-      CloudEvents Conformance Tool
-      </summary>
-    
-       ```bash
-       cloudevents send http://localhost:3000/publish \
-          --type order.changed.v1 \
-          --id 94064655-7e9e-4795-97a3-81bfd497aac6 \
-          --source myapp \
-          --datacontenttype application/json \
-          --data "{\"orderCode\":\"3211213\", \"orderStatus\":\"changed\"}" \
-          --yaml
-       ```
-    
-      </details>
-      <details>
-      <summary label="curl">
-      curl
-      </summary>
-    
-       ```bash
-       curl -v -X POST \
-            -H "ce-specversion: 1.0" \
-            -H "ce-type: order.changed.v1" \
-            -H "ce-source: myapp" \
-            -H "ce-eventtypeversion: v1" \
-            -H "ce-id: 94064655-7e9e-4795-97a3-81bfd497aac6" \
-            -H "content-type: application/json" \
-            -d "{\"orderCode\":\"3211213\", \"orderStatus\":\"changed\"}" \
-            http://localhost:3000/publish
-       ```
-      </details>
-    </div>
+   #### **curl**
+
+   ```bash
+   curl -v -X POST \
+        -H "ce-specversion: 1.0" \
+        -H "ce-type: order.received.v1" \
+        -H "ce-source: myapp" \
+        -H "ce-eventtypeversion: v1" \
+        -H "ce-id: cc99dcdd-6f6d-43d6-afef-d024eb276584" \
+        -H "content-type: application/json" \
+        -d "{\"orderCode\":\"3211213\", \"orderStatus\":\"received\"}" \
+        http://localhost:3000/publish
+   ```
+<!-- tabs:end -->
+
+1. Now, publish an event of type `order.changed.v1` to trigger your Function.
+
+<!-- tabs:start -->
+
+   #### **CloudEvents Conformance Tool**
+
+   ```bash
+   cloudevents send http://localhost:3000/publish \
+      --type order.changed.v1 \
+      --id 94064655-7e9e-4795-97a3-81bfd497aac6 \
+      --source myapp \
+      --datacontenttype application/json \
+      --data "{\"orderCode\":\"3211213\", \"orderStatus\":\"changed\"}" \
+      --yaml
+   ```
+
+   #### **curl**
+
+   ```bash
+    curl -v -X POST \
+        -H "ce-specversion: 1.0" \
+        -H "ce-type: order.changed.v1" \
+        -H "ce-source: myapp" \
+        -H "ce-eventtypeversion: v1" \
+        -H "ce-id: 94064655-7e9e-4795-97a3-81bfd497aac6" \
+        -H "content-type: application/json" \
+        -d "{\"orderCode\":\"3211213\", \"orderStatus\":\"changed\"}" \
+        http://localhost:3000/publish
+   ```
+<!-- tabs:end -->
 
 ## Verify the event delivery
 
 To verify that the events were properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
 
-You will see the received event in the logs:
-```
+You see the received event in the logs:
+
+```bash
 Received event: { orderCode: '3211213', orderStatus: 'received' }
 Received event: { orderCode: '3211213', orderStatus: 'changed' }
 ```

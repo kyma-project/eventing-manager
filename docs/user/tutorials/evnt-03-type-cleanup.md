@@ -9,13 +9,10 @@ You learn how Eventing behaves when you create a [Subscription](../resources/evn
 
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
 2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event).
-3. For this tutorial, instead of the default code sample, replace the Function source with the following code:
+3. For this procedure, instead of the default code sample, replace the Function source with the following code:
 
-   <div tabs name="Deploy a Function" group="create-workload">
-     <details open>
-     <summary label="Kyma Dashboard">
-     Kyma Dashboard
-     </summary>
+   <!-- tabs:start -->
+   #### **Kyma Dashboard**
 
    ```js
    module.exports = {
@@ -25,13 +22,9 @@ You learn how Eventing behaves when you create a [Subscription](../resources/evn
      } 
    }
    ```
-       
-     </details>
-     <details>
-     <summary label="kubectl">
-     kubectl
-     </summary>
-   
+
+   #### **kubectl**
+
    ```bash
    cat <<EOF | kubectl apply -f -
    apiVersion: serverless.kyma-project.io/v1alpha2
@@ -59,18 +52,14 @@ You learn how Eventing behaves when you create a [Subscription](../resources/evn
    EOF
    ```
 
-     </details>
-   </div>
+   <!-- tabs:end -->
 
 ## Create a Subscription with Event type consisting of alphanumeric characters
 
 Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR) and subscribe for events of the type: `order.payment*success.v1`. Note that `order.payment*success.v1` contains a prohibited character, the asterisk `*`.
 
-<div tabs name="Create a Subscription" group="create-subscription">
-  <details open>
-  <summary label="Kyma Dashboard">
-  Kyma Dashboard
-  </summary>
+<!-- tabs:start -->
+#### **Kyma Dashboard**
 
 1. Go to **Namespaces** and select the default Namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
@@ -84,13 +73,10 @@ Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (C
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-  </details>
-  <details>
-  <summary label="kubectl">
-  kubectl
-  </summary>
+#### **kubectl**
 
 Run:
+
 ```bash
 cat <<EOF | kubectl apply -f -
    apiVersion: eventing.kyma-project.io/v1alpha2
@@ -107,6 +93,7 @@ EOF
 ```
 
 To check that the Subscription was created and is ready, run:
+
 ```bash
 kubectl get subscriptions lastorder-payment-sub -o=jsonpath="{.status.ready}"
 ```
@@ -118,6 +105,7 @@ The operation was successful if the returned status says `true`.
 ## Check the Subscription cleaned Event type
 
 To check the Subscription cleaned Event type, run:
+
 ```bash
 kubectl get subscriptions lastorder-payment-sub -o=jsonpath="{.status.types}"
 ```
@@ -130,55 +118,51 @@ You created the `lastorder` Function, and subscribed to the `order.payment*succe
 Next, you see that you can still publish events with the original Event name (i.e. `order.payment*success.v1`) even though it contains the prohibited character, and it triggers the Function.
 
 1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
    ```
+
 2. Publish an event to trigger your Function. In another terminal window, run:
 
-   <div tabs name="Publish an event" group="trigger-workload">
-     <details open>
-     <summary label="CloudEvents Conformance Tool">
-     CloudEvents Conformance Tool
-     </summary>
-   
-      ```bash
-      cloudevents send http://localhost:3000/publish \
-         --type "order.payment*success.v1" \
-         --id e4bcc616-c3a9-4840-9321-763aa23851fc \
-         --source myapp \
-         --datacontenttype application/json \
-         --data "{\"orderCode\":\"3211213\", \"orderAmount\":\"1250\"}" \
-         --yaml
-      ```
-   
-     </details>
-     <details>
-     <summary label="curl">
-     curl
-     </summary>
-   
-      ```bash
-      curl -v -X POST \
-           -H "ce-specversion: 1.0" \
-           -H "ce-type: order.payment*success.v1" \
-           -H "ce-source: myapp" \
-           -H "ce-eventtypeversion: v1" \
-           -H "ce-id: e4bcc616-c3a9-4840-9321-763aa23851fc" \
-           -H "content-type: application/json" \
-           -d "{\"orderCode\":\"3211213\", \"orderAmount\":\"1250\"}" \
-           http://localhost:3000/publish
-      ```
-     </details>
-   </div>
+   <!-- tabs:start -->
+   #### **CloudEvents Conformance Tool**
+
+   ```bash
+   cloudevents send http://localhost:3000/publish \
+      --type "order.payment*success.v1" \
+      --id e4bcc616-c3a9-4840-9321-763aa23851fc \
+      --source myapp \
+      --datacontenttype application/json \
+      --data "{\"orderCode\":\"3211213\", \"orderAmount\":\"1250\"}" \
+      --yaml
+   ```
+
+   #### **curl**
+
+   ```bash
+   curl -v -X POST \
+        -H "ce-specversion: 1.0" \
+        -H "ce-type: order.payment*success.v1" \
+        -H "ce-source: myapp" \
+        -H "ce-eventtypeversion: v1" \
+        -H "ce-id: e4bcc616-c3a9-4840-9321-763aa23851fc" \
+        -H "content-type: application/json" \
+        -d "{\"orderCode\":\"3211213\", \"orderAmount\":\"1250\"}" \
+        http://localhost:3000/publish
+   ```
+   <!-- tabs:end -->
 
 ## Verify the event delivery
 
 To verify that the event was properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
 
 You see the received event in the logs:
-```
+
+```bash
 Received event:  { orderCode: '3211213', orderAmount: '1250' } , Event Type:  order.paymentsuccess.v1
 ```
+
 Note that the `Event Type` of the received event is not the same as defined in the Subscription.
 
 ## Conclusion

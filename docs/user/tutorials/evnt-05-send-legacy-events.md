@@ -15,11 +15,8 @@ Kyma Eventing also supports sending and receiving of legacy events. In this tuto
 
 To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). We're going to subscribe to events of the type `order.received.v1`.
 
-<div tabs name="Create a Subscription" group="trigger-workload">
-  <details open>
-  <summary label="Kyma Dashboard">
-  Kyma Dashboard
-  </summary>
+<!-- tabs:start -->
+#### **Kyma Dashboard**
 
 1. Go to **Namespaces** and select the default Namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
@@ -33,13 +30,10 @@ To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscripti
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-  </details>
-  <details>
-  <summary label="kubectl">
-  kubectl
-  </summary>
+#### **kubectl**
 
 Run:
+
 ```bash
 cat <<EOF | kubectl apply -f -
    apiVersion: eventing.kyma-project.io/v1alpha2
@@ -56,23 +50,25 @@ EOF
 ```
 
 To check that the Subscription was created and is ready, run:
+
 ```bash
 kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"
 ```
 
 The operation was successful if the command returns `true`.
 
-  </details>
-</div>
+<!-- tabs:end -->
 
-## Publish a legacy event to trigger the workload
+## Publish a Legacy Event To Trigger the Workload
 
 You created the `lastorder` Function, and subscribed to the `order.received.v1` events by creating a Subscription CR. Now it's time to send an event and trigger the Function.
 
 1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+
    ```bash
    kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
    ```
+
 2. Publish an event to trigger your Function. In another terminal window, run:
 
    ```bash
@@ -92,11 +88,12 @@ You created the `lastorder` Function, and subscribed to the `order.received.v1` 
 
    > **NOTE:** If you want to use a Function to publish a CloudEvent, see the [Event object SDK specification](https://kyma-project.io/#/serverless-manager/user/technical-reference/07-70-function-specification?id=event-object-sdk).
 
-## Verify the legacy event delivery
+## Verify the Legacy Event Delivery
 
 To verify that the event was properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
 
 You see the received event in the logs:
-```
+
+```bash
 Received event: { orderCode: '3211213' }
 ```
