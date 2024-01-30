@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	kappsv1 "k8s.io/api/apps/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -25,9 +26,16 @@ const (
 
 // allowedAnnotations are the publisher proxy deployment spec template annotations
 // which should be preserved during reconciliation.
-var allowedAnnotations = map[string]string{
-	"kubectl.kubernetes.io/restartedAt": "",
+func allowedAnnotations() map[string]string {
+	return map[string]string{
+		"kubectl.kubernetes.io/restartedAt": "",
+	}
 }
+
+var (
+	ErrUnknownBackendType = errors.New("unknown backend type")
+	ErrEPPDeployFailed    = errors.New("failed to apply Publisher Proxy deployment")
+)
 
 //go:generate go run github.com/vektra/mockery/v2 --name=Manager --outpkg=mocks --case=underscore
 type Manager interface {
@@ -45,7 +53,6 @@ type Manager interface {
 }
 
 type EventingManager struct {
-	ctx context.Context
 	client.Client
 	backendConfig env.BackendConfig
 	kubeClient    k8s.Client
@@ -62,7 +69,6 @@ func NewEventingManager(
 	recorder record.EventRecorder,
 ) Manager {
 	return &EventingManager{
-		ctx:           ctx,
 		Client:        client,
 		backendConfig: backendConfig,
 		kubeClient:    kubeClient,
@@ -99,30 +105,30 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 	case v1alpha1.EventMeshBackendType:
 		desiredPublisher = newEventMeshPublisherDeployment(eventing, em.backendConfig.PublisherConfig)
 	default:
-		return nil, fmt.Errorf("unknown EventingBackend type %q", backendType)
+		return nil, fmt.Errorf("%w: %q", ErrUnknownBackendType, backendType)
 	}
 
 	if err := controllerutil.SetControllerReference(eventing, desiredPublisher, em.Scheme()); err != nil {
-		return nil, fmt.Errorf("failed to set controller reference: %v", err)
+		return nil, fmt.Errorf("failed to set controller reference: %w", err)
 	}
 
 	currentPublisher, err := em.kubeClient.GetDeployment(ctx, GetPublisherDeploymentName(*eventing), eventing.Namespace)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Event Publisher deployment: %v", err)
+		return nil, fmt.Errorf("failed to get Event Publisher deployment: %w", err)
 	}
 
 	if currentPublisher != nil {
 		// preserve only allowed annotations
 		desiredPublisher.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
 		for k, v := range currentPublisher.Spec.Template.ObjectMeta.Annotations {
-			if _, ok := allowedAnnotations[k]; ok {
+			if _, ok := allowedAnnotations()[k]; ok {
 				desiredPublisher.Spec.Template.ObjectMeta.Annotations[k] = v
 			}
 		}
 
 		// if a publisher deploy from eventing-controller exists, then update it.
 		if err := em.migratePublisherDeploymentFromEC(ctx, eventing, *currentPublisher, *desiredPublisher); err != nil {
-			return nil, fmt.Errorf("failed to migrate publisher: %v", err)
+			return nil, fmt.Errorf("failed to migrate publisher: %w", err)
 		}
 	}
 
@@ -135,7 +141,7 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 
 	// Update publisher proxy deployment
 	if err := em.kubeClient.PatchApply(ctx, desiredPublisher); err != nil {
-		return nil, fmt.Errorf("failed to apply Publisher Proxy deployment: %v", err)
+		return nil, fmt.Errorf("%w: %w", ErrEPPDeployFailed, err)
 	}
 
 	return desiredPublisher, nil
@@ -156,7 +162,7 @@ func (em *EventingManager) migratePublisherDeploymentFromEC(
 	// change OwnerReference to Eventing CR.
 	updatedPublisher.OwnerReferences = nil
 	if err := controllerutil.SetControllerReference(eventing, updatedPublisher, em.Scheme()); err != nil {
-		return fmt.Errorf("failed to set controller reference: %v", err)
+		return fmt.Errorf("failed to set controller reference: %w", err)
 	}
 	// copy Spec from desired publisher
 	// because some ENV variables conflicts with server-side patch apply.
@@ -286,6 +292,6 @@ func convertECBackendType(backendType v1alpha1.BackendType) (eventingv1alpha1.Ba
 	case v1alpha1.NatsBackendType:
 		return eventingv1alpha1.NatsBackendType, nil
 	default:
-		return "", fmt.Errorf("unknown backend type: %s", backendType)
+		return "", fmt.Errorf("%w: %s", ErrUnknownBackendType, backendType)
 	}
 }

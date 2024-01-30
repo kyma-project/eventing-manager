@@ -18,7 +18,7 @@ import (
 const RequeueTimeForStatusCheck = 10
 
 // InitStateProcessing initializes the state of the EventingStatus if it is not set.
-func (es *Reconciler) InitStateProcessing(eventing *operatorv1alpha1.Eventing) {
+func (r *Reconciler) InitStateProcessing(eventing *operatorv1alpha1.Eventing) {
 	if eventing.Status.State == "" {
 		eventing.Status.SetStateProcessing()
 	}
@@ -44,7 +44,7 @@ func (r *Reconciler) syncStatusWithNATSState(ctx context.Context, state string,
 	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
 }
 
-func (r *Reconciler) syncStatusForEmptyBackend(ctx context.Context, reason operatorv1alpha1.ConditionReason,
+func (r *Reconciler) syncStatusForEmptyBackend(ctx context.Context,
 	message string, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
 ) error {
 	// Set error state in status
@@ -169,6 +169,9 @@ func (r *Reconciler) syncEventingStatus(ctx context.Context,
 func (r *Reconciler) updateStatus(ctx context.Context, oldEventing, newEventing *operatorv1alpha1.Eventing,
 	logger *zap.SugaredLogger,
 ) error {
+	// Preserve only supported conditions.
+	newEventing.Status.RemoveUnsupportedConditions()
+
 	// Compare the status taking into consideration lastTransitionTime in conditions
 	if oldEventing.Status.IsEqual(newEventing.Status) {
 		return nil
@@ -218,7 +221,9 @@ func (r *Reconciler) handleEventingState(ctx context.Context, deployment *kappsv
 	return kctrl.Result{}, r.syncEventingStatus(ctx, eventingCR, log)
 }
 
-// to be able to mock this function in tests.
+// IsDeploymentReady is a variable to able to mock this function in tests.
+//
+//nolint:gochecknoglobals //TODO: refactor the reconciler to support replacing this function without global variable
 var IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 	return deployment.Status.AvailableReplicas == *deployment.Spec.Replicas
 }

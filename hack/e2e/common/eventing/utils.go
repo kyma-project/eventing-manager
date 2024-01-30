@@ -24,8 +24,8 @@ func LegacyEventData(source, eventType string) string {
 	return `{\"` + keyApp + `\":\"` + source + `\",\"` + keyMode + `\":\"legacy\",\"` + keyType + `\":\"` + eventType + `\"}`
 }
 
-func LegacyEventPayload(eventId, eventVersion, eventType, data string) string {
-	return `{"data":"` + data + `","event-id":"` + eventId + `","event-type":"` + eventType + `","event-time":"2020-04-02T21:37:00Z","event-type-version":"` + eventVersion + `"}`
+func LegacyEventPayload(id, eventVersion, eventType, data string) string {
+	return `{"data":"` + data + `","event-id":"` + id + `","event-type":"` + eventType + `","event-time":"2020-04-02T21:37:00Z","event-type-version":"` + eventVersion + `"}`
 }
 
 func CloudEventMode(encoding binding.Encoding) string {
@@ -93,7 +93,7 @@ func NewCloudEvent(eventSource, eventType string, encoding binding.Encoding) (*c
 	ce.SetType(eventType)
 	ce.SetSource(eventSource)
 	if err := ce.SetData(cloudevents.ApplicationJSON, data); err != nil {
-		return nil, fmt.Errorf("failed to set cloudevent-%s data with error:[%s]", encoding.String(), err)
+		return nil, fmt.Errorf("failed to set cloudevent-%s data with error:[%w]", encoding.String(), err)
 	}
 	return &ce, nil
 }

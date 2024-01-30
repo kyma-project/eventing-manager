@@ -72,6 +72,17 @@ const (
 	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
 )
 
+// getSupportedConditionsTypes returns a map of supported condition types.
+func getSupportedConditionsTypes() map[ConditionType]interface{} {
+	return map[ConditionType]interface{}{
+		ConditionBackendAvailable:         nil,
+		ConditionPublisherProxyReady:      nil,
+		ConditionWebhookReady:             nil,
+		ConditionSubscriptionManagerReady: nil,
+		ConditionDeleted:                  nil,
+	}
+}
+
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // Eventing is the Schema for the eventing API.
@@ -92,11 +103,15 @@ type Eventing struct {
 
 // EventingStatus defines the observed state of Eventing.
 type EventingStatus struct {
-	ActiveBackend     BackendType         `json:"activeBackend"`
-	BackendConfigHash int64               `json:"specHash"`
-	State             string              `json:"state"`
-	PublisherService  string              `json:"publisherService,omitempty"`
-	Conditions        []kmetav1.Condition `json:"conditions,omitempty"`
+	ActiveBackend     BackendType `json:"activeBackend"`
+	BackendConfigHash int64       `json:"specHash"`
+	// Can have one of the following values: Ready, Error, Processing, Warning. Ready state is set
+	// when all the resources are deployed successfully and backend is connected.
+	// It gets Warning state in case backend is not specified and NATS module is not installed or EventMesh secret is missing in the cluster.
+	// Error state is set when there is an error. Processing state is set if recources are being created or changed.
+	State            string              `json:"state"`
+	PublisherService string              `json:"publisherService,omitempty"`
+	Conditions       []kmetav1.Condition `json:"conditions,omitempty"`
 }
 
 // EventingSpec defines the desired state of Eventing.
@@ -212,12 +227,17 @@ type Logging struct {
 	LogLevel string `json:"logLevel,omitempty"`
 }
 
+//nolint:gochecknoinits // registers Eventing CRD at startup
 func init() {
 	SchemeBuilder.Register(&Eventing{}, &EventingList{})
 }
 
 func (e *Eventing) SyncStatusActiveBackend() {
 	e.Status.ActiveBackend = e.Spec.Backend.Type
+}
+
+func (e *Eventing) IsPreviousBackendEmpty() bool {
+	return e.Status.ActiveBackend == ""
 }
 
 func (e *Eventing) IsSpecBackendTypeChanged() bool {

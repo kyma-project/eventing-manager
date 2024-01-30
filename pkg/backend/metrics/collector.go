@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -56,6 +56,12 @@ type Collector struct {
 
 // NewCollector a new instance of Collector.
 func NewCollector() *Collector {
+	const (
+		// for the latency we want 10 exponential Buckets starting at 0.002
+		bucketMin    = 0.002
+		bucketFactor = 2
+		bucketCount  = 10
+	)
 	return &Collector{
 		deliveryPerSubscription: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -68,7 +74,7 @@ func NewCollector() *Collector {
 			prometheus.HistogramOpts{
 				Name:    latencyMetricKey,
 				Help:    latencyMetricHelp,
-				Buckets: prometheus.ExponentialBuckets(0.002, 2, 10),
+				Buckets: prometheus.ExponentialBuckets(bucketMin, bucketFactor, bucketCount),
 			},
 			[]string{subscriptionNameLabel, subscriptionNamespaceLabel, eventTypeLabel, sinkLabel, responseCodeLabel, consumerNameLabel},
 		),
@@ -132,8 +138,8 @@ func (c *Collector) RecordDeliveryPerSubscription(subscriptionName, subscription
 		subscriptionName,
 		subscriptionNamespace,
 		eventType,
-		fmt.Sprintf("%v", sink),
-		fmt.Sprintf("%v", statusCode),
+		sink,
+		strconv.Itoa(statusCode),
 		consumerName).Inc()
 }
 
@@ -147,8 +153,8 @@ func (c *Collector) RecordLatencyPerSubscription(
 		subscriptionName,
 		subscriptionNamespace,
 		eventType,
-		fmt.Sprintf("%v", sink),
-		fmt.Sprintf("%v", statusCode),
+		sink,
+		strconv.Itoa(statusCode),
 		consumerName).Observe(duration.Seconds())
 }
 

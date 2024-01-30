@@ -31,6 +31,8 @@ const (
 // Perform a compile time check.
 var _ Backend = &EventMesh{}
 
+var ErrEMSubjectInvalid = errors.New("EventMesh subject invalid")
+
 type Backend interface {
 	// Initialize should initialize the communication layer with the messaging backend system
 	Initialize(cfg env.Config) error
@@ -98,9 +100,7 @@ func getWebHookAuth(credentials *OAuth2ClientCredentials) *types.WebhookAuth {
 
 // SyncSubscription synchronize the EV2 subscription with the EMS subscription.
 // It returns true, if the EV2 subscription status was changed.
-func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner,
-	apiRule *apigatewayv1beta1.APIRule,
-) (bool, error) { //nolint:funlen,gocognit
+func (em *EventMesh) SyncSubscription(subscription *eventingv1alpha2.Subscription, cleaner cleaner.Cleaner, apiRule *apigatewayv1beta1.APIRule) (bool, error) {
 	// Format logger
 	log := backendutils.LoggerWithSubscription(em.namedLogger(), subscription)
 
@@ -216,7 +216,7 @@ func (em *EventMesh) getProcessedEventTypes(kymaSubscription *eventingv1alpha2.S
 
 		if isEventTypeSegmentsOverLimit(eventMeshSubject) {
 			return nil, fmt.Errorf("EventMesh subject exceeds the limit of segments, "+
-				"max number of segements allowed: %d", eventTypeSegmentsLimit)
+				"max number of segements allowed: %d, %w", eventTypeSegmentsLimit, ErrEMSubjectInvalid)
 		}
 
 		result = append(result, backendutils.EventTypeInfo{
@@ -396,7 +396,7 @@ func (em *EventMesh) getSubscriptionIgnoreNotFound(name string) (*types.Subscrip
 func (em *EventMesh) getSubscription(name string) (*types.Subscription, error) {
 	eventMeshSubscription, resp, err := em.client.Get(name)
 	if err != nil {
-		return nil, fmt.Errorf("get subscription failed: %v", err)
+		return nil, fmt.Errorf("get subscription failed: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("get subscription failed: %w; %v",
@@ -410,7 +410,7 @@ func (em *EventMesh) deleteSubscription(name string) error {
 	em.namedLogger().Debugf("Deleting EventMesh subscription: %s", name)
 	resp, err := em.client.Delete(name)
 	if err != nil {
-		return fmt.Errorf("delete subscription failed: %v", err)
+		return fmt.Errorf("delete subscription failed: %w", err)
 	}
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
 		return fmt.Errorf("delete subscription failed: %w; %v",
@@ -423,7 +423,7 @@ func (em *EventMesh) deleteSubscription(name string) error {
 func (em *EventMesh) createSubscription(subscription *types.Subscription) error {
 	createResponse, err := em.client.Create(subscription)
 	if err != nil {
-		return fmt.Errorf("create subscription failed: %v", err)
+		return fmt.Errorf("create subscription failed: %w", err)
 	}
 	if createResponse.StatusCode > http.StatusAccepted && createResponse.StatusCode != http.StatusConflict {
 		return fmt.Errorf("create subscription failed: %w; %v",

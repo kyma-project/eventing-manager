@@ -1,7 +1,7 @@
 package v1alpha1_test
 
 import (
-	"fmt"
+	"strconv"
 
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -13,11 +13,11 @@ import (
 
 const (
 	eventSource                   = "source"
-	orderCreatedEventType         = "prefix." + "noapp." + "order.created.v1"
-	orderUpdatedEventType         = "prefix." + "app." + "order.updated.v1"
-	orderDeletedEventType         = "prefix." + "noapp." + "order.deleted.v1"
-	orderDeletedEventTypeNonClean = "prefix." + "noapp." + "order.deleted_&.v1"
-	orderProcessedEventType       = "prefix." + "noapp." + "order.processed.v1"
+	orderCreatedEventType         = "prefix.noapp.order.created.v1"
+	orderUpdatedEventType         = "prefix.app.order.updated.v1"
+	orderDeletedEventType         = "prefix.noapp.order.deleted.v1"
+	orderDeletedEventTypeNonClean = "prefix.noapp.order.deleted_&.v1"
+	orderProcessedEventType       = "prefix.noapp.order.processed.v1"
 )
 
 const (
@@ -136,7 +136,7 @@ func newV2DefaultSubscription(opts ...eventingtesting.SubscriptionOpt) *v1alpha2
 			Sink:         defaultSink,
 			ID:           defaultID,
 			Config: map[string]string{
-				v1alpha2.MaxInFlightMessages: fmt.Sprint(defaultMaxInFlight),
+				v1alpha2.MaxInFlightMessages: strconv.Itoa(defaultMaxInFlight),
 			},
 		},
 		Status: v1alpha2.SubscriptionStatus{

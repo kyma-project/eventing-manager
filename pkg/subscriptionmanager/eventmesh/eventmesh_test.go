@@ -111,10 +111,12 @@ func Test_cleanupEventMesh(t *testing.T) {
 	getSubscriptionURL := fmt.Sprintf(client.GetURLFormat, nameMapper.MapSubscriptionName(subscription.Name,
 		subscription.Namespace))
 	getSubscriptionURL = bebMock.MessagingURL + getSubscriptionURL
-	resp, err := http.Get(getSubscriptionURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, getSubscriptionURL, nil)
+	require.NoError(t, err)
+	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusOK)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// check that the Kyma subscription exists
 	unstructuredSub, err := bebSubMgr.Client.Resource(eventingtesting.SubscriptionGroupVersionResource()).Namespace(
@@ -135,10 +137,13 @@ func Test_cleanupEventMesh(t *testing.T) {
 
 	// then
 	// the BEB subscription should be deleted from BEB Mock
-	resp, err = http.Get(getSubscriptionURL)
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, getSubscriptionURL, nil)
+	require.NoError(t, err)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
 	require.NoError(t, err)
 	defer resp.Body.Close()
-	require.Equal(t, resp.StatusCode, http.StatusNotFound)
+	require.Equal(t, http.StatusNotFound, resp.StatusCode)
 
 	// the Kyma subscription status should be empty
 	unstructuredSub, err = bebSubMgr.Client.Resource(eventingtesting.SubscriptionGroupVersionResource()).Namespace(
@@ -194,7 +199,7 @@ func Test_markAllV1Alpha2SubscriptionsAsNotReady(t *testing.T) {
 	require.NoError(t, err)
 	gotSub, err := eventingtesting.ToSubscription(unstructuredSub)
 	require.NoError(t, err)
-	require.Equal(t, true, gotSub.Status.Ready)
+	require.True(t, gotSub.Status.Ready)
 
 	// when
 	err = markAllV1Alpha2SubscriptionsAsNotReady(fakeClient, defaultLogger.WithContext())
@@ -206,7 +211,7 @@ func Test_markAllV1Alpha2SubscriptionsAsNotReady(t *testing.T) {
 	require.NoError(t, err)
 	gotSub, err = eventingtesting.ToSubscription(unstructuredSub)
 	require.NoError(t, err)
-	require.Equal(t, false, gotSub.Status.Ready)
+	require.False(t, gotSub.Status.Ready)
 
 	// ensure hashes are preserved
 	require.Equal(t, ev2Hash, gotSub.Status.Backend.Ev2hash)
@@ -216,9 +221,6 @@ func Test_markAllV1Alpha2SubscriptionsAsNotReady(t *testing.T) {
 }
 
 func startBEBMock() *eventingtesting.EventMeshMock {
-	// TODO(k15r): FIX THIS HACK
-	// this is a very evil hack for the time being, until we refactored the config properly
-	// it sets the URLs to relative paths, that can easily be used in the mux.
 	b := eventingtesting.NewEventMeshMock()
 	b.Start()
 	return b

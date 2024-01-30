@@ -11,6 +11,7 @@ import (
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	kappsv1 "k8s.io/api/apps/v1"
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -34,6 +35,8 @@ const (
 
 var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
 
+var ErrPatchApplyFailed = errors.New("patch apply failed")
+
 // TestMain pre-hook and post-hook to run before and after all tests.
 func TestMain(m *testing.M) {
 	// Note: The setup will provision a single K8s env and
@@ -48,7 +51,7 @@ func TestMain(m *testing.M) {
 		ApplicationRuleCRDEnabled: true,
 		NATSCRDEnabled:            true,
 		AllowedEventingCR:         nil,
-	})
+	}, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -75,23 +78,6 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 		wantMatches          gomegatypes.GomegaMatcher
 		wantEnsureK8sObjects bool
 	}{
-		{
-			name: "Eventing CR should error state due to NATS is unavailable",
-			givenEventing: utils.NewEventingCR(
-				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", 1, 1),
-				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
-			),
-			givenNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-			),
-			givenNATSReady: false,
-			wantMatches: gomega.And(
-				matchers.HaveStatusError(),
-				matchers.HaveNATSNotAvailableCondition(),
-				matchers.HaveFinalizer(),
-			),
-		},
 		{
 			name: "Eventing CR should have ready state when all deployment replicas are ready",
 			givenEventing: utils.NewEventingCR(
@@ -221,7 +207,7 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			if tc.givenDeploymentReady && tc.givenEventing.Spec.Backend != nil {
 				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
 				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
-				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
+				//nolint:godox // TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
 			if tc.wantEnsureK8sObjects && tc.givenEventing.Spec.Backend != nil {
@@ -360,20 +346,20 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 	resourceVersionBefore := eppDeployment.ObjectMeta.ResourceVersion
 	for r := 0; r < runs; r++ {
 		// when
-		runId := fmt.Sprintf("run-%d", r)
+		runID := fmt.Sprintf("run-%d", r)
 
 		eventingCR, err = testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
 		require.NoError(t, err)
 		require.NotNil(t, eventingCR)
 
 		eventingCR = eventingCR.DeepCopy()
-		eventingCR.ObjectMeta.Labels = map[string]string{"reconcile": runId} // force new reconciliation
+		eventingCR.ObjectMeta.Labels = map[string]string{"reconcile": runID} // force new reconciliation
 		testEnvironment.EnsureK8sResourceUpdated(t, eventingCR)
 
 		eventingCR, err = testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
 		require.NoError(t, err)
 		require.NotNil(t, eventingCR)
-		require.Equal(t, eventingCR.ObjectMeta.Labels["reconcile"], runId)
+		require.Equal(t, eventingCR.ObjectMeta.Labels["reconcile"], runID)
 
 		// then
 		testEnvironment.EnsureEventingSpecPublisherReflected(t, eventingCR)
@@ -611,7 +597,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			wantMatches: gomega.And(
 				matchers.HaveStatusError(),
 				matchers.HaveEventMeshSubManagerNotReadyCondition(
-					"failed to sync Publisher Proxy secret: unexpected error"),
+					"failed to sync Publisher Proxy secret: patch apply failed"),
 				matchers.HaveFinalizer(),
 			),
 			shouldFailSubManager: true,
@@ -718,7 +704,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			if tc.givenDeploymentReady {
 				// check if EPP deployment, HPA resources created and values are reflected including owner reference.
 				ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
-				// TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
+				//nolint:godox // TODO: ensure NATS Backend config is reflected. Done as subscription controller is implemented.
 			}
 
 			if tc.wantEnsureK8sObjects {
@@ -893,60 +879,6 @@ func Test_WatcherNATSResource(t *testing.T) {
 		wantTargetEventingMatches   gomegatypes.GomegaMatcher
 	}{
 		{
-			name: "should update Eventing CR state if NATS CR state changes from ready to error",
-			givenOriginalNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateReady(),
-			),
-			givenTargetNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateError(),
-			),
-			wantOriginalEventingMatches: gomega.And(
-				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableCondition(),
-			),
-			wantTargetEventingMatches: gomega.And(
-				matchers.HaveStatusError(),
-				matchers.HaveNATSNotAvailableCondition(),
-			),
-		},
-		{
-			name: "should update Eventing CR state if NATS CR state changes from error to ready",
-			givenOriginalNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateError(),
-			),
-			givenTargetNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateReady(),
-			),
-			wantOriginalEventingMatches: gomega.And(
-				matchers.HaveStatusError(),
-				matchers.HaveNATSNotAvailableCondition(),
-			),
-			wantTargetEventingMatches: gomega.And(
-				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableCondition(),
-			),
-		},
-		{
-			name: "should update Eventing CR state to error when NATS CR is deleted",
-			givenOriginalNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateReady(),
-			),
-			givenTargetNATS: nil, // means, NATS CR is deleted.
-			wantOriginalEventingMatches: gomega.And(
-				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableCondition(),
-			),
-			wantTargetEventingMatches: gomega.And(
-				matchers.HaveStatusError(),
-				matchers.HaveNATSNotAvailableCondition(),
-			),
-		},
-		{
 			name: "should not reconcile Eventing CR in EventMesh mode",
 			givenOriginalNATS: natstestutils.NewNATSCR(
 				natstestutils.WithNATSCRDefaults(),
@@ -985,16 +917,11 @@ func Test_WatcherNATSResource(t *testing.T) {
 
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
-			// create NATS CR.
+			// create original NATS CR.
 			originalNats := tc.givenOriginalNATS.DeepCopy()
 			testEnvironment.EnsureK8sResourceCreated(t, originalNats)
-			// create original NATS CR.
 
-			if tc.givenOriginalNATS.Status.State == natsv1alpha1.StateReady {
-				testEnvironment.EnsureNATSResourceStateReady(t, originalNats)
-			} else if tc.givenOriginalNATS.Status.State == natsv1alpha1.StateError {
-				testEnvironment.EnsureNATSResourceStateError(t, originalNats)
-			}
+			testEnvironment.EnsureNATSResourceState(t, originalNats, tc.givenOriginalNATS.Status.State)
 
 			// create Eventing CR.
 			var eventingResource *operatorv1alpha1.Eventing
@@ -1040,11 +967,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 
 			// update target NATS CR to target NATS CR state
 			if tc.givenOriginalNATS != nil {
-				if tc.givenOriginalNATS.Status.State == natsv1alpha1.StateReady {
-					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenOriginalNATS)
-				} else if tc.givenOriginalNATS.Status.State == natsv1alpha1.StateError {
-					testEnvironment.EnsureNATSResourceStateError(t, tc.givenOriginalNATS)
-				}
+				testEnvironment.EnsureNATSResourceState(t, tc.givenOriginalNATS, tc.givenOriginalNATS.Status.State)
 			}
 
 			// check Eventing CR status.
@@ -1052,11 +975,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 
 			// update target NATS CR to target NATS CR state
 			if tc.givenTargetNATS != nil {
-				if tc.givenTargetNATS.Status.State == natsv1alpha1.StateReady {
-					testEnvironment.EnsureNATSResourceStateReady(t, tc.givenTargetNATS)
-				} else if tc.givenTargetNATS.Status.State == natsv1alpha1.StateError {
-					testEnvironment.EnsureNATSResourceStateError(t, tc.givenTargetNATS)
-				}
+				testEnvironment.EnsureNATSResourceState(t, tc.givenTargetNATS, tc.givenTargetNATS.Status.State)
 			} else {
 				// delete NATS CR
 				testEnvironment.EnsureK8sResourceDeleted(t, tc.givenOriginalNATS)
@@ -1069,6 +988,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 }
 
 func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
+	t.Helper()
 	testEnvironment.EnsureDeploymentExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureHPAExists(t, eventing.GetPublisherDeploymentName(*givenEventing), givenEventing.Namespace)
 	testEnvironment.EnsureEventingSpecPublisherReflected(t, givenEventing)
@@ -1078,6 +998,7 @@ func ensureEPPDeploymentAndHPAResources(t *testing.T, givenEventing *operatorv1a
 }
 
 func ensureK8sResources(t *testing.T, givenEventing *operatorv1alpha1.Eventing, testEnvironment *testutilsintegration.TestEnvironment) {
+	t.Helper()
 	testEnvironment.EnsureEPPK8sResourcesExists(t, *givenEventing)
 
 	// check if the owner reference is set.
@@ -1113,5 +1034,5 @@ func (mkc *MockKubeClient) GetCRD(ctx context.Context, name string) (*kapiextens
 }
 
 func (mkc *MockKubeClient) PatchApply(ctx context.Context, object kctrlclient.Object) error {
-	return fmt.Errorf("unexpected error")
+	return ErrPatchApplyFailed
 }

@@ -8,7 +8,7 @@ import (
 	ceclient "github.com/cloudevents/sdk-go/v2/client"
 )
 
-func NewHttpClient(transport *http.Transport) *http.Client {
+func NewHTTPClient(transport *http.Transport) *http.Client {
 	return &http.Client{Transport: transport}
 }
 

@@ -48,7 +48,7 @@ func (es *EventingStatus) UpdateConditionWebhookReady(status kmetav1.ConditionSt
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
-func (sm *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1.ConditionStatus, reason ConditionReason,
+func (es *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1.ConditionStatus, reason ConditionReason,
 	message string,
 ) {
 	condition := kmetav1.Condition{
@@ -58,7 +58,7 @@ func (sm *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1
 		Reason:             string(reason),
 		Message:            message,
 	}
-	meta.SetStatusCondition(&sm.Conditions, condition)
+	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
 func (es *EventingStatus) UpdateConditionDeletion(status kmetav1.ConditionStatus, reason ConditionReason,
@@ -85,8 +85,8 @@ func (es *EventingStatus) SetStateReady() {
 	es.UpdateConditionPublisherProxyReady(kmetav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)
 }
 
-func (ns *EventingStatus) SetStateWarning() {
-	ns.State = StateWarning
+func (es *EventingStatus) SetStateWarning() {
+	es.State = StateWarning
 }
 
 func (es *EventingStatus) SetNATSAvailableConditionToTrue() {
@@ -144,4 +144,20 @@ func (es *EventingStatus) ClearPublisherService() {
 // SetPublisherService sets the PublisherService from the given service name and namespace.
 func (es *EventingStatus) SetPublisherService(name, namespace string) {
 	es.PublisherService = fmt.Sprintf("%s.%s", name, namespace)
+}
+
+// RemoveUnsupportedConditions removes unsupported conditions from the status and keeps only the supported ones.
+func (es *EventingStatus) RemoveUnsupportedConditions() {
+	if len(es.Conditions) == 0 {
+		return
+	}
+
+	supportedConditionsTypes := getSupportedConditionsTypes()
+	supportedConditions := make([]kmetav1.Condition, 0, len(es.Conditions))
+	for _, condition := range es.Conditions {
+		if _, ok := supportedConditionsTypes[ConditionType(condition.Type)]; ok {
+			supportedConditions = append(supportedConditions, condition)
+		}
+	}
+	es.Conditions = supportedConditions
 }

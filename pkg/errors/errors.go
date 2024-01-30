@@ -14,19 +14,19 @@ import (
 // errors.Is(err, pkg.ErrPermission) instead of
 // err == pkg.ErrPermission { … }.
 func MakeError(actualError, underlyingError error) error {
-	return fmt.Errorf("%w: %v", actualError, underlyingError)
+	return fmt.Errorf("%w: %w", actualError, underlyingError)
 }
 
 // MakeSubscriptionError creates a new error and includes the underlyingError in the message
 // for subscription-related errors.
 func MakeSubscriptionError(actualError, underlyingError error, subscription any) error {
-	return fmt.Errorf("%w: %v, subscription: %v", actualError, underlyingError, subscription)
+	return fmt.Errorf("%w: %w, subscription: %v", actualError, underlyingError, subscription)
 }
 
 // MakeConsumerError creates a new error and includes the underlyingError in the message
 // for consumer-related errors.
 func MakeConsumerError(actualError, underlyingError error, consumer any) error {
-	return fmt.Errorf("%w: %v, consumer: %v", actualError, underlyingError, consumer)
+	return fmt.Errorf("%w: %w, consumer: %v", actualError, underlyingError, consumer)
 }
 
 // ArgumentError is a generic error which can be used to create errors that shall include any kind of argument

@@ -1,3 +1,4 @@
+//nolint:gomnd // magic numbers here are used only in context of the function
 package utils
 
 import (
@@ -32,7 +33,10 @@ const (
 	PublisherProxySuffix = "publisher-proxy"
 )
 
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec,gochecknoglobals // used in tests
+var (
+	seededRand  = rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec,gochecknoglobals // used in tests
+	ErrNotFound = errors.New("not found")
+)
 
 func GetRandString(length int) string {
 	b := make([]byte, length)
@@ -373,7 +377,7 @@ func FindObjectByKind(kind string, objects []client.Object) (client.Object, erro
 		}
 	}
 
-	return nil, errors.New("not found")
+	return nil, ErrNotFound
 }
 
 func FindServiceFromK8sObjects(name string, objects []client.Object) (client.Object, error) {
@@ -384,5 +388,5 @@ func FindServiceFromK8sObjects(name string, objects []client.Object) (client.Obj
 		}
 	}
 
-	return nil, errors.New("not found")
+	return nil, ErrNotFound
 }

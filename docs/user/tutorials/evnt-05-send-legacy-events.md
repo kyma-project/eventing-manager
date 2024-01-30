@@ -6,19 +6,20 @@ Kyma Eventing also supports sending and receiving of legacy events. In this tuto
 
 ## Prerequisites
 
->**NOTE:** Read about [Istio sidecars in Kyma and why you want them](https://kyma-project.io/#/istio/user/00-overview/00-30-overview-istio-sidecars). Then, check how to [enable automatic Istio sidecar proxy injection](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-20-enable-sidecar-injection). For more details, see [Default Istio setup in Kyma](https://kyma-project.io/#/istio/user/00-overview/00-40-overview-istio-setup).
+>**NOTE:** Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
 
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
-2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event).
+2. [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function).
 
 ## Create a Subscription
 
 To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). We're going to subscribe to events of the type `order.received.v1`.
 
 <!-- tabs:start -->
+
 #### **Kyma Dashboard**
 
-1. Go to **Namespaces** and select the default Namespace.
+1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
 3. Provide the following parameters:
    - **Subscription name**: `lastorder-sub`
@@ -30,7 +31,7 @@ To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscripti
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-#### **kubectl**
+#### **curl**
 
 Run:
 
@@ -66,7 +67,7 @@ You created the `lastorder` Function, and subscribed to the `order.received.v1` 
 1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
 
    ```bash
-   kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
+   kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
    ```
 
 2. Publish an event to trigger your Function. In another terminal window, run:
@@ -94,6 +95,6 @@ To verify that the event was properly delivered, check the logs of the Function 
 
 You see the received event in the logs:
 
-```bash
+```sh
 Received event: { orderCode: '3211213' }
 ```

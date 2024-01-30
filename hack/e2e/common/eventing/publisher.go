@@ -22,17 +22,20 @@ const (
 	CloudEventPublishEndpointFormat = "%s/publish"
 )
 
+var (
+	ErrFailedSendingCE      = errors.New("failed to send cloudevent")
+	ErrEncodingNotSupported = errors.New("unsupported cloudevent encoding")
+)
+
 type Publisher struct {
-	ctx          context.Context
 	clientCE     client.Client
 	clientHTTP   *http.Client
 	publisherURL string
 	logger       *zap.Logger
 }
 
-func NewPublisher(ctx context.Context, clientCE client.Client, clientHTTP *http.Client, publisherURL string, logger *zap.Logger) *Publisher {
+func NewPublisher(clientCE client.Client, clientHTTP *http.Client, publisherURL string, logger *zap.Logger) *Publisher {
 	return &Publisher{
-		ctx:          ctx,
 		clientCE:     clientCE,
 		clientHTTP:   clientHTTP,
 		publisherURL: publisherURL,
@@ -61,9 +64,10 @@ func (p *Publisher) SendCloudEventWithRetries(event *cloudevents.Event, encoding
 }
 
 func (p *Publisher) SendLegacyEvent(source, eventType, payload string) error {
+	ctx := context.Background()
 	url := p.LegacyPublishEndpoint(source)
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBufferString(payload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBufferString(payload))
 	if err != nil {
 		err = errors.Wrap(err, "Failed to create HTTP request for sending legacy event")
 		p.logger.Debug(err.Error())
@@ -125,7 +129,7 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 		}
 	default:
 		{
-			return fmt.Errorf("failed to use unsupported cloudevent encoding:[%s]", encoding.String())
+			return fmt.Errorf("%w:[%s]", ErrEncodingNotSupported, encoding.String())
 		}
 	}
 
@@ -139,14 +143,16 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 		p.PublishEndpoint(), encoding.String(), ce.ID(), ce.Source(), ce.Type(), ce.Data()))
 
 	result := p.clientCE.Send(ctx, ce)
+
+	//nolint:errorlint // this error is used in logs
 	switch {
 	case cloudevents.IsUndelivered(result):
 		{
-			return fmt.Errorf("failed to send cloudevent-%s undelivered:[%s] response:[%s]", encoding.String(), ce.Type(), result)
+			return fmt.Errorf("%w: encoding:[%s] undelivered:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), ce.Type(), result)
 		}
 	case cloudevents.IsNACK(result):
 		{
-			return fmt.Errorf("failed to send cloudevent-%s nack:[%s] response:[%s]", encoding.String(), ce.Type(), result)
+			return fmt.Errorf("%w: encoding:[%s] nack:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), ce.Type(), result)
 		}
 	case cloudevents.IsACK(result):
 		{
@@ -155,7 +161,7 @@ func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.En
 		}
 	default:
 		{
-			return fmt.Errorf("failed to send cloudevent-%s unknown:[%s] response:[%s]", encoding.String(), ce.Type(), result)
+			return fmt.Errorf("%w: encoding:[%s] unknown:[%s] response:[%s]", ErrFailedSendingCE, encoding.String(), ce.Type(), result)
 		}
 	}
 }

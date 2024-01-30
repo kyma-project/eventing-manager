@@ -1,6 +1,8 @@
 // Package v1alpha1 contains API Schema definitions for the eventing v1alpha1 API group
 // +kubebuilder:object:generate=true
 // +groupName=eventing.kyma-project.io
+//
+//nolint:gochecknoglobals // required for utilizing the API
 package v1alpha1
 
 import (

@@ -203,7 +203,6 @@ func GetCleanEventTypesFromEventTypes(eventTypes []eventingv1alpha2.EventType) [
 	return cleantypes
 }
 
-// TODO: to be moved to subscription types.
 func getUniqueEventTypes(eventTypes []string) []string {
 	unique := make([]string, 0, len(eventTypes))
 	mapper := make(map[string]bool)

@@ -9,8 +9,10 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	kctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -27,6 +29,9 @@ import (
 const (
 	TokenURLPath     = "/auth"
 	MessagingURLPath = "/messaging"
+
+	fewAttempts   = 2
+	smallInterval = 3
 )
 
 // EventMeshMock implements a programmable mock for EventMesh.
@@ -71,7 +76,7 @@ func NewEventMeshMockResponseOverride() *EventMeshMockResponseOverride {
 
 type (
 	ResponseUpdateReq      func(w http.ResponseWriter, key string, webhookAuth *emstypes.WebhookAuth)
-	ResponseUpdateStateReq func(w http.ResponseWriter, key string, state emstypes.State)
+	ResponseUpdateStateReq func(w http.ResponseWriter, key string, state emstypes.State) error
 	ResponseWithSub        func(w http.ResponseWriter, subscription emstypes.Subscription)
 	ResponseWithName       func(w http.ResponseWriter, subscriptionName string)
 	Response               func(w http.ResponseWriter)
@@ -111,20 +116,58 @@ func (m *EventMeshMock) Start() string {
 	mux := http.NewServeMux()
 
 	// oauth2 request
-	mux.HandleFunc(TokenURLPath, func(w http.ResponseWriter, r *http.Request) {
-		// TODO(k15r): method not allowed/implementd handling
+	mux.HandleFunc(TokenURLPath, m.handleToken())
+	mux.HandleFunc(client.ListURL, m.handleList())
+	mux.HandleFunc(MessagingURLPath+"/", m.handleMessaging())
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		m.log.V(1).Info(r.RequestURI)
+	})
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer GinkgoRecover()
+
+		// store request
+		m.Requests.StoreRequest(r)
+
+		description := ""
+		reqBytes, err := httputil.DumpRequest(r, true)
+		if err == nil {
+			description = string(reqBytes)
+		}
+		m.log.V(1).Info("received request",
+			"uri", r.RequestURI,
+			"method", r.Method,
+			"description", description,
+		)
+
+		w.Header().Set("Content-Type", "application/json")
+		mux.ServeHTTP(w, r)
+	}))
+	uri := ts.URL
+	m.server = ts
+	m.MessagingURL = m.server.URL + MessagingURLPath
+	m.TokenURL = m.server.URL + TokenURLPath
+	return uri
+}
+
+func (m *EventMeshMock) handleToken() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			m.AuthResponse(w)
 		}
-	})
+	}
+}
 
-	mux.HandleFunc(client.ListURL, func(w http.ResponseWriter, r *http.Request) {
+func (m *EventMeshMock) handleList() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			m.ListResponse(w)
 		}
-	})
+	}
+}
 
-	mux.HandleFunc(MessagingURLPath+"/", func(w http.ResponseWriter, r *http.Request) {
+func (m *EventMeshMock) handleMessaging() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodDelete:
 			key := r.URL.Path
@@ -165,7 +208,19 @@ func (m *EventMeshMock) Start() string {
 
 			// extract get request key from /messaging/events/subscriptions/%s/state
 			key := strings.TrimSuffix(r.URL.Path, "/state")
-			m.UpdateStateResponse(w, key, state)
+			for i := 0; i < 3; i++ {
+				err := m.UpdateStateResponse(w, key, state)
+				if err == nil {
+					break
+				}
+				if i < fewAttempts { // Don't sleep after the last attempt.
+					time.Sleep(time.Duration(smallInterval) * time.Second)
+				} else {
+					m.log.Error(err, "failed to update state response")
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+			}
 		case http.MethodGet:
 			key := r.URL.Path
 			// check if any response override defined for this subscription
@@ -179,37 +234,7 @@ func (m *EventMeshMock) Start() string {
 		default:
 			w.WriteHeader(http.StatusNotImplemented)
 		}
-	})
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		m.log.V(1).Info(r.RequestURI)
-	})
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer GinkgoRecover()
-
-		// store request
-		m.Requests.StoreRequest(r)
-
-		description := ""
-		reqBytes, err := httputil.DumpRequest(r, true)
-		if err == nil {
-			description = string(reqBytes)
-		}
-		m.log.V(1).Info("received request",
-			"uri", r.RequestURI,
-			"method", r.Method,
-			"description", description,
-		)
-
-		w.Header().Set("Content-Type", "application/json")
-		mux.ServeHTTP(w, r)
-	}))
-	uri := ts.URL
-	m.server = ts
-	m.MessagingURL = m.server.URL + MessagingURLPath
-	m.TokenURL = m.server.URL + TokenURLPath
-	return uri
+	}
 }
 
 func (m *EventMeshMock) Stop() {
@@ -251,7 +276,7 @@ func UpdateSubscriptionResponse(m *EventMeshMock) ResponseUpdateReq {
 
 // UpdateSubscriptionStateResponse updates the EventMesh subscription status in the mock.
 func UpdateSubscriptionStateResponse(m *EventMeshMock) ResponseUpdateStateReq {
-	return func(w http.ResponseWriter, key string, state emstypes.State) {
+	return func(w http.ResponseWriter, key string, state emstypes.State) error {
 		if subscription := m.Subscriptions.GetSubscription(key); subscription != nil {
 			switch state.Action {
 			case emstypes.StateActionPause:
@@ -264,7 +289,8 @@ func UpdateSubscriptionStateResponse(m *EventMeshMock) ResponseUpdateStateReq {
 				}
 			default:
 				{
-					panic(fmt.Sprintf("EventMesh subscription status is not supported: %#v", state))
+					errEventMeshStatusNotSupported := errors.New("EventMesh subscription status is not supported")
+					return fmt.Errorf("%w: %#v", errEventMeshStatusNotSupported, state)
 				}
 			}
 
@@ -273,10 +299,11 @@ func UpdateSubscriptionStateResponse(m *EventMeshMock) ResponseUpdateStateReq {
 
 			err := json.NewEncoder(w).Encode(*subscription)
 			Expect(err).ShouldNot(HaveOccurred())
-			return
+			return nil
 		}
 
 		w.WriteHeader(http.StatusNotFound)
+		return nil
 	}
 }
 

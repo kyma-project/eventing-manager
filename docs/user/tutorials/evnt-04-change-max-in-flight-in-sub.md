@@ -5,10 +5,10 @@ The "in-flight messages" config defines the number of events that Kyma Eventing 
 
 ## Prerequisites
 
->**NOTE:** Read about [Istio sidecars in Kyma and why you want them](https://kyma-project.io/#/istio/user/00-overview/00-30-overview-istio-sidecars). Then, check how to [enable automatic Istio sidecar proxy injection](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-20-enable-sidecar-injection). For more details, see [Default Istio setup in Kyma](https://kyma-project.io/#/istio/user/00-overview/00-40-overview-istio-setup).
+>**NOTE:** Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
 
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
-2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event).
+2. [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function).
 3. For this tutorial, instead of the default code sample, replace the Function source with the following code. To simulate prolonged event processing, the Function waits for 5 seconds before returning the response.
 
    <!-- tabs:start -->
@@ -109,6 +109,7 @@ kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"
 ```
 
 The operation was successful if the returned status says `true`.
+
 <!-- tabs:end -->
 
 ## Trigger the Workload With Multiple Events
@@ -119,7 +120,7 @@ Next, publish 15 events at once and see how Kyma Eventing triggers the workload.
 1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
 
    ```bash
-   kubectl -n kyma-system port-forward service/eventing-event-publisher-proxy 3000:80
+   kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
    ```
 
 2. Publish 15 events to the Eventing Publisher Proxy Service. In another terminal window, run:
@@ -198,5 +199,9 @@ Completely processed event: { orderCode: '14' }
 Completely processed event: { orderCode: '15' }
 ```
 
+<<<<<<< HEAD
 You can see that only five events at maximum were delivered to the Function in parallel. 
 As soon as the Function completes the processing of the event and returns the response, Kyma Eventing delivers the next in-line event to the Function.
+=======
+You can see that only 5 events at maximum were delivered to the Function in parallel and as soon as the Function completes the processing of the event and returns the response, Kyma Eventing delivers the next in-line event to the Function.
+>>>>>>> f4a813eda62d1688da24ce22634253dd5bf7a334

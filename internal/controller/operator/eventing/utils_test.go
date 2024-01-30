@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -92,17 +91,18 @@ func Test_removeFinalizer(t *testing.T) {
 
 func TestReconciler_getEventMeshBackendConfigHash(t *testing.T) {
 	hash, err := getEventMeshBackendConfigHash("kyma-system/eventing-backend", "sap.kyma.custom", "domain.com")
-	assert.NoError(t, err)
-	assert.NotEqual(t, 0, hash)
+	require.NoError(t, err)
+	require.NotZero(t, hash)
 }
 
 func TestReconciler_getEventMeshBackendConfigHash_EnsureConsistencyAndUniqueness(t *testing.T) {
 	hash1, err1 := getEventMeshBackendConfigHash("kyma-system/eventing-backend", "sap.kyma.custom", "domain.com")
+	require.NoError(t, err1)
 	hash2, err2 := getEventMeshBackendConfigHash("kyma-system/eventing-backend", "sap.kyma.custom", "domain.com")
+	require.NoError(t, err2)
 	hash3, err3 := getEventMeshBackendConfigHash("kyma-system/eventing-backen", "dsap.kyma.cust", "omdomain.com")
-	assert.NoError(t, err1)
-	assert.NoError(t, err2)
-	assert.NoError(t, err3)
-	assert.Equal(t, hash1, hash2)
-	assert.NotEqual(t, hash1, hash3)
+	require.NoError(t, err3)
+
+	require.Equal(t, hash1, hash2)
+	require.NotEqual(t, hash1, hash3)
 }

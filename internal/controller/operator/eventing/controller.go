@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strings"
 
+	natsio "github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 	kappsv1 "k8s.io/api/apps/v1"
 	kautoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -44,6 +45,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	natsconnection "github.com/kyma-project/eventing-manager/internal/connection/nats"
+	natsconnectionerrors "github.com/kyma-project/eventing-manager/internal/connection/nats/errors"
 	"github.com/kyma-project/eventing-manager/options"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/eventing"
@@ -69,6 +72,13 @@ const (
 	EventMeshPublishEndpointForPublisher  = "/sap/ems/v1/events"
 
 	SubscriptionExistsErrMessage = "cannot delete the eventing module as subscription exists"
+)
+
+var (
+	ErrSubscriptionExists      = errors.New(SubscriptionExistsErrMessage)
+	ErrUnsupportedBackedType   = errors.New("backend type not supported")
+	ErrNatsModuleMissing       = errors.New("NATS module has to be installed")
+	ErrAPIGatewayModuleMissing = errors.New("API-Gateway module is needed for EventMesh backend. APIRules CRD is not installed")
 )
 
 // Reconciler reconciles an Eventing object
@@ -97,6 +107,9 @@ type Reconciler struct {
 	clusterScopedResourcesWatched bool
 	natsCRWatchStarted            bool
 	natsWatchers                  map[string]watcher.Watcher
+	natsConnection                natsconnection.Interface
+	genericEvents                 chan event.GenericEvent
+	natsConnectionBuilder         natsconnection.Builder
 }
 
 func NewReconciler(
@@ -111,6 +124,7 @@ func NewReconciler(
 	subManagerFactory subscriptionmanager.ManagerFactory,
 	opts *options.Options,
 	allowedEventingCR *operatorv1alpha1.Eventing,
+	natsConnectionBuilder natsconnection.Builder,
 ) *Reconciler {
 	return &Reconciler{
 		Client:                  client,
@@ -129,6 +143,9 @@ func NewReconciler(
 		natsConfigHandler:       NewNatsConfigHandler(kubeClient, opts),
 		allowedEventingCR:       allowedEventingCR,
 		natsWatchers:            make(map[string]watcher.Watcher),
+		natsConnection:          nil, // This will be initialized only when reconciling the NATS backend.
+		genericEvents:           make(chan event.GenericEvent),
+		natsConnectionBuilder:   natsConnectionBuilder,
 	}
 }
 
@@ -292,6 +309,7 @@ func (r *Reconciler) SetupWithManager(mgr kctrl.Manager) error {
 				},
 			),
 		).
+		WatchesRawSource(&source.Channel{Source: r.genericEvents}, &handler.EnqueueRequestForObject{}).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 0,
 		}).
@@ -329,7 +347,7 @@ func (r *Reconciler) startNATSCRWatch(eventing *operatorv1alpha1.Eventing) error
 	}
 
 	if !found {
-		natsWatcher = watcher.NewResourceWatcher(r.dynamicClient, k8s.NatsGVK, eventing.Namespace)
+		natsWatcher = watcher.NewResourceWatcher(r.dynamicClient, k8s.NatsGVK(), eventing.Namespace)
 		r.natsWatchers[eventing.Namespace] = natsWatcher
 	}
 
@@ -393,8 +411,7 @@ func (r *Reconciler) handleEventingDeletion(ctx context.Context, eventing *opera
 	}
 	if exists {
 		eventing.Status.SetStateWarning()
-		return kctrl.Result{Requeue: true}, r.syncStatusWithDeletionErr(ctx, eventing,
-			errors.New(SubscriptionExistsErrMessage), log)
+		return kctrl.Result{Requeue: true}, r.syncStatusWithDeletionErr(ctx, eventing, ErrSubscriptionExists, log)
 	}
 
 	log.Info("handling Eventing deletion...")
@@ -449,7 +466,6 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	r.InitStateProcessing(eventing)
 	if eventing.Spec.Backend == nil {
 		return kctrl.Result{Requeue: true}, r.syncStatusForEmptyBackend(ctx,
-			operatorv1alpha1.ConditionReasonBackendNotSpecified,
 			operatorv1alpha1.ConditionBackendNotSpecifiedMessage,
 			eventing, log)
 	}
@@ -461,11 +477,9 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	// set webhook condition to true.
 	eventing.Status.SetWebhookReadyConditionToTrue()
 
-	// handle switching of backend.
-	if eventing.Status.ActiveBackend != "" {
-		if err := r.handleBackendSwitching(eventing, log); err != nil {
-			return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
-		}
+	// handle backend switching.
+	if err := r.handleBackendSwitching(ctx, eventing, log); err != nil {
+		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}
 
 	// update ActiveBackend in status.
@@ -486,92 +500,122 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 	case operatorv1alpha1.EventMeshBackendType:
 		return r.reconcileEventMeshBackend(ctx, eventing, log)
 	default:
-		return kctrl.Result{Requeue: false}, fmt.Errorf("not supported backend type %s", eventing.Spec.Backend.Type)
+		return kctrl.Result{}, reconcile.TerminalError(fmt.Errorf("%w: %s", ErrUnsupportedBackedType, eventing.Spec.Backend.Type))
 	}
 }
 
-func (r *Reconciler) handleBackendSwitching(
-	eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
+// handleBackendSwitching handles backend switching.
+// It stops the previously active backend if needed.
+// It updates the Eventing CR status properly.
+func (r *Reconciler) handleBackendSwitching(ctx context.Context,
+	eventingCR *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
 ) error {
-	// check if the backend was changed.
-	if !eventing.IsSpecBackendTypeChanged() {
+	if eventingCR.IsPreviousBackendEmpty() || !eventingCR.IsSpecBackendTypeChanged() {
 		return nil
 	}
 
-	// stop the previously active backend.
-	if eventing.Status.ActiveBackend == operatorv1alpha1.NatsBackendType {
+	// stop the previous active backend.
+	previousBackend := eventingCR.Status.ActiveBackend
+	if previousBackend == operatorv1alpha1.NatsBackendType {
 		log.Info("Stopping the NATS subscription manager because backend is switched")
 		if err := r.stopNATSSubManager(true, log); err != nil {
 			return err
 		}
-		r.stopNATSCRWatch(eventing)
-	} else if eventing.Status.ActiveBackend == operatorv1alpha1.EventMeshBackendType {
+		r.stopNATSCRWatch(eventingCR)
+		if r.natsConnection != nil {
+			r.natsConnection.Disconnect()
+		}
+	} else {
+		log.Info("Stopping the EventMesh subscription manager because backend is switched")
 		if err := r.stopEventMeshSubManager(true, log); err != nil {
 			return err
 		}
 	}
 
 	// update the Eventing CR status.
-	eventing.Status.SetStateProcessing()
-	eventing.Status.ClearConditions()
+	eventingCR.Status.SetStateProcessing()
+	eventingCR.Status.ClearConditions()
+
+	// delete publisher proxy resources.
+	log.Infof("deleting publisher proxy resources")
+	err := r.eventingManager.DeletePublisherProxyResources(ctx, eventingCR)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (r *Reconciler) reconcileNATSBackend(ctx context.Context, eventing *operatorv1alpha1.Eventing, log *zap.SugaredLogger) (kctrl.Result, error) {
+func (r *Reconciler) reconcileNATSBackend(ctx context.Context,
+	eventingCR *operatorv1alpha1.Eventing, log *zap.SugaredLogger,
+) (kctrl.Result, error) {
 	// retrieves the NATS CRD
-	_, err := r.kubeClient.GetCRD(ctx, k8s.NatsGVK.GroupResource().String())
+	_, err := r.kubeClient.GetCRD(ctx, k8s.NatsGVK().GroupResource().String())
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			// delete the publisher proxy resources, because the publisher deployment will go
 			// into CrashLoopBackOff.
 			log.Infof("NATS module not enabled, deleting publisher proxy resources")
-			delErr := r.eventingManager.DeletePublisherProxyResources(ctx, eventing)
+			delErr := r.eventingManager.DeletePublisherProxyResources(ctx, eventingCR)
 			if delErr != nil {
 				return kctrl.Result{}, delErr
 			}
 			// update the Eventing CR status.
-			notFoundErr := fmt.Errorf("NATS module has to be installed: %v", err)
-			return kctrl.Result{}, r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
+			notFoundErr := fmt.Errorf("%w: %w", ErrNatsModuleMissing, err)
+			return kctrl.Result{}, r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventingCR,
 				notFoundErr, log)
 		}
 		return kctrl.Result{}, err
 	}
 
-	if err = r.startNATSCRWatch(eventing); err != nil {
-		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+	if err = r.startNATSCRWatch(eventingCR); err != nil {
+		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventingCR, err, log)
 	}
 
-	// check nats CR if it exists and is in natsAvailable state
-	err = r.checkNATSAvailability(ctx, eventing)
-	if err != nil {
-		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+	if connErr := r.connectToNATS(eventingCR); connErr != nil {
+		if errors.Is(connErr, natsconnectionerrors.ErrCannotConnect) {
+			return kctrl.Result{}, reconcile.TerminalError(
+				r.syncStatusWithNATSErr(ctx, eventingCR, connErr, log),
+			)
+		}
+
+		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventingCR, connErr, log)
 	}
 
 	// set NATSAvailable condition to true and update status
-	eventing.Status.SetNATSAvailableConditionToTrue()
+	eventingCR.Status.SetNATSAvailableConditionToTrue()
 
-	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.Spec.Backend.Type)
+	deployment, err := r.handlePublisherProxy(ctx, eventingCR, eventingCR.Spec.Backend.Type)
 	if err != nil {
-		return kctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventing, err, log)
+		return kctrl.Result{}, r.syncStatusWithPublisherProxyErr(ctx, eventingCR, err, log)
 	}
 
 	// start NATS subscription manager
-	if err := r.reconcileNATSSubManager(ctx, eventing, log); err != nil {
-		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventing, err, log)
+	if err := r.reconcileNATSSubManager(eventingCR, log); err != nil {
+		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventingCR, err, log)
 	}
 
-	return r.handleEventingState(ctx, deployment, eventing, log)
+	return r.handleEventingState(ctx, deployment, eventingCR, log)
 }
 
-func (r *Reconciler) checkNATSAvailability(ctx context.Context, eventing *operatorv1alpha1.Eventing) error {
-	natsAvailable, err := r.eventingManager.IsNATSAvailable(ctx, eventing.Namespace)
-	if err != nil {
-		return err
+// connectToNATS connects to NATS and returns an error if it failed.
+// It also registers handlers for reconnection and disconnection.
+func (r *Reconciler) connectToNATS(eventingCR *operatorv1alpha1.Eventing) error {
+	if r.natsConnection == nil {
+		r.natsConnection = r.natsConnectionBuilder.Build()
 	}
-	if !natsAvailable {
-		return fmt.Errorf(NatsServerNotAvailableMsg)
+
+	connHandler := func(_ *natsio.Conn) {
+		r.namedLogger().Debug("Handle NATS reconnection")
+		r.genericEvents <- event.GenericEvent{Object: eventingCR}
 	}
-	return nil
+
+	connErrHandler := func(_ *natsio.Conn, _ error) {
+		r.namedLogger().Debug("Handle NATS disconnection")
+		r.genericEvents <- event.GenericEvent{Object: eventingCR}
+	}
+
+	return r.natsConnection.Connect(connHandler, connErrHandler)
 }
 
 func (r *Reconciler) handlePublisherProxy(
@@ -608,8 +652,7 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 	if err != nil {
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	} else if !isAPIRuleCRDEnabled {
-		apiRuleMissingErr := errors.New("API-Gateway module is needed for EventMesh backend. APIRules CRD is not installed")
-		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, apiRuleMissingErr, log)
+		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, ErrAPIGatewayModuleMissing, log)
 	}
 
 	// retrieve secret used to authenticate with EventMesh
@@ -617,14 +660,14 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			return kctrl.Result{}, r.syncSubManagerStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
-				fmt.Errorf(EventMeshSecretMissingMessage), log)
+				ErrEventMeshSecretMissing, log)
 		}
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing,
-			fmt.Errorf("failed to get EventMesh secret: %v", err), log)
+			fmt.Errorf("failed to get EventMesh secret: %w", err), log)
 	}
 
 	// Start the EventMesh subscription controller
-	err = r.reconcileEventMeshSubManager(ctx, eventing, eventMeshSecret, log)
+	err = r.reconcileEventMeshSubManager(ctx, eventing, eventMeshSecret)
 	if err != nil {
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}

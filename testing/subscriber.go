@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -24,6 +25,13 @@ const (
 	checkEndpoint         = "/check"
 	internalErrorEndpoint = "/return500"
 	checkRetriesEndpoint  = "/check_retries"
+	notFoundTimeout       = 500 * time.Millisecond
+)
+
+var (
+	ErrEventNotReceived       = errors.New("event not received")
+	ErrUnexpectedResponseCode = errors.New("unexpected response code received")
+	ErrWrongRetries           = errors.New("wrong number of retries")
 )
 
 type Subscriber struct {
@@ -98,7 +106,7 @@ func getCloudEventServeMux() *http.ServeMux {
 		select {
 		case m := <-store:
 			msg = m
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(notFoundTimeout):
 			msg = ""
 		}
 		_, err := w.Write([]byte(msg))
@@ -120,7 +128,7 @@ func getCloudEventServeMux() *http.ServeMux {
 	})
 	// this Endpoint returns the number of attempted retries.
 	mux.HandleFunc(checkRetriesEndpoint, func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte(fmt.Sprintf("%d", retries.Load())))
+		_, err := w.Write([]byte(strconv.Itoa(int(retries.Load()))))
 		if err != nil {
 			log.Printf("check_retries failed: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -154,7 +162,7 @@ func getDataServeMux() *http.ServeMux {
 		select {
 		case m := <-store:
 			msg = m
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(notFoundTimeout):
 			msg = ""
 		}
 		_, err := w.Write([]byte(msg))
@@ -176,7 +184,7 @@ func getDataServeMux() *http.ServeMux {
 	})
 	// this Endpoint returns the number of attempted retries.
 	mux.HandleFunc(checkRetriesEndpoint, func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte(fmt.Sprintf("%d", retries.Load())))
+		_, err := w.Write([]byte(strconv.Itoa(int(retries.Load()))))
 		if err != nil {
 			log.Printf("check_retries failed: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -205,24 +213,29 @@ func (s Subscriber) CheckEvent(expectedData string) error {
 	err := retry.Do(
 		func() error {
 			// check if a response was received and that it's code is in 2xx-range
-			resp, err := http.Get(s.checkURL)
+			ctx := context.Background()
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.checkURL, nil)
 			if err != nil {
-				return errors.Wrapf(err, "get HTTP request failed")
+				return err
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				return fmt.Errorf("get HTTP request failed: %w", err)
 			}
 			if !is2XXStatusCode(resp.StatusCode) {
-				return fmt.Errorf("expected resonse code 2xx, actual response code: %d", resp.StatusCode)
+				return fmt.Errorf("%w: expected: 2xx, actual: %d", ErrUnexpectedResponseCode, resp.StatusCode)
 			}
 
 			// try to read the response body
 			defer func() { _ = resp.Body.Close() }()
 			body, err = io.ReadAll(resp.Body)
 			if err != nil {
-				return errors.Wrapf(err, "read data failed")
+				return fmt.Errorf("read data failed: %w", err)
 			}
 
 			// compare response body with expectations
 			if expectedData != string(body) {
-				return fmt.Errorf("event not received")
+				return ErrEventNotReceived
 			}
 			return nil
 		},
@@ -232,7 +245,7 @@ func (s Subscriber) CheckEvent(expectedData string) error {
 		retry.OnRetry(func(n uint, err error) { log.Printf("[%v] try failed: %s", n, err) }),
 	)
 	if err != nil {
-		return errors.Wrapf(err, "check event after retries failed")
+		return fmt.Errorf("check event after retries failed: %w", err)
 	}
 
 	log.Print("event received")
@@ -246,24 +259,29 @@ func (s Subscriber) CheckRetries(expectedNoOfRetries int, expectedData string) e
 	delay := time.Second
 	err := retry.Do(
 		func() error {
-			resp, err := http.Get(s.checkRetriesURL)
+			ctx := context.Background()
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.checkRetriesURL, nil)
 			if err != nil {
-				return errors.Wrapf(err, "get HTTP request failed")
+				return err
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				return fmt.Errorf("get HTTP request failed: %w", err)
 			}
 			if !is2XXStatusCode(resp.StatusCode) {
-				return fmt.Errorf("expected resonse code 2xx, actual response code: %d", resp.StatusCode)
+				return fmt.Errorf("%w: expected: 2xx, actual: %d", ErrUnexpectedResponseCode, resp.StatusCode)
 			}
 			defer func() { _ = resp.Body.Close() }()
 			body, err = io.ReadAll(resp.Body)
 			if err != nil {
-				return errors.Wrapf(err, "read data failed")
+				return fmt.Errorf("read data failed: %w", err)
 			}
 			actualRetires, err := strconv.Atoi(string(body))
 			if err != nil {
-				return errors.Wrapf(err, "read data failed")
+				return fmt.Errorf("read data failed: %w", err)
 			}
 			if actualRetires < expectedNoOfRetries {
-				return fmt.Errorf("number of retries do not match (actualRetires=%d, expectedRetries=%d)", actualRetires, expectedNoOfRetries)
+				return fmt.Errorf("%w: actualRetires:%d, expectedRetries:%d", ErrWrongRetries, actualRetires, expectedNoOfRetries)
 			}
 			return nil
 		},

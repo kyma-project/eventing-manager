@@ -123,7 +123,7 @@ func Test_setEventMeshServerSubHashInStatus(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.Equal(t, kymaSubscription.Status.Backend.EventMeshHash, wantHash)
+	require.Equal(t, wantHash, kymaSubscription.Status.Backend.EventMeshHash)
 }
 
 func Test_setEventMeshLocalSubHashInStatus(t *testing.T) {
@@ -140,7 +140,7 @@ func Test_setEventMeshLocalSubHashInStatus(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.Equal(t, kymaSubscription.Status.Backend.Ev2hash, wantHash)
+	require.Equal(t, wantHash, kymaSubscription.Status.Backend.Ev2hash)
 }
 
 func Test_updateHashesInStatus(t *testing.T) {
@@ -157,8 +157,8 @@ func Test_updateHashesInStatus(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.Equal(t, kymaSubscription.Status.Backend.Ev2hash, wantHash)
-	require.Equal(t, kymaSubscription.Status.Backend.EventMeshHash, wantHash)
+	require.Equal(t, wantHash, kymaSubscription.Status.Backend.Ev2hash)
+	require.Equal(t, wantHash, kymaSubscription.Status.Backend.EventMeshHash)
 }
 
 func Test_setEmsSubscriptionStatus(t *testing.T) {

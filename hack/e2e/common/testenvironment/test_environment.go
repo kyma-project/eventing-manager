@@ -40,9 +40,17 @@ const (
 	ThreeAttempts = 3
 )
 
+var (
+	ErrSubscriptionNotReconciled = errors.New("subscription not reconciled")
+	ErrSubscriptionNotReady      = errors.New("subscription not READY")
+	ErrDeploymentNotReady        = errors.New("deployment not READY")
+	ErrWrongActiveType           = errors.New("specified backend not active")
+	ErrEventingNotReady          = errors.New("eventing not READY")
+	ErrInvalidDeployment         = errors.New("deployment.spec invalid")
+)
+
 // TestEnvironment provides mocked resources for integration tests.
 type TestEnvironment struct {
-	Context          context.Context
 	Logger           *zap.Logger
 	K8sClientset     *kubernetes.Clientset
 	K8sClient        client.Client
@@ -74,7 +82,6 @@ func NewTestEnvironment() *TestEnvironment {
 	}
 
 	return &TestEnvironment{
-		Context:          context.TODO(),
 		Logger:           logger,
 		K8sClientset:     clientSet,
 		K8sClient:        k8sClient,
@@ -86,14 +93,14 @@ func NewTestEnvironment() *TestEnvironment {
 func (te *TestEnvironment) CreateTestNamespace() error {
 	return common.Retry(Attempts, Interval, func() error {
 		// It's fine if the Namespace already exists.
-		return client.IgnoreAlreadyExists(te.K8sClient.Create(te.Context, fixtures.Namespace(te.TestConfigs.TestNamespace)))
+		return client.IgnoreAlreadyExists(te.K8sClient.Create(context.TODO(), fixtures.Namespace(te.TestConfigs.TestNamespace)))
 	})
 }
 
 func (te *TestEnvironment) DeleteTestNamespace() error {
 	return common.Retry(FewAttempts, Interval, func() error {
 		// It's fine if the Namespace does not exist.
-		return client.IgnoreNotFound(te.K8sClient.Delete(te.Context, fixtures.Namespace(te.TestConfigs.TestNamespace)))
+		return client.IgnoreNotFound(te.K8sClient.Delete(context.TODO(), fixtures.Namespace(te.TestConfigs.TestNamespace)))
 	})
 }
 
@@ -103,12 +110,12 @@ func (te *TestEnvironment) InitEventPublisherClient() error {
 	maxIdleConnsPerHost := 10
 	idleConnTimeout := 1 * time.Minute
 	t := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
-	clientHTTP := http.NewHttpClient(t.Clone())
+	clientHTTP := http.NewHTTPClient(t.Clone())
 	clientCE, err := http.NewCloudEventsClient(t.Clone())
 	if err != nil {
 		return err
 	}
-	te.EventPublisher = eventing.NewPublisher(context.Background(), *clientCE, clientHTTP, te.TestConfigs.PublisherURL, te.Logger)
+	te.EventPublisher = eventing.NewPublisher(*clientCE, clientHTTP, te.TestConfigs.PublisherURL, te.Logger)
 	return nil
 }
 
@@ -118,8 +125,8 @@ func (te *TestEnvironment) InitSinkClient() {
 	maxIdleConnsPerHost := 10
 	idleConnTimeout := 1 * time.Minute
 	t := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
-	clientHTTP := http.NewHttpClient(t.Clone())
-	te.SinkClient = eventing.NewSinkClient(context.Background(), clientHTTP, te.TestConfigs.SinkPortForwardedURL, te.Logger)
+	clientHTTP := http.NewHTTPClient(t.Clone())
+	te.SinkClient = eventing.NewSinkClient(clientHTTP, te.TestConfigs.SinkPortForwardedURL, te.Logger)
 }
 
 func (te *TestEnvironment) CreateAllSubscriptions() error {
@@ -218,7 +225,7 @@ func (te *TestEnvironment) WaitForSubscription(ctx context.Context, subsToTest e
 				"in namespace: %s to get recocniled by backend: %s", subsToTest.Name, te.TestConfigs.TestNamespace,
 				te.TestConfigs.BackendType)
 			te.Logger.Debug(errMsg)
-			return errors.New(errMsg)
+			return fmt.Errorf("%s, %w", errMsg, ErrSubscriptionNotReconciled)
 		}
 
 		// check if subscription is ready.
@@ -226,7 +233,7 @@ func (te *TestEnvironment) WaitForSubscription(ctx context.Context, subsToTest e
 			errMsg := fmt.Sprintf("waiting subscription: %s "+
 				"in namespace: %s to get ready", subsToTest.Name, te.TestConfigs.TestNamespace)
 			te.Logger.Debug(errMsg)
-			return errors.New(errMsg)
+			return fmt.Errorf("%s, %w", errMsg, ErrSubscriptionNotReady)
 		}
 		return nil
 	})
@@ -263,7 +270,7 @@ func (te *TestEnvironment) DeleteSinkResources() error {
 
 func (te *TestEnvironment) CreateSinkDeployment(name, namespace, image string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Patch(te.Context, fixtures.NewSinkDeployment(name, namespace, image),
+		return te.K8sClient.Patch(context.TODO(), fixtures.NewSinkDeployment(name, namespace, image),
 			client.Apply,
 			&client.PatchOptions{
 				Force:        ptr.To(true),
@@ -274,7 +281,7 @@ func (te *TestEnvironment) CreateSinkDeployment(name, namespace, image string) e
 
 func (te *TestEnvironment) CreateSinkService(name, namespace string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Patch(te.Context, fixtures.NewSinkService(name, namespace),
+		return te.K8sClient.Patch(context.TODO(), fixtures.NewSinkService(name, namespace),
 			client.Apply,
 			&client.PatchOptions{
 				Force:        ptr.To(true),
@@ -285,7 +292,7 @@ func (te *TestEnvironment) CreateSinkService(name, namespace string) error {
 
 func (te *TestEnvironment) DeleteDeployment(name, namespace string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Delete(te.Context, &kappsv1.Deployment{
+		return te.K8sClient.Delete(context.TODO(), &kappsv1.Deployment{
 			ObjectMeta: kmetav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
@@ -296,7 +303,7 @@ func (te *TestEnvironment) DeleteDeployment(name, namespace string) error {
 
 func (te *TestEnvironment) DeleteService(name, namespace string) error {
 	return common.Retry(FewAttempts, Interval, func() error {
-		return te.K8sClient.Delete(te.Context, &kcorev1.Service{
+		return te.K8sClient.Delete(context.TODO(), &kcorev1.Service{
 			ObjectMeta: kmetav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
@@ -306,7 +313,7 @@ func (te *TestEnvironment) DeleteService(name, namespace string) error {
 }
 
 func (te *TestEnvironment) GetDeploymentFromK8s(name, namespace string) (*kappsv1.Deployment, error) {
-	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, kmetav1.GetOptions{})
+	return te.K8sClientset.AppsV1().Deployments(namespace).Get(context.TODO(), name, kmetav1.GetOptions{})
 }
 
 func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string) error {
@@ -323,7 +330,7 @@ func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string)
 
 		// if image is provided, then check if the deployment has correct image.
 		if image != "" && gotDeployment.Spec.Template.Spec.Containers[0].Image != image {
-			err = fmt.Errorf("expected deployment (%s) image to be: %s, but found: %s", name, image,
+			err = fmt.Errorf("%w: expected deployment (%s) image to be: %s, but found: %s", ErrInvalidDeployment, name, image,
 				gotDeployment.Spec.Template.Spec.Containers[0].Image,
 			)
 			te.Logger.Debug(err.Error())
@@ -334,7 +341,7 @@ func (te *TestEnvironment) WaitForDeploymentReady(name, namespace, image string)
 		if *gotDeployment.Spec.Replicas != gotDeployment.Status.UpdatedReplicas ||
 			*gotDeployment.Spec.Replicas != gotDeployment.Status.ReadyReplicas ||
 			*gotDeployment.Spec.Replicas != gotDeployment.Status.AvailableReplicas {
-			err = fmt.Errorf("waiting for deployment: %s to get ready", name)
+			err = fmt.Errorf("waiting for deployment: %s to get ready: %w", name, ErrDeploymentNotReady)
 			te.Logger.Debug(err.Error())
 			return err
 		}
@@ -357,7 +364,7 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 	// delete with retries.
 	return common.Retry(FewAttempts, Interval, func() error {
 		// delete subscription from cluster.
-		err := te.K8sClient.Delete(te.Context, sub)
+		err := te.K8sClient.Delete(context.TODO(), sub)
 		if err != nil && !kerrors.IsNotFound(err) {
 			te.Logger.Debug(fmt.Sprintf("failed to delete subscription: %s "+
 				"in namespace: %s", name, te.TestConfigs.TestNamespace))
@@ -369,11 +376,11 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 
 func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string, subCRVersion fixtures.SubscriptionCRVersion) error {
 	// define the event
-	var eventId, legacyEventSource, legacyEventType, payload string
+	var id, legacyEventSource, legacyEventType, payload string
 	if subCRVersion == fixtures.V1Alpha1SubscriptionCRVersion {
-		eventId, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEventForV1Alpha1(eventType, te.TestConfigs.EventTypePrefix)
+		id, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEventForV1Alpha1(eventType, te.TestConfigs.EventTypePrefix)
 	} else {
-		eventId, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEvent(eventSource, eventType)
+		id, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEvent(eventSource, eventType)
 	}
 
 	// publish the event
@@ -383,8 +390,8 @@ func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType stri
 	}
 
 	// verify if the event was received by the sink.
-	te.Logger.Debug(fmt.Sprintf("Verifying if LegacyEvent (ID: %s) was received by the sink", eventId))
-	return te.VerifyLegacyEventReceivedBySink(eventId, eventType, eventSource, payload)
+	te.Logger.Debug(fmt.Sprintf("Verifying if LegacyEvent (ID: %s) was received by the sink", id))
+	return te.VerifyLegacyEventReceivedBySink(id, eventType, eventSource, payload)
 }
 
 func (te *TestEnvironment) TestDeliveryOfCloudEvent(eventSource, eventType string, encoding binding.Encoding) error {
@@ -405,7 +412,7 @@ func (te *TestEnvironment) TestDeliveryOfCloudEvent(eventSource, eventType strin
 	return te.VerifyCloudEventReceivedBySink(*ceEvent)
 }
 
-func (te *TestEnvironment) VerifyLegacyEventReceivedBySink(eventId, eventType, eventSource, payload string) error {
+func (te *TestEnvironment) VerifyLegacyEventReceivedBySink(id, eventType, eventSource, payload string) error {
 	// publisher-proxy converts LegacyEvent to CloudEvent, so the sink should have received a CloudEvent.
 	// extract data from payload of legacy event.
 	result := make(map[string]interface{})
@@ -416,7 +423,7 @@ func (te *TestEnvironment) VerifyLegacyEventReceivedBySink(eventId, eventType, e
 
 	// define the expected CloudEvent.
 	expectedCEEvent := cloudevents.NewEvent()
-	expectedCEEvent.SetID(eventId)
+	expectedCEEvent.SetID(id)
 	expectedCEEvent.SetType(eventType)
 	expectedCEEvent.SetSource(eventSource)
 	if err := expectedCEEvent.SetData(cloudevents.ApplicationJSON, data); err != nil {
@@ -518,14 +525,14 @@ func (te *TestEnvironment) SetupEventingCR() error {
 
 func (te *TestEnvironment) DeleteEventingCR() error {
 	return common.Retry(Attempts, Interval, func() error {
-		return client.IgnoreNotFound(te.K8sClient.Delete(te.Context,
+		return client.IgnoreNotFound(te.K8sClient.Delete(context.TODO(),
 			fixtures.EventingCR(operatorv1alpha1.BackendType(te.TestConfigs.BackendType))))
 	})
 }
 
 func (te *TestEnvironment) GetEventingCRFromK8s(name, namespace string) (*operatorv1alpha1.Eventing, error) {
 	var eventingCR operatorv1alpha1.Eventing
-	err := te.K8sClient.Get(te.Context, ktypes.NamespacedName{
+	err := te.K8sClient.Get(context.TODO(), ktypes.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}, &eventingCR)
@@ -533,7 +540,7 @@ func (te *TestEnvironment) GetEventingCRFromK8s(name, namespace string) (*operat
 }
 
 func (te *TestEnvironment) GetDeployment(name, namespace string) (*kappsv1.Deployment, error) {
-	return te.K8sClientset.AppsV1().Deployments(namespace).Get(te.Context, name, kmetav1.GetOptions{})
+	return te.K8sClientset.AppsV1().Deployments(namespace).Get(context.TODO(), name, kmetav1.GetOptions{})
 }
 
 func (te *TestEnvironment) WaitForEventingCRReady() error {
@@ -551,13 +558,13 @@ func (te *TestEnvironment) WaitForEventingCRReady() error {
 		}
 
 		if gotEventingCR.Spec.Backend.Type != gotEventingCR.Status.ActiveBackend {
-			err := fmt.Errorf("waiting for Eventing CR to switch backend")
-			te.Logger.Debug(err.Error())
-			return err
+			msg := "waiting for Eventing CR to switch backend"
+			te.Logger.Debug(msg)
+			return fmt.Errorf("%s: %w", msg, ErrWrongActiveType)
 		}
 
 		if gotEventingCR.Status.State != operatorv1alpha1.StateReady {
-			err := fmt.Errorf("waiting for Eventing CR to get ready state")
+			err := fmt.Errorf("waiting for Eventing CR to get ready state: %w", ErrEventingNotReady)
 			te.Logger.Debug(err.Error())
 			return err
 		}
@@ -569,9 +576,9 @@ func (te *TestEnvironment) WaitForEventingCRReady() error {
 	})
 }
 
-func (env *TestEnvironment) GetPeerAuthenticationFromK8s(name, namespace string) (*istiopkgsecurityv1beta1.PeerAuthentication, error) {
-	result, err := env.K8sDynamicClient.Resource(fixtures.PeerAuthenticationGVR()).Namespace(
-		namespace).Get(env.Context, name, kmetav1.GetOptions{})
+func (te *TestEnvironment) GetPeerAuthenticationFromK8s(name, namespace string) (*istiopkgsecurityv1beta1.PeerAuthentication, error) {
+	result, err := te.K8sDynamicClient.Resource(fixtures.PeerAuthenticationGVR()).Namespace(
+		namespace).Get(context.TODO(), name, kmetav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

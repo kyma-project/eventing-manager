@@ -1,3 +1,4 @@
+// nolint: gomnd // used in tests
 package fixtures
 
 import (
@@ -278,6 +279,7 @@ func ConvertSelectorLabelsToString(labels map[string]string) string {
 	return strings.Join(result, ",")
 }
 
+//nolint:goerr113 //TODO: this is ERRORHANDLING NOT a LOGGER!!!!
 func AppendMsgToError(err error, msg string) error {
 	return errors.Join(err, fmt.Errorf("\n==> %s", msg))
 }

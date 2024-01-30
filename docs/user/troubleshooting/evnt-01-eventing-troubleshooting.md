@@ -16,7 +16,7 @@ Trouble with Kyma Eventing may be caused by various issues, so this document gui
 
 Follow these steps to detect the source of the problem:
 
-### Step 1: Check the status of the Eventing custom resource (CR)
+### Step 1: Check the Status of the Eventing Custom Resource (CR)
 
 1. Check the Eventing CR. Is the **State** field `Ready`?
 
@@ -32,7 +32,7 @@ Follow these steps to detect the source of the problem:
 
 3. If the **State** is `Ready`, the Eventing CR is not an issue. Follow the next steps to find the source of the problem.
 
-### Step 2: Check the status of the Subscription
+### Step 2: Check the Status of the Subscription
 
 1. Check whether the Subscription is `Ready`. Run the command:
 
@@ -50,7 +50,7 @@ Follow these steps to detect the source of the problem:
 
 3. Check if the event type defined in the Subscription is correctly formatted as specified in the [Event names](../evnt-event-names.md) guidelines.
 
-### Step 3: Check if the event was published correctly
+### Step 3: Check if the Event Was Published Correctly
 
 1. Check the HTTP status code returned after sending an event.
 
@@ -67,7 +67,7 @@ Follow these steps to detect the source of the problem:
       kubectl -n {NAMESPACE} get subscriptions.eventing.kyma-project.io {NAME} -o jsonpath='{.spec.filter.filters}'
       ```
 
-### Step 4: Check the Eventing Manager logs
+### Step 4: Check the Eventing Manager Logs
 
 1. Check the logs from the Eventing Manager Pod for any errors and to verify that the event is dispatched.
    To fetch these logs, run this command:
@@ -84,7 +84,7 @@ Follow these steps to detect the source of the problem:
 
    - Eventing Manager cannot connect to NATS Server.
 
-### Step 5: Check if the Subscription sink is healthy
+### Step 5: Check if the Subscription Sink Is Healthy
 
 1. Check whether the workload URL defined in the Subscription sink is correct and healthy to receive events. To get the sink from the Subscription, run this command:
 
@@ -102,7 +102,7 @@ Follow these steps to detect the source of the problem:
 
     If the returned HTTP status code is not 2xx, check the logs of the subscriber instance.
 
-### Step 6: Check NATS JetStream status
+### Step 6: Check NATS JetStream Status
 
 1. Check the health of NATS Pods. Run the command:
 

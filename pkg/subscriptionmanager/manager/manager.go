@@ -13,7 +13,7 @@ const (
 	ParamNameCertsURL     = "certs_url"
 )
 
-type Params map[string]interface{}
+type Params map[string][]byte
 
 // Manager defines the interface that subscription managers for different messaging backends should implement.
 //

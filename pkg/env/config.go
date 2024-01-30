@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -16,6 +17,8 @@ const (
 	backendValueBEB  = "BEB"
 	backendValueNats = "NATS"
 )
+
+var ErrInvalidBackend = errors.New("invalid backend")
 
 // Backend returns the selected backend based on the environment variable
 // "BACKEND". "NATS" is the default value in case of an empty variable.
@@ -28,7 +31,7 @@ func Backend() (string, error) {
 	case backendValueNats, "":
 		return backendValueNats, nil
 	default:
-		return "", fmt.Errorf("invalid BACKEND set: %v", backend)
+		return "", fmt.Errorf("%w: %v", ErrInvalidBackend, backend)
 	}
 }
 

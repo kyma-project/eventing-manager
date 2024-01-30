@@ -3,74 +3,35 @@ KYMA_CLI ?= "${PROJECT_ROOT}/${KYMA}"
 CLUSTER_NAME ?= kyma
 REGISTRY_PORT ?= 5001
 
-ifndef MODULE_VERSION
-	include ${PROJECT_ROOT}/.version
-endif
-
-ifndef MODULE_SHA
-    MODULE_SHA = ${shell git rev-parse --short HEAD}
-endif
-
-.PHONY: module-build
-module-build: ## Build the Module, push it to a registry and print it based on the commit hash.
-	@make -C ${PROJECT_ROOT} module-build \
-		IMG=${IMG} \
-		MODULE_REGISTRY=${MODULE_REGISTRY} \
-		MODULE_VERSION=${MODULE_VERSION}-${MODULE_SHA}
-	cp -f ${PROJECT_ROOT}/module-template.yaml ${ARTIFACTS}/module-template.yaml
-	@echo "Added template to job artifacts: ${ARTIFACTS}/module-template.yaml"
-	@echo "\n~~~~~~~~~~~~BEGINNING OF MODULE TEMPLATE~~~~~~~~~~~~~~"
-	@cat ${ARTIFACTS}/module-template.yaml
-	@echo "\n~~~~~~~~~~~~~~~END OF MODULE TEMPLATE~~~~~~~~~~~~~~~~"
-
-.PHONY: download-module-template
-download-module-template: ## Downloads the module-template from the module-build prow job.
-	export PROJECT_ROOT="${PROJECT_ROOT}" \
-	&& ../get_module_template_from_build_job.sh
-
-.PHONY: install-latest-module-template-fast
-install-latest-module-template-fast: ## Downloads and applies the latest released module-template from fast channel.
-	kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/module-template.yaml
-
 .PHONY: create-kyma-system-ns
 create-kyma-system-ns: ## Create kyma-system namespace.
 	kubectl create ns kyma-system
-
-.PHONY: install-module-template
-install-module-template: ## Apply Eventing moduletemplate.
-	kubectl apply -f ${PROJECT_ROOT}/module-template.yaml
-
-.PHONY: enable-module-without-default-cr
-enable-module-without-default-cr: ## Enable Eventing module without creating default Eventing CR.
-	"${KYMA_CLI}" alpha enable module eventing -c fast -n kyma-system -p Ignore
-
-.PHONY: install-lifecycle-manager
-install-lifecycle-manager: ## Deploys lifecycle-manager.
-	"${KYMA_CLI}" alpha deploy \
-		--ci \
-		--force-conflicts
 
 .PHONY: create-k3d
 create-k3d: ## Create k3d with kyma CRDs.
 	"${KYMA_CLI}" provision k3d -p 8081:80@loadbalancer -p 8443:443@loadbalancer --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
 
-.PHONY: install-lifecycle-manager
-install-lifecycle-manager: ## Deploys lifecycle-manager.
-	"${KYMA_CLI}" alpha deploy \
-		--ci \
-		--force-conflicts
+.PHONY: install-nats-module
+install-nats-module:
+	$(eval LATEST_NATS_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/nats-manager/releases/latest | jq -r '.tag_name'))
+	@echo "Deploying NATS Manager: ${LATEST_NATS_VERSION}"
+	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-manager.yaml
+	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-default-cr.yaml
 
-.PHONY: install-latest-nats-module-template-fast
-install-latest-nats-module-template-fast: ## Downloads and applies the latest nats-manager released module-template from fast channel.
-	kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/module-template.yaml
+.PHONY: install-istio-module
+install-istio-module:
+	$(eval LATEST_ISTIO_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/istio-manager/releases/latest | jq -r '.tag_name'))
+	@echo "Deploying Istio Manager: ${LATEST_ISTIO_VERSION}"
+	kubectl label namespace kyma-system istio-injection=enabled --overwrite
+	kubectl apply -f https://github.com/kyma-project/istio/releases/latest/download/istio-manager.yaml
+	kubectl apply -f https://github.com/kyma-project/istio/releases/latest/download/istio-default-cr.yaml
 
-.PHONY: enable-nats-module
-enable-nats-module:
-	"${KYMA_CLI}" alpha enable module nats -c fast -f --ci -n kyma-system
-
-.PHONY: get-nats-via-lifecycle-manager
-get-nats-via-lifecycle-manager: install-lifecycle-manager install-latest-nats-module-template-fast enable-nats-module
-	./check-k8s-resource-is-ready.sh 180 nats kyma-system
+.PHONY: install-api-gateway-module
+install-api-gateway-module:
+	$(eval LATEST_API_GATEWAY_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/api-gateway/releases/latest | jq -r '.tag_name'))
+	@echo "Deploying API Gateway module: ${LATEST_API_GATEWAY_VERSION}"
+	kubectl apply -f https://github.com/kyma-project/api-gateway/releases/latest/download/api-gateway-manager.yaml
+	kubectl apply -f https://github.com/kyma-project/api-gateway/releases/latest/download/apigateway-default-cr.yaml
 
 .PHONY: verify-kyma
 verify-kyma: ## Wait for Kyma CR to be in Ready state.
@@ -83,3 +44,39 @@ install-k3d-tools: ## Create k3d with kyma CRDs.
 .PHONY: apply-peerauthentication-crd
 apply-peerauthentication-crd:
 	kubectl apply -f ../../config/crd/for-tests/security.istio.io_peerauthentication.yaml
+
+.PHONY: wait-nats-cr-ready
+wait-nats-cr-ready:
+	kubectl wait nats.operator.kyma-project.io -n kyma-system eventing-nats --timeout=300s --for=jsonpath='{.status.state}'=Ready
+
+.PHONY: wait-eventing-cr-ready
+wait-eventing-cr-ready:
+	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=300s --for=jsonpath='{.status.state}'=Ready
+
+.PHONY: wait-eventing-cr-ready-with-backend
+wait-eventing-cr-ready-with-backend:
+	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=300s --for=jsonpath='{.status.state}'=Ready --for=jsonpath='{.status.activeBackend}'=${ACTIVE_BACKEND}
+
+.PHONY: wait-istio-cr-ready
+wait-istio-cr-ready:
+	kubectl wait istios.operator.kyma-project.io -n kyma-system default --timeout=300s --for=jsonpath='{.status.state}'=Ready
+
+.PHONY: wait-api-gateway-cr-ready
+wait-api-gateway-cr-ready:
+	kubectl wait apigateways.operator.kyma-project.io -n kyma-system default --timeout=300s --for=jsonpath='{.status.state}'=Ready
+
+.PHONY: provision-gardener-cluster
+provision-gardener-cluster:
+	PROJECT_ROOT="${PROJECT_ROOT}" KYMA_CLI="${KYMA_CLI}" ${PROJECT_ROOT}/scripts/gardener/aws/provision.sh
+
+.PHONY: deprovision-gardener-cluster
+deprovision-gardener-cluster:
+	PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/gardener/aws/deprovision.sh
+
+.PHONY: create-ias-app
+create-ias-app:
+	PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/ias/create-ias-app.sh
+
+.PHONY: delete-ias-app
+delete-ias-app:
+	PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/ias/delete-ias-app.sh

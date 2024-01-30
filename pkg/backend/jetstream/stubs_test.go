@@ -1,3 +1,4 @@
+//nolint:godox // stubs for testing
 package jetstream
 
 import (

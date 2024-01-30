@@ -232,7 +232,7 @@ func (js *JetStream) validateConfig() error {
 		return pkgerrors.New("Stream name cannot be empty")
 	}
 	if len(js.Config.JSStreamName) > jsMaxStreamNameLength {
-		return fmt.Errorf("stream name should be max %d characters long", jsMaxStreamNameLength)
+		return ErrStreamNameTooLong
 	}
 	if _, err := toJetStreamStorageType(js.Config.JSStreamStorageType); err != nil {
 		return err

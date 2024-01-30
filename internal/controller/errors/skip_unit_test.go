@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	controllererrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
 )
+
+var ErrGeneric = errors.New("some error")
 
 func Test_NewSkippable(t *testing.T) {
 	testCases := []struct {
@@ -14,8 +18,8 @@ func Test_NewSkippable(t *testing.T) {
 	}{
 		{error: controllererrors.NewSkippable(nil)},
 		{error: controllererrors.NewSkippable(controllererrors.NewSkippable(nil))},
-		{error: controllererrors.NewSkippable(fmt.Errorf("some error"))},
-		{error: controllererrors.NewSkippable(controllererrors.NewSkippable(fmt.Errorf("some error")))},
+		{error: controllererrors.NewSkippable(ErrGeneric)},
+		{error: controllererrors.NewSkippable(controllererrors.NewSkippable(ErrGeneric))},
 	}
 
 	for _, tc := range testCases {
@@ -24,9 +28,7 @@ func Test_NewSkippable(t *testing.T) {
 			t.Errorf("test NewSkippable retuned nil error")
 			continue
 		}
-		if err := errors.Unwrap(skippableErr); tc.error != err {
-			t.Errorf("test NewSkippable failed, want: %#v but got: %#v", tc.error, err)
-		}
+		require.ErrorIs(t, skippableErr, tc.error)
 	}
 }
 
@@ -43,17 +45,17 @@ func Test_IsSkippable(t *testing.T) {
 		},
 		{
 			name:          "skippable error, should be skipped",
-			givenError:    controllererrors.NewSkippable(fmt.Errorf("some errore")),
+			givenError:    controllererrors.NewSkippable(ErrGeneric),
 			wantSkippable: true,
 		},
 		{
 			name:          "not-skippable error, should not be skipped",
-			givenError:    fmt.Errorf("some error"),
+			givenError:    ErrGeneric,
 			wantSkippable: false,
 		},
 		{
 			name:          "not-skippable error which wraps a skippable error, should not be skipped",
-			givenError:    fmt.Errorf("some error %w", controllererrors.NewSkippable(fmt.Errorf("some error"))),
+			givenError:    fmt.Errorf("some error %w", controllererrors.NewSkippable(ErrGeneric)),
 			wantSkippable: false,
 		},
 	}

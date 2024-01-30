@@ -11,25 +11,31 @@ import (
 
 var (
 	// onlyOneSignalHandler to make sure that only one signal handler is registered.
+	//nolint:gochecknoglobals // needs to be global so that the application is always closed on second signal
 	onlyOneSignalHandler = make(chan struct{})
 
-	// shutdownSignals array of system signals to cause shutdown.
-	shutdownSignals = []os.Signal{syscall.SIGINT, syscall.SIGTERM}
+	ErrTerminationRequested = errors.New("received a termination signal")
 )
+
+// shutdownSignals array of system signals to cause shutdown.
+func shutdownSignals() []os.Signal {
+	return []os.Signal{syscall.SIGINT, syscall.SIGTERM}
+}
 
 // SetupSignalHandler registered for SIGTERM and SIGINT. A stop channel is returned
 // which is closed on one of these signals. If a second signal is caught, the program
 // is terminated with exit code 1.
-func SetupSignalHandler() (stopCh <-chan struct{}) {
+func SetupSignalHandler() <-chan struct{} {
 	close(onlyOneSignalHandler) // panics when called twice
 
 	return setupStopChannel()
 }
 
-func setupStopChannel() (stopCh <-chan struct{}) {
+func setupStopChannel() <-chan struct{} {
+	const chanSize = 2 // we want to be able to read twice
 	stop := make(chan struct{})
-	osSignal := make(chan os.Signal, 2)
-	signal.Notify(osSignal, shutdownSignals...)
+	osSignal := make(chan os.Signal, chanSize)
+	signal.Notify(osSignal, shutdownSignals()...)
 	go func() {
 		<-osSignal
 		close(stop)
@@ -58,8 +64,8 @@ func NewReusableContext() context.Context {
 }
 
 // Deadline implements context.Context.
-func (scc *signalContext) Deadline() (deadline time.Time, ok bool) {
-	return
+func (scc *signalContext) Deadline() (time.Time, bool) {
+	return time.Time{}, false
 }
 
 // Done implements context.Context.
@@ -72,7 +78,7 @@ func (scc *signalContext) Err() error {
 	select {
 	case _, ok := <-scc.Done():
 		if !ok {
-			return errors.New("received a termination signal")
+			return ErrTerminationRequested
 		}
 	default:
 	}

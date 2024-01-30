@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -13,7 +14,9 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager"
 )
 
-func (r *Reconciler) reconcileNATSSubManager(ctx context.Context, eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
+var ErrCannotBuildNATSURL = errors.New("NATS CR is not found to build NATS server URL")
+
+func (r *Reconciler) reconcileNATSSubManager(eventing *v1alpha1.Eventing, log *zap.SugaredLogger) error {
 	// get the subscription config
 	defaultSubsConfig := r.getDefaultSubscriptionConfig()
 	// get the nats config
@@ -133,7 +136,7 @@ func (n *NatsConfigHandlerImpl) GetNatsConfig(ctx context.Context, eventing v1al
 		return nil, err
 	}
 	// identifies the NATs server url and sets to natsConfig
-	err = n.setUrlToNatsConfig(ctx, &eventing, &natsConfig)
+	err = n.setURLToNatsConfig(ctx, &eventing, &natsConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -145,12 +148,12 @@ func (n *NatsConfigHandlerImpl) GetNatsConfig(ctx context.Context, eventing v1al
 	return &natsConfig, nil
 }
 
-func (n *NatsConfigHandlerImpl) setUrlToNatsConfig(ctx context.Context, eventing *v1alpha1.Eventing, natsConfig *env.NATSConfig) error {
-	natsUrl, err := n.getNATSUrl(ctx, eventing.Namespace)
+func (n *NatsConfigHandlerImpl) setURLToNatsConfig(ctx context.Context, eventing *v1alpha1.Eventing, natsConfig *env.NATSConfig) error {
+	natsURL, err := n.getNATSUrl(ctx, eventing.Namespace)
 	if err != nil {
 		return err
 	}
-	natsConfig.URL = natsUrl
+	natsConfig.URL = natsURL
 	return nil
 }
 
@@ -162,5 +165,5 @@ func (n *NatsConfigHandlerImpl) getNATSUrl(ctx context.Context, namespace string
 	for _, nats := range natsList.Items {
 		return fmt.Sprintf("nats://%s.%s.svc.cluster.local:%d", nats.Name, nats.Namespace, natsClientPort), nil
 	}
-	return "", fmt.Errorf("NATS CR is not found to build NATS server URL")
+	return "", ErrCannotBuildNATSURL
 }

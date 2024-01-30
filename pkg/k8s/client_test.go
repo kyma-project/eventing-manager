@@ -3,7 +3,6 @@ package k8s
 import (
 	"context"
 	"crypto/rand"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -301,7 +300,7 @@ func Test_DeleteResource(t *testing.T) {
 			err := kubeClient.DeleteDeployment(ctx, tc.givenDeployment.Name, tc.givenDeployment.Namespace)
 
 			// then
-			require.Nil(t, err)
+			require.NoError(t, err)
 			// Check that the deployment must not exist.
 			err = fakeClient.Get(ctx, types.NamespacedName{
 				Name:      tc.givenDeployment.Name,
@@ -359,7 +358,7 @@ func Test_DeleteDeployment(t *testing.T) {
 			err := kubeClient.DeleteDeployment(ctx, deployment.Name, deployment.Namespace)
 
 			// then
-			require.Nil(t, err)
+			require.NoError(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
 				types.NamespacedName{Name: "test-deployment", Namespace: tc.namespace}, &kappsv1.Deployment{})
@@ -412,7 +411,7 @@ func Test_DeleteClusterRole(t *testing.T) {
 			err := kubeClient.DeleteClusterRole(ctx, clusterRole.Name, clusterRole.Namespace)
 
 			// then
-			require.Nil(t, err)
+			require.NoError(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
 				types.NamespacedName{Name: clusterRole.Name, Namespace: clusterRole.Namespace}, &krbacv1.ClusterRole{})
@@ -465,7 +464,7 @@ func Test_DeleteClusterRoleBinding(t *testing.T) {
 			err := kubeClient.DeleteClusterRoleBinding(ctx, clusterRoleBinding.Name, clusterRoleBinding.Namespace)
 
 			// then
-			require.Nil(t, err)
+			require.NoError(t, err)
 			// Check that the deployment was deleted
 			err = fakeClient.Get(ctx,
 				types.NamespacedName{Name: clusterRoleBinding.Name, Namespace: clusterRoleBinding.Namespace}, &krbacv1.ClusterRoleBinding{})
@@ -511,7 +510,7 @@ func Test_GetSecret(t *testing.T) {
 			name:                "namespaced name format error",
 			givenNamespacedName: "my-secret",
 			wantSecret:          nil,
-			wantError:           errors.New("invalid namespaced name. It must be in the format of 'namespace/name'"),
+			wantError:           ErrSecretRefInvalid,
 		},
 	}
 
@@ -538,7 +537,7 @@ func Test_GetSecret(t *testing.T) {
 			if tc.wantNotFoundError {
 				require.True(t, kerrors.IsNotFound(err))
 			} else {
-				require.Equal(t, tc.wantError, err)
+				require.ErrorIs(t, err, tc.wantError)
 			}
 			require.Equal(t, tc.wantSecret, secret)
 		})
@@ -886,9 +885,9 @@ func TestGetSubscriptions(t *testing.T) {
 
 			// Assert the result of the method
 			if tc.wantSubscriptionList != nil && len(tc.wantSubscriptionList.Items) > 0 {
-				require.True(t, len(result.Items) > 0)
+				require.NotEmpty(t, result.Items)
 			} else {
-				require.Equal(t, 0, len(result.Items))
+				require.Empty(t, result.Items)
 			}
 		})
 	}

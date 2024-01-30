@@ -86,8 +86,8 @@ func TestNewDeployment(t *testing.T) {
 			container := findPublisherContainer(publisherName, *deployment)
 			assert.NotNil(t, container)
 
-			assert.Equal(t, fmt.Sprint(container.Name), publisherName)
-			assert.Equal(t, fmt.Sprint(container.Image), publisherConfig.Image)
+			assert.Equal(t, container.Name, publisherName)
+			assert.Equal(t, container.Image, publisherConfig.Image)
 			assert.Equal(t, fmt.Sprint(container.ImagePullPolicy), publisherConfig.ImagePullPolicy)
 
 			tc.wantBackendAssertions(t, publisherName, *deployment)
@@ -289,15 +289,16 @@ func Test_GetEventMeshEnvVars(t *testing.T) {
 
 // natsBackendAssertions checks that the NATS-specific data was set in the NewNATSPublisherDeployment.
 func natsBackendAssertions(t *testing.T, publisherName string, deployment kappsv1.Deployment) {
+	t.Helper()
 	container := findPublisherContainer(publisherName, deployment)
 	assert.NotNil(t, container)
 
 	streamName := test.FindEnvVar(container.Env, "JS_STREAM_NAME")
-	assert.Equal(t, streamName.Value, "kyma")
+	assert.Equal(t, "kyma", streamName.Value)
 	url := test.FindEnvVar(container.Env, "NATS_URL")
-	assert.Equal(t, url.Value, natsURL)
+	assert.Equal(t, natsURL, url.Value)
 	eventTypePrefixEnv := test.FindEnvVar(container.Env, "EVENT_TYPE_PREFIX")
-	assert.Equal(t, eventTypePrefixEnv.Value, eventTypePrefix)
+	assert.Equal(t, eventTypePrefix, eventTypePrefixEnv.Value)
 
 	// check the affinity was set
 	affinityLabels := deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].PodAffinityTerm.LabelSelector.MatchLabels
@@ -308,6 +309,7 @@ func natsBackendAssertions(t *testing.T, publisherName string, deployment kappsv
 
 // eventMeshBackendAssertions checks that the eventmesh-specific data was set in the NewEventMeshPublisherDeployment.
 func eventMeshBackendAssertions(t *testing.T, publisherName string, deployment kappsv1.Deployment) {
+	t.Helper()
 	container := findPublisherContainer(publisherName, deployment)
 	assert.NotNil(t, container)
 
