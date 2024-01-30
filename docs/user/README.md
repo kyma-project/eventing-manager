@@ -22,7 +22,7 @@ Eventing in Kyma from a user’s perspective works as follows:
 
 - Offer an HTTP end point, for example a Function to receive the events.
 - Specify the events the user is interested in using the Kyma [Subscription CR](./resources/evnt-cr-subscription.md).
-- Send [CloudEvents](https://cloudevents.io/) or legacy events (deprecated) to the following HTTP end points on our [Event Publisher Proxy](https://github.com/kyma-project/eventing-publisher-proxy/blob/main/README.md) service.
+- Send [CloudEvents](https://cloudevents.io/) or legacy events (deprecated) to the following HTTP end points on our [Eventing Publisher Proxy](https://github.com/kyma-project/eventing-publisher-proxy/blob/main/README.md) service.
   - `/publish` for CloudEvents.
   - `<application_name>/v1/events` for legacy events.
 
