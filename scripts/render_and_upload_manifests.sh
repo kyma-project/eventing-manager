@@ -37,11 +37,6 @@ MODULE_VERSION=${PULL_BASE_REF} make render-manifest
 echo "Generated eventing-manager.yaml:"
 cat eventing-manager.yaml
 
-# MODULE_VERSION=${PULL_BASE_REF} make module-build
-# TODO completly remove the rendering of the module-template from the repository.
-# echo "Generated moduletemplate.yaml:"
-# cat module-template.yaml
-
 echo "Updating github release with eventing-manager.yaml"
 
 echo "Finding release id for: ${PULL_BASE_REF}"
@@ -66,6 +61,4 @@ fi
 UPLOAD_URL="https://uploads.github.com/repos/kyma-project/eventing-manager/releases/${RELEASE_ID}/assets"
 
 uploadFile "eventing-manager.yaml" "${UPLOAD_URL}?name=eventing-manager.yaml"
-# TODO completly remove the rendering of the module-template from the repository.
-# uploadFile "module-template.yaml" "${UPLOAD_URL}?name=module-template.yaml"
 uploadFile "config/samples/default.yaml" "${UPLOAD_URL}?name=eventing-default-cr.yaml"
