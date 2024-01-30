@@ -1,9 +1,0 @@
-name: {{.Name}}
-channel: {{.Channel}}
-version: {{.Version}}
-defaultCR: config/samples/default.yaml
-manifest: eventing-manager.yaml
-security: sec-scanners-config.yaml
-annotations:
-  "operator.kyma-project.io/doc-url": "https://kyma-project.io/#/eventing-manager/user/README"
-moduleRepo: https://github.com/kyma-project/eventing-manager.git
