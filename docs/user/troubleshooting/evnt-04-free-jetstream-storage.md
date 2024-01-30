@@ -4,7 +4,7 @@
 
 NATS JetStream backend stopped receiving events due to full storage.
 
-You observe the following behavior in the Event Publisher Proxy (EPP):
+You observe the following behavior in the Eventing Publisher Proxy (EPP):
 
 - `507 Insufficient Storage` HTTP Status from EPP on the publish request.
 - `cannot send to stream: nats: maximum bytes exceeded` in the EPP logs.

@@ -118,13 +118,13 @@ The operation was successful if the returned status says `true`.
 You created the `lastorder` Function, and subscribed to the `order.received.v1` events by creating a Subscription CR.
 Next, publish 15 events at once and see how Kyma Eventing triggers the workload.
 
-1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
 
    ```bash
    kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
    ```
 
-2. Now publish 15 events to the Event Publisher Proxy Service. In another terminal window, run:
+2. Now publish 15 events to the Eventing Publisher Proxy Service. In another terminal window, run:
 
 <!-- tabs:start -->
 

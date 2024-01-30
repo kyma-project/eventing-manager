@@ -64,7 +64,7 @@ The operation was successful if the command returns `true`.
 
 You created the `lastorder` Function, and subscribed to the `order.received.v1` events by creating a Subscription CR. Now it's time to send an event and trigger the Function.
 
-1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
 
    ```bash
    kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
@@ -89,7 +89,7 @@ You created the `lastorder` Function, and subscribed to the `order.received.v1` 
 
    > **NOTE:** If you want to use a Function to publish a CloudEvent, see the [Event object SDK specification](https://kyma-project.io/#/serverless-manager/user/technical-reference/07-70-function-specification?id=event-object-sdk).
 
-## Publish Legacy Events Using Kyma Eventing
+## Publish Legacy Events
 
 To verify that the event was properly delivered, check the logs of the Function:
 
