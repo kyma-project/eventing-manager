@@ -152,4 +152,4 @@ These components use this CR:
 | Component   |   Description |
 |-------------|---------------|
 | [Eventing Manager](../evnt-architecture.md#eventing-manager) | The Eventing Manager reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend. |
-| [Eventing Publisher Proxy](../evnt-architecture.md#event-publisher-proxy) | The Eventing Publisher Proxy reads the Subscriptions to find out how events are used for each Application. |
+| [Eventing Publisher Proxy](../evnt-architecture.md#eventing-publisher-proxy) | The Eventing Publisher Proxy reads the Subscriptions to find out how events are used for each Application. |
