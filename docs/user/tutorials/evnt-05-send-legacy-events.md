@@ -89,7 +89,7 @@ You created the `lastorder` Function, and subscribed to the `order.received.v1` 
 
    > **NOTE:** If you want to use a Function to publish a CloudEvent, see the [Event object SDK specification](https://kyma-project.io/#/serverless-manager/user/technical-reference/07-70-function-specification?id=event-object-sdk).
 
-## Publish Legacy Events Using Kyma Eventing
+## Publish Legacy Events
 
 To verify that the event was properly delivered, check the logs of the Function:
 

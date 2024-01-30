@@ -61,7 +61,7 @@ The operation was successful if the returned status says `true`.
 
 <!-- tabs:end -->
 
-## Trigger the workload with an event
+## Trigger the Workload with an Event
 
 You created the `lastorder` Function, and subscribed to the `order.received.v1` and `order.changed.v1` events by creating a Subscription CR. Now it's time to publish the events and trigger the Function.
 In the following example, you port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost.
