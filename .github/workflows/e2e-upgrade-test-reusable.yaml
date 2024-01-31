@@ -1,0 +1,110 @@
+name: Upgrade Tests Workflow (reusable)
+
+env:
+  E2E_LOG_LEVEL: debug
+  KYMA_STABILITY: "unstable"
+  KYMA: "./hack/kyma"
+
+on:
+  workflow_call:
+    inputs:
+      # image tag before upgrade
+      pre-upgrade-image-tag:
+        required: true
+        type: string
+      # image tag after upgrade
+      post-upgrade-image-tag:
+        required: true
+        type: string
+      # job name of the prow build job
+      build-job-name:
+        type: string
+      # commit sha of the PR or main branch commit
+      build-job-commit-sha:
+        type: string
+
+jobs:
+  e2e-upgrade: # This job tests the upgrade of Eventing module from the latest image of the main branch to the current commit.
+    runs-on: ubuntu-latest
+    env:
+      BACKEND_TYPE: NATS
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Pre-upgrade checkout
+        run: git checkout -b ${{ inputs.pre-upgrade-image-tag }}
+
+      - name: Install k3d tools
+        run: make -C hack/ci/ install-k3d-tools
+
+      - name: Install Kyma CLI & setup k3d cluster using Kyma CLI 
+        run: |
+          make kyma
+          make -C hack/ci/ create-k3d
+          kubectl version
+          kubectl cluster-info
+
+      - name: Create kyma-system namespace
+        run: |
+          make -C hack/ci/ create-kyma-system-ns
+
+      - name: Install the latest released NATS manager
+        run: |
+          kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-manager.yaml
+          kubectl apply -f https://github.com/kyma-project/nats-manager/releases/latest/download/nats-default-cr.yaml
+
+      - name: Wait for NATS module to be ready
+        run: |
+          make -C hack/ci/ wait-nats-cr-ready
+
+      - name: Install Eventing manager before upgrade 
+        run: |
+          pre_upgrade_image=$(./hack/ci/build-full-image-path.sh ${{ inputs.pre-upgrade-image-tag }})
+          echo "Pre-upgrade image: $pre_upgrade_image"
+          make deploy IMG=$pre_upgrade_image
+
+      - name: Create test resources and wait for eventing CR readiness 
+        run: |
+          export MANAGER_IMAGE=$(./hack/ci/build-full-image-path.sh ${{ inputs.pre-upgrade-image-tag }})
+          make e2e-setup
+          make e2e-eventing-setup
+
+      - name: Wait for the ${{ inputs.build-job-name }} job to succeed
+        if: ${{ inputs.build-job-name != '' }}
+        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
+        with:
+          context: ${{ inputs.build-job-name }}
+          commit_ref: "${{ inputs.build-job-commit-sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
+          timeout: 600000 # 10 minutes in milliseconds
+          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
+          check_interval: 60000 # 1 minute in milliseconds
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_OWNER: "${{ github.repository_owner }}"
+          GITHUB_REPO: "eventing-manager"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Post-upgrade checkout
+        run: git checkout -b ${{ inputs.post-upgrade-image-tag }}
+
+      - name: Install Eventing manager after upgrade  
+        run: |
+          post_upgrade_image=$(./hack/ci/build-full-image-path.sh ${{ inputs.post-upgrade-image-tag }})
+          echo "Post-upgrade image: $post_upgrade_image"
+          make deploy IMG=$post_upgrade_image
+
+      - name: Create test resources and waits for eventing CR readiness
+        run: |
+          export MANAGER_IMAGE=$(./hack/ci/build-full-image-path.sh ${{ inputs.post-upgrade-image-tag }})
+          make e2e-setup
+            
+      - name: Run e2e tests
+        run: |
+          make e2e-eventing
+
+      - name: Cleanup test resources
+        run: |
+          make e2e-eventing-cleanup
+          make e2e-cleanup
+
