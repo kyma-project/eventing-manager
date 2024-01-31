@@ -1,96 +1,78 @@
-name: "Create release"
+name: Create release
 
 on:
   workflow_dispatch:
+    inputs:
+      DRY_RUN:
+        type: boolean
+        default: false
+        description: "Dry run: setting this to `true` will skip the final step of publishing the release, leaving it as a draft-release. This can be helpful for testing and debugging. Note that the tag and release are still getting generated and the next run of this result in incremented release version. To avoid this, do not forget to delete the resulting release and tag."
 
 jobs:
-  verify-release:
-    name: Verify release
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.gen-version.outputs.VERSION }}
+  gen-version:
+    name: Generate semantic version from branch and tags
+    uses: kyma-project/eventing-tools/.github/workflows/get-version-from-release-branch-reusable.yml@main
+    # outputs: VERSION
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  bump-sec-scanners-config:
+    name: Bump the sec-scandners-config.yaml
+    needs: gen-version
+    uses: kyma-project/eventing-tools/.github/workflows/bump-sec-scanners-config-reusable.yml@main
+    with:
+      VERSION: ${{ needs.gen-version.outputs.VERSION }}
+    secrets:
+      BOT_PAT: ${{ secrets.BOT_PAT }}
 
-      - name: Generate version number
-        id: gen-version
-        run: |
-          # get script
-          GET_VERSION=$(mktemp /tmp/get-version-from-branch.XXXXX)
-          curl -L https://raw.githubusercontent.com/kyma-project/eventing-tools/main/hack/scripts/get-version-from-branch.sh -o "${GET_VERSION}"
-          chmod +x "${GET_VERSION}"
-          # get version via script
-          VERSION=$("${GET_VERSION}")
-          # push version to output environment file
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+  run-unit-test:
+    name: Run Unit Tests
+    needs: [gen-version, bump-sec-scanners-config]
+    uses: kyma-project/eventing-tools/.github/workflows/unit-test-reusable.yml@main
 
-      - name: Check image Tag
-        env:
-          VERSION: ${{ steps.gen-version.outputs.VERSION }}
-        run: ./scripts/check_sec-scanners-config.sh $VERSION
+  run-golint-cli:
+    name: Run Golint-cli
+    needs: [gen-version, bump-sec-scanners-config]
+    uses: kyma-project/eventing-tools/.github/workflows/lint-reusable.yml@main
 
-  create-draft:
-    name: Create draft release
-    needs: verify-release
-    runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ needs.verify-release.outputs.VERSION }}
-    outputs:
-      release_id: ${{ steps.create-draft.outputs.release_id }}
+  build-image:
+    name: Build image
+    needs: [gen-version, run-unit-test, run-golint-cli]
+    uses: kyma-project/eventing-tools/.github/workflows/trigger-prow-build-job-reusable.yml@main
+    with:
+      VERSION: ${{ needs.gen-version.outputs.VERSION }}
+      TIMEOUT: 120000 # 20 minutes
+      INTERVAL: 6000 # 1 minute
+      CONTEXT: "release-eventing-manager-build"
+    secrets:
+      BOT_PAT: ${{ secrets.BOT_PAT }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  create-draft-release:
+    name: Create a draft release
+    needs: [gen-version, run-unit-test, run-golint-cli]
+    uses: kyma-project/eventing-tools/.github/workflows/create-draft-release-reusable.yml@main
+    with:
+      VERSION: ${{ needs.gen-version.outputs.VERSION }}
+    secrets:
+      BOT_PAT: ${{ secrets.BOT_PAT }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: Create changelog
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./scripts/create_changelog.sh $VERSION
-
-      - name: Create draft release
-        id: create-draft
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          RELEASE_ID=$(./scripts/create_draft_release.sh $VERSION)
-          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
-
-      - name: Create lightweight tag
-        run: |
-          git tag $VERSION
-          git push origin $VERSION
-
-      - name: Verify job status
-        run: ./scripts/verify-status.sh ${{ github.ref_name }} 600 10 30
-
-      - name: Create and upload eventing-manager.yaml and eventing-default-cr.yaml
-        env:
-          PULL_BASE_REF: ${{ needs.verify-release.outputs.VERSION }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMG: "europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${VERSION}"
-          MODULE_REGISTRY: "europe-docker.pkg.dev/kyma-project/prod/unsigned"
-          KUSTOMIZE_VERSION: "v4.5.6"
-        run: |
-          ./scripts/render_and_upload_manifests.sh
+  render-and-upload-manifest:
+    name: Render and upload the manifests
+    needs: [gen-version, create-draft-release]
+    uses: kyma-project/eventing-tools/.github/workflows/render-and-upload-manifests-reusbale.yml@main
+    with:
+      VERSION: ${{ needs.gen-version.outputs.VERSION }}
+      CR_FILE: "somedir/cr_file.yaml"
+      CRD_FILE: "crd_file.yaml"
+    secrets:
+      BOT_PAT: ${{ secrets.BOT_PAT }}
 
   publish-release:
-    name: Publish release
-    needs: [verify-release, create-draft]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Publish release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./scripts/publish_release.sh ${{ needs.create-draft.outputs.release_id }}
+    if: ${{ !inputs.DRY_RUN }}
+    needs: [gen-version, render-and-upload-manifest]
+    name: Publish the release
+    uses: kyma-project/eventing-tools/.github/workflows/publish-release-reusable.yml@main
+    with:
+      VERSION: ${{ needs.gen-version.outputs.VERSION }}
+    secrets:
+      BOT_PAT: ${{ secrets.BOT_PAT }}
