@@ -48,7 +48,7 @@ jobs:
 
   create-draft-release:
     name: Create a draft release
-    needs: [gen-version, run-unit-test, run-golint-cli]
+    needs: [gen-version, run-unit-test, run-golint-cli, build-image]
     uses: kyma-project/eventing-tools/.github/workflows/create-draft-release-reusable.yml@main
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
@@ -58,7 +58,7 @@ jobs:
 
   render-and-upload-manifest:
     name: Render and upload the manifests
-    needs: [gen-version, create-draft-release]
+    needs: [gen-version, create-draft-release, build-image]
     uses: kyma-project/eventing-tools/.github/workflows/render-and-upload-manifests-reusbale.yml@main
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
@@ -69,7 +69,7 @@ jobs:
 
   publish-release:
     if: ${{ !inputs.DRY_RUN }}
-    needs: [gen-version, render-and-upload-manifest]
+    needs: [gen-version, render-and-upload-manifest, build-image]
     name: Publish the release
     uses: kyma-project/eventing-tools/.github/workflows/publish-release-reusable.yml@main
     with:
