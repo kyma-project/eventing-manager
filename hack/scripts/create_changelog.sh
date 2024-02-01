@@ -22,7 +22,7 @@ echo "## What has changed" >>${CHANGELOG_FILE}
 
 # Iterate over all commits since the previous release.
 git log "${PREVIOUS_RELEASE}"..HEAD --pretty=tformat:"%h" --reverse | while read -r commit; do
-	# If the author of the commit is not kyma-bot, show append the commit message to the changelog.
+	# If the author of the commit is not kyma-bot, append the commit message to the changelog.
 	COMMIT_AUTHOR=$(curl -H "${GITHUB_AUTH_HEADER}" -sS "${GITHUB_URL}/commits/${commit}" | jq -r '.author.login')
 	if [ "${COMMIT_AUTHOR}" != "kyma-bot" ]; then
 		git show -s "${commit}" --format="* %s by @${COMMIT_AUTHOR}" >>${CHANGELOG_FILE}
