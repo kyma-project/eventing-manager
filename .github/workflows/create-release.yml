@@ -11,13 +11,13 @@ on:
 jobs:
   gen-version:
     name: Generate semantic version from branch and tags
-    uses: kyma-project/eventing-tools/.github/workflows/get-version-from-release-branch-reusable.yml@main
+    uses: kyma-project/eventing-tools/.github/workflows/get-version-from-release-branch-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
     # outputs: VERSION
 
   bump-sec-scanners-config:
     name: Bump the sec-scandners-config.yaml
     needs: gen-version
-    uses: kyma-project/eventing-tools/.github/workflows/bump-sec-scanners-config-reusable.yml@main
+    uses: kyma-project/eventing-tools/.github/workflows/bump-sec-scanners-config-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
     secrets:
@@ -26,17 +26,17 @@ jobs:
   run-unit-test:
     name: Run Unit Tests
     needs: [gen-version, bump-sec-scanners-config]
-    uses: kyma-project/eventing-tools/.github/workflows/unit-test-reusable.yml@main
+    uses: kyma-project/eventing-tools/.github/workflows/unit-test-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
 
   run-golint-cli:
     name: Run Golint-cli
     needs: [gen-version, bump-sec-scanners-config]
-    uses: kyma-project/eventing-tools/.github/workflows/lint-reusable.yml@main
+    uses: kyma-project/eventing-tools/.github/workflows/lint-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
 
   build-image:
     name: Build image
     needs: [gen-version, run-unit-test, run-golint-cli]
-    uses: kyma-project/eventing-tools/.github/workflows/trigger-prow-build-job-reusable.yml@main
+    uses: kyma-project/eventing-tools/.github/workflows/trigger-prow-build-job-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
       TIMEOUT: 120000 # 20 minutes
@@ -49,7 +49,7 @@ jobs:
   create-draft-release:
     name: Create a draft release
     needs: [gen-version, run-unit-test, run-golint-cli, build-image]
-    uses: kyma-project/eventing-tools/.github/workflows/create-draft-release-reusable.yml@main
+    uses: kyma-project/eventing-tools/.github/workflows/create-draft-release-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
     secrets:
@@ -59,7 +59,7 @@ jobs:
   render-and-upload-manifest:
     name: Render and upload the manifests
     needs: [gen-version, create-draft-release, build-image]
-    uses: kyma-project/eventing-tools/.github/workflows/render-and-upload-manifests-reusable.yml@main
+    uses: kyma-project/eventing-tools/.github/workflows/render-and-upload-manifests-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
       CR_FILE: "somedir/cr_file.yaml"
@@ -71,7 +71,7 @@ jobs:
     if: ${{ !inputs.DRY_RUN }}
     needs: [gen-version, render-and-upload-manifest, build-image]
     name: Publish the release
-    uses: kyma-project/eventing-tools/.github/workflows/publish-release-reusable.yml@main
+    uses: kyma-project/eventing-tools/.github/workflows/publish-release-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
     secrets:
