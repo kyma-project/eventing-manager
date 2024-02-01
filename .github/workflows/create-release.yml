@@ -62,8 +62,8 @@ jobs:
     uses: kyma-project/eventing-tools/.github/workflows/render-and-upload-manifests-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
-      CR_FILE: "somedir/cr_file.yaml"
-      CRD_FILE: "crd_file.yaml"
+      CR_FILE: eventing-default-cr.yaml
+      CRD_FILE: eventing-manager.yaml
     secrets:
       BOT_PAT: ${{ secrets.BOT_PAT }}
 
