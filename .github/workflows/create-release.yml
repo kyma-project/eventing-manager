@@ -59,7 +59,7 @@ jobs:
   render-and-upload-manifest:
     name: Render and upload the manifests
     needs: [gen-version, create-draft-release, build-image]
-    uses: kyma-project/eventing-tools/.github/workflows/render-and-upload-manifests-reusbale.yml@main
+    uses: kyma-project/eventing-tools/.github/workflows/render-and-upload-manifests-reusable.yml@main
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
       CR_FILE: "somedir/cr_file.yaml"
