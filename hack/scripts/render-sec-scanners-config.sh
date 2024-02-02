@@ -13,7 +13,8 @@ PUBLISHER_FILE=${4-"config/manager/manager.yaml"}
 echo "fetching webhook image from ${WEBHOOK_FILE}"
 WEBHOOK_IMAGE=$(yq eval '.images[0].newName' <"$WEBHOOK_FILE")
 WEBHOOK_TAG=$(yq eval '.images[0].newTag' <"$WEBHOOK_FILE")
-echo -e "webhook image is ${WEBHOOK_IMAGE}:${WEBHOOK_TAG} \n"
+WEBHOOK_IMAGE="${WEBHOOK_IMAGE}:$WEBHOOK_TAG"
+echo -e "webhook image is ${WEBHOOK_IMAGE} \n"
 
 # Fetch Publisher Image.
 echo "fetching publisher image from ${PUBLISHER_FILE}"
@@ -31,7 +32,7 @@ rc-tag: ${TAG}
 protecode:
   - europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${TAG}
   - ${PUBLISHER_IMAGE}
-  - ${WEBHOOK_IMAGE}:${WEBHOOK_TAG}
+  - ${WEBHOOK_IMAGE}
 whitesource:
   language: golang-mod
   subprojects: false
