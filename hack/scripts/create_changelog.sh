@@ -29,10 +29,10 @@ git log "${PREVIOUS_RELEASE}"..HEAD --pretty=tformat:"%h" --reverse | while read
 	fi
 done
 
-# Create a new file (with a unique name based on the process ID of the current shell).
+# Create a new contibutors file (with a unique name based on the process ID of the current shell).
 NEW_CONTRIB=$$.new
 
-# Find unique authors that contribute since the last release, but not before it, and to the NEW_CONTRIB file.
+# Find unique authors who contributed since the last release, but not before it, and add them to the NEW_CONTRIB file.
 join -v2 \
 	<(curl -H "${GITHUB_AUTH_HEADER}" -sS "${GITHUB_URL}/compare/$(git rev-list --max-parents=0 HEAD)...${PREVIOUS_RELEASE}" | jq -r '.commits[].author.login' | sort -u) \
 	<(curl -H "${GITHUB_AUTH_HEADER}" -sS "${GITHUB_URL}/compare/${PREVIOUS_RELEASE}...HEAD" | jq -r '.commits[].author.login' | sort -u) >${NEW_CONTRIB}
@@ -54,4 +54,3 @@ echo -e "\n**Full changelog**: https://github.com/$REPOSITORY/compare/${PREVIOUS
 
 # Cleanup the NEW_CONTRIB file.
 rm ${NEW_CONTRIB} || echo "cleaned up"
-
