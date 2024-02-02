@@ -30,7 +30,7 @@ git log "${PREVIOUS_RELEASE}"..HEAD --pretty=tformat:"%h" --reverse | while read
 done
 
 # Create a new contibutors file (with a unique name based on the process ID of the current shell).
-NEW_CONTRIB=$$.new
+NEW_CONTRIB=$$.authors
 
 # Find unique authors who contributed since the last release, but not before it, and add them to the NEW_CONTRIB file.
 join -v2 \
