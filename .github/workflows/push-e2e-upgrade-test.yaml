@@ -28,6 +28,6 @@ jobs:
     with:
       pre-upgrade-image-tag: ${{ needs.get-latest-release.outputs.latest_release_tag }}
       post-upgrade-image-tag: main
-      build-job-name: push-eventing-manager-build
+      build-job-name: post-eventing-manager-build
       build-job-commit-sha: ${{ github.sha }}
     secrets: inherit
