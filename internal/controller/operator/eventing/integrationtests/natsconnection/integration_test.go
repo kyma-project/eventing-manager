@@ -45,7 +45,7 @@ func Test_NATSConnection(t *testing.T) {
 			),
 		},
 		{
-			name: "Eventing CR should be in error state if not connected to NATS",
+			name: "Eventing CR should be in warning state if not connected to NATS",
 			givenNATSConnectionMock: func() *natsconnectionmocks.Connection {
 				conn := &natsconnectionmocks.Connection{}
 				conn.On("Connect", mock.Anything, mock.Anything).Return(natsconnectionerrors.ErrCannotConnect)
@@ -55,7 +55,7 @@ func Test_NATSConnection(t *testing.T) {
 				return conn
 			},
 			wantMatches: gomega.And(
-				matchers.HaveStatusError(),
+				matchers.HaveStatusWarning(),
 				matchers.HaveBackendNotAvailableConditionWith(
 					natsconnectionerrors.ErrCannotConnect.Error(),
 					operatorv1alpha1.ConditionReasonNATSNotAvailable,
