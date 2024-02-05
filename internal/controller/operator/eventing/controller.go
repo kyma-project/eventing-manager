@@ -575,11 +575,11 @@ func (r *Reconciler) reconcileNATSBackend(ctx context.Context,
 	if connErr := r.connectToNATS(eventingCR); connErr != nil {
 		if errors.Is(connErr, natsconnectionerrors.ErrCannotConnect) {
 			return kctrl.Result{}, reconcile.TerminalError(
-				r.syncStatusWithNATSErr(ctx, eventingCR, connErr, log),
+				r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventingCR, connErr, log),
 			)
 		}
 
-		return kctrl.Result{}, r.syncStatusWithNATSErr(ctx, eventingCR, connErr, log)
+		return kctrl.Result{}, r.syncStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventingCR, connErr, log)
 	}
 
 	// set NATSAvailable condition to true and update status
