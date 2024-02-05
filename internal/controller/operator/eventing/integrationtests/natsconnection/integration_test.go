@@ -37,8 +37,6 @@ func Test_NATSConnection(t *testing.T) {
 				conn := &natsconnectionmocks.Connection{}
 				conn.On("Connect", mock.Anything, mock.Anything).Return(nil)
 				conn.On("IsConnected").Return(true)
-				conn.On("RegisterReconnectHandler", mock.Anything).Return()
-				conn.On("RegisterDisconnectErrHandler", mock.Anything).Return()
 				return conn
 			},
 			wantMatches: gomega.And(
@@ -54,8 +52,6 @@ func Test_NATSConnection(t *testing.T) {
 				conn := &natsconnectionmocks.Connection{}
 				conn.On("Connect", mock.Anything, mock.Anything).Return(natsconnectionerrors.ErrCannotConnect)
 				conn.On("IsConnected").Return(false)
-				conn.On("RegisterReconnectHandler", mock.Anything).Return()
-				conn.On("RegisterDisconnectErrHandler", mock.Anything).Return()
 				return conn
 			},
 			wantMatches: gomega.And(
@@ -73,8 +69,6 @@ func Test_NATSConnection(t *testing.T) {
 				conn := &natsconnectionmocks.Connection{}
 				conn.On("Connect", mock.Anything, mock.Anything).Return(ErrAny)
 				conn.On("IsConnected").Return(false)
-				conn.On("RegisterReconnectHandler", mock.Anything).Return()
-				conn.On("RegisterDisconnectErrHandler", mock.Anything).Return()
 				return conn
 			},
 			wantMatches: gomega.And(
