@@ -6,6 +6,7 @@ import (
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	kappsv1 "k8s.io/api/apps/v1"
@@ -22,6 +23,9 @@ import (
 // Test_NATSConnection tests the Eventing CR status when connecting to NATS.
 func Test_NATSConnection(t *testing.T) {
 	// given
+
+	ErrAny := errors.New("any")
+
 	testCases := []struct {
 		name                    string
 		givenNATSConnectionMock func() *natsconnectionmocks.Connection
@@ -33,8 +37,6 @@ func Test_NATSConnection(t *testing.T) {
 				conn := &natsconnectionmocks.Connection{}
 				conn.On("Connect", mock.Anything, mock.Anything).Return(nil)
 				conn.On("IsConnected").Return(true)
-				conn.On("RegisterReconnectHandler", mock.Anything).Return()
-				conn.On("RegisterDisconnectErrHandler", mock.Anything).Return()
 				return conn
 			},
 			wantMatches: gomega.And(
@@ -45,19 +47,34 @@ func Test_NATSConnection(t *testing.T) {
 			),
 		},
 		{
-			name: "Eventing CR should be in error state if not connected to NATS",
+			name: "Eventing CR should be in warning state if the connect behaviour returned a cannot connect error",
 			givenNATSConnectionMock: func() *natsconnectionmocks.Connection {
 				conn := &natsconnectionmocks.Connection{}
 				conn.On("Connect", mock.Anything, mock.Anything).Return(natsconnectionerrors.ErrCannotConnect)
 				conn.On("IsConnected").Return(false)
-				conn.On("RegisterReconnectHandler", mock.Anything).Return()
-				conn.On("RegisterDisconnectErrHandler", mock.Anything).Return()
 				return conn
 			},
 			wantMatches: gomega.And(
-				matchers.HaveStatusError(),
+				matchers.HaveStatusWarning(),
 				matchers.HaveBackendNotAvailableConditionWith(
 					natsconnectionerrors.ErrCannotConnect.Error(),
+					operatorv1alpha1.ConditionReasonNATSNotAvailable,
+				),
+				matchers.HaveFinalizer(),
+			),
+		},
+		{
+			name: "Eventing CR should be in warning state if the connect behaviour returned any error",
+			givenNATSConnectionMock: func() *natsconnectionmocks.Connection {
+				conn := &natsconnectionmocks.Connection{}
+				conn.On("Connect", mock.Anything, mock.Anything).Return(ErrAny)
+				conn.On("IsConnected").Return(false)
+				return conn
+			},
+			wantMatches: gomega.And(
+				matchers.HaveStatusWarning(),
+				matchers.HaveBackendNotAvailableConditionWith(
+					ErrAny.Error(),
 					operatorv1alpha1.ConditionReasonNATSNotAvailable,
 				),
 				matchers.HaveFinalizer(),
