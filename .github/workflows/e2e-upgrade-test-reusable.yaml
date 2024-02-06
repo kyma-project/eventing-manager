@@ -19,9 +19,10 @@ on:
       build-job-name:
         type: string
         description: "The name of the build job to wait for"
-      build-job-commit-sha:
+      commit-sha:
         type: string
-        description: "The commit sha"
+        description: "The commit sha of the new version"
+        required: true
 
 # PR:      main -> PR
 # main: release -> main
@@ -77,7 +78,7 @@ jobs:
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
           context: ${{ inputs.build-job-name }}
-          commit_ref: "${{ inputs.build-job-commit-sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
+          commit_ref: "${{ inputs.commit-sha }}"
           timeout: 600000 # 10 minutes in milliseconds
           # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
           check_interval: 60000 # 1 minute in milliseconds
@@ -88,6 +89,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit-sha }}
 
       - name: Install Eventing manager after upgrade  
         run: |
