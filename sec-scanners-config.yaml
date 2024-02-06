@@ -1,4 +1,5 @@
 module-name: eventing
+rc-tag: 1.1.0
 protecode:
   - europe-docker.pkg.dev/kyma-project/prod/eventing-manager:main
   - europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.0.1
