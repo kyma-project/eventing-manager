@@ -4,6 +4,8 @@ env:
   E2E_LOG_LEVEL: debug
   KYMA_STABILITY: "unstable"
   KYMA: "./hack/kyma"
+  DOCKER_IMAGE_REPO: "europe-docker.pkg.dev/kyma-project/prod/eventing-manager"
+  DOCKER_IMAGE_REPO_DEV: "europe-docker.pkg.dev/kyma-project/dev/eventing-manager"
 
 on:
   workflow_call:
@@ -24,8 +26,9 @@ on:
         description: "The commit sha of the new version"
         required: true
 
-# PR:      main -> PR
-# main: release -> main
+# For example,
+# PR:             main -> PR
+# main: latest release -> main
 
 jobs:
   e2e-upgrade: # This job tests the upgrade of Eventing module from the latest image of the main branch to the current commit.
@@ -63,13 +66,13 @@ jobs:
 
       - name: Install Eventing manager before upgrade 
         run: |
-          pre_upgrade_image=$(./hack/ci/build-full-image-path.sh ${{ inputs.pre-upgrade-image-tag }})
+          pre_upgrade_image=$DOCKER_IMAGE_REPO:${{ inputs.pre-upgrade-image-tag }}
           echo "Pre-upgrade image: $pre_upgrade_image"
           make deploy IMG=$pre_upgrade_image
 
       - name: Create test resources and wait for eventing CR readiness 
         run: |
-          export MANAGER_IMAGE=$(./hack/ci/build-full-image-path.sh ${{ inputs.pre-upgrade-image-tag }})
+          export MANAGER_IMAGE=$DOCKER_IMAGE_REPO:${{ inputs.pre-upgrade-image-tag }}
           make e2e-setup
           make e2e-eventing-setup
 
@@ -92,15 +95,21 @@ jobs:
         with:
           ref: ${{ inputs.commit-sha }}
 
-      - name: Install Eventing manager after upgrade  
+      - name: Upgrade Eventing manager
+        id: upgrade-eventing-manager  
         run: |
-          post_upgrade_image=$(./hack/ci/build-full-image-path.sh ${{ inputs.post-upgrade-image-tag }})
+          if [[ ${{ inputs.post-upgrade-image-tag }} == PR* ]]; then
+            post_upgrade_image=$DOCKER_IMAGE_REPO_DEV:${{ inputs.post-upgrade-image-tag }}
+          else
+            post_upgrade_image=$DOCKER_IMAGE_REPO:${{ inputs.post-upgrade-image-tag }}
+          fi
           echo "Post-upgrade image: $post_upgrade_image"
           make deploy IMG=$post_upgrade_image
+          echo "post_upgrade_image=$post_upgrade_image" >> "$GITHUB_OUTPUT"
 
       - name: Create test resources and waits for eventing CR readiness
         run: |
-          export MANAGER_IMAGE=$(./hack/ci/build-full-image-path.sh ${{ inputs.post-upgrade-image-tag }})
+          export MANAGER_IMAGE=${{ steps.upgrade-eventing-manager.outputs.post_upgrade_image }}
           make e2e-setup
             
       - name: Run e2e tests
