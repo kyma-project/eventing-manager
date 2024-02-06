@@ -8,20 +8,24 @@ env:
 on:
   workflow_call:
     inputs:
-      # image tag before upgrade
       pre-upgrade-image-tag:
         required: true
         type: string
-      # image tag after upgrade
+        description: "The image tag of the Eventing Manager before the upgrade"
       post-upgrade-image-tag:
         required: true
         type: string
-      # job name of the prow build job
+        description: "The image tag of the Eventing Manager after the upgrade"
       build-job-name:
         type: string
-      # commit sha of the PR or main branch commit
-      build-job-commit-sha:
+        description: "The name of the build job to wait for"
+      commit-sha:
         type: string
+        description: "The commit sha of the new version"
+        required: true
+
+# PR:      main -> PR
+# main: release -> main
 
 jobs:
   e2e-upgrade: # This job tests the upgrade of Eventing module from the latest image of the main branch to the current commit.
@@ -31,8 +35,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Pre-upgrade checkout
-        run: git checkout -b ${{ inputs.pre-upgrade-image-tag }}
+        with:
+          ref: ${{ inputs.pre-upgrade-image-tag }}
 
       - name: Install k3d tools
         run: make -C hack/ci/ install-k3d-tools
@@ -74,7 +78,7 @@ jobs:
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
           context: ${{ inputs.build-job-name }}
-          commit_ref: "${{ inputs.build-job-commit-sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
+          commit_ref: "${{ inputs.commit-sha }}"
           timeout: 600000 # 10 minutes in milliseconds
           # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
           check_interval: 60000 # 1 minute in milliseconds
@@ -85,8 +89,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Post-upgrade checkout
-        run: git checkout -b ${{ inputs.post-upgrade-image-tag }}
+        with:
+          ref: ${{ inputs.commit-sha }}
 
       - name: Install Eventing manager after upgrade  
         run: |
