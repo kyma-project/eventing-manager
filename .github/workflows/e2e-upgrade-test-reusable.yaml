@@ -8,20 +8,23 @@ env:
 on:
   workflow_call:
     inputs:
-      # image tag before upgrade
       pre-upgrade-image-tag:
         required: true
         type: string
-      # image tag after upgrade
+        description: "The image tag of the Eventing Manager before the upgrade"
       post-upgrade-image-tag:
         required: true
         type: string
-      # job name of the prow build job
+        description: "The image tag of the Eventing Manager after the upgrade"
       build-job-name:
         type: string
-      # commit sha of the PR or main branch commit
+        description: "The name of the build job to wait for"
       build-job-commit-sha:
         type: string
+        description: "The commit sha"
+
+# PR:      main -> PR
+# main: release -> main
 
 jobs:
   e2e-upgrade: # This job tests the upgrade of Eventing module from the latest image of the main branch to the current commit.
@@ -31,8 +34,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Pre-upgrade checkout
-        run: git checkout -b ${{ inputs.pre-upgrade-image-tag }}
+        with:
+          ref: ${{ inputs.pre-upgrade-image-tag }}
 
       - name: Install k3d tools
         run: make -C hack/ci/ install-k3d-tools
@@ -85,8 +88,6 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Post-upgrade checkout
-        run: git checkout -b ${{ inputs.post-upgrade-image-tag }}
 
       - name: Install Eventing manager after upgrade  
         run: |
