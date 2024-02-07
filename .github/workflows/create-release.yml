@@ -39,8 +39,8 @@ jobs:
     uses: kyma-project/eventing-tools/.github/workflows/trigger-prow-build-job-reusable.yml@f509756e135aa2255cfd9e96c833fe5c6e511b3b
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
-      TIMEOUT: 120000 # 20 minutes
-      INTERVAL: 6000 # 1 minute
+      TIMEOUT: 1200000 # 20 minutes
+      INTERVAL: 60000 # 1 minute
       CONTEXT: "release-eventing-manager-build"
       COMMIT_REF: ${{ github.ref_name }}
     secrets: inherit
@@ -58,7 +58,7 @@ jobs:
   render-and-upload-manifest:
     name: Render and upload the manifests
     needs: [gen-version, create-draft-release, build-image]
-    uses: kyma-project/eventing-tools/.github/workflows/render-and-upload-manifests-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
+    uses: kyma-project/eventing-tools/.github/workflows/render-and-upload-manifests-reusable.yml@5c713986ad2249557ad12481a3608480f548975c
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
       CR_FILE: eventing-default-cr.yaml
