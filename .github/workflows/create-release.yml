@@ -36,16 +36,14 @@ jobs:
   build-image:
     name: Build image
     needs: [gen-version, run-unit-test, run-golint-cli]
-    uses: kyma-project/eventing-tools/.github/workflows/trigger-prow-build-job-reusable.yml@b434a1f4e7d803f7e852858ab07c06d2932c4aed
+    uses: kyma-project/eventing-tools/.github/workflows/trigger-prow-build-job-reusable.yml@f509756e135aa2255cfd9e96c833fe5c6e511b3b
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
       TIMEOUT: 120000 # 20 minutes
       INTERVAL: 6000 # 1 minute
       CONTEXT: "release-eventing-manager-build"
       COMMIT_REF: ${{ github.ref_name }}
-    secrets:
-      BOT_PAT: ${{ secrets.BOT_PAT }}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    secrets: inherit
 
   create-draft-release:
     name: Create a draft release
