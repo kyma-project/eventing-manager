@@ -48,7 +48,7 @@ jobs:
   create-draft-release:
     name: Create a draft release
     needs: [gen-version, run-unit-test, run-golint-cli, build-image]
-    uses: kyma-project/eventing-tools/.github/workflows/create-draft-release-reusable.yml@d5c713986ad2249557ad12481a3608480f548975c
+    uses: kyma-project/eventing-tools/.github/workflows/create-draft-release-reusable.yml@5c713986ad2249557ad12481a3608480f548975c
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
     secrets:
