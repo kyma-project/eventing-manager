@@ -17,7 +17,7 @@ jobs:
   bump-sec-scanners-config:
     name: Bump the sec-scanners-config.yaml
     needs: gen-version
-    uses: kyma-project/eventing-tools/.github/workflows/bump-sec-scanners-config-reusable.yml@d491378dbbeef63bf8616f1a1b2b1a49ea5f9eeb
+    uses: kyma-project/eventing-tools/.github/workflows/bump-sec-scanners-config-reusable.yml@e8d1cd652dd636ad14b420da984f0bd4bf84ee0a
     with:
       VERSION: ${{ needs.gen-version.outputs.VERSION }}
     secrets:
