@@ -147,7 +147,7 @@ jobs:
 
           # Create a PR.
           BODY="This is an auto-generated PR to bump the sec-scanners-config.yml and kustomization on ${REPO}."
-          PR_URL=$(gh pr create --base "${CURRENT_BRANCH}" --head "${BRANCH_NAME}" --title "Bump sec-scanners-configand kustomization on ${CURRENT_BRANCH}" --body "${BODY}")
+          PR_URL=$(gh pr create --base "${CURRENT_BRANCH}" --head "${BRANCH_NAME}" --title "Bump sec-scanners-config and kustomization on ${CURRENT_BRANCH}" --body "${BODY}")
           echo "PR_URL=${PR_URL}" >> $GITHUB_ENV
 
       - name: USER INTERACTION REQUIRED
