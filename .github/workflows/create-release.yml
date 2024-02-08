@@ -163,7 +163,7 @@ jobs:
           PR_URL: ${{ env.PR_URL }}
           GH_TOKEN: ${{ secrets.BOT_PAT }}
         run: |
-          end_time=$((SECONDS+${TIMEOUT}))
+          end_time=$((SECONDS+3600)) # 1 hour
 
           while [ $SECONDS -lt $end_time ]; do
             pr_state=$(gh pr view ${PR_URL} --json state --jq '.state')
