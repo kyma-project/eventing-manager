@@ -48,7 +48,7 @@ jobs:
         with:
           go-version: "stable"
 
-      - name: "Setup yq" # Required for rendering the sec-scanners-config.
+      - name: "Setup yq" # Required for rendering the files.
         shell: bash
         run: |
           go install github.com/mikefarah/yq/v4@latest
@@ -56,16 +56,13 @@ jobs:
 
       - name: Render sec-scanners-config.yaml
         shell: bash
-        # Where ever you use this workflow, the script hack/scripts/render-sec-scanners-config.sh must exist.
         run: |
           yq --version
           ./hack/ci/render-sec-scanners-config.sh "${VERSION}"
 
       - name: Bump kustomize file
         shell: bash
-        # Where ever you use this workflow, the script hack/scripts/render-sec-scanners-config.sh must exist.
         run: |
-          yq --version
           ./hack/ci/bump-kustomize-file.sh "${VERSION}"
 
       # Check if there are changes so we can determin if all following steps can be skipped.
@@ -84,6 +81,13 @@ jobs:
         shell: bash
         run: |
           FILE="sec-scanners-config.yaml"
+          [ -f "${FILE}" ] && cat "${FILE}" || echo "${FILE} not found."
+
+      - name: Print out kustomize file
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          FILE="config/manager/kustomization.yaml"
           [ -f "${FILE}" ] && cat "${FILE}" || echo "${FILE} not found."
 
       - name: Set up git
@@ -135,12 +139,15 @@ jobs:
           git add sec-scanners-config.yaml
           git commit -m "auto-bump sec-scanners-config: ${PR_DATE}"
 
+          git add "config/manager/kustomization.yaml"
+          git commit -m "auto-bump kustomization file: ${PR_DATE}"
+
           # Push the changes to origin, as defined earlier.
           git push origin "$BRANCH_NAME"
 
           # Create a PR.
-          BODY="This is an auto-generated PR to bump the sec-scanners-config.yml on ${REPO}."
-          PR_URL=$(gh pr create --base "${CURRENT_BRANCH}" --head "${BRANCH_NAME}" --title "Bump sec-scanners-config on ${CURRENT_BRANCH}" --body "${BODY}")
+          BODY="This is an auto-generated PR to bump the sec-scanners-config.yml and kustomization on ${REPO}."
+          PR_URL=$(gh pr create --base "${CURRENT_BRANCH}" --head "${BRANCH_NAME}" --title "Bump sec-scanners-configand kustomization on ${CURRENT_BRANCH}" --body "${BODY}")
           echo "PR_URL=${PR_URL}" >> $GITHUB_ENV
 
       - name: USER INTERACTION REQUIRED
