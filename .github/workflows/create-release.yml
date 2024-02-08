@@ -2,6 +2,11 @@ name: "Create release"
 
 on:
   workflow_dispatch:
+    inputs:
+      DRY_RUN:
+        type: boolean
+        default: false
+        description: "Dry run: setting this to `true` will skip the final step of publishing the release, leaving it as a draft-release. This can be helpful for testing and debugging. Note that the tag and release are still getting generated and the next run of this result in incremented release version. To avoid this, do not forget to delete the resulting release and tag."
 
 jobs:
   verify-release:
@@ -28,10 +33,152 @@ jobs:
           # push version to output environment file
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Check image Tag
+  bump-sec-scanners-config:
+    name: Bump sec-scanners-config.yaml
+    needs: verify-release
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.verify-release.outputs.VERSION }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+
+      - name: "Setup yq" # Required for rendering the sec-scanners-config.
+        shell: bash
+        run: |
+          go install github.com/mikefarah/yq/v4@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Render sec-scanners-config.yaml
         env:
-          VERSION: ${{ steps.gen-version.outputs.VERSION }}
-        run: ./scripts/check_sec-scanners-config.sh $VERSION
+          VERSION: ${{ inputs.VERSION }}
+        shell: bash
+        # Where ever you use this workflow, the script hack/scripts/render-sec-scanners-config.sh must exist.
+        run: |
+          yq --version
+          ./hack/ci/render-sec-scanners-config.sh "${VERSION}"
+
+      - name: Bump kustomize file
+        env:
+          VERSION: ${{ inputs.VERSION }}
+        shell: bash
+        # Where ever you use this workflow, the script hack/scripts/render-sec-scanners-config.sh must exist.
+        run: |
+          yq --version
+          ./hack/ci/bump-kustomize-file.sh "${VERSION}"
+
+      # Check if there are changes so we can determin if all following steps can be skipped.
+      - name: Check for changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then 
+            echo "No changes found. No need to create a PR" 
+          else 
+            echo "Changes found. Creating a PR and waiting for it to be merged."
+            echo "CREATE_PR=true" >> $GITHUB_ENV 
+          fi
+
+      - name: Print out sec-scanners-config.yaml
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          FILE="sec-scanners-config.yaml"
+          [ -f "${FILE}" ] && cat "${FILE}" || echo "${FILE} not found."
+
+      - name: Set up git
+        if: ${{ env.CREATE_PR == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          # set git username 
+          ghusername=$(curl -s -H "Authorization: token ${GH_TOKEN}" https://api.github.com/user | jq '.login')
+          git config user.name "${ghusername}"
+          # set git mail address
+          ghemailaddress="${ghusername}@users.noreply.github.com"
+          git config user.email "${ghemailaddress}"
+          # set remote url
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+
+      - name: Set all variables
+        if: ${{ env.CREATE_PR == 'true' }}
+        shell: bash
+        run: |
+          CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+          echo "current branch: ${CURRENT_BRANCH}"
+          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
+
+          PR_DATE="$(date '+%Y-%m-%d-%H-%M-%S')"
+          echo "pr date: ${PR_DATE}"
+          echo "PR_DATE=${PR_DATE}" >> $GITHUB_ENV
+
+          BRANCH_NAME="sec-scanners-bump-${CURRENT_BRANCH}-${PR_DATE}"
+          echo "name of the new branch: ${BRANCH_NAME}"
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+
+      - name: Create a pull request
+        if: ${{ env.CREATE_PR == 'true' }}
+        env:
+          REPO: ${{ github.repository }}
+          CURRENT_BRANCH: ${{ env.CURRENT_BRANCH }}
+          PR_DATE: ${{ env.PR_DATE }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+        shell: bash
+        run: |
+          # Create a new branch for our changes.
+          git checkout -b "${BRANCH_NAME}"
+
+          # Stage the changes to sec-scanner-config.yaml and create a commit.
+          git add sec-scanners-config.yaml
+          git commit -m "auto-bump sec-scanners-config: ${PR_DATE}"
+
+          # Push the changes to origin, as defined earlier.
+          git push origin "$BRANCH_NAME"
+
+          # Create a PR.
+          BODY="This is an auto-generated PR to bump the sec-scanners-config.yml on ${REPO}."
+          PR_URL=$(gh pr create --base "${CURRENT_BRANCH}" --head "${BRANCH_NAME}" --title "Bump sec-scanners-config on ${CURRENT_BRANCH}" --body "${BODY}")
+          echo "PR_URL=${PR_URL}" >> $GITHUB_ENV
+
+      - name: USER INTERACTION REQUIRED
+        if: ${{ env.CREATE_PR == 'true' }}
+        shell: bash
+        env:
+          PR_URL: ${{ env.PR_URL }}
+        run: |
+          echo "please review  ${PR_URL}"
+
+      - name: Wait for PR to be merged
+        if: ${{ env.CREATE_PR == 'true' }}
+        shell: bash
+        env:
+          TIMEOUT: ${{ inputs.TIMEOUT }}
+          PR_URL: ${{ env.PR_URL }}
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+        run: |
+          end_time=$((SECONDS+${TIMEOUT}))
+
+          while [ $SECONDS -lt $end_time ]; do
+            pr_state=$(gh pr view ${PR_URL} --json state --jq '.state')
+            if [ "$pr_state" == "CLOSED" ]; then 
+              echo "ERROR! PR has been closed!"
+              exit 1
+            elif [ "$pr_state" == "MERGED" ]; then
+              echo "PR has been merged!"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "Timeout reached. PR not merged within the specified time."
+          exit 1
 
   create-draft:
     name: Create draft release
@@ -81,6 +228,7 @@ jobs:
 
   publish-release:
     name: Publish release
+    if: ${{ !inputs.DRY_RUN }}
     needs: [verify-release, create-draft]
     runs-on: ubuntu-latest
 
