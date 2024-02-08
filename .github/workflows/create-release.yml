@@ -55,8 +55,6 @@ jobs:
           echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
       - name: Render sec-scanners-config.yaml
-        env:
-          VERSION: ${{ inputs.VERSION }}
         shell: bash
         # Where ever you use this workflow, the script hack/scripts/render-sec-scanners-config.sh must exist.
         run: |
@@ -64,8 +62,6 @@ jobs:
           ./hack/ci/render-sec-scanners-config.sh "${VERSION}"
 
       - name: Bump kustomize file
-        env:
-          VERSION: ${{ inputs.VERSION }}
         shell: bash
         # Where ever you use this workflow, the script hack/scripts/render-sec-scanners-config.sh must exist.
         run: |
@@ -159,7 +155,6 @@ jobs:
         if: ${{ env.CREATE_PR == 'true' }}
         shell: bash
         env:
-          TIMEOUT: ${{ inputs.TIMEOUT }}
           PR_URL: ${{ env.PR_URL }}
           GH_TOKEN: ${{ secrets.BOT_PAT }}
         run: |
