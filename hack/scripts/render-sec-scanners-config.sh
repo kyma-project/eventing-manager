@@ -8,7 +8,7 @@ TAG=$1
 OUTPUT_FILE=${2:-"sec-scanners-config.yaml"}
 WEBHOOK_FILE=${3-"config/webhook/kustomization.yaml"}
 PUBLISHER_FILE=${4-"config/manager/manager.yaml"}
-
+KUSTOMIZATION_FILE=${5-"config/manager/kustomization.yaml"}
 # Fetch Webhook Image.
 echo "fetching webhook image from ${WEBHOOK_FILE}"
 WEBHOOK_IMAGE=$(yq eval '.images[0].newName' <"$WEBHOOK_FILE")
@@ -41,3 +41,7 @@ whitesource:
     - "**/*_test.go"
     - "/hack/**"
 EOF
+
+# Bump kustomization file
+sed -i "/images.newTag/c\images.newTag: ${VERSION}" "${KUSTOMIZATION_FILE}"
+awk -v ntv="$VERSION" '/newTag:/ {print $1 ":" " " ntv} !/newTag:/' "$KUSTOMIZATION_FILE" >tmp_file && mv tmp_file "$KUSTOMIZATION_FILE"
