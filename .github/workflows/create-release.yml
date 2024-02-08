@@ -29,7 +29,7 @@ jobs:
           curl -L https://raw.githubusercontent.com/kyma-project/eventing-tools/main/hack/scripts/get-version-from-branch.sh -o "${GET_VERSION}"
           chmod +x "${GET_VERSION}"
           # get version via script
-          VERSION="$(.hack/ci/get-version-from-branch.sh)""
+          VERSION="$(./hack/ci/get-version-from-branch.sh)"
           # push version to output environment file
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
