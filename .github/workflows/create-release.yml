@@ -182,7 +182,7 @@ jobs:
 
   create-draft:
     name: Create draft release
-    needs: verify-release
+    needs: [verify-release, bump-sec-scanners-config]
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.verify-release.outputs.VERSION }}
