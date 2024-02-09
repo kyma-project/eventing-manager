@@ -210,13 +210,14 @@ jobs:
           RELEASE_ID=$(./scripts/create_draft_release.sh $VERSION)
           echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
 
-      - name: Create lightweight tag
+      - name: Trigger prow job 'release-eventing-manager-build'
         run: |
+          # The job release-eventing-manager-build will be triggered by pushing a new tag (format: x.y.z) to the repo.
           git tag $VERSION
           git push origin $VERSION
 
-      - name: Verify job status
-        run: ./scripts/verify-status.sh ${{ github.ref_name }} 600 10 30
+      - name: Wait for job 'release-eventing-manager-build' to succeed
+        run: ./scripts/verify-status.sh ${{ github.ref_name }} 600 10 30 # Inputs: repo (format: "owner/repo"), timeout, interval and initial wait time.
 
       - name: Create and upload eventing-manager.yaml and eventing-default-cr.yaml
         env:
