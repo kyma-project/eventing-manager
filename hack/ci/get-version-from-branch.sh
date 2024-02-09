@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script will generate the version.
+# This script will generate the version for a release from the current branch name and the exisitng tags.
 #
 # First it verifies, that the current branch name is 'release-x.y',
 # where x and y are multi-digit integers.
