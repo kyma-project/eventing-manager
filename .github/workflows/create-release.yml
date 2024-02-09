@@ -6,7 +6,7 @@ on:
       DRY_RUN:
         type: boolean
         default: false
-        description: "Dry run: setting this to `true` will skip the final step of publishing the release, leaving it as a draft-release. This can be helpful for testing and debugging. Note that the tag and release are still getting generated and the next run of this will result in a incremented release version. To avoid this do not forget to delete the resulting release and tag."
+        description: "Dry run: setting this to `true` will skip the final step of publishing the release, leaving it as a draft-release. This can be helpful for testing and debugging. Note that the tag and release are still getting generated and the next run of this will result in an incremented release version. To avoid this do not forget to delete the resulting release and tag."
 
 jobs:
   generate-version:
