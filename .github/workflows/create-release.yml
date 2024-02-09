@@ -9,7 +9,7 @@ on:
         description: "Dry run: setting this to `true` will skip the final step of publishing the release, leaving it as a draft-release. This can be helpful for testing and debugging. Note that the tag and release are still getting generated and the next run of this result in incremented release version. To avoid this, do not forget to delete the resulting release and tag."
 
 jobs:
-  verify-release:
+  generate-version:
     name: Verify release
     runs-on: ubuntu-latest
     outputs:
@@ -30,10 +30,10 @@ jobs:
 
   bump-sec-scanners-config:
     name: Bump sec-scanners-config.yaml
-    needs: verify-release
+    needs: generate-version
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ needs.verify-release.outputs.VERSION }}
+      VERSION: ${{ needs.generate-version.outputs.VERSION }}
 
     steps:
       - name: Checkout code
@@ -179,10 +179,10 @@ jobs:
 
   create-draft:
     name: Create draft release
-    needs: [verify-release, bump-sec-scanners-config]
+    needs: [generate-version, bump-sec-scanners-config]
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ needs.verify-release.outputs.VERSION }}
+      VERSION: ${{ needs.generate-version.outputs.VERSION }}
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
 
@@ -216,7 +216,7 @@ jobs:
 
       - name: Create and upload eventing-manager.yaml and eventing-default-cr.yaml
         env:
-          PULL_BASE_REF: ${{ needs.verify-release.outputs.VERSION }}
+          PULL_BASE_REF: ${{ needs.generate-version.outputs.VERSION }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMG: "europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${VERSION}"
           MODULE_REGISTRY: "europe-docker.pkg.dev/kyma-project/prod/unsigned"
@@ -227,7 +227,7 @@ jobs:
   publish-release:
     name: Publish release
     if: ${{ !inputs.DRY_RUN }}
-    needs: [verify-release, create-draft]
+    needs: [generate-version, create-draft]
     runs-on: ubuntu-latest
 
     steps:
