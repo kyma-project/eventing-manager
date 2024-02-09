@@ -200,14 +200,14 @@ jobs:
       - name: Create changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./scripts/create_changelog.sh $VERSION
+        run: ./hack/ci/create_changelog.sh $VERSION
 
       - name: Create draft release
         id: create-draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RELEASE_ID=$(./scripts/create_draft_release.sh $VERSION)
+          RELEASE_ID=$(./hack/ci/create_draft_release.sh $VERSION)
           echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
 
       - name: Trigger prow job 'release-eventing-manager-build'
@@ -217,7 +217,7 @@ jobs:
           git push origin $VERSION
 
       - name: Wait for job 'release-eventing-manager-build' to succeed
-        run: ./scripts/verify-status.sh ${{ github.ref_name }} 600 10 30 # Inputs: repo (format: "owner/repo"), timeout, interval and initial wait time.
+        run: ./hack/ci/wait-for-release-build-job.sh ${{ github.ref_name }} 600 10 30 # Inputs: repo (format: "owner/repo"), timeout, interval and initial wait time.
 
       - name: Create and upload eventing-manager.yaml and eventing-default-cr.yaml
         env:
@@ -227,7 +227,7 @@ jobs:
           MODULE_REGISTRY: "europe-docker.pkg.dev/kyma-project/prod/unsigned"
           KUSTOMIZE_VERSION: "v4.5.6"
         run: |
-          ./scripts/render_and_upload_manifests.sh
+          ./hack/ci/render_and_upload_manifests.sh
 
   publish-release:
     name: Publish release
