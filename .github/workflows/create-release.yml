@@ -2,12 +2,6 @@ name: "Create release"
 
 on:
   workflow_dispatch:
-    inputs:
-      DRY_RUN:
-        type: boolean
-        default: false
-        description: "Dry run: setting this to `true` will skip the final step of publishing the release, leaving it as a draft-release. This can be helpful for testing and debugging. Note that the tag and release are still getting generated and the next run of this will result in an incremented release version. To avoid this do not forget to delete the resulting release and tag."
-
 jobs:
   generate-version:
     name: Verify release
@@ -223,20 +217,3 @@ jobs:
           KUSTOMIZE_VERSION: "v4.5.6"
         run: |
           ./hack/ci/render_and_upload_manifests.sh
-
-  publish-release:
-    name: Publish release
-    if: ${{ !inputs.DRY_RUN }}
-    needs: [generate-version, create-draft]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Publish release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./hack/ci/publish_release.sh ${{ needs.create-draft.outputs.release_id }}
