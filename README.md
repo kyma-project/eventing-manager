@@ -15,7 +15,8 @@ This project is scaffolded using [Kubebuilder](https://book.kubebuilder.io), and
 ## Get Started
 
 You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
-> **Note:** Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
+> [!NOTE]
+> Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
 
 ## Install
 
@@ -57,7 +58,8 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    make run
    ```
 
-> **NOTE:** You can also run this in one step with the command: `make install run`.
+> [!NOTE]
+> You can also run this in one step with the command: `make install run`.
 
 ### Run Tests
 
@@ -85,7 +87,8 @@ If you are editing the API definitions, generate the manifests such as CRs or CR
 make manifests
 ```
 
-> **NOTE:** Run `make --help` for more information on all potential `make` targets.
+> [!NOTE]
+> Run `make --help` for more information on all potential `make` targets.
 
 For more information, see the [Kubebuilder documentation](https://book.kubebuilder.io/introduction.html).
 
@@ -106,7 +109,8 @@ make docker-buildx IMG=<container-registry>/eventing-manager:<tag>
 ## Deployment
 
 You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
-> **Note:** Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
+> [!NOTE]
+> Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
 
 ### Deploy on the Cluster
 

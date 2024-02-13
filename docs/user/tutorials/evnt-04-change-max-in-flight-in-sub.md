@@ -5,7 +5,8 @@ The "in-flight messages" config defines the number of events that Kyma Eventing 
 
 ## Prerequisites
 
->**NOTE:** Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
+> [!NOTE]
+> Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
 
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
 2. [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function).

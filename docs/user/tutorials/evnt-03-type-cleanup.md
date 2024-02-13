@@ -5,7 +5,8 @@ You learn how Eventing behaves when you create a [Subscription](../resources/evn
 
 ## Prerequisites
 
->**NOTE:** Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
+> [!NOTE]
+> Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
 
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
 2. [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function).
@@ -193,4 +194,5 @@ Note that the `Event Type` of the received event is not the same as defined in t
 
 You see that Kyma Eventing modifies the event names to filter out prohibited characters to conform to Cloud Event specifications. 
 
-> **CAUTION:** This cleanup modification is abstract; you can still publish and subscribe to the original Event names. However, in some cases, it can lead to a naming collision as explained in [Event names](../evnt-event-names.md).
+> [!WARNING]
+> This cleanup modification is abstract; you can still publish and subscribe to the original Event names. However, in some cases, it can lead to a naming collision as explained in [Event names](../evnt-event-names.md).
