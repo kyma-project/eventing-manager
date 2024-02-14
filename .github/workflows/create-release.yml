@@ -2,9 +2,8 @@ name: "Create release"
 
 on:
   workflow_dispatch:
-
 jobs:
-  verify-release:
+  generate-version:
     name: Verify release
     runs-on: ubuntu-latest
     outputs:
@@ -19,26 +18,165 @@ jobs:
       - name: Generate version number
         id: gen-version
         run: |
-          # get script
-          GET_VERSION=$(mktemp /tmp/get-version-from-branch.XXXXX)
-          curl -L https://raw.githubusercontent.com/kyma-project/eventing-tools/main/hack/scripts/get-version-from-branch.sh -o "${GET_VERSION}"
-          chmod +x "${GET_VERSION}"
-          # get version via script
-          VERSION=$("${GET_VERSION}")
+          VERSION="$(./hack/ci/get-version-from-branch.sh)"
           # push version to output environment file
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Check image Tag
+  bump-sec-scanners-config:
+    name: Bump sec-scanners-config.yaml
+    needs: generate-version
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.generate-version.outputs.VERSION }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+
+      - name: "Setup yq" # Required for rendering the files.
+        shell: bash
+        run: |
+          go install github.com/mikefarah/yq/v4@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Render sec-scanners-config.yaml
+        shell: bash
+        run: |
+          yq --version
+          ./hack/ci/render-sec-scanners-config.sh "${VERSION}"
+
+      - name: Bump kustomize file
+        shell: bash
+        run: |
+          ./hack/ci/bump-kustomize-file.sh "${VERSION}"
+
+      # Check if there are changes so we can determin if all following steps can be skipped.
+      - name: Check for changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then 
+            echo "No changes found. No need to create a PR" 
+          else 
+            echo "Changes found. Creating a PR and waiting for it to be merged."
+            echo "CREATE_PR=true" >> $GITHUB_ENV 
+          fi
+
+      - name: Print out sec-scanners-config.yaml
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          FILE="sec-scanners-config.yaml"
+          [ -f "${FILE}" ] && cat "${FILE}" || echo "${FILE} not found."
+
+      - name: Print out kustomize file
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          FILE="config/manager/kustomization.yaml"
+          [ -f "${FILE}" ] && cat "${FILE}" || echo "${FILE} not found."
+
+      - name: Set up git
+        if: ${{ env.CREATE_PR == 'true' }}
         env:
-          VERSION: ${{ steps.gen-version.outputs.VERSION }}
-        run: ./scripts/check_sec-scanners-config.sh $VERSION
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          # set git username 
+          ghusername=$(curl -s -H "Authorization: token ${GH_TOKEN}" https://api.github.com/user | jq '.login')
+          git config user.name "${ghusername}"
+          # set git mail address
+          ghemailaddress="${ghusername}@users.noreply.github.com"
+          git config user.email "${ghemailaddress}"
+          # set remote url
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+
+      - name: Set all variables
+        if: ${{ env.CREATE_PR == 'true' }}
+        shell: bash
+        run: |
+          CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+          echo "current branch: ${CURRENT_BRANCH}"
+          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
+
+          PR_DATE="$(date '+%Y-%m-%d-%H-%M-%S')"
+          echo "pr date: ${PR_DATE}"
+          echo "PR_DATE=${PR_DATE}" >> $GITHUB_ENV
+
+          BRANCH_NAME="sec-scanners-bump-${CURRENT_BRANCH}-${PR_DATE}"
+          echo "name of the new branch: ${BRANCH_NAME}"
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+
+      - name: Create a pull request
+        if: ${{ env.CREATE_PR == 'true' }}
+        env:
+          REPO: ${{ github.repository }}
+          CURRENT_BRANCH: ${{ env.CURRENT_BRANCH }}
+          PR_DATE: ${{ env.PR_DATE }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+        shell: bash
+        run: |
+          # Create a new branch for our changes.
+          git checkout -b "${BRANCH_NAME}"
+
+          # Stage the changes to sec-scanner-config.yaml and create a commit.
+          git add sec-scanners-config.yaml
+          git commit -m "auto-bump sec-scanners-config: ${PR_DATE}"
+
+          git add "config/manager/kustomization.yaml"
+          git commit -m "auto-bump kustomization file: ${PR_DATE}"
+
+          # Push the changes to origin, as defined earlier.
+          git push origin "$BRANCH_NAME"
+
+          # Create a PR.
+          BODY="This is an auto-generated PR to bump the sec-scanners-config.yml and kustomization on ${REPO}."
+          PR_URL=$(gh pr create --base "${CURRENT_BRANCH}" --head "${BRANCH_NAME}" --title "Bump sec-scanners-config and kustomization on ${CURRENT_BRANCH}" --body "${BODY}")
+          echo "PR_URL=${PR_URL}" >> $GITHUB_ENV
+
+      - name: USER INTERACTION REQUIRED
+        if: ${{ env.CREATE_PR == 'true' }}
+        shell: bash
+        env:
+          PR_URL: ${{ env.PR_URL }}
+        run: |
+          echo "please review  ${PR_URL}"
+
+      - name: Wait for PR to be merged
+        if: ${{ env.CREATE_PR == 'true' }}
+        shell: bash
+        env:
+          PR_URL: ${{ env.PR_URL }}
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
+        run: |
+          end_time=$((SECONDS+3600)) # 1 hour
+
+          while [ $SECONDS -lt $end_time ]; do
+            pr_state=$(gh pr view ${PR_URL} --json state --jq '.state')
+            if [ "$pr_state" == "CLOSED" ]; then 
+              echo "ERROR! PR has been closed!"
+              exit 1
+            elif [ "$pr_state" == "MERGED" ]; then
+              echo "PR has been merged!"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "Timeout reached. PR not merged within the specified time."
+          exit 1
 
   create-draft:
     name: Create draft release
-    needs: verify-release
+    needs: [generate-version, bump-sec-scanners-config]
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ needs.verify-release.outputs.VERSION }}
+      VERSION: ${{ needs.generate-version.outputs.VERSION }}
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
 
@@ -51,46 +189,31 @@ jobs:
       - name: Create changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./scripts/create_changelog.sh $VERSION
+        run: ./hack/ci/create_changelog.sh $VERSION
 
       - name: Create draft release
         id: create-draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RELEASE_ID=$(./scripts/create_draft_release.sh $VERSION)
+          RELEASE_ID=$(./hack/ci/create_draft_release.sh $VERSION)
           echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
 
-      - name: Create lightweight tag
+      - name: Trigger prow job 'release-eventing-manager-build'
         run: |
+          # The job release-eventing-manager-build will be triggered by pushing a new tag (format: x.y.z) to the repo.
           git tag $VERSION
           git push origin $VERSION
 
-      - name: Verify job status
-        run: ./scripts/verify-status.sh ${{ github.ref_name }} 600 10 30
+      - name: Wait for job 'release-eventing-manager-build' to succeed
+        run: ./hack/ci/wait-for-release-build-job.sh ${{ github.ref_name }} 600 10 30 # Inputs: repo (format: "owner/repo"), timeout, interval and initial wait time.
 
       - name: Create and upload eventing-manager.yaml and eventing-default-cr.yaml
         env:
-          PULL_BASE_REF: ${{ needs.verify-release.outputs.VERSION }}
+          PULL_BASE_REF: ${{ needs.generate-version.outputs.VERSION }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMG: "europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${VERSION}"
           MODULE_REGISTRY: "europe-docker.pkg.dev/kyma-project/prod/unsigned"
           KUSTOMIZE_VERSION: "v4.5.6"
         run: |
-          ./scripts/render_and_upload_manifests.sh
-
-  publish-release:
-    name: Publish release
-    needs: [verify-release, create-draft]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Publish release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./scripts/publish_release.sh ${{ needs.create-draft.outputs.release_id }}
+          ./hack/ci/render_and_upload_manifests.sh
