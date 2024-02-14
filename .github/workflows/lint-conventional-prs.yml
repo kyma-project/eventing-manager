@@ -27,5 +27,5 @@ jobs:
             refactor
             test
           requireScope: false
-          # https://regex101.com/r/YybDgS/1
+          # https://regex101.com/r/pmEvPq/2
           subjectPattern: ^(?![A-Z]).+$
