@@ -2,11 +2,13 @@
 
 Kyma Eventing also supports sending and receiving of legacy events. In this tutorial we will show how to send legacy events.
 
-> **NOTE:** It is recommended to use [CloudEvents specification](https://cloudevents.io/) for sending and receiving events in Kyma.
+> [!NOTE]
+> It is recommended to use [CloudEvents specification](https://cloudevents.io/) for sending and receiving events in Kyma.
 
 ## Prerequisites
 
->**NOTE:** Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
+> [!NOTE]
+> Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
 
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
 2. [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function).
@@ -87,7 +89,8 @@ You created the `lastorder` Function, and subscribed to the `order.received.v1` 
        http://localhost:3000/myapp/v1/events
    ```
 
-   > **NOTE:** If you want to use a Function to publish a CloudEvent, see the [Event object SDK specification](https://kyma-project.io/#/serverless-manager/user/technical-reference/07-70-function-specification?id=event-object-sdk).
+> [!NOTE]
+> If you want to use a Function to publish a CloudEvent, see the [Event object SDK specification](https://kyma-project.io/#/serverless-manager/user/technical-reference/07-70-function-specification?id=event-object-sdk).
 
 ## Publish Legacy Events
 
