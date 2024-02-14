@@ -9,11 +9,17 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+    commit-message:
+      prefix: "deps(dependabot)"
   - package-ecosystem: "docker" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+    commit-message:
+      prefix: "deps(dependabot)"
   - package-ecosystem: "github-actions" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+    commit-message:
+      prefix: "deps(dependabot)"
