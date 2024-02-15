@@ -85,12 +85,12 @@ The following table provides more details on the overall state of the Eventing C
 
 Warnings indicate that user action is required, that is, the user must install the NATS module or create an EventMesh Secret.
 
-| Backend Config | Backend State         | Backend Type | Eventing State | Addition comment |
+| Backend Config | Backend State         | Backend Type | Eventing State | Impact on event flow |
 |---------------------------|---------------------------|----------------|----------------|----------|
 | exists                        | Error (NATS ist unavailable or cannot be connected) | NATS | Warning | no events will be accepted / dispatched |
-| exists                        | Missing | NATS | Warning | no events will be accepted / dispatched |
-| exists            | Warning (NATS deletion blocked)                         | NATS | Ready | events will be accepted / dispatched |
 | missing            |                           | NATS/EventMesh | Warning | no events will be accepted / dispatched |
 | exists                        | Error (secret for EventMesh missing)      | EventMesh | Warning | no events will be accepted / dispatched |
-| exists                    | Error (cases not caused by a user)      | NATS/EventMesh | Error | |
-| exists                        | Processing (creating/updating eventing module)      | NATS/EventMesh | Processing | |
+| exists                    | Error (cases not caused by a user, e.g. cannot create EPP deployment or cannot start subscription manager although backend is available)      | NATS/EventMesh | Error | no events will be accepted / dispatched |
+| exists                        | Processing (mainly happens during initialization and backend switching)      | NATS/EventMesh | Processing | no events will be accepted / dispatched |
+| exists                        | Missing | NATS | Warning | no events will be accepted / dispatched |
+| exists            | Warning (NATS deletion blocked)                         | NATS | Ready | events will be accepted / dispatched |
