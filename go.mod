@@ -1,6 +1,6 @@
 module github.com/kyma-project/eventing-manager
 
-go 1.22
+go 1.22.0
 
 require (
 	github.com/avast/retry-go/v3 v3.1.1
@@ -10,30 +10,30 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/api-gateway v0.0.0-20231222161810-7e09cec0147d
-	github.com/kyma-project/kyma/common/logging v0.0.0-20231220133808-e2c22b79a28b
+	github.com/kyma-project/api-gateway v0.0.0-20240216104156-e6b3f60184dc
+	github.com/kyma-project/kyma/common/logging v0.0.0-20240212102606-f2ca576c17ef
 	github.com/kyma-project/nats-manager v1.0.3-0.20231219150808-13159cfea47c
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/nats-io/nats-server/v2 v2.10.10
+	github.com/nats-io/nats-server/v2 v2.10.11
 	github.com/nats-io/nats.go v1.33.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.31.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.18.0
 	github.com/stretchr/testify v1.8.4
-	github.com/vektra/mockery/v2 v2.40.3
+	github.com/vektra/mockery/v2 v2.41.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/oauth2 v0.17.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028
 	istio.io/api v1.20.2
 	istio.io/client-go v1.20.2
-	k8s.io/api v0.29.1
-	k8s.io/apiextensions-apiserver v0.29.1
-	k8s.io/apimachinery v0.29.1
-	k8s.io/client-go v0.29.1
-	k8s.io/utils v0.0.0-20231127182322-b307cd553661
-	sigs.k8s.io/controller-runtime v0.17.1
+	k8s.io/api v0.29.2
+	k8s.io/apiextensions-apiserver v0.29.2
+	k8s.io/apimachinery v0.29.2
+	k8s.io/client-go v0.29.2
+	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
+	sigs.k8s.io/controller-runtime v0.17.2
 )
 
 require (
@@ -62,7 +62,7 @@ require (
 	github.com/jinzhu/copier v0.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.17.5 // indirect
+	github.com/klauspost/compress v1.17.6 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -113,7 +113,7 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/component-base v0.29.1 // indirect
+	k8s.io/component-base v0.29.2 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
