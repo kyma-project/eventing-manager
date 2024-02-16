@@ -19,3 +19,5 @@ jobs:
   unit-test:
     name: "Run golangci-lint"
     uses: kyma-project/eventing-tools/.github/workflows/lint-reusable.yml@main
+    with:
+      go-version: '1.22'
