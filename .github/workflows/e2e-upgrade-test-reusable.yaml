@@ -41,10 +41,17 @@ jobs:
         with:
           ref: ${{ inputs.pre-upgrade-image-tag }}
 
+      - name: Setup Go via go.mod
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - run: go version
+
       - name: Install k3d tools
         run: make -C hack/ci/ install-k3d-tools
 
-      - name: Install Kyma CLI & setup k3d cluster using Kyma CLI 
+      - name: Install Kyma CLI & setup k3d cluster using Kyma CLI
         run: |
           make kyma
           make -C hack/ci/ create-k3d
@@ -64,13 +71,13 @@ jobs:
         run: |
           make -C hack/ci/ wait-nats-cr-ready
 
-      - name: Install Eventing manager before upgrade 
+      - name: Install Eventing manager before upgrade
         run: |
           pre_upgrade_image=$DOCKER_IMAGE_REPO:${{ inputs.pre-upgrade-image-tag }}
           echo "Pre-upgrade image: $pre_upgrade_image"
           make deploy IMG=$pre_upgrade_image
 
-      - name: Create test resources and wait for eventing CR readiness 
+      - name: Create test resources and wait for eventing CR readiness
         run: |
           export MANAGER_IMAGE=$DOCKER_IMAGE_REPO:${{ inputs.pre-upgrade-image-tag }}
           make e2e-setup
@@ -96,7 +103,7 @@ jobs:
           ref: ${{ inputs.commit-sha }}
 
       - name: Upgrade Eventing manager
-        id: upgrade-eventing-manager  
+        id: upgrade-eventing-manager
         run: |
           if [[ ${{ inputs.post-upgrade-image-tag }} == PR* ]]; then
             post_upgrade_image=$DOCKER_IMAGE_REPO_DEV:${{ inputs.post-upgrade-image-tag }}
@@ -111,7 +118,7 @@ jobs:
         run: |
           export MANAGER_IMAGE=${{ steps.upgrade-eventing-manager.outputs.post_upgrade_image }}
           make e2e-setup
-            
+
       - name: Run e2e tests
         run: |
           make e2e-eventing
@@ -120,4 +127,3 @@ jobs:
         run: |
           make e2e-eventing-cleanup
           make e2e-cleanup
-
