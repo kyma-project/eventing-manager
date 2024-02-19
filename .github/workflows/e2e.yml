@@ -147,6 +147,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Go via go.mod
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - run: go version
+
       - name: Install k3d tools
         run: |
           make -C hack/ci/ install-k3d-tools
