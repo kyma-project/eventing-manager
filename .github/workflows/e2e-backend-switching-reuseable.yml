@@ -28,12 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache Binaries
-        id: cache-binaries
-        uses: actions/cache@v4
+      - name: Setup Go via go.mod
+        uses: actions/setup-go@v5
         with:
-          path: bin
-          key: ${{ runner.os }}-bin
+          go-version-file: go.mod
 
       - name: Install Kyma CLI
         run: |
@@ -135,7 +133,7 @@ jobs:
       - name: Switch to EventMesh backend
         run: |
           kubectl apply -f config/samples/default_eventmesh.yaml
-          make -C hack/ci/ wait-eventing-cr-ready-with-backend ACTIVE_BACKEND=EventMesh         
+          make -C hack/ci/ wait-eventing-cr-ready-with-backend ACTIVE_BACKEND=EventMesh
 
       - name: Test eventing with EventMesh
         env:
