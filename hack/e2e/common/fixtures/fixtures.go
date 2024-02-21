@@ -102,7 +102,7 @@ func EventingEventMeshCR() *operatorv1alpha1.Eventing {
 
 // PublisherSpec returns the desired publisher proxy spec.
 // The values set for the desired publisher proxy spec is based on the values for the default Eventing
-// custom resource which is configured here: github.com/kyma-project/eventing-manager/config/samples/default.yaml
+// custom resource which is configured here: github.com/kyma-project/eventing-manager/config/samples/default.yaml.
 func PublisherSpec() operatorv1alpha1.Publisher {
 	return operatorv1alpha1.Publisher{
 		Replicas: operatorv1alpha1.Replicas{
