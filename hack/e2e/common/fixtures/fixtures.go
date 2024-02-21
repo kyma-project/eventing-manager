@@ -100,6 +100,9 @@ func EventingEventMeshCR() *operatorv1alpha1.Eventing {
 	}
 }
 
+// PublisherSpec returns the desired publisher proxy spec.
+// The values set for the desired publisher proxy spec is based on the values for the default Eventing
+// custom resource which is configured here: github.com/kyma-project/eventing-manager/config/samples/default.yaml
 func PublisherSpec() operatorv1alpha1.Publisher {
 	return operatorv1alpha1.Publisher{
 		Replicas: operatorv1alpha1.Replicas{
@@ -108,12 +111,12 @@ func PublisherSpec() operatorv1alpha1.Publisher {
 		},
 		Resources: kcorev1.ResourceRequirements{
 			Limits: kcorev1.ResourceList{
-				"cpu":    resource.MustParse("300m"),
-				"memory": resource.MustParse("312Mi"),
+				"cpu":    resource.MustParse("500m"),
+				"memory": resource.MustParse("512Mi"),
 			},
 			Requests: kcorev1.ResourceList{
-				"cpu":    resource.MustParse("100m"),
-				"memory": resource.MustParse("156Mi"),
+				"cpu":    resource.MustParse("40m"),
+				"memory": resource.MustParse("64Mi"),
 			},
 		},
 	}
