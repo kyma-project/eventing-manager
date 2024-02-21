@@ -8,7 +8,7 @@
 
 ## Overview
 
-Eventing Manager is a standard Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that observes the state of Eventing resources and reconciles their state according to the desired state. It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/), which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
+Eventing Manager is a standard Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that observes the state of Eventing resources and reconciles their state according to the desired state. It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/), which provide a reconcile function responsible for synchronizing resources until the desired state is reached in the cluster.
 
 This project is scaffolded using [Kubebuilder](https://book.kubebuilder.io), and all the Kubebuilder `makefile` helpers mentioned [here](https://book.kubebuilder.io/reference/makefile-helpers.html) can be used.
 
@@ -20,13 +20,13 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 
 ## Install
 
-1. To install the latest version of the Eventing Manager on your cluster, run:
+1. To install the latest version of the Eventing Manager in your cluster, run:
 
    ```bash
    kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing-manager.yaml
    ```
 
-2. To install the latest version of the default Eventing custom resource (CR) on your cluster, run:
+2. To install the latest version of the default Eventing custom resource (CR) in your cluster, run:
 
    ```bash
    kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing-default-cr.yaml
@@ -112,7 +112,7 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
 > [!NOTE]
 > Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
 
-### Deploy on the Cluster
+### Deploy in the Cluster
 
 1. Download Go packages:
 
