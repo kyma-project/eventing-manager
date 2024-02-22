@@ -9,8 +9,8 @@ The `subscriptions.eventing.kyma-project.io` CustomResourceDefinition (CRD) is a
 This sample Subscription custom resource (CR) subscribes to an event called `order.created.v1`.
 
 > **WARNING:** Prohibited characters in event names under the **spec.types** property, are not supported in some backends. If any are detected, Eventing will remove them. Read [Event names](../evnt-event-names.md#event-name-cleanup) for more information.
-
-> **NOTE:** Both the subscriber and the Subscription should exist in the same namespace.
+> [!NOTE]
+> Both, the subscriber and the Subscription, should exist in the same namespace.
 
 ```yaml
 apiVersion: eventing.kyma-project.io/v1alpha2
@@ -152,4 +152,4 @@ These components use this CR:
 | Component   |   Description |
 |-------------|---------------|
 | [Eventing Manager](../evnt-architecture.md#eventing-manager) | The Eventing Manager reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend. |
-| [Event Publisher Proxy](../evnt-architecture.md#event-publisher-proxy) | The Event Publisher Proxy reads the Subscriptions to find out how events are used for each Application. |
+| [Eventing Publisher Proxy](../evnt-architecture.md#eventing-publisher-proxy) | The Eventing Publisher Proxy reads the Subscriptions to find out how events are used for each Application. |

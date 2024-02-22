@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 		ApplicationRuleCRDEnabled: true,
 		NATSCRDEnabled:            true,
 		AllowedEventingCR:         nil,
-	})
+	}, nil)
 	if err != nil {
 		panic(err)
 	}

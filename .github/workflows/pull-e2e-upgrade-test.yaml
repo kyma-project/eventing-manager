@@ -1,0 +1,19 @@
+name: pull-e2e-upgrade-test
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - 'sec-scanners-config.yaml'
+
+jobs:
+  upgrade-test:
+    uses: ./.github/workflows/e2e-upgrade-test-reusable.yaml
+    with:
+      pre-upgrade-image-tag: main
+      post-upgrade-image-tag: PR-${{ github.event.number }}
+      build-job-name: pull-eventing-manager-build
+      commit-sha: ${{ github.event.pull_request.head.sha }}
+    secrets: inherit

@@ -1,5 +1,5 @@
 # Troubleshooting - Eventing
 
-The troubleshooting section aims to identify the most common recurring problems the users face with Kyma Eventing, as well as the most suitable solutions to these problems.
+Learn more about solutions to the most common recurring problems that may occur with Kyma Eventing.
 
 If you can't find a solution, don't hesitate to create a [GitHub](https://github.com/kyma-project/kyma/issues) issue or reach out to our [Slack channel](http://slack.kyma-project.io/) to get direct support from the community.

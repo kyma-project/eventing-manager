@@ -135,11 +135,12 @@ func Test_IsReady(t *testing.T) {
 
 	status := v1alpha1.SubscriptionStatus{}
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			status.Conditions = tc.givenConditions
-			if gotReadyStatus := status.IsReady(); tc.wantReadyStatus != gotReadyStatus {
-				t.Errorf("Subscription status is not valid, want: %v but got: %v", tc.wantReadyStatus, gotReadyStatus)
+			status.Conditions = testcase.givenConditions
+			if gotReadyStatus := status.IsReady(); testcase.wantReadyStatus != gotReadyStatus {
+				t.Errorf("Subscription status is not valid, want: %v but got: %v", testcase.wantReadyStatus, gotReadyStatus)
 			}
 		})
 	}
@@ -389,10 +390,11 @@ func Test_conditionsEquals(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			want := tc.wantEqualStatus
-			actual := v1alpha1.ConditionsEquals(tc.conditionsSet1, tc.conditionsSet2)
+			want := testcase.wantEqualStatus
+			actual := v1alpha1.ConditionsEquals(testcase.conditionsSet1, testcase.conditionsSet2)
 			if actual != want {
 				t.Errorf("The list of conditions are not equal, want: %v but got: %v", want, actual)
 			}

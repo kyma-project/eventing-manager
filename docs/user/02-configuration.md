@@ -73,6 +73,24 @@ Use the following sample CRs as guidance. Each can be applied immediately when y
 | **conditions.&#x200b;type** (required)               | string     | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)                                                                                                                                                                                                                                                            |
 | **publisherService**                                 | string     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **specHash** (required)                              | integer    |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| **state** (required)                                 | string     | Can have one of the following values: Ready, Error, Processing, Warning. Ready state is set when all the resources are deployed successfully and backend is connected. It gets Warning state in case backend is not specified and NATS module is not installed or EventMesh secret is missing in the cluster. Error state is set when there is an error. Processing state is set if recources are being created or changed. |
+| **state** (required)                                 | string     | Can have one of the following values: `Ready`, `Error`, `Processing`, `Warning`. `Ready` state is set when all the resources are deployed successfully and backend is connected. It gets `Warning` state in case backend is not specified, NATS module is not installed or EventMesh secret is missing in the cluster. `Error` state is set when there is an error. `Processing` state is set if recources are being created or changed. See the next section for more details. |
 
 <!-- TABLE-END -->
+
+<h3>More Details About Eventing CR State</h3>
+The following table provides more details on the overall state of the Eventing CR:
+- The <b>State</b> column has the overall state of the Eventing CR.
+- The <b>Backend Config</b> column is part of the eventing CR that is either available or mistakenly not specified by a user.
+- The <b>Backend State</b> column describes the state of the NATS backend or EventMesh Secret existence. 
+
+Warnings indicate that user action is required, that is, the user must install the NATS module or create an EventMesh Secret.
+
+| Backend Config | Backend State         | Backend Type | Eventing State | Impact on event flow |
+|---------------------------|---------------------------|----------------|----------------|----------|
+| exists            | Warning (NATS deletion blocked)                         | NATS | Ready | events will be accepted / dispatched |
+| exists                        | Processing (mainly happens during initialization and backend switching)      | NATS/EventMesh | Processing | no events will be accepted / dispatched |
+| exists                        | Error (NATS ist unavailable or cannot be connected) | NATS | Warning | no events will be accepted / dispatched |
+| missing            |                           | NATS/EventMesh | Warning | no events will be accepted / dispatched |
+| exists                        | Missing | NATS | Warning | no events will be accepted / dispatched |
+| exists                        | Error (secret for EventMesh missing)      | EventMesh | Warning | no events will be accepted / dispatched |
+| exists                    | Error (cases not caused by a user, e.g. cannot create EPP deployment or cannot start subscription manager although backend is available)      | NATS/EventMesh | Error | no events will be accepted / dispatched |

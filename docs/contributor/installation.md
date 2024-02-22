@@ -124,7 +124,7 @@ This step depends on your desired backend: NATS or EventMesh.
    make uninstall
    ```
 
-## Run Eventing Manager on a Cluster Using the Go Runtime Environment
+## Run Eventing Manager in a Cluster Using the Go Runtime Environment
 
 ### Installation
 

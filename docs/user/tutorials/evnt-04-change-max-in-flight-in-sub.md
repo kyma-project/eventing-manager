@@ -5,78 +5,70 @@ The "in-flight messages" config defines the number of events that Kyma Eventing 
 
 ## Prerequisites
 
->**NOTE:** Read about [Istio sidecars in Kyma and why you want them](https://kyma-project.io/#/istio/user/00-overview/00-30-overview-istio-sidecars). Then, check how to [enable automatic Istio sidecar proxy injection](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-20-enable-sidecar-injection). For more details, see [Default Istio setup in Kyma](https://kyma-project.io/#/istio/user/00-overview/00-40-overview-istio-setup).
+> [!NOTE]
+> Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
 
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
-2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event).
+2. [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function).
 3. For this tutorial, instead of the default code sample, replace the Function source with the following code. To simulate prolonged event processing, the Function waits for 5 seconds before returning the response.
 
-   <div tabs name="Deploy a Function" group="create-workload">
-     <details open>
-     <summary label="Kyma Dashboard">
-     Kyma Dashboard
-     </summary>
+<!-- tabs:start -->
 
-   ```js
-   module.exports = {
-     main: async function (event, context) {
-       console.log("Processing event:", event.data);
-       // sleep/wait for 5 seconds
-       await new Promise(r => setTimeout(r, 5 * 1000));
-       console.log("Completely processed event:", event.data);
-       return;
-     } 
-   }
-   ```
+#### **Kyma Dashboard**
 
-     </details>
-     <details>
-     <summary label="kubectl">
-     kubectl
-     </summary>
+```js
+module.exports = {
+  main: async function (event, context) {
+    console.log("Processing event:", event.data);
+    // sleep/wait for 5 seconds
+    await new Promise(r => setTimeout(r, 5 * 1000));
+    console.log("Completely processed event:", event.data);
+    return;
+  } 
+}
+```
 
-   ```bash
-   cat <<EOF | kubectl apply -f -
-   apiVersion: serverless.kyma-project.io/v1alpha2
-   kind: Function
-   metadata:
-     name: lastorder
-     namespace: default
-   spec:
-     replicas: 1
-     resourceConfiguration:
-       function:
-         profile: S
-       build:
-         profile: local-dev
-     runtime: nodejs18
-     source:
-       inline:
-         source: |-
-           module.exports = {
-             main: async function (event, context) {
-               console.log("Processing event:", event.data);
-               // sleep/wait for 5 seconds
-               await new Promise(r => setTimeout(r, 5 * 1000));
-               console.log("Completely processed event:", event.data);
-               return;
-             }
-           }
-   EOF
-   ```
+#### **kubectl**
 
-     </details>
-   </div>
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: serverless.kyma-project.io/v1alpha2
+kind: Function
+metadata:
+  name: lastorder
+  namespace: default
+spec:
+  replicas: 1
+  resourceConfiguration:
+    function:
+      profile: S
+    build:
+      profile: local-dev
+  runtime: nodejs18
+  source:
+    inline:
+      source: |-
+        module.exports = {
+          main: async function (event, context) {
+            console.log("Processing event:", event.data);
+            // sleep/wait for 5 seconds
+            await new Promise(r => setTimeout(r, 5 * 1000));
+            console.log("Completely processed event:", event.data);
+            return;
+          }
+        }
+ EOF
+ ```
+
+<!-- tabs:end -->
 
 ## Create a Subscription With Max-In-Flight Config
 
 Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). Subscribe for events of the type: `order.received.v1` and set the `maxInFlightMessages` to `5`, so that Kyma Eventing forwards maximum 5 events in parallel to the sink without waiting for a response.
 
-<div tabs name="Create a Subscription" group="create-subscription">
-  <details open>
-  <summary label="Kyma Dashboard">
-  Kyma Dashboard
-  </summary>
+<!-- tabs:start -->
+
+#### **Kyma Dashboard**
 
 1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
@@ -91,11 +83,7 @@ Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (C
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-  </details>
-  <details>
-  <summary label="kubectl">
-  kubectl
-  </summary>
+#### **kubectl**
 
 Run:
 
@@ -123,67 +111,82 @@ kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"
 ```
 
 The operation was successful if the returned status says `true`.
-  </details>
-</div>
+
+<!-- tabs:end -->
 
 ## Trigger the Workload With Multiple Events
 
 You created the `lastorder` Function, and subscribed to the `order.received.v1` events by creating a Subscription CR.
 Next, publish 15 events at once and see how Kyma Eventing triggers the workload.
 
-1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
 
    ```bash
    kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
    ```
 
-2. Now publish 15 events to the Event Publisher Proxy Service. In another terminal window, run:
+2. Now publish 15 events to the Eventing Publisher Proxy Service. In another terminal window, run:
 
-   <div tabs name="Publish an event" group="trigger-workload">
-     <details open>
-     <summary label="CloudEvents Conformance Tool">
-     CloudEvents Conformance Tool
-     </summary>
+<!-- tabs:start -->
 
-     ```bash
-     for i in {1..15}
-     do
-       cloudevents send http://localhost:3000/publish \
-         --type order.received.v1 \
-         --id e4bcc616-c3a9-4840-9321-763aa23851f${i} \
-         --source myapp \
-         --datacontenttype application/json \
-         --data "{\"orderCode\":\"$i\"}" \
-         --yaml
-     done
-     ```
+#### **CloudEvents Conformance Tool**
 
-     </details>
-     <details>
-     <summary label="curl">
-     curl
-     </summary>
+```bash
+for i in {1..15}
+do
+  cloudevents send http://localhost:3000/publish \
+    --type order.received.v1 \
+    --id e4bcc616-c3a9-4840-9321-763aa23851f${i} \
+    --source myapp \
+    --datacontenttype application/json \
+    --data "{\"orderCode\":\"$i\"}" \
+    --yaml
+done
+```
 
-     ```bash
-     for i in {1..15}
-     do
-       curl -v -X POST \
-         -H "ce-specversion: 1.0" \
-         -H "ce-type: order.received.v1" \
-         -H "ce-source: myapp" \
-         -H "ce-eventtypeversion: v1" \
-         -H "ce-id: e4bcc616-c3a9-4840-9321-763aa23851f${i}" \
-         -H "content-type: application/json" \
-         -d "{\"orderCode\":\"$i\"}" \
-         http://localhost:3000/publish
-     done
-     ```
-     </details>
-   </div>
+#### **curl**
+
+```bash
+for i in {1..15}
+do
+  curl -v -X POST \
+    -H "ce-specversion: 1.0" \
+    -H "ce-type: order.received.v1" \
+    -H "ce-source: myapp" \
+    -H "ce-eventtypeversion: v1" \
+    -H "ce-id: e4bcc616-c3a9-4840-9321-763aa23851f${i}" \
+    -H "content-type: application/json" \
+    -d "{\"orderCode\":\"$i\"}" \
+    http://localhost:3000/publish
+done
+```
+<!-- tabs:end -->
 
 ## Verify the Event Delivery
 
-To verify that the events ware properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
+To verify that the event was properly delivered, check the logs of the Function:
+
+<!-- tabs:start -->
+
+#### **Kyma Dashboard**
+
+1. In Kyma Dashboard, return to the view of your `lastorder` Function.
+2. In the **Code** view, find the **Replicas of the Function** section.
+3. Click the name of your replica.
+4. Locate the **Containers** section and click on **View Logs**.
+
+#### **kubectl**
+
+Run:
+
+```bash
+kubectl logs \
+  -n default \
+  -l serverless.kyma-project.io/function-name=lastorder,serverless.kyma-project.io/resource=deployment \
+  -c function
+```
+
+<!-- tabs:end -->
 
 You will see the received events in the logs as:
 

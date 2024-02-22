@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func TestSelectorInstanceEventing(t *testing.T) {
+func TestSelectorCreatedByEventingManager(t *testing.T) {
 	// given
 	tests := []struct {
 		name string
@@ -17,7 +17,7 @@ func TestSelectorInstanceEventing(t *testing.T) {
 			name: "should return the correct selector",
 			want: labels.SelectorFromSet(
 				map[string]string{
-					"app.kubernetes.io/instance": "eventing",
+					"app.kubernetes.io/created-by": "eventing-manager",
 				},
 			),
 		},
@@ -26,7 +26,7 @@ func TestSelectorInstanceEventing(t *testing.T) {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			got := SelectorInstanceEventing()
+			got := SelectorCreatedByEventingManager()
 
 			// then
 			require.Equal(t, testcase.want, got)

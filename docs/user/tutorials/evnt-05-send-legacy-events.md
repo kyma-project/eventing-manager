@@ -2,24 +2,24 @@
 
 Kyma Eventing also supports sending and receiving of legacy events. In this tutorial we will show how to send legacy events.
 
-> **NOTE:** It is recommended to use [CloudEvents specification](https://cloudevents.io/) for sending and receiving events in Kyma.
+> [!NOTE]
+> It is recommended to use [CloudEvents specification](https://cloudevents.io/) for sending and receiving events in Kyma.
 
 ## Prerequisites
 
->**NOTE:** Read about [Istio sidecars in Kyma and why you want them](https://kyma-project.io/#/istio/user/00-overview/00-30-overview-istio-sidecars). Then, check how to [enable automatic Istio sidecar proxy injection](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-20-enable-sidecar-injection). For more details, see [Default Istio setup in Kyma](https://kyma-project.io/#/istio/user/00-overview/00-40-overview-istio-setup).
+> [!NOTE]
+> Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
 
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
-2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event).
+2. [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function).
 
 ## Create a Subscription
 
 To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). We're going to subscribe to events of the type `order.received.v1`.
 
-<div tabs name="Create a Subscription" group="trigger-workload">
-  <details open>
-  <summary label="Kyma Dashboard">
-  Kyma Dashboard
-  </summary>
+<!-- tabs:start -->
+
+#### **Kyma Dashboard**
 
 1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
@@ -33,11 +33,7 @@ To subscribe to events, we need a [Subscription](../resources/evnt-cr-subscripti
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-  </details>
-  <details>
-  <summary label="kubectl">
-  kubectl
-  </summary>
+#### **curl**
 
 Run:
 
@@ -64,14 +60,13 @@ kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"
 
 The operation was successful if the command returns `true`.
 
-  </details>
-</div>
+<!-- tabs:end -->
 
 ## Publish a Legacy Event To Trigger the Workload
 
 You created the `lastorder` Function, and subscribed to the `order.received.v1` events by creating a Subscription CR. Now it's time to send an event and trigger the Function.
 
-1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
 
    ```bash
    kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
@@ -94,11 +89,34 @@ You created the `lastorder` Function, and subscribed to the `order.received.v1` 
        http://localhost:3000/myapp/v1/events
    ```
 
-   > **NOTE:** If you want to use a Function to publish a CloudEvent, see the [Event object SDK specification](https://kyma-project.io/#/serverless-manager/user/technical-reference/07-70-function-specification?id=event-object-sdk).
+> [!NOTE]
+> If you want to use a Function to publish a CloudEvent, see the [Event object SDK specification](https://kyma-project.io/#/serverless-manager/user/technical-reference/07-70-function-specification?id=event-object-sdk).
 
-## Publish Legacy Events Using Kyma Eventing
+## Publish Legacy Events
 
-To verify that the event was properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
+To verify that the event was properly delivered, check the logs of the Function:
+
+<!-- tabs:start -->
+
+#### **Kyma Dashboard**
+
+1. In Kyma Dashboard, return to the view of your `lastorder` Function.
+2. In the **Code** view, find the **Replicas of the Function** section.
+3. Click the name of your replica.
+4. Locate the **Containers** section and click on **View Logs**.
+
+#### **kubectl**
+
+Run:
+
+```bash
+kubectl logs \
+  -n default \
+  -l serverless.kyma-project.io/function-name=lastorder,serverless.kyma-project.io/resource=deployment \
+  -c function
+```
+
+<!-- tabs:end -->
 
 You see the received event in the logs:
 

@@ -9,8 +9,10 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	kctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -27,6 +29,9 @@ import (
 const (
 	TokenURLPath     = "/auth"
 	MessagingURLPath = "/messaging"
+
+	fewAttempts   = 2
+	smallInterval = 3
 )
 
 // EventMeshMock implements a programmable mock for EventMesh.
@@ -71,7 +76,7 @@ func NewEventMeshMockResponseOverride() *EventMeshMockResponseOverride {
 
 type (
 	ResponseUpdateReq      func(w http.ResponseWriter, key string, webhookAuth *emstypes.WebhookAuth)
-	ResponseUpdateStateReq func(w http.ResponseWriter, key string, state emstypes.State)
+	ResponseUpdateStateReq func(w http.ResponseWriter, key string, state emstypes.State) error
 	ResponseWithSub        func(w http.ResponseWriter, subscription emstypes.Subscription)
 	ResponseWithName       func(w http.ResponseWriter, subscriptionName string)
 	Response               func(w http.ResponseWriter)
@@ -203,7 +208,19 @@ func (m *EventMeshMock) handleMessaging() func(w http.ResponseWriter, r *http.Re
 
 			// extract get request key from /messaging/events/subscriptions/%s/state
 			key := strings.TrimSuffix(r.URL.Path, "/state")
-			m.UpdateStateResponse(w, key, state)
+			for i := 0; i < 3; i++ {
+				err := m.UpdateStateResponse(w, key, state)
+				if err == nil {
+					break
+				}
+				if i < fewAttempts { // Don't sleep after the last attempt.
+					time.Sleep(time.Duration(smallInterval) * time.Second)
+				} else {
+					m.log.Error(err, "failed to update state response")
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+			}
 		case http.MethodGet:
 			key := r.URL.Path
 			// check if any response override defined for this subscription
@@ -259,7 +276,7 @@ func UpdateSubscriptionResponse(m *EventMeshMock) ResponseUpdateReq {
 
 // UpdateSubscriptionStateResponse updates the EventMesh subscription status in the mock.
 func UpdateSubscriptionStateResponse(mock *EventMeshMock) ResponseUpdateStateReq {
-	return func(w http.ResponseWriter, key string, state emstypes.State) {
+	return func(w http.ResponseWriter, key string, state emstypes.State) error {
 		if subscription := mock.Subscriptions.GetSubscription(key); subscription != nil {
 			switch state.Action {
 			case emstypes.StateActionPause:
@@ -272,7 +289,8 @@ func UpdateSubscriptionStateResponse(mock *EventMeshMock) ResponseUpdateStateReq
 				}
 			default:
 				{
-					panic(fmt.Sprintf("EventMesh subscription status is not supported: %#v", state))
+					errEventMeshStatusNotSupported := errors.New("EventMesh subscription status is not supported")
+					return fmt.Errorf("%w: %#v", errEventMeshStatusNotSupported, state)
 				}
 			}
 
@@ -281,10 +299,11 @@ func UpdateSubscriptionStateResponse(mock *EventMeshMock) ResponseUpdateStateReq
 
 			err := json.NewEncoder(w).Encode(*subscription)
 			Expect(err).ShouldNot(HaveOccurred())
-			return
+			return nil
 		}
 
 		w.WriteHeader(http.StatusNotFound)
+		return nil
 	}
 }
 

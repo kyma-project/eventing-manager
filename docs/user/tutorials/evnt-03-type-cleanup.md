@@ -5,72 +5,63 @@ You learn how Eventing behaves when you create a [Subscription](../resources/evn
 
 ## Prerequisites
 
->**NOTE:** Read about [Istio sidecars in Kyma and why you want them](https://kyma-project.io/#/istio/user/00-overview/00-30-overview-istio-sidecars). Then, check how to [enable automatic Istio sidecar proxy injection](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-20-enable-sidecar-injection). For more details, see [Default Istio setup in Kyma](https://kyma-project.io/#/istio/user/00-overview/00-40-overview-istio-setup).
+> [!NOTE]
+> Read about the [Purpose and Benefits of Istio Sidecars](https://kyma-project.io/#/istio/user/00-30-overview-istio-sidecars). Then, check how to [Enable Automatic Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection). For more details, see [Default Istio Setup](https://kyma-project.io/#/istio/user/00-40-overview-istio-setup) in Kyma.
 
 1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
-2. [Create a Function](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event).
+2. [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function).
 3. For this tutorial, instead of the default code sample, replace the Function source with the following code:
 
-   <div tabs name="Deploy a Function" group="create-workload">
-     <details open>
-     <summary label="Kyma Dashboard">
-     Kyma Dashboard
-     </summary>
+<!-- tabs:start -->
 
-   ```js
-   module.exports = {
-     main: async function (event, context) {
-       console.log("Received event: ", event.data, ", Event Type: ", event.extensions.request.headers['ce-type']);
-       return;
-     } 
-   }
-   ```
+#### **Kyma Dashboard**
 
-     </details>
-     <details>
-     <summary label="kubectl">
-     kubectl
-     </summary>
+```js
+module.exports = {
+  main: async function (event, context) {
+    console.log("Received event: ", event.data, ", Event Type: ", event.extensions.request.headers['ce-type']);
+    return;
+  } 
+}
+```
 
-   ```bash
-   cat <<EOF | kubectl apply -f -
-   apiVersion: serverless.kyma-project.io/v1alpha2
-   kind: Function
-   metadata:
-     name: lastorder
-     namespace: default
-   spec:
-     replicas: 1
-     resourceConfiguration:
-       function:
-         profile: S
-       build:
-         profile: local-dev
-     runtime: nodejs18
-     source:
-       inline:
-         source: |-
-           module.exports = {
-             main: async function (event, context) {
-               console.log("Received event: ", event.data, ", Event Type: ", event.extensions.request.headers['ce-type']);
-               return;
-             }
-           }
+#### **kubectl**
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: serverless.kyma-project.io/v1alpha2
+kind: Function
+metadata:
+  name: lastorder
+  namespace: default
+spec:
+  replicas: 1
+  resourceConfiguration:
+    function:
+      profile: S
+    build:
+      profile: local-dev
+  runtime: nodejs18
+  source:
+    inline:
+      source: |-
+        module.exports = {
+          main: async function (event, context) {
+            console.log("Received event: ", event.data, ", Event Type: ", event.extensions.request.headers['ce-type']);
+            return;
+         }
+       }
    EOF
    ```
-
-     </details>
-   </div>
+<!-- tabs:end -->
 
 ## Create a Subscription With Event Type Consisting of Alphanumeric Characters
 
 Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR) and subscribe for events of the type: `order.payment*success.v1`. Note that `order.payment*success.v1` contains a prohibited character, the asterisk `*`.
 
-<div tabs name="Create a Subscription" group="create-subscription">
-  <details open>
-  <summary label="Kyma Dashboard">
-  Kyma Dashboard
-  </summary>
+<!-- tabs:start -->
+
+#### **Kyma Dashboard**
 
 1. Go to **Namespaces** and select the default namespace.
 2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
@@ -84,11 +75,7 @@ Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (C
 4. Click **Create**.
 5. Wait a few seconds for the Subscription to have status `READY`.
 
-  </details>
-  <details>
-  <summary label="kubectl">
-  kubectl
-  </summary>
+#### **kubectl**
 
 Run:
 
@@ -114,8 +101,8 @@ kubectl get subscriptions lastorder-payment-sub -o=jsonpath="{.status.ready}"
 ```
 
 The operation was successful if the returned status says `true`.
-  </details>
-</div>
+
+<!-- tabs:end -->
 
 ## Check the Subscription Cleaned Event Type
 
@@ -132,7 +119,7 @@ Note that the returned event type `["order.paymentsuccess.v1"]` does not contain
 You created the `lastorder` Function, and subscribed to the `order.payment*success.v1` events by creating a Subscription CR. 
 Next, you see that you can still publish events with the original Event name (i.e. `order.payment*success.v1`) even though it contains the prohibited character, and it triggers the Function.
 
-1. Port-forward the [Event Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
+1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
 
    ```bash
    kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
@@ -140,45 +127,60 @@ Next, you see that you can still publish events with the original Event name (i.
 
 2. Publish an event to trigger your Function. In another terminal window, run:
 
-   <div tabs name="Publish an event" group="trigger-workload">
-     <details open>
-     <summary label="CloudEvents Conformance Tool">
-     CloudEvents Conformance Tool
-     </summary>
+<!-- tabs:start -->
 
-      ```bash
-      cloudevents send http://localhost:3000/publish \
-         --type "order.payment*success.v1" \
-         --id e4bcc616-c3a9-4840-9321-763aa23851fc \
-         --source myapp \
-         --datacontenttype application/json \
-         --data "{\"orderCode\":\"3211213\", \"orderAmount\":\"1250\"}" \
-         --yaml
-      ```
+#### **CloudEvents Conformance Tool**
 
-     </details>
-     <details>
-     <summary label="curl">
-     curl
-     </summary>
+```bash
+cloudevents send http://localhost:3000/publish \
+   --type "order.payment*success.v1" \
+   --id e4bcc616-c3a9-4840-9321-763aa23851fc \
+   --source myapp \
+   --datacontenttype application/json \
+   --data "{\"orderCode\":\"3211213\", \"orderAmount\":\"1250\"}" \
+   --yaml
+```
 
-      ```bash
-      curl -v -X POST \
-           -H "ce-specversion: 1.0" \
-           -H "ce-type: order.payment*success.v1" \
-           -H "ce-source: myapp" \
-           -H "ce-eventtypeversion: v1" \
-           -H "ce-id: e4bcc616-c3a9-4840-9321-763aa23851fc" \
-           -H "content-type: application/json" \
-           -d "{\"orderCode\":\"3211213\", \"orderAmount\":\"1250\"}" \
-           http://localhost:3000/publish
-      ```
-     </details>
-   </div>
+#### **curl**
+
+```bash
+curl -v -X POST \
+     -H "ce-specversion: 1.0" \
+     -H "ce-type: order.payment*success.v1" \
+     -H "ce-source: myapp" \
+     -H "ce-eventtypeversion: v1" \
+     -H "ce-id: e4bcc616-c3a9-4840-9321-763aa23851fc" \
+     -H "content-type: application/json" \
+     -d "{\"orderCode\":\"3211213\", \"orderAmount\":\"1250\"}" \
+     http://localhost:3000/publish
+```
+<!-- tabs:end -->
 
 ## Verify the Event Delivery
 
-To verify that the event was properly delivered, check the logs of the Function (see [Verify the event delivery](https://kyma-project.io/#/02-get-started/04-trigger-workload-with-event?id=verify-the-event-delivery)).
+To verify that the event was properly delivered, check the logs of the Function:
+
+<!-- tabs:start -->
+
+#### **Kyma Dashboard**
+
+1. In Kyma Dashboard, return to the view of your `lastorder` Function.
+2. In the **Code** view, find the **Replicas of the Function** section.
+3. Click the name of your replica.
+4. Locate the **Containers** section and click on **View Logs**.
+
+#### **kubectl**
+
+Run:
+
+```bash
+kubectl logs \
+  -n default \
+  -l serverless.kyma-project.io/function-name=lastorder,serverless.kyma-project.io/resource=deployment \
+  -c function
+```
+
+<!-- tabs:end -->
 
 You see the received event in the logs:
 
@@ -192,4 +194,5 @@ Note that the `Event Type` of the received event is not the same as defined in t
 
 You see that Kyma Eventing modifies the event names to filter out prohibited characters to conform to Cloud Event specifications. 
 
-> **CAUTION:** This cleanup modification is abstract; you can still publish and subscribe to the original Event names. However, in some cases, it can lead to a naming collision as explained in [Event names](../evnt-event-names.md).
+> [!WARNING]
+> This cleanup modification is abstract; you can still publish and subscribe to the original Event names. However, in some cases, it can lead to a naming collision as explained in [Event names](../evnt-event-names.md).

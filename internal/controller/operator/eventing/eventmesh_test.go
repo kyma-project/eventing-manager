@@ -31,13 +31,14 @@ const (
 )
 
 var (
-	ErrFailedToStart  = errors.New("failed to start")
-	ErrFailedToStop   = errors.New("failed to stop")
-	ErrFailedToRemove = errors.New("failed to remove")
-	errNotFound       = errors.New("secret not found")
+	ErrFailedToStart        = errors.New("failed to start")
+	ErrFailedToStop         = errors.New("failed to stop")
+	ErrFailedToRemove       = errors.New("failed to remove")
+	errNotFound             = errors.New("secret not found")
+	ErrFailedToApplyPatch   = errors.New("failed to apply patch")
+	ErrFailedToSyncPPSecret = errors.New("failed to sync Publisher Proxy secret: failed to apply patch")
 )
 
-//nolint:goerr113 // all tests here need to be fixed, as they use require.ErrorAs and use it wrongly
 func Test_reconcileEventMeshSubManager(t *testing.T) {
 	t.Parallel()
 
@@ -117,10 +118,10 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 				mockKubeClient := new(k8smocks.Client)
 				mockKubeClient.On("GetSecret", ctx, mock.Anything, mock.Anything).Return(
 					utils.NewOAuthSecret("test-secret", givenNamespace), nil).Once()
-				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(errors.New("failed to apply patch")).Once()
+				mockKubeClient.On("PatchApply", ctx, mock.Anything).Return(ErrFailedToApplyPatch).Once()
 				return mockKubeClient
 			},
-			wantError: errors.New("failed to sync Publisher Proxy secret: failed to apply patch"),
+			wantError: ErrFailedToSyncPPSecret,
 		},
 		{
 			name:                              "it should do nothing because subscription manager is already started",
@@ -189,7 +190,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			givenEventMeshSubManagerMock: func() *submgrmanagermocks.Manager {
 				eventMeshSubManagerMock := new(submgrmanagermocks.Manager)
 				eventMeshSubManagerMock.On("Init", mock.Anything).Return(nil).Once()
-				eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(errors.New("failed to start")).Twice()
+				eventMeshSubManagerMock.On("Start", mock.Anything, mock.Anything).Return(ErrFailedToStart).Twice()
 				return eventMeshSubManagerMock
 			},
 			givenEventingManagerMock: func() *eventingmocks.Manager {
@@ -211,7 +212,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			},
 			wantAssertCheck:  true,
 			givenShouldRetry: true,
-			wantError:        errors.New("failed to start"),
+			wantError:        ErrFailedToStart,
 			wantHashAfter:    int64(0),
 		},
 		{
@@ -772,8 +773,8 @@ func Test_getOAuth2ClientCredentials(t *testing.T) {
 
 			kubeClient := new(k8smocks.Client)
 
-			if tc.givenSecret != nil {
-				kubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(tc.givenSecret, nil).Once()
+			if testcase.givenSecret != nil {
+				kubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(testcase.givenSecret, nil).Once()
 			} else {
 				kubeClient.On("GetSecret", mock.Anything, mock.Anything).Return(nil, errNotFound).Once()
 			}

@@ -8,30 +8,32 @@
 
 ## Overview
 
-Eventing Manager is a standard Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that observes the state of Eventing resources and reconciles their state according to the desired state. It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/), which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
+Eventing Manager is a standard Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that observes the state of Eventing resources and reconciles their state according to the desired state. It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/), which provide a reconcile function responsible for synchronizing resources until the desired state is reached in the cluster.
 
 This project is scaffolded using [Kubebuilder](https://book.kubebuilder.io), and all the Kubebuilder `makefile` helpers mentioned [here](https://book.kubebuilder.io/reference/makefile-helpers.html) can be used.
 
 ## Get Started
 
 You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
-> **Note:** Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
+> [!NOTE]
+> Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
 
 ## Install
 
-1. To install the latest version of the Eventing Manager on your cluster, run:
+1. To install the latest version of the Eventing Manager in your cluster, run:
 
    ```bash
    kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing-manager.yaml
    ```
 
-2. To install the latest version of the default Eventing custom resource (CR) on your cluster, run:
+2. To install the latest version of the default Eventing custom resource (CR) in your cluster, run:
 
    ```bash
-   kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing_default_cr.yaml
+   kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing-default-cr.yaml
    ```
 
 ## Development
+
 
 ### Prerequisites
 
@@ -56,7 +58,8 @@ You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/)
    make run
    ```
 
-> **NOTE:** You can also run this in one step with the command: `make install run`.
+> [!NOTE]
+> You can also run this in one step with the command: `make install run`.
 
 ### Run Tests
 
@@ -84,7 +87,8 @@ If you are editing the API definitions, generate the manifests such as CRs or CR
 make manifests
 ```
 
-> **NOTE:** Run `make --help` for more information on all potential `make` targets.
+> [!NOTE]
+> Run `make --help` for more information on all potential `make` targets.
 
 For more information, see the [Kubebuilder documentation](https://book.kubebuilder.io/introduction.html).
 
@@ -105,9 +109,10 @@ make docker-buildx IMG=<container-registry>/eventing-manager:<tag>
 ## Deployment
 
 You need a Kubernetes cluster to run against. You can use [k3d](https://k3d.io/) to get a local cluster for testing, or run against a remote cluster.
-> **Note:** Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
+> [!NOTE]
+> Your controller automatically uses the current context in your kubeconfig file, that is, whatever cluster `kubectl cluster-info` shows.
 
-### Deploy on the Cluster
+### Deploy in the Cluster
 
 1. Download Go packages:
 
@@ -167,77 +172,6 @@ To delete the CRDs from the cluster:
    ```sh
    make uninstall
    ```
-
-### Deploy Eventing Manager Module With [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
-
-1. Deploy the Lifecycle Manager to the Kubernetes cluster:
-
-   ```shell
-   kyma alpha deploy
-   ```
-
-2. Apply the Eventing module template to the Kubernetes cluster:
-
-   > **NOTE:** You can get the latest released [module template](https://github.com/kyma-project/eventing-manager/releases/latest/download/module-template.yaml), or you can use the module template from the artifacts of `eventing-module-build` job either from the `main` branch or from your pull request.
-
-   ```sh
-   kubectl apply -f module-template.yaml
-   ```
-
-3. Enable the Eventing module:
-
-   ```sh
-   kyma alpha enable module eventing -c fast -n kyma-system
-   ```
-
-4. If you want to verify whether your Eventing module is deployed properly, perform the following checks:
-
-   - Check if the Eventing resource has the `ready` state:
-
-     ```shell
-     kubectl get -n kyma-system eventing
-     ```
-
-   - Check if the Kyma resource has the ready state:
-
-     ```shell
-     kubectl get -n kyma-system kyma
-     ```
-
-### Uninstall Eventing Manager Module With [Kyma Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main)
-
-1. Delete Eventing custom resource (CR) from the Kubernetes cluster (if exists):
-
-    ```sh
-    kubectl delete -n kyma-system eventing eventing
-    ```
-
-2. Disable the Eventing module:
-
-   ```sh
-   kyma alpha disable module eventing
-   ```
-
-3. Delete the Eventing module template:
-
-   ```sh
-   kubectl get moduletemplates -A
-   kubectl delete moduletemplate -n <NAMESPACE> <NAME>
-   ```
-
-4. Check whether your Eventing module is uninstalled properly:
-
-   - Make sure that the Eventing CR does not exist. If it exists, check its status:
-
-     ```shell
-     kubectl get -n kyma-system eventing eventing -o yaml
-     ```
-
-   - Check if the Kyma resource has the `ready` state:
-
-     ```shell
-     kubectl get -n kyma-system kyma
-     ```
 
 ## End-to-End Tests
 

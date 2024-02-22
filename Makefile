@@ -14,8 +14,6 @@ OS_TYPE ?= $(shell uname)
 # Module Registry used for pushing the image
 MODULE_REGISTRY_PORT ?= 8888
 MODULE_REGISTRY ?= op-kcp-registry.localhost:$(MODULE_REGISTRY_PORT)/unsigned
-# Desired Channel of the Generated Module Template
-MODULE_CHANNEL ?= fast
 
 # Image URL to use all building/pushing image targets
 IMG_REGISTRY_PORT ?= $(MODULE_REGISTRY_PORT)
@@ -190,23 +188,6 @@ module-image: docker-build docker-push ## Build the Module Image and push it to 
 	echo "built and pushed module image $(IMG)"
 
 DEFAULT_CR ?= $(shell pwd)/config/samples/default.yaml
-.PHONY: module-build
-module-build: kyma render-manifest module-config-template configure-git-origin ## Build the Module and push it to a registry defined in MODULE_REGISTRY
-	#################################################################
-	## Building module with:
-	# - image: ${IMG}
-	# - channel: ${MODULE_CHANNEL}
-	# - name: kyma-project.io/module/$(MODULE_NAME)
-	# - version: $(MODULE_VERSION)
-	@$(KYMA) alpha create module --path . --output=module-template.yaml --module-config-file=module-config.yaml $(MODULE_CREATION_FLAGS)
-
-.PHONY: module-config-template
-module-config-template:
-	@cat module-config-template.yaml \
-		| sed -e 's/{{.Channel}}/${MODULE_CHANNEL}/g' \
-			-e 's/{{.Version}}/$(MODULE_VERSION)/g' \
-			-e 's/{{.Name}}/kyma-project.io\/module\/$(MODULE_NAME)/g' \
-				> module-config.yaml
 
 .PHONY: configure-git-origin
 configure-git-origin:
@@ -222,7 +203,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.0
-CONTROLLER_TOOLS_VERSION ?= v0.11.3
+CONTROLLER_TOOLS_VERSION ?= v0.14.0
 GOLANG_CI_LINT_VERSION ?= v1.55.2
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"

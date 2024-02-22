@@ -51,7 +51,7 @@ func TestMain(m *testing.M) {
 		ApplicationRuleCRDEnabled: true,
 		NATSCRDEnabled:            true,
 		AllowedEventingCR:         nil,
-	})
+	}, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -78,23 +78,6 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 		wantMatches          gomegatypes.GomegaMatcher
 		wantEnsureK8sObjects bool
 	}{
-		{
-			name: "Eventing CR should error state due to NATS is unavailable",
-			givenEventing: utils.NewEventingCR(
-				utils.WithEventingCRMinimal(),
-				utils.WithEventingStreamData("Memory", "1M", 1, 1),
-				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
-			),
-			givenNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-			),
-			givenNATSReady: false,
-			wantMatches: gomega.And(
-				matchers.HaveStatusError(),
-				matchers.HaveNATSNotAvailableCondition(),
-				matchers.HaveFinalizer(),
-			),
-		},
 		{
 			name: "Eventing CR should have ready state when all deployment replicas are ready",
 			givenEventing: utils.NewEventingCR(
@@ -896,60 +879,6 @@ func Test_WatcherNATSResource(t *testing.T) {
 		wantOriginalEventingMatches gomegatypes.GomegaMatcher
 		wantTargetEventingMatches   gomegatypes.GomegaMatcher
 	}{
-		{
-			name: "should update Eventing CR state if NATS CR state changes from ready to error",
-			givenOriginalNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateReady(),
-			),
-			givenTargetNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateError(),
-			),
-			wantOriginalEventingMatches: gomega.And(
-				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableCondition(),
-			),
-			wantTargetEventingMatches: gomega.And(
-				matchers.HaveStatusError(),
-				matchers.HaveNATSNotAvailableCondition(),
-			),
-		},
-		{
-			name: "should update Eventing CR state if NATS CR state changes from error to ready",
-			givenOriginalNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateError(),
-			),
-			givenTargetNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateReady(),
-			),
-			wantOriginalEventingMatches: gomega.And(
-				matchers.HaveStatusError(),
-				matchers.HaveNATSNotAvailableCondition(),
-			),
-			wantTargetEventingMatches: gomega.And(
-				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableCondition(),
-			),
-		},
-		{
-			name: "should update Eventing CR state to error when NATS CR is deleted",
-			givenOriginalNATS: natstestutils.NewNATSCR(
-				natstestutils.WithNATSCRDefaults(),
-				natstestutils.WithNATSStateReady(),
-			),
-			givenTargetNATS: nil, // means, NATS CR is deleted.
-			wantOriginalEventingMatches: gomega.And(
-				matchers.HaveStatusReady(),
-				matchers.HaveNATSAvailableCondition(),
-			),
-			wantTargetEventingMatches: gomega.And(
-				matchers.HaveStatusError(),
-				matchers.HaveNATSNotAvailableCondition(),
-			),
-		},
 		{
 			name: "should not reconcile Eventing CR in EventMesh mode",
 			givenOriginalNATS: natstestutils.NewNATSCR(

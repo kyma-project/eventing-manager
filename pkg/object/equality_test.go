@@ -33,8 +33,8 @@ func TestApiRuleEqual(t *testing.T) {
 	}
 	rule := apigatewayv1beta1.Rule{
 		Path: "path",
-		Methods: []string{
-			http.MethodPost,
+		Methods: []apigatewayv1beta1.HttpMethod{
+			apigatewayv1beta1.HttpMethod(http.MethodPost),
 		},
 		AccessStrategies: []*apigatewayv1beta1.Authenticator{
 			{
@@ -131,7 +131,9 @@ func TestApiRuleEqual(t *testing.T) {
 			prep: func() *apigatewayv1beta1.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				newRule := rule.DeepCopy()
-				newRule.Methods = []string{http.MethodOptions}
+				newRule.Methods = []apigatewayv1beta1.HttpMethod{
+					apigatewayv1beta1.HttpMethod(http.MethodOptions),
+				}
 				apiRuleCopy.Spec.Rules = []apigatewayv1beta1.Rule{*newRule}
 				return apiRuleCopy
 			},

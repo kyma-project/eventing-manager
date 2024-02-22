@@ -4,7 +4,7 @@
 Event names depend on the type of event. Eventing supports the following event types:
 
 - [CloudEvents](https://cloudevents.io/) - they use a specification for describing event data in a common way.
-- legacy events - they are converted to CloudEvents by [Event Publisher Proxy](evnt-architecture.md#event-publisher-proxy).
+- legacy events - they are converted to CloudEvents by [Eventing Publisher Proxy](evnt-architecture.md#eventing-publisher-proxy).
 
 ## Event Name Format
 

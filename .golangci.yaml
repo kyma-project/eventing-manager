@@ -19,11 +19,13 @@ linters:
     - varcheck # deprecated (since v1.49.0) and replaced by 'unused'
     - wsl # too strict and mostly code is not more readable
     ### disabled for now... will be enabled 1 by 1
+    - dupl
     - ireturn
     - maintidx
     - prealloc
     - testpackage
     - wrapcheck
+    - paralleltest
 
 linters-settings:
   stylecheck:
@@ -142,6 +144,8 @@ linters-settings:
         alias: istio$1$2
       - pkg: github.com/nats-io/nats-server/v2/(\w+)$
         alias: natsio$1
+      - pkg: github.com/nats-io/nats.go
+        alias: natsio
       - pkg: github.com/kyma-project/eventing-manager/internal/controller/(\w+)$
         alias: controller$1
       - pkg: github.com/kyma-project/kyma/common/logging/logger
@@ -150,6 +154,12 @@ linters-settings:
         alias: natsv1alpha1
       - pkg: github.com/kyma-project/nats-manager/testutils
         alias: natstestutils
+      - pkg: github.com/kyma-project/eventing-manager/internal/connection/nats
+        alias: natsconnection
+      - pkg: github.com/kyma-project/eventing-manager/internal/connection/nats/errors
+        alias: natsconnectionerrors
+      - pkg: github.com/kyma-project/eventing-manager/internal/connection/nats/mocks
+        alias: natsconnectionmocks
       - pkg: github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/(\w+)$
         alias: subscriptioncontroller$1
       - pkg: github.com/kyma-project/eventing-manager/internal/controller/operator/eventing

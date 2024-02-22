@@ -2,6 +2,7 @@ package object
 
 import (
 	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -13,6 +14,30 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
+
+func TestStringsToMethods(t *testing.T) {
+	// arrange
+	givenStrings := []string{
+		http.MethodGet,
+		http.MethodPut,
+		http.MethodHead,
+		http.MethodPost,
+		http.MethodPatch,
+		http.MethodConnect,
+		http.MethodTrace,
+		http.MethodOptions,
+		http.MethodDelete,
+	}
+
+	// act
+	methods := StringsToMethods(givenStrings)
+	actualStrings := apigatewayv1beta1.ConvertHttpMethodsToStrings(methods)
+
+	// assert
+	if !reflect.DeepEqual(givenStrings, actualStrings) {
+		t.Fatalf("slices of strings are not. wanted: %v but got %v", givenStrings, actualStrings)
+	}
+}
 
 func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 	// given
@@ -583,7 +608,9 @@ func TestWithRules(t *testing.T) {
 			Spec: eventingv1alpha2.SubscriptionSpec{Sink: sink1},
 		}
 
-		methods = []string{"some.method"}
+		methods = []string{
+			http.MethodGet,
+		}
 	)
 
 	type args struct {
@@ -624,7 +651,7 @@ func TestWithRules(t *testing.T) {
 								Port:       ptr.To(port),
 								IsExternal: ptr.To(external),
 							},
-							Methods: methods,
+							Methods: StringsToMethods(methods),
 							AccessStrategies: []*apigatewayv1beta1.Authenticator{
 								{
 									Handler: &apigatewayv1beta1.Handler{
@@ -643,7 +670,7 @@ func TestWithRules(t *testing.T) {
 								Port:       ptr.To(port),
 								IsExternal: ptr.To(external),
 							},
-							Methods: methods,
+							Methods: StringsToMethods(methods),
 							AccessStrategies: []*apigatewayv1beta1.Authenticator{
 								{
 									Handler: &apigatewayv1beta1.Handler{
