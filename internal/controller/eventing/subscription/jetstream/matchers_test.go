@@ -40,7 +40,7 @@ func BeJetStreamSubscriptionWithSubject(source, subject string,
 		}
 		result := info.Config.FilterSubject == jetstream.GetJetStreamSubject(source, subject, typeMatching)
 		if !result {
-			//nolint: goerr113 // no production code, but test helper functionality
+			//nolint:goerr113 // no production code, but test helper functionality
 			return false, fmt.Errorf(
 				"BeJetStreamSubscriptionWithSubject expected %v to be equal to %v",
 				info.Config.FilterSubject,

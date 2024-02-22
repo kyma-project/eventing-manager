@@ -9,7 +9,6 @@ linters:
     - golint # deprecated (since v1.41.0) and replaced by 'revive'
     - ifshort # deprecated (since v1.48.0)
     - interfacer # deprecated (since v1.38.0)
-    - lll
     - maligned # deprecated (since v1.38.0)
     - nlreturn # too strict and mostly code is not more readable
     - nosnakecase  # deprecated (since v1.48.1) and replaced by 'revive'
@@ -19,6 +18,7 @@ linters:
     - varcheck # deprecated (since v1.49.0) and replaced by 'unused'
     - wsl # too strict and mostly code is not more readable
     ### disabled for now... will be enabled 1 by 1
+    - lll
     - dupl
     - ireturn
     - maintidx
@@ -238,6 +238,9 @@ issues:
     - linters:
       - importas
       text: has alias "" which is not part of config # Ignore false positives that emerged due to https://github.com/julz/importas/issues/15.
+    - linters:
+      - lll
+      source: "^// +kubebuilder: " # Exclude lll issues for long lines starting with kubebuilder marker prefix
   max-issues-per-linter: 0
   max-same-issues: 0
 output:
