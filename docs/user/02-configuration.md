@@ -10,19 +10,11 @@ View the complete [Eventing CRD](https://github.com/kyma-project/eventing-manage
 
 The CRD is equipped with validation rules and defaulting, so the CR is automatically filled with default values.
 
-You can override the defaults. However, you must make sure that a backend is set; otherwise the Eventing Manager does not create any resources and goes into warning state.
-
 The validation rules provide guidance when you edit the CR. For example, you are not allowed to delete an existing backend.
 
-## Examples
+You can override the defaults. However, you must make sure that a backend is set; otherwise the Eventing Manager does not create any resources and goes into warning state.
 
-Use the following sample CRs as guidance. Each can be applied immediately when you [install](../contributor/installation.md) Eventing Manager.
-
-- [Default CR - NATS backend](https://github.com/kyma-project/eventing-manager/blob/main/config/samples/default.yaml)
-- [Default CR - EventMesh backend](https://github.com/kyma-project/eventing-manager/blob/main/config/samples/default_eventmesh.yaml)
-
-
-## Impact of the Backend to the Eventing CR State and Event Flow
+### Impact of the Backend to the Eventing CR State and Event Flow
 The following table provides more details on the overall state of the Eventing CR: 
 - The <b>Backend State</b> column describes the state of the NATS backend or EventMesh Secret existence.
 - The <b>Backend Config</b> describes whether the Eventing CR that has been specified by a user or is not available.
@@ -40,6 +32,12 @@ Warnings indicate that user action is required, that is, the user must install t
 | EventMesh      | exists         | Error (secret for EventMesh missing)                                                                                                        | Warning        | No events will be accepted or dispatched |
 | NATS/EventMesh | exists         | Error (cases not caused by a user, such as cannot create EPP deployment or cannot start subscription manager although backend is available) | Error          | No events will be accepted or dispatched |
 
+## Examples
+
+Use the following sample CRs as guidance. Each can be applied immediately when you [install](../contributor/installation.md) Eventing Manager.
+
+- [Default CR - NATS backend](https://github.com/kyma-project/eventing-manager/blob/main/config/samples/default.yaml)
+- [Default CR - EventMesh backend](https://github.com/kyma-project/eventing-manager/blob/main/config/samples/default_eventmesh.yaml)
 
 ## Reference
 
