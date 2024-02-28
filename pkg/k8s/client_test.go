@@ -3,17 +3,14 @@ package k8s
 import (
 	"context"
 	"crypto/rand"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
 	kapixclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
-	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,161 +23,6 @@ import (
 )
 
 const testFieldManager = "eventing-manager"
-
-var errPatchNotAllowed = errors.New("apply patches are not supported in the fake client")
-
-func Test_PatchApply(t *testing.T) {
-	t.Parallel()
-
-	twoReplicas := int32(2)
-	threeReplicas := int32(3)
-
-	// define test cases
-	testCases := []struct {
-		name                  string
-		givenDeployment       *kappsv1.Deployment
-		givenUpdateDeployment *kappsv1.Deployment
-	}{
-		{
-			name: "should update resource when exists in k8s",
-			givenDeployment: &kappsv1.Deployment{
-				TypeMeta: kmetav1.TypeMeta{
-					Kind:       "Deployment",
-					APIVersion: "apps/v1",
-				},
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "test",
-				},
-				Spec: kappsv1.DeploymentSpec{
-					Replicas: &twoReplicas,
-				},
-			},
-			givenUpdateDeployment: &kappsv1.Deployment{
-				TypeMeta: kmetav1.TypeMeta{
-					Kind:       "Deployment",
-					APIVersion: "apps/v1",
-				},
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "test",
-				},
-				Spec: kappsv1.DeploymentSpec{
-					Replicas: &threeReplicas,
-				},
-			},
-		},
-	}
-
-	// run test cases
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			// given
-			var objs []client.Object
-			if tc.givenDeployment != nil {
-				objs = append(objs, tc.givenDeployment)
-			}
-			fakeClientBuilder := fake.NewClientBuilder()
-			fakeClient := fakeClientBuilder.WithObjects(objs...).Build()
-			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager, nil)
-
-			// when
-			err := kubeClient.PatchApply(context.Background(), tc.givenUpdateDeployment)
-
-			// then
-			// NOTE: The kubeClient.PatchApply is not supported in the fake client.
-			// (https://github.com/kubernetes/kubernetes/issues/115598)
-			// So in unit test we only check that the client.Patch with client.Apply
-			// is called or not.
-			// The real behaviour will be tested in integration tests with envTest pkg.
-			require.ErrorContains(t, err, errPatchNotAllowed.Error())
-		})
-	}
-}
-
-func Test_PatchApplyPeerAuthentication(t *testing.T) {
-	t.Parallel()
-
-	// define test cases
-	testCases := []struct {
-		name                          string
-		givenPeerAuthentication       *istiopkgsecurityv1beta1.PeerAuthentication
-		givenUpdatePeerAuthentication *istiopkgsecurityv1beta1.PeerAuthentication
-	}{
-		{
-			name: "should update resource when exists in k8s",
-			givenPeerAuthentication: &istiopkgsecurityv1beta1.PeerAuthentication{
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name:      "eventing-publisher-proxy-metrics",
-					Namespace: "test",
-					Labels: map[string]string{
-						"app.kubernetes.io/name":    "eventing-publisher-proxy-old",
-						"app.kubernetes.io/version": "0.1.0",
-					},
-				},
-				TypeMeta: kmetav1.TypeMeta{
-					Kind:       "PeerAuthentication",
-					APIVersion: "security.istio.io/v1beta1",
-				},
-			},
-			givenUpdatePeerAuthentication: &istiopkgsecurityv1beta1.PeerAuthentication{
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name:      "eventing-publisher-proxy-metrics",
-					Namespace: "test",
-					Labels: map[string]string{
-						"app.kubernetes.io/name":    "eventing-publisher-proxy-new",
-						"app.kubernetes.io/version": "0.1.0",
-					},
-				},
-				TypeMeta: kmetav1.TypeMeta{
-					Kind:       "PeerAuthentication",
-					APIVersion: "security.istio.io/v1beta1",
-				},
-			},
-		},
-	}
-
-	// run test cases
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			// get crd
-			paCRD, err := testutils.NewPeerAuthenticationCRD()
-			require.NoError(t, err)
-
-			// given
-			var objs []client.Object
-			objs = append(objs, paCRD)
-			if tc.givenPeerAuthentication != nil {
-				objs = append(objs, tc.givenPeerAuthentication)
-			}
-
-			// define scheme
-			fakeClientBuilder := fake.NewClientBuilder()
-			newScheme := scheme.Scheme
-			require.NoError(t, istiopkgsecurityv1beta1.AddToScheme(newScheme))
-
-			fakeClient := fakeClientBuilder.WithScheme(newScheme).WithObjects(objs...).Build()
-			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager, nil)
-
-			// when
-			err = kubeClient.PatchApplyPeerAuthentication(context.Background(), tc.givenUpdatePeerAuthentication)
-
-			// then
-			// NOTE: The kubeClient.PatchApply is not supported in the fake client.
-			// (https://github.com/kubernetes/kubernetes/issues/115598)
-			// So in unit test we only check that the client.Patch with client.Apply
-			// is called or not.
-			// The real behaviour will be tested in integration tests with envTest pkg.
-			require.ErrorContains(t, err, errPatchNotAllowed.Error())
-		})
-	}
-}
 
 func Test_UpdateDeployment(t *testing.T) {
 	t.Parallel()
