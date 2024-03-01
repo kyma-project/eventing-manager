@@ -702,7 +702,8 @@ func Test_GetSecretForPublisher(t *testing.T) {
 			gotPublisherSecret, err := getSecretForPublisher(publisherSecret)
 			if testcase.expectedError != nil {
 				require.Error(t, err)
-				require.ErrorContains(t, err, testcase.expectedError.Error())
+				require.ErrorIs(t, err, ErrEventMeshSecretMalformatted)
+				require.ErrorContains(t, err, tc.expectedError.Error())
 				return
 			}
 			require.NoError(t, err)

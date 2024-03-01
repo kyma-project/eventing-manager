@@ -669,6 +669,12 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 	// Start the EventMesh subscription controller
 	err = r.reconcileEventMeshSubManager(ctx, eventing, eventMeshSecret)
 	if err != nil {
+		// In case the the error is caused by a malformatted secret, we want to set the status to warning,
+		// to indicate the requirement of user interaction.
+		if IsMalformattedSecretErr(err) {
+			return kctrl.Result{}, r.syncSubManagerStatusWithNATSState(ctx, operatorv1alpha1.StateWarning, eventing,
+				ErrEventMeshSecretMalformatted, log)
+		}
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}
 	eventing.Status.SetSubscriptionManagerReadyConditionToTrue()
