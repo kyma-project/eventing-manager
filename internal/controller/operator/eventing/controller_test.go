@@ -452,8 +452,8 @@ func Test_stopNatsCRWatch(t *testing.T) {
 			testEnv.Reconciler.stopNATSCRWatch(eventing)
 
 			// Check the results
-			require.Equal(t, nil, testcase.watchNatsWatcher)
-			require.False(t, testcase.natsCRWatchStarted)
+			require.Nil(t, tc.watchNatsWatcher)
+			require.False(t, tc.natsCRWatchStarted)
 		})
 	}
 }
