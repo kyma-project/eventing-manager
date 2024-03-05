@@ -327,15 +327,15 @@ func getSecretForPublisher(eventMeshSecret *kcorev1.Secret) (*kcorev1.Secret, er
 		label.KeyName: label.ValueEventingPublisherProxy,
 	}
 
-	if _, ok := eventMeshSecret.Data["messaging"]; !ok {
-		return nil, newMalformattedSecretErr(EMSecretMessagingMissing)
-	}
-	messagingBytes := eventMeshSecret.Data["messaging"]
-
 	if _, ok := eventMeshSecret.Data["namespace"]; !ok {
 		return nil, newMalformattedSecretErr(EMSecretNamespaceMissing)
 	}
 	namespaceBytes := eventMeshSecret.Data["namespace"]
+
+	if _, ok := eventMeshSecret.Data["messaging"]; !ok {
+		return nil, newMalformattedSecretErr(EMSecretMessagingMissing)
+	}
+	messagingBytes := eventMeshSecret.Data["messaging"]
 
 	var messages []Message
 	err := json.Unmarshal(messagingBytes, &messages)

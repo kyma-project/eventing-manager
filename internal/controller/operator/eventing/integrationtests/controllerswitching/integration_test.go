@@ -166,10 +166,10 @@ func Test_Switching(t *testing.T) {
 			// create eventing-webhook-auth secret.
 			testEnvironment.EnsureOAuthSecretCreated(t, testcase.givenEventing)
 			// create EventMesh secret.
-			if testcase.givenEventing.Spec.Backend.Type == operatorv1alpha1.EventMeshBackendType {
-				testEnvironment.EnsureEventMeshSecretCreated(t, testcase.givenEventing)
-			} else if testcase.givenSwitchedEventing.Spec.Backend.Type == operatorv1alpha1.EventMeshBackendType {
-				testEnvironment.EnsureEventMeshSecretCreated(t, testcase.givenSwitchedEventing)
+			if tc.givenEventing.Spec.Backend.Type == operatorv1alpha1.EventMeshBackendType {
+				testEnvironment.EnsureDefaultEventMeshSecretCreated(t, tc.givenEventing)
+			} else if tc.givenSwitchedEventing.Spec.Backend.Type == operatorv1alpha1.EventMeshBackendType {
+				testEnvironment.EnsureDefaultEventMeshSecretCreated(t, tc.givenSwitchedEventing)
 			}
 
 			// create Eventing CR.

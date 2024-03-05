@@ -91,7 +91,7 @@ func Test_EventMesh_APIRule_Dependency_Check(t *testing.T) {
 			testEnvironment.EnsureOAuthSecretCreated(t, testcase.givenEventing)
 
 			// create EventMesh secret.
-			testEnvironment.EnsureEventMeshSecretCreated(t, testcase.givenEventing)
+			testEnvironment.EnsureDefaultEventMeshSecretCreated(t, tc.givenEventing)
 
 			// when
 			// create Eventing CR.

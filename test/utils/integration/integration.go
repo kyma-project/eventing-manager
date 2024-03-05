@@ -915,10 +915,15 @@ func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure correctness of CABundle in Webhooks")
 }
 
-func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
+func (env TestEnvironment) EnsureDefaultEventMeshSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
 	t.Helper()
 	subarr := strings.Split(eventing.Spec.Backend.Config.EventMeshSecret, "/")
 	secret := testutils.NewEventMeshSecret(subarr[1], subarr[0])
+	env.EnsuretEventMeshSecretCreated(t, eventing, secret)
+}
+
+func (env TestEnvironment) EnsuretEventMeshSecretCreated(t *testing.T, eventing *v1alpha1.Eventing, secret *kcorev1.Secret) {
+	t.Helper()
 	env.EnsureK8sResourceCreated(t, secret)
 }
 

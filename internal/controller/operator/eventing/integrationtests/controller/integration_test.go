@@ -671,7 +671,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 
 			if !testcase.shouldEventMeshSecretNotFound {
 				// create EventMesh secret.
-				testEnvironment.EnsureEventMeshSecretCreated(t, testcase.givenEventing)
+				testEnvironment.EnsureDefaultEventMeshSecretCreated(t, tc.givenEventing)
 			}
 
 			originalKubeClient := testEnvironment.KubeClient
@@ -804,8 +804,8 @@ func Test_DeleteEventingCR(t *testing.T) {
 				testEnvironment.EnsureNATSResourceStateReady(t, nats)
 			} else {
 				// create eventing-webhook-auth secret.
-				testEnvironment.EnsureOAuthSecretCreated(t, testcase.givenEventing)
-				testEnvironment.EnsureEventMeshSecretCreated(t, testcase.givenEventing)
+				testEnvironment.EnsureOAuthSecretCreated(t, tc.givenEventing)
+				testEnvironment.EnsureDefaultEventMeshSecretCreated(t, tc.givenEventing)
 			}
 			testEnvironment.EnsureK8sResourceCreated(t, testcase.givenEventing)
 
@@ -936,7 +936,7 @@ func Test_WatcherNATSResource(t *testing.T) {
 				)
 				// create necessary EventMesh secrets
 				testEnvironment.EnsureOAuthSecretCreated(t, eventingResource)
-				testEnvironment.EnsureEventMeshSecretCreated(t, eventingResource)
+				testEnvironment.EnsureDefaultEventMeshSecretCreated(t, eventingResource)
 			} else {
 				eventingResource = utils.NewEventingCR(
 					utils.WithEventingCRNamespace(givenNamespace),
