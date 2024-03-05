@@ -81,9 +81,9 @@ func (_c *ManagerFactory_NewEventMeshManager_Call) RunAndReturn(run func(string)
 	return _c
 }
 
-// NewJetStreamManager provides a mock function with given fields: _a0, _a1
-func (_m *ManagerFactory) NewJetStreamManager(_a0 v1alpha1.Eventing, _a1 env.NATSConfig) manager.Manager {
-	ret := _m.Called(_a0, _a1)
+// NewJetStreamManager provides a mock function with given fields: eventing, config
+func (_m *ManagerFactory) NewJetStreamManager(eventing v1alpha1.Eventing, config env.NATSConfig) manager.Manager {
+	ret := _m.Called(eventing, config)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewJetStreamManager")
@@ -91,7 +91,7 @@ func (_m *ManagerFactory) NewJetStreamManager(_a0 v1alpha1.Eventing, _a1 env.NAT
 
 	var r0 manager.Manager
 	if rf, ok := ret.Get(0).(func(v1alpha1.Eventing, env.NATSConfig) manager.Manager); ok {
-		r0 = rf(_a0, _a1)
+		r0 = rf(eventing, config)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(manager.Manager)
@@ -107,13 +107,13 @@ type ManagerFactory_NewJetStreamManager_Call struct {
 }
 
 // NewJetStreamManager is a helper method to define mock.On call
-//   - _a0 v1alpha1.Eventing
-//   - _a1 env.NATSConfig
-func (_e *ManagerFactory_Expecter) NewJetStreamManager(_a0 interface{}, _a1 interface{}) *ManagerFactory_NewJetStreamManager_Call {
-	return &ManagerFactory_NewJetStreamManager_Call{Call: _e.mock.On("NewJetStreamManager", _a0, _a1)}
+//   - eventing v1alpha1.Eventing
+//   - config env.NATSConfig
+func (_e *ManagerFactory_Expecter) NewJetStreamManager(eventing interface{}, config interface{}) *ManagerFactory_NewJetStreamManager_Call {
+	return &ManagerFactory_NewJetStreamManager_Call{Call: _e.mock.On("NewJetStreamManager", eventing, config)}
 }
 
-func (_c *ManagerFactory_NewJetStreamManager_Call) Run(run func(_a0 v1alpha1.Eventing, _a1 env.NATSConfig)) *ManagerFactory_NewJetStreamManager_Call {
+func (_c *ManagerFactory_NewJetStreamManager_Call) Run(run func(eventing v1alpha1.Eventing, config env.NATSConfig)) *ManagerFactory_NewJetStreamManager_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(v1alpha1.Eventing), args[1].(env.NATSConfig))
 	})
