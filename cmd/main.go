@@ -39,7 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	natsconnection "github.com/kyma-project/eventing-manager/internal/connection/nats"
@@ -64,7 +63,6 @@ func registerSchemas(scheme *runtime.Scheme) {
 	kutilruntime.Must(kapiextensionsv1.AddToScheme(scheme))
 	kutilruntime.Must(jetstream.AddToScheme(scheme))
 	kutilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))
-	kutilruntime.Must(eventingv1alpha1.AddToScheme(scheme))
 	kutilruntime.Must(eventingv1alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -203,12 +201,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	//+kubebuilder:scaffold:builder
 
 	// Setup webhooks.
-	if err = (&eventingv1alpha1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create webhook")
-		syncLogger(ctrLogger)
-		os.Exit(1)
-	}
-
 	if err = (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create webhook")
 		syncLogger(ctrLogger)

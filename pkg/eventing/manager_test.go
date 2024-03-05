@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -314,47 +313,6 @@ func Test_IsNATSAvailable(t *testing.T) {
 			available, err := em.IsNATSAvailable(ctx, testcase.givenNamespace)
 			require.Equal(t, testcase.wantAvailable, available)
 			require.Equal(t, testcase.wantErr, err)
-		})
-	}
-}
-
-func Test_ConvertECBackendType(t *testing.T) {
-	// Define a list of test cases
-	testCases := []struct {
-		name           string
-		backendType    v1alpha1.BackendType
-		expectedResult eventingv1alpha1.BackendType
-		expectedError  error
-	}{
-		{
-			name:           "Convert EventMeshBackendType",
-			backendType:    v1alpha1.EventMeshBackendType,
-			expectedResult: eventingv1alpha1.BEBBackendType,
-			expectedError:  nil,
-		},
-		{
-			name:           "Convert NatsBackendType",
-			backendType:    v1alpha1.NatsBackendType,
-			expectedResult: eventingv1alpha1.NatsBackendType,
-			expectedError:  nil,
-		},
-		{
-			name:           "Unknown backend type",
-			backendType:    "unknown",
-			expectedResult: "",
-			expectedError:  ErrUnknownBackendType,
-		},
-	}
-
-	// Iterate over the test cases and run sub-tests
-	for _, tc := range testCases {
-		testcase := tc
-		t.Run(testcase.name, func(t *testing.T) {
-			// when
-			result, err := convertECBackendType(testcase.backendType)
-			// then
-			require.ErrorIs(t, err, testcase.expectedError)
-			require.Equal(t, testcase.expectedResult, result)
 		})
 	}
 }

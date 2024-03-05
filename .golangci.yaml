@@ -84,8 +84,6 @@ linters-settings:
         alias: kunstructured
       - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
         alias: kmetav1
-      - pkg: github.com/kyma-project/eventing-manager/api/eventing/v1alpha1
-        alias: eventingv1alpha1
       - pkg: github.com/kyma-project/eventing-manager/api/eventing/v1alpha2
         alias: eventingv1alpha2
       - pkg: github.com/kyma-project/eventing-manager/api/operator/v1alpha1

@@ -433,6 +433,11 @@ func (te *TestEnvironment) CompareCloudEvents(expectedEvent cloudevents.Event, g
 		resultError = fixtures.AppendMsgToError(resultError, msg)
 	}
 
+	// if it is a v1alpha1 Subscription event, then we do not check further.
+	if strings.HasPrefix(gotEvent.Type(), te.TestConfigs.EventTypePrefix) {
+		return resultError
+	}
+
 	// check in detail further the source and type.
 	if expectedEvent.Source() != gotEvent.Source() {
 		msg := fmt.Sprintf("expected event Source: %s, got event Source: %s", expectedEvent.Source(), gotEvent.Source())
