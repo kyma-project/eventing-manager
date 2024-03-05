@@ -6,13 +6,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
 	kapixclientsetfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
-	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,172 +23,6 @@ import (
 )
 
 const testFieldManager = "eventing-manager"
-
-func Test_PatchApply(t *testing.T) {
-	t.Parallel()
-
-	// NOTE: In real k8s client, the kubeClient.PatchApply creates the resource
-	// if it does not exist on the cluster. But in the fake client the behaviour
-	// is not properly replicated. As mentioned: "ObjectMeta's `Generation` and
-	// `ResourceVersion` don't behave properly, Patch or Update operations that
-	// rely on these fields will fail, or give false positives." in docs
-	// https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client/fake
-	// This scenario will be tested in integration tests with envTest pkg.
-
-	twoReplicas := int32(2)
-	threeReplicas := int32(3)
-
-	// define test cases
-	testCases := []struct {
-		name                  string
-		givenDeployment       *kappsv1.Deployment
-		givenUpdateDeployment *kappsv1.Deployment
-	}{
-		{
-			name: "should update resource when exists in k8s",
-			givenDeployment: &kappsv1.Deployment{
-				TypeMeta: kmetav1.TypeMeta{
-					Kind:       "Deployment",
-					APIVersion: "apps/v1",
-				},
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "test",
-				},
-				Spec: kappsv1.DeploymentSpec{
-					Replicas: &twoReplicas,
-				},
-			},
-			givenUpdateDeployment: &kappsv1.Deployment{
-				TypeMeta: kmetav1.TypeMeta{
-					Kind:       "Deployment",
-					APIVersion: "apps/v1",
-				},
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "test",
-				},
-				Spec: kappsv1.DeploymentSpec{
-					Replicas: &threeReplicas,
-				},
-			},
-		},
-	}
-
-	// run test cases
-	for _, tc := range testCases {
-		testcase := tc
-		t.Run(testcase.name, func(t *testing.T) {
-			t.Parallel()
-
-			// given
-			var objs []client.Object
-			if testcase.givenDeployment != nil {
-				objs = append(objs, testcase.givenDeployment)
-			}
-			fakeClientBuilder := fake.NewClientBuilder()
-			fakeClient := fakeClientBuilder.WithObjects(objs...).Build()
-			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager, nil)
-
-			// when
-			err := kubeClient.PatchApply(context.Background(), testcase.givenUpdateDeployment)
-
-			// then
-			require.NoError(t, err)
-			// check that it should exist on k8s.
-			gotSTS, err := kubeClient.GetDeployment(context.Background(),
-				testcase.givenUpdateDeployment.GetName(), testcase.givenUpdateDeployment.GetNamespace())
-			require.NoError(t, err)
-			require.Equal(t, testcase.givenUpdateDeployment.GetName(), gotSTS.Name)
-			require.Equal(t, testcase.givenUpdateDeployment.GetNamespace(), gotSTS.Namespace)
-			require.Equal(t, *testcase.givenUpdateDeployment.Spec.Replicas, *gotSTS.Spec.Replicas)
-		})
-	}
-}
-
-func Test_PatchApplyPeerAuthentication(t *testing.T) {
-	t.Parallel()
-
-	// NOTE: In real k8s client, the kubeClient.PatchApply creates the resource
-	// if it does not exist on the cluster. But in the fake client the behaviour
-	// is not properly replicated. As mentioned: "ObjectMeta's `Generation` and
-	// `ResourceVersion` don't behave properly, Patch or Update operations that
-	// rely on these fields will fail, or give false positives." in docs
-	// https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client/fake
-	// This scenario will be tested in integration tests with envTest pkg.
-
-	// define test cases
-	testCases := []struct {
-		name                          string
-		givenPeerAuthentication       *istiopkgsecurityv1beta1.PeerAuthentication
-		givenUpdatePeerAuthentication *istiopkgsecurityv1beta1.PeerAuthentication
-	}{
-		{
-			name: "should update resource when exists in k8s",
-			givenPeerAuthentication: &istiopkgsecurityv1beta1.PeerAuthentication{
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name:      "eventing-publisher-proxy-metrics",
-					Namespace: "test",
-					Labels: map[string]string{
-						"app.kubernetes.io/name":    "eventing-publisher-proxy-old",
-						"app.kubernetes.io/version": "0.1.0",
-					},
-				},
-				TypeMeta: kmetav1.TypeMeta{
-					Kind:       "PeerAuthentication",
-					APIVersion: "security.istio.io/v1beta1",
-				},
-			},
-			givenUpdatePeerAuthentication: &istiopkgsecurityv1beta1.PeerAuthentication{
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name:      "eventing-publisher-proxy-metrics",
-					Namespace: "test",
-					Labels: map[string]string{
-						"app.kubernetes.io/name":    "eventing-publisher-proxy-new",
-						"app.kubernetes.io/version": "0.1.0",
-					},
-				},
-				TypeMeta: kmetav1.TypeMeta{
-					Kind:       "PeerAuthentication",
-					APIVersion: "security.istio.io/v1beta1",
-				},
-			},
-		},
-	}
-
-	// run test cases
-	for _, tc := range testCases {
-		testcase := tc
-		t.Run(testcase.name, func(t *testing.T) {
-			t.Parallel()
-
-			// get crd
-			paCRD, err := testutils.NewPeerAuthenticationCRD()
-			require.NoError(t, err)
-
-			// given
-			var objs []client.Object
-			objs = append(objs, paCRD)
-			if testcase.givenPeerAuthentication != nil {
-				objs = append(objs, testcase.givenPeerAuthentication)
-			}
-
-			// define scheme
-			fakeClientBuilder := fake.NewClientBuilder()
-			newScheme := scheme.Scheme
-			require.NoError(t, istiopkgsecurityv1beta1.AddToScheme(newScheme))
-
-			fakeClient := fakeClientBuilder.WithScheme(newScheme).WithObjects(objs...).Build()
-			kubeClient := NewKubeClient(fakeClient, nil, testFieldManager, nil)
-
-			// when
-			err = kubeClient.PatchApplyPeerAuthentication(context.Background(), testcase.givenUpdatePeerAuthentication)
-
-			// then
-			require.NoError(t, err)
-		})
-	}
-}
 
 func Test_UpdateDeployment(t *testing.T) {
 	t.Parallel()

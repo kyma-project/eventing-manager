@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.3
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: subscriptions.eventing.kyma-project.io
 spec:
   group: eventing.kyma-project.io
@@ -33,14 +32,19 @@ spec:
         description: Subscription is the Schema for the subscriptions API.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -60,9 +64,9 @@ spec:
                 description: Defines which events will be sent to the sink.
                 properties:
                   dialect:
-                    description: Contains a `URI-reference` to the CloudEvent filter
-                      dialect. See [here](https://github.com/cloudevents/spec/blob/main/subscriptions/spec.md#3241-filter-dialects)
-                      for more details.
+                    description: |-
+                      Contains a `URI-reference` to the CloudEvent filter dialect. See
+                      [here](https://github.com/cloudevents/spec/blob/main/subscriptions/spec.md#3241-filter-dialects) for more details.
                     type: string
                   filters:
                     items:
@@ -119,8 +123,9 @@ spec:
                 description: Defines the CE protocol settings specification implementation.
                 properties:
                   contentMode:
-                    description: Defines the content mode for eventing based on BEB.
-                      The value is either `BINARY`, or `STRUCTURED`.
+                    description: |-
+                      Defines the content mode for eventing based on BEB.
+                       The value is either `BINARY`, or `STRUCTURED`.
                     type: string
                   exemptHandshake:
                     description: Defines if the exempt handshake for eventing is based
@@ -162,9 +167,9 @@ spec:
                     type: object
                 type: object
               sink:
-                description: Kubernetes Service that should be used as a target for
-                  the events that match the Subscription. Must exist in the same Namespace
-                  as the Subscription.
+                description: |-
+                  Kubernetes Service that should be used as a target for the events that match the Subscription.
+                  Must exist in the same Namespace as the Subscription.
                 type: string
             required:
             - filter
@@ -279,14 +284,19 @@ spec:
         description: Subscription is the Schema for the subscriptions API.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -303,18 +313,18 @@ spec:
                 description: Unique identifier of the Subscription, read-only.
                 type: string
               sink:
-                description: Kubernetes Service that should be used as a target for
-                  the events that match the Subscription. Must exist in the same Namespace
-                  as the Subscription.
+                description: |-
+                  Kubernetes Service that should be used as a target for the events that match the Subscription.
+                  Must exist in the same Namespace as the Subscription.
                 type: string
               source:
                 description: Defines the origin of the event.
                 type: string
               typeMatching:
-                description: 'Defines how types should be handled.<br /> - `standard`:
-                  backend-specific logic will be applied to the configured source
-                  and types.<br /> - `exact`: no further processing will be applied
-                  to the configured source and types.'
+                description: |-
+                  Defines how types should be handled.<br />
+                  - `standard`: backend-specific logic will be applied to the configured source and types.<br />
+                  - `exact`: no further processing will be applied to the configured source and types.
                 type: string
               types:
                 description: List of event types that will be used for subscribing

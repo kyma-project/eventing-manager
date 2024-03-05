@@ -4,8 +4,8 @@ go 1.22.0
 
 require (
 	github.com/avast/retry-go/v3 v3.1.1
-	github.com/cloudevents/sdk-go/protocol/nats/v2 v2.15.0
-	github.com/cloudevents/sdk-go/v2 v2.15.0
+	github.com/cloudevents/sdk-go/protocol/nats/v2 v2.15.1
+	github.com/cloudevents/sdk-go/v2 v2.15.1
 	github.com/go-logr/logr v1.4.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
@@ -20,10 +20,10 @@ require (
 	github.com/onsi/gomega v1.31.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.18.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/vektra/mockery/v2 v2.42.0
 	go.uber.org/atomic v1.11.0
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.17.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028
 	istio.io/api v1.20.2
@@ -33,7 +33,7 @@ require (
 	k8s.io/apimachinery v0.29.2
 	k8s.io/client-go v0.29.2
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
-	sigs.k8s.io/controller-runtime v0.17.1
+	sigs.k8s.io/controller-runtime v0.17.2
 )
 
 require (
@@ -91,7 +91,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.15.0 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.19.0 // indirect
