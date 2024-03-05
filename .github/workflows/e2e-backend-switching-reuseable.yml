@@ -45,7 +45,7 @@ jobs:
           CLUSTER_PREFIX: ${{ inputs.cluster-name-prefix }}
           GARDENER_PROJECT_NAME: ${{ vars.GARDENER_PROJECT_NAME }}
           GARDENER_PROVIDER_SECRET_NAME: ${{ vars.GARDENER_PROVIDER_SECRET_NAME_AWS }}
-          MACHINE_TYPE: "c4.xlarge"
+          MACHINE_TYPE: "m5.xlarge"
           SCALER_MIN: "1"
           SCALER_MAX: "2"
           RETRY_ATTEMPTS: "1"
