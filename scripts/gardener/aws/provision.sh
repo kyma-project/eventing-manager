@@ -62,6 +62,9 @@ gardener::validate_and_default() {
         export GARDENER_CLUSTER_VERSION="$(${KYMA_CLI} provision gardener aws --help | grep "kube-version string" | awk -F "\"" '{print $2}')"
     fi
 
+    # Detect supported linux version.
+    GARDEN_LINUX_VERSION=$(kubectl --kubeconfig="${GARDENER_KUBECONFIG}" get cloudprofiles.core.gardener.cloud gcp -o go-template='{{range .spec.machineImages}}{{if eq .name "gardenlinux"}}{{range .versions}}{{if eq .classification "supported"}}{{.version}}{{end}}{{end}}{{end}}{{end}}')
+
     # print configurations for debugging purposes:
     log::banner "Configurations:"
     echo "CLUSTER_NAME: ${CLUSTER_NAME}"
@@ -72,6 +75,7 @@ gardener::validate_and_default() {
     echo "SCALER_MAX: ${SCALER_MAX}"
     echo "GARDENER_CLUSTER_VERSION: ${GARDENER_CLUSTER_VERSION}"
     echo "RETRY_ATTEMPTS ${RETRY_ATTEMPTS}"
+    echo "GARDEN_LINUX_VERSION ${GARDEN_LINUX_VERSION}"
 }
 
 gardener::provision_cluster() {
@@ -89,6 +93,7 @@ gardener::provision_cluster() {
       --scaler-min ${SCALER_MIN} \
       --scaler-max ${SCALER_MAX} \
       --kube-version="${GARDENER_CLUSTER_VERSION}" \
+      --gardenlinux-version "${GARDEN_LINUX_VERSION}" \
       --attempts ${RETRY_ATTEMPTS} \
       --verbose \
       --hibernation-start ""
