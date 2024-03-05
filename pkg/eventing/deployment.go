@@ -32,7 +32,7 @@ const (
 	PublisherSecretClientSecretKey  = "client-secret"
 	PublisherSecretTokenEndpointKey = "token-endpoint"
 
-	PublisherSecretEMSURLKey       = "ems-publish-url"
+	PublisherSecretEMSURLKey       = "ems-publish-url" //nolint:gosec // no hardcoded secret, just a lookup key
 	PublisherSecretBEBNamespaceKey = "beb-namespace"
 
 	PriorityClassName             = "eventing-manager-priority-class"

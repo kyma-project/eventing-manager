@@ -34,12 +34,12 @@ func Test_JSCleanSource(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			cleaner := NewJetStreamCleaner(defaultLogger)
-			eventType, _ := cleaner.CleanSource(tc.givenEventSource)
-			require.Equal(t, tc.wantEventSource, eventType)
+			eventType, _ := cleaner.CleanSource(testcase.givenEventSource)
+			require.Equal(t, testcase.wantEventSource, eventType)
 		})
 	}
 }
@@ -69,12 +69,12 @@ func Test_JSCleanEventType(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			cleaner := NewJetStreamCleaner(defaultLogger)
-			eventType, _ := cleaner.CleanEventType(tc.givenEventType)
-			require.Equal(t, tc.wantEventType, eventType)
+			eventType, _ := cleaner.CleanEventType(testcase.givenEventType)
+			require.Equal(t, testcase.wantEventType, eventType)
 		})
 	}
 }

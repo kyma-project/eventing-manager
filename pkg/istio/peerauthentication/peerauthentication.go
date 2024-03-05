@@ -37,14 +37,14 @@ func SyncPeerAuthentications(ctx context.Context, kubeClient k8s.Client, log *za
 		return errors.New("eventing-manager deployment not found")
 	}
 	// create PeerAuthentications.
-	for _, pa := range []*istiopkgsecurityv1beta1.PeerAuthentication{
+	for _, authentication := range []*istiopkgsecurityv1beta1.PeerAuthentication{
 		EventingManagerMetrics(deploy.Namespace, ownerReferences(*deploy)),
 		EventPublisherProxyMetrics(deploy.Namespace, ownerReferences(*deploy)),
 	} {
-		if err = kubeClient.PatchApplyPeerAuthentication(ctx, pa); err != nil {
+		if err = kubeClient.PatchApplyPeerAuthentication(ctx, authentication); err != nil {
 			return errors.Wrap(err, "failed to patchApply PeerAuthentication")
 		}
-		log.Infof("patch applied PeerAuthentication: %s in Namespace: %s", pa.Name, pa.Namespace)
+		log.Infof("patch applied PeerAuthentication: %s in Namespace: %s", authentication.Name, authentication.Namespace)
 	}
 	return nil
 }

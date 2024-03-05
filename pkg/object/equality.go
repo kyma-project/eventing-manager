@@ -153,34 +153,34 @@ func clusterRoleBindingEqual(a, b *krbacv1.ClusterRoleBinding) bool {
 }
 
 // apiRuleEqual asserts the equality of two APIRule objects.
-func apiRuleEqual(a1, a2 *apigatewayv1beta1.APIRule) bool {
-	if a1 == a2 {
+func apiRuleEqual(rule1, rule2 *apigatewayv1beta1.APIRule) bool {
+	if rule1 == rule2 {
 		return true
 	}
 
-	if a1 == nil || a2 == nil {
+	if rule1 == nil || rule2 == nil {
 		return false
 	}
 
-	if !reflect.DeepEqual(a1.Labels, a2.Labels) {
+	if !reflect.DeepEqual(rule1.Labels, rule2.Labels) {
 		return false
 	}
-	if !ownerReferencesDeepEqual(a1.OwnerReferences, a2.OwnerReferences) {
+	if !ownerReferencesDeepEqual(rule1.OwnerReferences, rule2.OwnerReferences) {
 		return false
 	}
-	if !reflect.DeepEqual(a1.Spec.Service.Name, a2.Spec.Service.Name) {
+	if !reflect.DeepEqual(rule1.Spec.Service.Name, rule2.Spec.Service.Name) {
 		return false
 	}
-	if !reflect.DeepEqual(a1.Spec.Service.IsExternal, a2.Spec.Service.IsExternal) {
+	if !reflect.DeepEqual(rule1.Spec.Service.IsExternal, rule2.Spec.Service.IsExternal) {
 		return false
 	}
-	if !reflect.DeepEqual(a1.Spec.Service.Port, a2.Spec.Service.Port) {
+	if !reflect.DeepEqual(rule1.Spec.Service.Port, rule2.Spec.Service.Port) {
 		return false
 	}
-	if !reflect.DeepEqual(a1.Spec.Rules, a2.Spec.Rules) {
+	if !reflect.DeepEqual(rule1.Spec.Rules, rule2.Spec.Rules) {
 		return false
 	}
-	if !reflect.DeepEqual(a1.Spec.Gateway, a2.Spec.Gateway) {
+	if !reflect.DeepEqual(rule1.Spec.Gateway, rule2.Spec.Gateway) {
 		return false
 	}
 
@@ -211,19 +211,19 @@ func ownerReferencesDeepEqual(ors1, ors2 []kmetav1.OwnerReference) bool {
 
 // publisherProxyDeploymentEqual asserts the equality of two Deployment objects
 // for event publisher proxy deployments.
-func publisherProxyDeploymentEqual(d1, d2 *kappsv1.Deployment) bool {
-	if d1 == nil || d2 == nil {
+func publisherProxyDeploymentEqual(a, b *kappsv1.Deployment) bool {
+	if a == nil || b == nil {
 		return false
 	}
-	if d1 == d2 {
+	if a == b {
 		return true
 	}
-	if !reflect.DeepEqual(d1.Labels, d2.Labels) {
+	if !reflect.DeepEqual(a.Labels, b.Labels) {
 		return false
 	}
 
-	cst1 := d1.Spec.Template
-	cst2 := d2.Spec.Template
+	cst1 := a.Spec.Template
+	cst2 := b.Spec.Template
 	if !mapDeepEqual(cst1.Annotations, cst2.Annotations) {
 		return false
 	}
@@ -269,15 +269,15 @@ func podSpecEqual(ps1, ps2 *kcorev1.PodSpec) bool {
 }
 
 // containerEqual asserts the equality of two Container objects.
-func containerEqual(c1, c2 *kcorev1.Container) bool {
-	if c1 == nil || c2 == nil {
+func containerEqual(a, b *kcorev1.Container) bool {
+	if a == nil || b == nil {
 		return false
 	}
-	if c1.Image != c2.Image {
+	if a.Image != b.Image {
 		return false
 	}
 
-	ps1, ps2 := c1.Ports, c2.Ports
+	ps1, ps2 := a.Ports, b.Ports
 	if len(ps1) != len(ps2) {
 		return false
 	}
@@ -297,31 +297,31 @@ func containerEqual(c1, c2 *kcorev1.Container) bool {
 		}
 	}
 
-	if !envEqual(c1.Env, c2.Env) {
+	if !envEqual(a.Env, b.Env) {
 		return false
 	}
 
-	if !reflect.DeepEqual(c1.Resources, c2.Resources) {
+	if !reflect.DeepEqual(a.Resources, b.Resources) {
 		return false
 	}
 
-	return probeEqual(c1.ReadinessProbe, c2.ReadinessProbe)
+	return probeEqual(a.ReadinessProbe, b.ReadinessProbe)
 }
 
 // envEqual asserts the equality of two core environment slices. It's used
 // by containerEqual.
-func envEqual(e1, e2 []kcorev1.EnvVar) bool {
-	if len(e1) != len(e2) {
+func envEqual(a, b []kcorev1.EnvVar) bool {
+	if len(a) != len(b) {
 		return false
 	}
 
-	if len(e1) == 0 {
+	if len(a) == 0 {
 		return true
 	}
 	isFound := false
-	for _, ev1 := range e1 {
+	for _, ev1 := range a {
 		isFound = false
-		for _, ev2 := range e2 {
+		for _, ev2 := range b {
 			if reflect.DeepEqual(ev1, ev2) {
 				isFound = true
 				break
@@ -336,39 +336,39 @@ func envEqual(e1, e2 []kcorev1.EnvVar) bool {
 
 // probeEqual asserts the equality of two Probe objects. It's used by
 // containerEqual.
-func probeEqual(p1, p2 *kcorev1.Probe) bool {
-	if p1 == p2 {
+func probeEqual(a, b *kcorev1.Probe) bool {
+	if a == b {
 		return true
 	}
 
-	if p1 == nil || p2 == nil {
+	if a == nil || b == nil {
 		return false
 	}
 
-	isInitialDelaySecondsEqual := p1.InitialDelaySeconds != p2.InitialDelaySeconds
-	isTimeoutSecondsEqual := p1.TimeoutSeconds != p2.TimeoutSeconds && p1.TimeoutSeconds != 0 && p2.TimeoutSeconds != 0
-	isPeriodSecondsEqual := p1.PeriodSeconds != p2.PeriodSeconds && p1.PeriodSeconds != 0 && p2.PeriodSeconds != 0
-	isSuccessThresholdEqual := p1.SuccessThreshold != p2.SuccessThreshold && p1.SuccessThreshold != 0 && p2.SuccessThreshold != 0
-	isFailureThresholdEqual := p1.FailureThreshold != p2.FailureThreshold && p1.FailureThreshold != 0 && p2.FailureThreshold != 0
+	isInitialDelaySecondsEqual := a.InitialDelaySeconds != b.InitialDelaySeconds
+	isTimeoutSecondsEqual := a.TimeoutSeconds != b.TimeoutSeconds && a.TimeoutSeconds != 0 && b.TimeoutSeconds != 0
+	isPeriodSecondsEqual := a.PeriodSeconds != b.PeriodSeconds && a.PeriodSeconds != 0 && b.PeriodSeconds != 0
+	isSuccessThresholdEqual := a.SuccessThreshold != b.SuccessThreshold && a.SuccessThreshold != 0 && b.SuccessThreshold != 0
+	isFailureThresholdEqual := a.FailureThreshold != b.FailureThreshold && a.FailureThreshold != 0 && b.FailureThreshold != 0
 
 	if isInitialDelaySecondsEqual || isTimeoutSecondsEqual || isPeriodSecondsEqual || isSuccessThresholdEqual || isFailureThresholdEqual {
 		return false
 	}
 
-	return handlerEqual(&p1.ProbeHandler, &p2.ProbeHandler)
+	return handlerEqual(&a.ProbeHandler, &b.ProbeHandler)
 }
 
 // handlerEqual asserts the equality of two Handler objects. It's used
 // by probeEqual.
-func handlerEqual(h1, h2 *kcorev1.ProbeHandler) bool {
-	if h1 == h2 {
+func handlerEqual(a, b *kcorev1.ProbeHandler) bool {
+	if a == b {
 		return true
 	}
-	if h1 == nil || h2 == nil {
+	if a == nil || b == nil {
 		return false
 	}
 
-	hg1, hg2 := h1.HTTPGet, h2.HTTPGet
+	hg1, hg2 := a.HTTPGet, b.HTTPGet
 	if hg1 == nil && hg2 != nil {
 		return false
 	}

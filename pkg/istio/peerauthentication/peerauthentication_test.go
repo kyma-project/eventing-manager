@@ -57,8 +57,8 @@ func Test_SyncPeerAuthentications(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			logger, err := test.NewEventingLogger()
 			require.NoError(t, err)
@@ -67,17 +67,17 @@ func Test_SyncPeerAuthentications(t *testing.T) {
 			// define mocks.
 			kubeClient := new(k8smocks.Client)
 			kubeClient.On("PeerAuthenticationCRDExists",
-				ctx).Return(tc.givenPeerAuthenticationExists, nil).Once()
+				ctx).Return(testcase.givenPeerAuthenticationExists, nil).Once()
 
-			if tc.wantPatchApplyCalled {
+			if testcase.wantPatchApplyCalled {
 				kubeClient.On("PatchApplyPeerAuthentication", ctx,
 					mock.Anything).Return(nil).Twice()
 			}
 
-			if tc.givenDeploymentExists && tc.wantGetDeploymentDynamicCalled {
+			if testcase.givenDeploymentExists && testcase.wantGetDeploymentDynamicCalled {
 				kubeClient.On("GetDeploymentDynamic", ctx, "eventing-manager",
 					"kyma-system").Return(emDeployment, nil).Once()
-			} else if tc.wantGetDeploymentDynamicCalled {
+			} else if testcase.wantGetDeploymentDynamicCalled {
 				kubeClient.On("GetDeploymentDynamic", ctx, "eventing-manager",
 					"kyma-system").Return(nil, nil).Once()
 			}
@@ -86,8 +86,8 @@ func Test_SyncPeerAuthentications(t *testing.T) {
 			err = SyncPeerAuthentications(ctx, kubeClient, logger.WithContext())
 
 			// then
-			if tc.wantError != nil {
-				require.Equal(t, tc.wantError.Error(), err.Error())
+			if testcase.wantError != nil {
+				require.Equal(t, testcase.wantError.Error(), err.Error())
 			} else {
 				require.NoError(t, err)
 			}

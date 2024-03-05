@@ -22,6 +22,7 @@ import (
 
 // Test_NATSConnection tests the Eventing CR status when connecting to NATS.
 func Test_NATSConnection(t *testing.T) {
+	t.Parallel()
 	// given
 
 	ErrAny := errors.New("any")
@@ -89,7 +90,7 @@ func Test_NATSConnection(t *testing.T) {
 			t.Parallel()
 
 			// setup environment
-			te, err := testutilsintegration.NewTestEnvironment(
+			testEnvironment, err := testutilsintegration.NewTestEnvironment(
 				testutilsintegration.TestEnvironmentConfig{
 					NATSCRDEnabled: true,
 					ProjectRootDir: "../../../../../../",
@@ -97,7 +98,7 @@ func Test_NATSConnection(t *testing.T) {
 				tcc.givenNATSConnectionMock(),
 			)
 			require.NoError(t, err)
-			defer func() { require.NoError(t, te.TearDown()) }() // always cleanup
+			defer func() { require.NoError(t, testEnvironment.TearDown()) }() // always cleanup
 			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool { return true }
 
 			// prepare resources
@@ -106,12 +107,12 @@ func Test_NATSConnection(t *testing.T) {
 			natsCR.SetNamespace(eventingCR.Namespace)
 
 			// create resources
-			te.EnsureNamespaceCreation(t, eventingCR.Namespace)
-			te.EnsureK8sResourceCreated(t, natsCR)
-			te.EnsureK8sResourceCreated(t, eventingCR)
+			testEnvironment.EnsureNamespaceCreation(t, eventingCR.Namespace)
+			testEnvironment.EnsureK8sResourceCreated(t, natsCR)
+			testEnvironment.EnsureK8sResourceCreated(t, eventingCR)
 
 			// then
-			te.GetEventingAssert(gomega.NewWithT(t), eventingCR).Should(tcc.wantMatches)
+			testEnvironment.GetEventingAssert(gomega.NewWithT(t), eventingCR).Should(tcc.wantMatches)
 		})
 	}
 }

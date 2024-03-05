@@ -23,7 +23,7 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	////
 
 	// setup
-	err := setupSuite()
+	ensemble, err := setupSuite()
 	require.NoError(t, err)
 	ctx := context.Background()
 	g := gomega.NewGomegaWithT(t)
@@ -31,11 +31,11 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	// ensure namespace created
 	namespace := getTestNamespace()
 	name := fmt.Sprintf("test-resource-%s", namespace)
-	ensureNamespaceCreated(ctx, t, namespace)
+	ensureNamespaceCreated(ctx, t, ensemble, namespace)
 
 	// ensure subscriber service is created
 	subscriberService := eventingtesting.NewSubscriberSvc(name, namespace)
-	ensureK8sResourceCreated(ctx, t, subscriberService)
+	ensureK8sResourceCreated(ctx, t, ensemble, subscriberService)
 
 	// ensure Kyma subscription is created
 	kymaSubscription := eventingtesting.NewSubscription(
@@ -45,8 +45,8 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 		eventingtesting.WithOrderCreatedV1Event(),
 		eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, name)),
 	)
-	ensureK8sResourceCreated(ctx, t, kymaSubscription)
-	getSubscriptionAssert(ctx, g, kymaSubscription).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
+	ensureK8sResourceCreated(ctx, t, ensemble, kymaSubscription)
+	getSubscriptionAssert(ctx, g, kymaSubscription, ensemble).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
 
 	// ensure APIRule is created
 	apiRule := &apigatewayv1beta1.APIRule{
@@ -55,11 +55,11 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 			Namespace: kymaSubscription.Namespace,
 		},
 	}
-	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
-	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
+	getAPIRuleAssert(ctx, g, apiRule, ensemble).Should(eventingtesting.HaveNotEmptyAPIRule())
+	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, ensemble, apiRule)
 
 	// ensure hashes are computed
-	getSubscriptionAssert(ctx, g, kymaSubscription).Should(
+	getSubscriptionAssert(ctx, g, kymaSubscription, ensemble).Should(
 		gomega.And(
 			eventingtesting.HaveSubscriptionReady(),
 			eventingtesting.HaveNonZeroEv2Hash(),
@@ -71,13 +71,13 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	webhookAuthHashBefore := kymaSubscription.Status.Backend.WebhookAuthHash
 
 	// ensure EventMesh subscription is created
-	eventMeshSubscription := getEventMeshSubFromMock(kymaSubscription.Name, kymaSubscription.Namespace)
+	eventMeshSubscription := getEventMeshSubFromMock(kymaSubscription.Name, kymaSubscription.Namespace, ensemble)
 	g.Expect(eventMeshSubscription).ShouldNot(gomega.BeNil())
 
 	// counts EventMesh mock requests before changing the credentials
-	uri := getEventMeshSubKeyForMock(kymaSubscription.Name, kymaSubscription.Namespace)
-	deleteRequestsBefore := emTestEnsemble.eventMeshMock.CountRequests(http.MethodDelete, uri)
-	patchRequestsBefore := emTestEnsemble.eventMeshMock.CountRequests(http.MethodPatch, uri)
+	uri := getEventMeshSubKeyForMock(kymaSubscription.Name, kymaSubscription.Namespace, ensemble)
+	deleteRequestsBefore := ensemble.eventMeshMock.CountRequests(http.MethodDelete, uri)
+	patchRequestsBefore := ensemble.eventMeshMock.CountRequests(http.MethodPatch, uri)
 
 	////
 	// update the credentials
@@ -95,10 +95,10 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	// ensure Kyma subscription is updated
 	kymaSubscription = kymaSubscription.DeepCopy()
 	kymaSubscription.Labels = map[string]string{"reconcile": "true"}
-	ensureK8sSubscriptionUpdated(ctx, t, kymaSubscription)
+	ensureK8sSubscriptionUpdated(ctx, t, ensemble, kymaSubscription)
 
 	// ensure hashes are computed
-	getSubscriptionAssert(ctx, g, kymaSubscription).Should(
+	getSubscriptionAssert(ctx, g, kymaSubscription, ensemble).Should(
 		gomega.And(
 			eventingtesting.HaveSubscriptionReady(),
 			eventingtesting.HaveNonZeroEv2Hash(),
@@ -114,8 +114,8 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	////
 
 	// counts EventMesh mock requests after changing the credentials
-	deleteRequestsAfter := emTestEnsemble.eventMeshMock.CountRequests(http.MethodDelete, uri)
-	patchRequestsAfter := emTestEnsemble.eventMeshMock.CountRequests(http.MethodPatch, uri)
+	deleteRequestsAfter := ensemble.eventMeshMock.CountRequests(http.MethodDelete, uri)
+	patchRequestsAfter := ensemble.eventMeshMock.CountRequests(http.MethodPatch, uri)
 
 	// ensure expected EventMesh mock requests
 	require.NotEqual(t, webhookAuthHashBefore, webhookAuthHashAfter)
@@ -124,5 +124,5 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	require.Equal(t, 1, patchRequestsAfter)
 
 	// cleanup
-	require.NoError(t, tearDownSuite())
+	require.NoError(t, tearDownSuite(ensemble))
 }

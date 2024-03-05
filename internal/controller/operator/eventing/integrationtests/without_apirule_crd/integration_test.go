@@ -17,7 +17,7 @@ const (
 	projectRootDir = "../../../../../../"
 )
 
-var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment
 
 // TestMain pre-hook and post-hook to run before and after all tests.
 func TestMain(m *testing.M) {
@@ -77,28 +77,29 @@ func Test_EventMesh_APIRule_Dependency_Check(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
 			g := gomega.NewWithT(t)
 
 			// given
 			// create unique namespace for this test run.
-			givenNamespace := tc.givenEventing.Namespace
+			givenNamespace := testcase.givenEventing.Namespace
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
 			// create eventing-webhook-auth secret.
-			testEnvironment.EnsureOAuthSecretCreated(t, tc.givenEventing)
+			testEnvironment.EnsureOAuthSecretCreated(t, testcase.givenEventing)
 
 			// create EventMesh secret.
-			testEnvironment.EnsureEventMeshSecretCreated(t, tc.givenEventing)
+			testEnvironment.EnsureEventMeshSecretCreated(t, testcase.givenEventing)
 
 			// when
 			// create Eventing CR.
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+			testEnvironment.EnsureK8sResourceCreated(t, testcase.givenEventing)
 
 			// then
 			// check Eventing CR status.
-			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantMatches)
+			testEnvironment.GetEventingAssert(g, testcase.givenEventing).Should(testcase.wantMatches)
 		})
 	}
 }

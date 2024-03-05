@@ -19,7 +19,7 @@ var _ ManagerFactory = &Factory{}
 
 //go:generate go run github.com/vektra/mockery/v2 --name=ManagerFactory --outpkg=mocks --case=underscore
 type ManagerFactory interface {
-	NewJetStreamManager(v1alpha1.Eventing, env.NATSConfig) manager.Manager
+	NewJetStreamManager(eventing v1alpha1.Eventing, config env.NATSConfig) manager.Manager
 	NewEventMeshManager(domain string) (manager.Manager, error)
 }
 

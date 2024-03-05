@@ -25,7 +25,7 @@ const (
 
 // NewAPIRule creates a APIRule object.
 func NewAPIRule(ns, namePrefix string, opts ...Option) *apigatewayv1beta1.APIRule {
-	s := &apigatewayv1beta1.APIRule{
+	rule := &apigatewayv1beta1.APIRule{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Namespace:    ns,
 			GenerateName: namePrefix,
@@ -33,10 +33,10 @@ func NewAPIRule(ns, namePrefix string, opts ...Option) *apigatewayv1beta1.APIRul
 	}
 
 	for _, opt := range opts {
-		opt(s)
+		opt(rule)
 	}
 
-	return s
+	return rule
 }
 
 // ApplyExistingAPIRuleAttributes copies some important attributes from a given
@@ -102,7 +102,7 @@ func WithLabels(labels map[string]string) Option {
 
 // WithOwnerReference sets the OwnerReferences of an APIRule.
 func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
-	return func(r *apigatewayv1beta1.APIRule) {
+	return func(rule *apigatewayv1beta1.APIRule) {
 		ownerRefs := make([]kmetav1.OwnerReference, 0)
 		for _, sub := range subs {
 			blockOwnerDeletion := true
@@ -115,7 +115,7 @@ func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
 			}
 			ownerRefs = append(ownerRefs, ownerRef)
 		}
-		r.SetOwnerReferences(ownerRefs)
+		rule.SetOwnerReferences(ownerRefs)
 	}
 }
 
@@ -123,7 +123,7 @@ func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
 func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigatewayv1beta1.Service,
 	methods ...string,
 ) Option {
-	return func(r *apigatewayv1beta1.APIRule) {
+	return func(rule *apigatewayv1beta1.APIRule) {
 		var handler apigatewayv1beta1.Handler
 		if featureflags.IsEventingWebhookAuthEnabled() {
 			handler.Name = OAuthHandlerNameJWT
@@ -163,7 +163,7 @@ func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigat
 			}
 			rules = append(rules, rule)
 		}
-		r.Spec.Rules = rules
+		rule.Spec.Rules = rules
 	}
 }
 

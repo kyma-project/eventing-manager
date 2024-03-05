@@ -167,9 +167,9 @@ func (c *Collector) RecordEventTypes(subscriptionName, subscriptionNamespace, ev
 func (c *Collector) RecordSubscriptionStatus(isActive bool, subscriptionName,
 	subscriptionNamespace, backendType, consumer, streamName string,
 ) {
-	var v float64
+	var metricValue float64 = 0
 	if isActive {
-		v = 1
+		metricValue = 1
 	}
 	c.subscriptionStatus.With(prometheus.Labels{
 		subscriptionNameLabel:      subscriptionName,
@@ -177,7 +177,7 @@ func (c *Collector) RecordSubscriptionStatus(isActive bool, subscriptionName,
 		consumerNameLabel:          consumer,
 		backendTypeLabel:           backendType,
 		streamNameLabel:            streamName,
-	}).Set(v)
+	}).Set(metricValue)
 }
 
 // RemoveSubscriptionStatus removes an eventing_ec_subscription_status metric.

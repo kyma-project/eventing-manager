@@ -84,13 +84,13 @@ func setSubscriptionStatusExternalSink(subscription *eventingv1alpha2.Subscripti
 		return errors.Errorf("APIRule has nil host")
 	}
 
-	u, err := url.ParseRequestURI(subscription.Spec.Sink)
+	uri, err := url.ParseRequestURI(subscription.Spec.Sink)
 	if err != nil {
 		return xerrors.Errorf("invalid sink for subscription namespace=%s name=%s : %v", subscription.Namespace, subscription.Name, err)
 	}
 
-	path := u.Path
-	if u.Path == "" {
+	path := uri.Path
+	if uri.Path == "" {
 		path = "/"
 	}
 

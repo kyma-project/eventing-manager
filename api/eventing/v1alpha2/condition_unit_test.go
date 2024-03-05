@@ -41,8 +41,8 @@ func Test_InitializeSubscriptionConditions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// given
 			g := NewGomegaWithT(t)
-			s := v1alpha2.SubscriptionStatus{}
-			s.Conditions = tt.givenConditions
+			subStatus := v1alpha2.SubscriptionStatus{}
+			subStatus.Conditions = tt.givenConditions
 			wantConditionTypes := []v1alpha2.ConditionType{
 				v1alpha2.ConditionSubscribed,
 				v1alpha2.ConditionSubscriptionActive,
@@ -51,12 +51,12 @@ func Test_InitializeSubscriptionConditions(t *testing.T) {
 			}
 
 			// when
-			s.InitializeConditions()
+			subStatus.InitializeConditions()
 
 			// then
-			g.Expect(s.Conditions).To(HaveLen(len(wantConditionTypes)))
+			g.Expect(subStatus.Conditions).To(HaveLen(len(wantConditionTypes)))
 			foundConditionTypes := make([]v1alpha2.ConditionType, 0)
-			for _, condition := range s.Conditions {
+			for _, condition := range subStatus.Conditions {
 				g.Expect(condition.Status).To(BeEquivalentTo(kcorev1.ConditionUnknown))
 				foundConditionTypes = append(foundConditionTypes, condition.Type)
 			}
@@ -533,19 +533,19 @@ func Test_SetConditionSubscriptionActive(t *testing.T) {
 			wantLastTransitionTime: &conditionNotReady.LastTransitionTime,
 		},
 	}
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			sub.Status.Conditions = tc.givenConditions
+			sub.Status.Conditions = testcase.givenConditions
 
 			// when
-			conditions := v1alpha2.GetSubscriptionActiveCondition(sub, tc.givenError)
+			conditions := v1alpha2.GetSubscriptionActiveCondition(sub, testcase.givenError)
 
 			// then
-			require.True(t, v1alpha2.ConditionsEquals(conditions, tc.wantConditions))
-			if tc.wantLastTransitionTime != nil {
-				require.Equal(t, *tc.wantLastTransitionTime, conditions[0].LastTransitionTime)
+			require.True(t, v1alpha2.ConditionsEquals(conditions, testcase.wantConditions))
+			if testcase.wantLastTransitionTime != nil {
+				require.Equal(t, *testcase.wantLastTransitionTime, conditions[0].LastTransitionTime)
 			}
 		})
 	}

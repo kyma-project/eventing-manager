@@ -24,7 +24,7 @@ const (
 	projectRootDir = "../../../../../../"
 )
 
-var testEnvironment *testutilsintegration.TestEnvironment //nolint:gochecknoglobals // used in tests
+var testEnvironment *testutilsintegration.TestEnvironment
 
 // TestMain pre-hook and post-hook to run before and after all tests.
 func TestMain(m *testing.M) {
@@ -57,6 +57,7 @@ func TestMain(m *testing.M) {
 }
 
 func Test_Switching(t *testing.T) {
+	t.Parallel()
 	// given - common for all test cases.
 	setEventMeshSecretConfig := func(eventingCR *operatorv1alpha1.Eventing, name, namespace string) {
 		eventingCR.Spec.Backend.Config.EventMeshSecret = fmt.Sprintf("%s/%s", namespace, name)
@@ -139,59 +140,59 @@ func Test_Switching(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			g := gomega.NewWithT(t)
+			gomega := gomega.NewWithT(t)
 
 			// given
 			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 			// create unique namespace for this test run.
-			givenNamespace := tc.givenEventing.Namespace
+			givenNamespace := testcase.givenEventing.Namespace
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
 			// create NATS CR.
-			tc.givenNATS.SetNamespace(givenNamespace)
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenNATS)
-			testEnvironment.EnsureNATSResourceStateReady(t, tc.givenNATS)
+			testcase.givenNATS.SetNamespace(givenNamespace)
+			testEnvironment.EnsureK8sResourceCreated(t, testcase.givenNATS)
+			testEnvironment.EnsureNATSResourceStateReady(t, testcase.givenNATS)
 
 			// sync object meta for both Eventing CRs.
-			tc.givenSwitchedEventing.ObjectMeta = tc.givenEventing.ObjectMeta
-			setEventMeshSecretConfig(tc.givenEventing, tc.givenEventMeshSecretName, givenNamespace)
-			setEventMeshSecretConfig(tc.givenSwitchedEventing, tc.givenEventMeshSecretName, givenNamespace)
+			testcase.givenSwitchedEventing.ObjectMeta = testcase.givenEventing.ObjectMeta
+			setEventMeshSecretConfig(testcase.givenEventing, testcase.givenEventMeshSecretName, givenNamespace)
+			setEventMeshSecretConfig(testcase.givenSwitchedEventing, testcase.givenEventMeshSecretName, givenNamespace)
 
 			// create eventing-webhook-auth secret.
-			testEnvironment.EnsureOAuthSecretCreated(t, tc.givenEventing)
+			testEnvironment.EnsureOAuthSecretCreated(t, testcase.givenEventing)
 			// create EventMesh secret.
-			if tc.givenEventing.Spec.Backend.Type == operatorv1alpha1.EventMeshBackendType {
-				testEnvironment.EnsureEventMeshSecretCreated(t, tc.givenEventing)
-			} else if tc.givenSwitchedEventing.Spec.Backend.Type == operatorv1alpha1.EventMeshBackendType {
-				testEnvironment.EnsureEventMeshSecretCreated(t, tc.givenSwitchedEventing)
+			if testcase.givenEventing.Spec.Backend.Type == operatorv1alpha1.EventMeshBackendType {
+				testEnvironment.EnsureEventMeshSecretCreated(t, testcase.givenEventing)
+			} else if testcase.givenSwitchedEventing.Spec.Backend.Type == operatorv1alpha1.EventMeshBackendType {
+				testEnvironment.EnsureEventMeshSecretCreated(t, testcase.givenSwitchedEventing)
 			}
 
 			// create Eventing CR.
-			testEnvironment.EnsureK8sResourceCreated(t, tc.givenEventing)
+			testEnvironment.EnsureK8sResourceCreated(t, testcase.givenEventing)
 
 			// ********* before switching checks ********.
-			testEnvironment.GetEventingAssert(g, tc.givenEventing).Should(tc.wantPreSwitchMatches)
-			ensureEPPDeploymentAndHPAResources(t, tc.givenEventing, testEnvironment)
-			ensureK8sResources(t, tc.givenEventing, testEnvironment)
+			testEnvironment.GetEventingAssert(gomega, testcase.givenEventing).Should(testcase.wantPreSwitchMatches)
+			ensureEPPDeploymentAndHPAResources(t, testcase.givenEventing, testEnvironment)
+			ensureK8sResources(t, testcase.givenEventing, testEnvironment)
 
 			// get Eventing CR from cluster.
-			gotEventing, err := testEnvironment.GetEventingFromK8s(tc.givenEventing.Name, givenNamespace)
+			gotEventing, err := testEnvironment.GetEventingFromK8s(testcase.givenEventing.Name, givenNamespace)
 			require.NoError(t, err)
 
 			// when: switch backend.
-			tc.givenSwitchedEventing.ObjectMeta = gotEventing.ObjectMeta
-			testEnvironment.EnsureK8sResourceUpdated(t, tc.givenSwitchedEventing)
+			testcase.givenSwitchedEventing.ObjectMeta = gotEventing.ObjectMeta
+			testEnvironment.EnsureK8sResourceUpdated(t, testcase.givenSwitchedEventing)
 
 			// then
 			// ********* after switching checks ********.
-			testEnvironment.GetEventingAssert(g, tc.givenSwitchedEventing).Should(tc.wantPostSwitchMatches)
-			ensureEPPDeploymentAndHPAResources(t, tc.givenSwitchedEventing, testEnvironment)
-			ensureK8sResources(t, tc.givenSwitchedEventing, testEnvironment)
+			testEnvironment.GetEventingAssert(gomega, testcase.givenSwitchedEventing).Should(testcase.wantPostSwitchMatches)
+			ensureEPPDeploymentAndHPAResources(t, testcase.givenSwitchedEventing, testEnvironment)
+			ensureK8sResources(t, testcase.givenSwitchedEventing, testEnvironment)
 		})
 	}
 }

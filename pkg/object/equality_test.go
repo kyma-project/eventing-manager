@@ -1,3 +1,4 @@
+//nolint:dupl // these comparison functions all look very similar
 package object
 
 import (
@@ -184,6 +185,7 @@ func TestApiRuleEqual(t *testing.T) {
 }
 
 func Test_isSubscriptionStatusEqual(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name                string
 		subscriptionStatus1 eventingv1alpha2.SubscriptionStatus
@@ -246,11 +248,11 @@ func Test_isSubscriptionStatusEqual(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			gotEqualStatus := IsSubscriptionStatusEqual(tc.subscriptionStatus1, tc.subscriptionStatus2)
-			require.Equal(t, tc.wantEqualStatus, gotEqualStatus)
+			gotEqualStatus := IsSubscriptionStatusEqual(testcase.subscriptionStatus1, testcase.subscriptionStatus2)
+			require.Equal(t, testcase.wantEqualStatus, gotEqualStatus)
 		})
 	}
 }
@@ -440,7 +442,7 @@ func Test_ownerReferencesDeepEqual(t *testing.T) {
 		}
 	}
 
-	tests := []struct {
+	testCases := []struct {
 		name                  string
 		givenOwnerReferences1 []kmetav1.OwnerReference
 		givenOwnerReferences2 []kmetav1.OwnerReference
@@ -548,10 +550,10 @@ func Test_ownerReferencesDeepEqual(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.wantEqual, ownerReferencesDeepEqual(tc.givenOwnerReferences1, tc.givenOwnerReferences2))
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			require.Equal(t, testcase.wantEqual, ownerReferencesDeepEqual(testcase.givenOwnerReferences1, testcase.givenOwnerReferences2))
 		})
 	}
 }

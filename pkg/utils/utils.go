@@ -20,22 +20,22 @@ const randStringlength = 10
 var ErrParseSink = errors.Errorf("failed to parse subscription sink URL")
 
 // GetPortNumberFromURL converts string port from url.URL to uint32 port.
-func GetPortNumberFromURL(u url.URL) (uint32, error) {
+func GetPortNumberFromURL(urlWithPort url.URL) (uint32, error) {
 	const (
 		httpPort  = 80
 		httpsPort = 443
 	)
 	port := uint32(0)
-	sinkPort := u.Port()
+	sinkPort := urlWithPort.Port()
 	if sinkPort != "" {
 		u64, err := strconv.ParseUint(sinkPort, 10, 32)
 		if err != nil {
-			return port, errors.Wrapf(err, "convert port failed %s", u.Port())
+			return port, errors.Wrapf(err, "convert port failed %s", urlWithPort.Port())
 		}
 		port = uint32(u64)
 	}
 	if port == uint32(0) {
-		switch strings.ToLower(u.Scheme) {
+		switch strings.ToLower(urlWithPort.Scheme) {
 		case "https":
 			port = uint32(httpsPort)
 		default:
@@ -87,13 +87,13 @@ func ProcMountTypePtr(p kcorev1.ProcMountType) *kcorev1.ProcMountType {
 }
 
 // for Random string generation.
-const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec,gochecknoglobals
 
 // GetRandString returns a random string of the given length.
 func GetRandString(length int) string {
-	b := make([]byte, length)
+	charset := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	b := make([]rune, length)
 	for i := range b {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}

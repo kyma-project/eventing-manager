@@ -76,20 +76,20 @@ func Test_Reconcile(t *testing.T) {
 			name:              "Return nil and default Result{} when there is no error from the reconciler dependencies",
 			givenSubscription: testSub,
 			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
-				te := setupTestEnvironment(t, testSub)
-				te.Backend.On("SyncSubscription", mock.Anything).Return(nil)
-				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
+				testenv := setupTestEnvironment(t, testSub)
+				testenv.Backend.On("SyncSubscription", mock.Anything).Return(nil)
+				testenv.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
 					[]string{eventingtesting.JetStreamSubject})
-				te.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
+				testenv.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
 				return NewReconciler(
-						te.Client,
-						te.Backend,
-						te.Logger,
-						te.Recorder,
-						te.Cleaner,
+						testenv.Client,
+						testenv.Backend,
+						testenv.Logger,
+						testenv.Recorder,
+						testenv.Cleaner,
 						happyValidator,
 						collector),
-					te.Backend
+					testenv.Backend
 			},
 			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
@@ -98,16 +98,16 @@ func Test_Reconcile(t *testing.T) {
 			name:              "Return nil and default Result{} when the subscription does not exist on the cluster",
 			givenSubscription: testSub,
 			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
-				te := setupTestEnvironment(t)
+				testenv := setupTestEnvironment(t)
 				return NewReconciler(
-						te.Client,
-						te.Backend,
-						te.Logger,
-						te.Recorder,
-						te.Cleaner,
+						testenv.Client,
+						testenv.Backend,
+						testenv.Logger,
+						testenv.Recorder,
+						testenv.Cleaner,
 						happyValidator,
 						collector),
-					te.Backend
+					testenv.Backend
 			},
 			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
@@ -116,16 +116,16 @@ func Test_Reconcile(t *testing.T) {
 			name:              "Return nil and default Result{} when the subscription has no finalizer",
 			givenSubscription: eventingtesting.NewSubscription(subscriptionName, namespaceName),
 			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
-				te := setupTestEnvironment(t, eventingtesting.NewSubscription(subscriptionName, namespaceName))
+				testenv := setupTestEnvironment(t, eventingtesting.NewSubscription(subscriptionName, namespaceName))
 				return NewReconciler(
-						te.Client,
-						te.Backend,
-						te.Logger,
-						te.Recorder,
-						te.Cleaner,
+						testenv.Client,
+						testenv.Backend,
+						testenv.Logger,
+						testenv.Recorder,
+						testenv.Cleaner,
 						happyValidator,
 						collector),
-					te.Backend
+					testenv.Backend
 			},
 			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  nil,
@@ -134,20 +134,20 @@ func Test_Reconcile(t *testing.T) {
 			name:              "Return error and default Result{} when backend sync returns error",
 			givenSubscription: testSub,
 			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
-				te := setupTestEnvironment(t, testSub)
-				te.Backend.On("SyncSubscription", mock.Anything).Return(backendSyncErr)
-				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
+				testenv := setupTestEnvironment(t, testSub)
+				testenv.Backend.On("SyncSubscription", mock.Anything).Return(backendSyncErr)
+				testenv.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
 					[]string{eventingtesting.JetStreamSubject})
-				te.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
+				testenv.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
 				return NewReconciler(
-						te.Client,
-						te.Backend,
-						te.Logger,
-						te.Recorder,
-						te.Cleaner,
+						testenv.Client,
+						testenv.Backend,
+						testenv.Logger,
+						testenv.Recorder,
+						testenv.Cleaner,
 						happyValidator,
 						collector),
-					te.Backend
+					testenv.Backend
 			},
 			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  backendSyncErr,
@@ -157,20 +157,20 @@ func Test_Reconcile(t *testing.T) {
 				"backend sync returns missingSubscriptionErr",
 			givenSubscription: testSub,
 			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
-				te := setupTestEnvironment(t, testSub)
-				te.Backend.On("SyncSubscription", mock.Anything).Return(missingSubSyncErr)
-				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
+				testenv := setupTestEnvironment(t, testSub)
+				testenv.Backend.On("SyncSubscription", mock.Anything).Return(missingSubSyncErr)
+				testenv.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
 					[]string{eventingtesting.JetStreamSubject})
-				te.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
+				testenv.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
 				return NewReconciler(
-						te.Client,
-						te.Backend,
-						te.Logger,
-						te.Recorder,
-						te.Cleaner,
+						testenv.Client,
+						testenv.Backend,
+						testenv.Logger,
+						testenv.Recorder,
+						testenv.Cleaner,
 						happyValidator,
 						collector),
-					te.Backend
+					testenv.Backend
 			},
 			wantReconcileResult: kctrl.Result{RequeueAfter: requeueDuration},
 			wantReconcileError:  nil,
@@ -179,17 +179,17 @@ func Test_Reconcile(t *testing.T) {
 			name:              "Return error and default Result{} when backend delete returns error",
 			givenSubscription: testSubUnderDeletion,
 			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
-				te := setupTestEnvironment(t, testSubUnderDeletion)
-				te.Backend.On("DeleteSubscription", mock.Anything).Return(backendDeleteErr)
+				testenv := setupTestEnvironment(t, testSubUnderDeletion)
+				testenv.Backend.On("DeleteSubscription", mock.Anything).Return(backendDeleteErr)
 				return NewReconciler(
-						te.Client,
-						te.Backend,
-						te.Logger,
-						te.Recorder,
-						te.Cleaner,
+						testenv.Client,
+						testenv.Backend,
+						testenv.Logger,
+						testenv.Recorder,
+						testenv.Cleaner,
 						happyValidator,
 						collector),
-					te.Backend
+					testenv.Backend
 			},
 			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  errFailedToDeleteSub,
@@ -198,42 +198,42 @@ func Test_Reconcile(t *testing.T) {
 			name:              "Return error and default Result{} when validator returns error",
 			givenSubscription: testSub,
 			givenReconcilerSetup: func() (*Reconciler, *backendjetstreammocks.Backend) {
-				te := setupTestEnvironment(t, testSub)
-				te.Backend.On("DeleteSubscriptionsOnly", mock.Anything).Return(nil)
-				te.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
+				testenv := setupTestEnvironment(t, testSub)
+				testenv.Backend.On("DeleteSubscriptionsOnly", mock.Anything).Return(nil)
+				testenv.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return(
 					[]string{eventingtesting.JetStreamSubject})
-				te.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
+				testenv.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
 				return NewReconciler(
-						te.Client,
-						te.Backend,
-						te.Logger,
-						te.Recorder,
-						te.Cleaner,
+						testenv.Client,
+						testenv.Backend,
+						testenv.Logger,
+						testenv.Recorder,
+						testenv.Cleaner,
 						unhappyValidator,
 						collector),
-					te.Backend
+					testenv.Backend
 			},
 			wantReconcileResult: kctrl.Result{},
 			wantReconcileError:  validatorErr,
 		},
 	}
 
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			reconciler, mockedBackend := tc.givenReconcilerSetup()
-			r := kctrl.Request{NamespacedName: types.NamespacedName{
-				Namespace: tc.givenSubscription.Namespace,
-				Name:      tc.givenSubscription.Name,
+			reconciler, mockedBackend := testcase.givenReconcilerSetup()
+			request := kctrl.Request{NamespacedName: types.NamespacedName{
+				Namespace: testcase.givenSubscription.Namespace,
+				Name:      testcase.givenSubscription.Name,
 			}}
 
 			// when
-			res, err := reconciler.Reconcile(context.Background(), r)
+			res, err := reconciler.Reconcile(context.Background(), request)
 
 			// then
-			req.Equal(tc.wantReconcileResult, res)
-			req.ErrorIs(err, tc.wantReconcileError)
+			req.Equal(testcase.wantReconcileResult, res)
+			req.ErrorIs(err, testcase.wantReconcileError)
 			mockedBackend.AssertExpectations(t)
 		})
 	}
@@ -287,7 +287,7 @@ func Test_handleSubscriptionDeletion(t *testing.T) {
 			)
 
 			testEnvironment := setupTestEnvironment(t, sub)
-			ctx, r, mockedBackend := context.Background(), testEnvironment.Reconciler, testEnvironment.Backend
+			ctx, reconciler, mockedBackend := context.Background(), testEnvironment.Reconciler, testEnvironment.Backend
 
 			if testCase.wantDeleteCall {
 				if errors.Is(testCase.wantError, errFailedToDeleteSub) {
@@ -298,7 +298,7 @@ func Test_handleSubscriptionDeletion(t *testing.T) {
 			}
 
 			// when
-			_, err := r.handleSubscriptionDeletion(ctx, sub, r.namedLogger())
+			_, err := reconciler.handleSubscriptionDeletion(ctx, sub, reconciler.namedLogger())
 			require.ErrorIs(t, err, testCase.wantError)
 
 			// then
@@ -307,15 +307,15 @@ func Test_handleSubscriptionDeletion(t *testing.T) {
 			ensureFinalizerMatch(t, sub, testCase.wantFinalizers)
 
 			// check the changes were made on the kubernetes server
-			fetchedSub, err := fetchTestSubscription(ctx, r)
+			fetchedSub, err := fetchTestSubscription(ctx, reconciler)
 			require.NoError(t, err)
 			ensureFinalizerMatch(t, &fetchedSub, testCase.wantFinalizers)
 
 			// clean up finalizers first before deleting sub
 			fetchedSub.ObjectMeta.Finalizers = nil
-			err = r.Client.Update(ctx, &fetchedSub)
+			err = reconciler.Client.Update(ctx, &fetchedSub)
 			require.NoError(t, err)
-			err = r.Client.Delete(ctx, &fetchedSub)
+			err = reconciler.Client.Delete(ctx, &fetchedSub)
 			require.NoError(t, err)
 		})
 	}
@@ -328,7 +328,7 @@ func Test_addFinalizer(t *testing.T) {
 	var emptyFinalizer []string
 	sub := eventingtesting.NewSubscription(subscriptionName, namespaceName)
 	testEnvironment := setupTestEnvironment(t, sub)
-	r := testEnvironment.Reconciler
+	reconciler := testEnvironment.Reconciler
 	fakeSub := eventingtesting.NewSubscription("fake", namespaceName)
 
 	testCases := []struct {
@@ -352,23 +352,23 @@ func Test_addFinalizer(t *testing.T) {
 		},
 	}
 
-	for _, tC := range testCases {
-		testCase := tC
-		t.Run(testCase.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// in case syncSubscriptionStatus throws an error
-			if tC.wantErrorMessage != "" {
-				_, err := r.addFinalizer(ctx, fakeSub)
-				require.ErrorContains(t, err, tC.wantErrorMessage)
+			if testcase.wantErrorMessage != "" {
+				_, err := reconciler.addFinalizer(ctx, fakeSub)
+				require.ErrorContains(t, err, testcase.wantErrorMessage)
 				return
 			}
-			sub.Finalizers = tC.givenFinalizers
-			_, err := r.addFinalizer(ctx, sub)
+			sub.Finalizers = testcase.givenFinalizers
+			_, err := reconciler.addFinalizer(ctx, sub)
 			require.NoError(t, err)
 
-			fetchedSub, err := fetchTestSubscription(context.Background(), r)
+			fetchedSub, err := fetchTestSubscription(context.Background(), reconciler)
 			require.NoError(t, err)
 
-			if tC.wantErrorMessage != "" {
+			if testcase.wantErrorMessage != "" {
 				ensureFinalizerMatch(t, &fetchedSub, emptyFinalizer)
 			} else {
 				ensureFinalizerMatch(t, &fetchedSub, eventingFinalizer)
@@ -451,22 +451,22 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 			sub := testCase.givenSub
 
 			testEnvironment := setupTestEnvironment(t, sub)
-			ctx, r := context.Background(), testEnvironment.Reconciler
+			ctx, reconciler := context.Background(), testEnvironment.Reconciler
 
 			// when
-			err := r.syncSubscriptionStatus(ctx, sub, testCase.givenError, r.namedLogger())
+			err := reconciler.syncSubscriptionStatus(ctx, sub, testCase.givenError, reconciler.namedLogger())
 			require.NoError(t, err)
 
 			// then
 			ensureSubscriptionMatchesConditionsAndStatus(t, *sub, testCase.wantConditions, testCase.wantStatus)
 
 			// fetch the sub also from k8s server in order to check whether changes were done both in-memory and on k8s server
-			fetchedSub, err := fetchTestSubscription(ctx, r)
+			fetchedSub, err := fetchTestSubscription(ctx, reconciler)
 			require.NoError(t, err)
 			ensureSubscriptionMatchesConditionsAndStatus(t, fetchedSub, testCase.wantConditions, testCase.wantStatus)
 
 			// clean up
-			err = r.Client.Delete(ctx, sub)
+			err = reconciler.Client.Delete(ctx, sub)
 			require.NoError(t, err)
 		})
 	}
@@ -474,7 +474,7 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 
 func Test_syncEventTypes(t *testing.T) {
 	testEnvironment := setupTestEnvironment(t)
-	r := testEnvironment.Reconciler
+	reconciler := testEnvironment.Reconciler
 
 	jsSubjects := []string{eventingtesting.JetStreamSubjectV2}
 	eventTypes := []eventingv1alpha2.EventType{
@@ -559,7 +559,7 @@ func Test_syncEventTypes(t *testing.T) {
 			sub := testCase.givenSub
 
 			// when
-			require.NoError(t, r.syncEventTypes(sub))
+			require.NoError(t, reconciler.syncEventTypes(sub))
 
 			// then
 			require.Equal(t, testCase.wantSubStatus.Types, sub.Status.Types)
@@ -574,7 +574,7 @@ func Test_updateStatus(t *testing.T) {
 
 	ctx := context.Background()
 	testEnvironment := setupTestEnvironment(t, sub)
-	r := testEnvironment.Reconciler
+	reconciler := testEnvironment.Reconciler
 
 	testCases := []struct {
 		name       string
@@ -604,36 +604,36 @@ func Test_updateStatus(t *testing.T) {
 		},
 	}
 
-	for _, tC := range testCases {
-		testCase := tC
-		t.Run(testCase.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			resourceVersionBefore := sub.ResourceVersion
-			sub.Status = tC.oldStatus
+			sub.Status = testcase.oldStatus
 			newSub := sub.DeepCopy()
-			newSub.Status = tC.newStatus
+			newSub.Status = testcase.newStatus
 
 			// simulate the update error
-			if tC.wantError != nil {
-				require.NoError(t, r.Client.Delete(ctx, sub))
+			if testcase.wantError != nil {
+				require.NoError(t, reconciler.Client.Delete(ctx, sub))
 			}
 
 			// when
-			updateStatusErr := r.updateStatus(ctx, sub, newSub, r.namedLogger())
+			updateStatusErr := reconciler.updateStatus(ctx, sub, newSub, reconciler.namedLogger())
 
 			// then
 			// in case the function should fail
-			if tC.wantError != nil {
-				require.ErrorIs(t, updateStatusErr, tC.wantError)
+			if testcase.wantError != nil {
+				require.ErrorIs(t, updateStatusErr, testcase.wantError)
 				return
 			}
 
 			// then
 			require.NoError(t, updateStatusErr)
-			fetchedSub, err := fetchTestSubscription(context.Background(), r)
+			fetchedSub, err := fetchTestSubscription(context.Background(), reconciler)
 			require.NoError(t, err)
 
-			require.Equal(t, tC.wantChange, fetchedSub.ResourceVersion != resourceVersionBefore)
+			require.Equal(t, testcase.wantChange, fetchedSub.ResourceVersion != resourceVersionBefore)
 			require.Equal(t, newSub.Status.Ready, fetchedSub.Status.Ready)
 			require.Equal(t, newSub.Status.Conditions, fetchedSub.Status.Conditions)
 		})
@@ -680,39 +680,39 @@ func Test_updateSubscription(t *testing.T) {
 		},
 	}
 
-	for _, tC := range testCases {
-		testCase := tC
-		t.Run(testCase.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			testEnvironment := setupTestEnvironment(t)
-			if tC.wantErrorMessage == "" {
+			if testcase.wantErrorMessage == "" {
 				sub.ResourceVersion = ""
 				testEnvironment = setupTestEnvironment(t, sub)
 			}
-			r := testEnvironment.Reconciler
+			reconciler := testEnvironment.Reconciler
 
 			resourceVersionBefore := sub.ResourceVersion
 
 			// when
-			err := r.updateSubscriptionStatus(ctx, tC.desiredSub, r.namedLogger())
+			err := reconciler.updateSubscriptionStatus(ctx, testcase.desiredSub, reconciler.namedLogger())
 
 			// then
 			// in case the subscription doesn't exist
-			if tC.wantErrorMessage != "" {
-				require.ErrorContains(t, err, testCase.wantErrorMessage)
+			if testcase.wantErrorMessage != "" {
+				require.ErrorContains(t, err, testcase.wantErrorMessage)
 				return
 			}
 
 			// then
-			fetchedSub, err := fetchTestSubscription(context.Background(), r)
+			fetchedSub, err := fetchTestSubscription(context.Background(), reconciler)
 			require.NoError(t, err)
 
-			require.Equal(t, tC.wantChange, fetchedSub.ResourceVersion != resourceVersionBefore)
-			ensureFinalizerMatch(t, &fetchedSub, testCase.desiredSub.Finalizers)
-			require.Equal(t, testCase.desiredSub.Status.Ready, fetchedSub.Status.Ready)
-			require.Equal(t, testCase.desiredSub.Status.Conditions, fetchedSub.Status.Conditions)
+			require.Equal(t, testcase.wantChange, fetchedSub.ResourceVersion != resourceVersionBefore)
+			ensureFinalizerMatch(t, &fetchedSub, testcase.desiredSub.Finalizers)
+			require.Equal(t, testcase.desiredSub.Status.Ready, fetchedSub.Status.Ready)
+			require.Equal(t, testcase.desiredSub.Status.Conditions, fetchedSub.Status.Conditions)
 
 			// clean up
-			require.NoError(t, r.Client.Delete(ctx, sub))
+			require.NoError(t, reconciler.Client.Delete(ctx, sub))
 		})
 	}
 }
@@ -743,7 +743,7 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *TestEnvironment 
 	jsCleaner := cleaner.NewJetStreamCleaner(defaultLogger)
 	defaultSinkValidator := sink.NewValidator(fakeClient, recorder)
 
-	r := Reconciler{
+	reconciler := Reconciler{
 		Backend:       mockedBackend,
 		Client:        fakeClient,
 		logger:        defaultLogger,
@@ -756,7 +756,7 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *TestEnvironment 
 	return &TestEnvironment{
 		Client:     fakeClient,
 		Backend:    mockedBackend,
-		Reconciler: &r,
+		Reconciler: &reconciler,
 		Logger:     defaultLogger,
 		Recorder:   recorder,
 		Cleaner:    jsCleaner,

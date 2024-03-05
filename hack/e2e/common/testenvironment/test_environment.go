@@ -109,7 +109,10 @@ func (te *TestEnvironment) InitEventPublisherClient() error {
 	maxConnsPerHost := 10
 	maxIdleConnsPerHost := 10
 	idleConnTimeout := 1 * time.Minute
-	t := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	t, err := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	if err != nil {
+		return err
+	}
 	clientHTTP := http.NewHTTPClient(t.Clone())
 	clientCE, err := http.NewCloudEventsClient(t.Clone())
 	if err != nil {
@@ -119,14 +122,18 @@ func (te *TestEnvironment) InitEventPublisherClient() error {
 	return nil
 }
 
-func (te *TestEnvironment) InitSinkClient() {
+func (te *TestEnvironment) InitSinkClient() error {
 	maxIdleConns := 10
 	maxConnsPerHost := 10
 	maxIdleConnsPerHost := 10
 	idleConnTimeout := 1 * time.Minute
-	t := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	t, err := http.NewTransport(maxIdleConns, maxConnsPerHost, maxIdleConnsPerHost, idleConnTimeout)
+	if err != nil {
+		return err
+	}
 	clientHTTP := http.NewHTTPClient(t.Clone())
 	te.SinkClient = eventing.NewSinkClient(clientHTTP, te.TestConfigs.SinkPortForwardedURL, te.Logger)
+	return nil
 }
 
 func (te *TestEnvironment) CreateAllSubscriptions() error {
@@ -376,11 +383,11 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 
 func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string, subCRVersion fixtures.SubscriptionCRVersion) error {
 	// define the event
-	var id, legacyEventSource, legacyEventType, payload string
+	var evntID, legacyEventSource, legacyEventType, payload string
 	if subCRVersion == fixtures.V1Alpha1SubscriptionCRVersion {
-		id, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEventForV1Alpha1(eventType, te.TestConfigs.EventTypePrefix)
+		evntID, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEventForV1Alpha1(eventType, te.TestConfigs.EventTypePrefix)
 	} else {
-		id, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEvent(eventSource, eventType)
+		evntID, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEvent(eventSource, eventType)
 	}
 
 	// publish the event
@@ -390,8 +397,8 @@ func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType stri
 	}
 
 	// verify if the event was received by the sink.
-	te.Logger.Debug(fmt.Sprintf("Verifying if LegacyEvent (ID: %s) was received by the sink", id))
-	return te.VerifyLegacyEventReceivedBySink(id, eventType, eventSource, payload)
+	te.Logger.Debug(fmt.Sprintf("Verifying if LegacyEvent (ID: %s) was received by the sink", evntID))
+	return te.VerifyLegacyEventReceivedBySink(evntID, eventType, eventSource, payload)
 }
 
 func (te *TestEnvironment) TestDeliveryOfCloudEvent(eventSource, eventType string, encoding binding.Encoding) error {
@@ -412,7 +419,7 @@ func (te *TestEnvironment) TestDeliveryOfCloudEvent(eventSource, eventType strin
 	return te.VerifyCloudEventReceivedBySink(*ceEvent)
 }
 
-func (te *TestEnvironment) VerifyLegacyEventReceivedBySink(id, eventType, eventSource, payload string) error {
+func (te *TestEnvironment) VerifyLegacyEventReceivedBySink(evntID, eventType, eventSource, payload string) error {
 	// publisher-proxy converts LegacyEvent to CloudEvent, so the sink should have received a CloudEvent.
 	// extract data from payload of legacy event.
 	result := make(map[string]interface{})
@@ -423,7 +430,7 @@ func (te *TestEnvironment) VerifyLegacyEventReceivedBySink(id, eventType, eventS
 
 	// define the expected CloudEvent.
 	expectedCEEvent := cloudevents.NewEvent()
-	expectedCEEvent.SetID(id)
+	expectedCEEvent.SetID(evntID)
 	expectedCEEvent.SetType(eventType)
 	expectedCEEvent.SetSource(eventSource)
 	if err := expectedCEEvent.SetData(cloudevents.ApplicationJSON, data); err != nil {

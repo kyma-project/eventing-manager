@@ -94,24 +94,25 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 
 	ctx := context.Background()
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			if tc.givenDeployment != nil {
-				tc.givenDeployment.Namespace = tc.givenEventing.Namespace
+			if testcase.givenDeployment != nil {
+				testcase.givenDeployment.Namespace = testcase.givenEventing.Namespace
 			}
 			// define mocks.
 			kubeClient := new(k8smocks.Client)
-			kubeClient.On("GetDeployment", ctx, mock.Anything, mock.Anything).Return(tc.givenDeployment, nil)
+			kubeClient.On("GetDeployment", ctx, mock.Anything, mock.Anything).Return(testcase.givenDeployment, nil)
 			kubeClient.On("UpdateDeployment", ctx, mock.Anything).Return(nil)
 			kubeClient.On("Create", ctx, mock.Anything).Return(nil)
-			kubeClient.On("PatchApply", ctx, mock.Anything).Return(tc.patchApplyErr)
+			kubeClient.On("PatchApply", ctx, mock.Anything).Return(testcase.patchApplyErr)
 
 			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
 
 			logger, err := test.NewEventingLogger()
 			require.NoError(t, err)
 
-			em := &EventingManager{
+			mgr := &EventingManager{
 				Client:        mockClient,
 				kubeClient:    kubeClient,
 				backendConfig: env.BackendConfig{},
@@ -119,13 +120,13 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 			}
 
 			// when
-			deployment, err := em.applyPublisherProxyDeployment(ctx, tc.givenEventing, &env.NATSConfig{}, tc.givenBackendType)
+			deployment, err := mgr.applyPublisherProxyDeployment(ctx, testcase.givenEventing, &env.NATSConfig{}, testcase.givenBackendType)
 
 			// then
-			require.ErrorIs(t, err, tc.wantErr)
-			if tc.wantedDeployment != nil {
+			require.ErrorIs(t, err, testcase.wantErr)
+			if testcase.wantedDeployment != nil {
 				require.NotNil(t, deployment)
-				require.Equal(t, tc.wantedDeployment.Spec.Template.ObjectMeta.Annotations,
+				require.Equal(t, testcase.wantedDeployment.Spec.Template.ObjectMeta.Annotations,
 					deployment.Spec.Template.ObjectMeta.Annotations)
 			}
 		})
@@ -203,31 +204,32 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 
 	ctx := context.Background()
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			tc.givenEventing.Name = "eventing-manager"
-			existingPublisher := tc.givenCurrentDeploymentFunc()
-			existingPublisher.Namespace = tc.givenEventing.Namespace
+			testcase.givenEventing.Name = "eventing-manager"
+			existingPublisher := testcase.givenCurrentDeploymentFunc()
+			existingPublisher.Namespace = testcase.givenEventing.Namespace
 			desiredPublisher := testutils.NewDeployment(existingPublisher.Name,
-				tc.givenEventing.Namespace, map[string]string{})
+				testcase.givenEventing.Namespace, map[string]string{})
 
 			// define mocks.
 			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
-			kubeClientMock := tc.givenKubeClientFunc()
+			kubeClientMock := testcase.givenKubeClientFunc()
 
 			// define logger.
 			logger, err := test.NewEventingLogger()
 			require.NoError(t, err)
 
 			// create eventing manager instance.
-			em := &EventingManager{
+			mgr := &EventingManager{
 				Client:     mockClient,
 				kubeClient: kubeClientMock,
 				logger:     logger,
 			}
 
 			// when
-			err = em.migratePublisherDeploymentFromEC(ctx, tc.givenEventing, *existingPublisher, *desiredPublisher)
+			err = mgr.migratePublisherDeploymentFromEC(ctx, testcase.givenEventing, *existingPublisher, *desiredPublisher)
 
 			// then
 			require.NoError(t, err)
@@ -294,13 +296,14 @@ func Test_IsNATSAvailable(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			ctx := context.Background()
 			kubeClient := new(k8smocks.Client)
-			kubeClient.On("GetNATSResources", ctx, tc.givenNamespace).Return(&natsv1alpha1.NATSList{
-				Items: tc.givenNATSResources,
-			}, tc.wantErr)
+			kubeClient.On("GetNATSResources", ctx, testcase.givenNamespace).Return(&natsv1alpha1.NATSList{
+				Items: testcase.givenNATSResources,
+			}, testcase.wantErr)
 
 			// when
 			em := EventingManager{
@@ -308,9 +311,9 @@ func Test_IsNATSAvailable(t *testing.T) {
 			}
 
 			// then
-			available, err := em.IsNATSAvailable(ctx, tc.givenNamespace)
-			require.Equal(t, tc.wantAvailable, available)
-			require.Equal(t, tc.wantErr, err)
+			available, err := em.IsNATSAvailable(ctx, testcase.givenNamespace)
+			require.Equal(t, testcase.wantAvailable, available)
+			require.Equal(t, testcase.wantErr, err)
 		})
 	}
 }
@@ -345,12 +348,13 @@ func Test_ConvertECBackendType(t *testing.T) {
 
 	// Iterate over the test cases and run sub-tests
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			result, err := convertECBackendType(tc.backendType)
+			result, err := convertECBackendType(testcase.backendType)
 			// then
-			require.ErrorIs(t, err, tc.expectedError)
-			require.Equal(t, tc.expectedResult, result)
+			require.ErrorIs(t, err, testcase.expectedError)
+			require.Equal(t, testcase.expectedResult, result)
 		})
 	}
 }
@@ -396,8 +400,8 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 
 	// Iterate over the test cases.
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
@@ -406,66 +410,67 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 
 			var createdObjects []client.Object
 			// define mocks behaviours.
-			if tc.wantError {
+			if testcase.wantError {
 				kubeClient.On("PatchApply", ctx, mock.Anything).Return(ErrUseMeWithMocks)
 			} else {
 				kubeClient.On("PatchApply", ctx, mock.Anything).Run(func(args mock.Arguments) {
-					obj := args.Get(1).(client.Object)
+					obj, ok := args.Get(1).(client.Object)
+					require.True(t, ok)
 					createdObjects = append(createdObjects, obj)
 				}).Return(nil)
 			}
 
-			em := EventingManager{
+			mgr := EventingManager{
 				Client:     mockClient,
 				kubeClient: kubeClient,
 			}
 
 			// when
-			err := em.DeployPublisherProxyResources(ctx, tc.givenEventing, tc.givenEPPDeployment)
+			err := mgr.DeployPublisherProxyResources(ctx, testcase.givenEventing, testcase.givenEPPDeployment)
 
 			// then
-			if tc.wantError {
+			if testcase.wantError {
 				require.Error(t, err)
 				return
 			}
 
 			require.NoError(t, err)
-			require.Len(t, createdObjects, tc.wantCreatedResourcesCount)
+			require.Len(t, createdObjects, testcase.wantCreatedResourcesCount)
 
 			// check ServiceAccount.
 			sa, err := testutils.FindObjectByKind("ServiceAccount", createdObjects)
 			require.NoError(t, err)
-			require.True(t, testutils.HasOwnerReference(sa, *tc.givenEventing))
+			require.True(t, testutils.HasOwnerReference(sa, *testcase.givenEventing))
 
 			// check ClusterRole.
 			cr, err := testutils.FindObjectByKind("ClusterRole", createdObjects)
 			require.NoError(t, err)
-			require.True(t, testutils.HasOwnerReference(cr, *tc.givenEventing))
+			require.True(t, testutils.HasOwnerReference(cr, *testcase.givenEventing))
 
 			// check ClusterRoleBinding.
 			crb, err := testutils.FindObjectByKind("ClusterRoleBinding", createdObjects)
 			require.NoError(t, err)
-			require.True(t, testutils.HasOwnerReference(crb, *tc.givenEventing))
+			require.True(t, testutils.HasOwnerReference(crb, *testcase.givenEventing))
 
 			// check Publish Service.
-			pSvc, err := testutils.FindServiceFromK8sObjects(GetPublisherPublishServiceName(*tc.givenEventing), createdObjects)
+			pSvc, err := testutils.FindServiceFromK8sObjects(GetPublisherPublishServiceName(*testcase.givenEventing), createdObjects)
 			require.NoError(t, err)
-			require.True(t, testutils.HasOwnerReference(pSvc, *tc.givenEventing))
+			require.True(t, testutils.HasOwnerReference(pSvc, *testcase.givenEventing))
 
 			// check Metrics Service.
-			mSvc, err := testutils.FindServiceFromK8sObjects(GetPublisherMetricsServiceName(*tc.givenEventing), createdObjects)
+			mSvc, err := testutils.FindServiceFromK8sObjects(GetPublisherMetricsServiceName(*testcase.givenEventing), createdObjects)
 			require.NoError(t, err)
-			require.True(t, testutils.HasOwnerReference(mSvc, *tc.givenEventing))
+			require.True(t, testutils.HasOwnerReference(mSvc, *testcase.givenEventing))
 
 			// check Health Service.
-			hSvc, err := testutils.FindServiceFromK8sObjects(GetPublisherHealthServiceName(*tc.givenEventing), createdObjects)
+			hSvc, err := testutils.FindServiceFromK8sObjects(GetPublisherHealthServiceName(*testcase.givenEventing), createdObjects)
 			require.NoError(t, err)
-			require.True(t, testutils.HasOwnerReference(hSvc, *tc.givenEventing))
+			require.True(t, testutils.HasOwnerReference(hSvc, *testcase.givenEventing))
 
 			// check HPA.
 			hpa, err := testutils.FindObjectByKind("HorizontalPodAutoscaler", createdObjects)
 			require.NoError(t, err)
-			require.True(t, testutils.HasOwnerReference(hpa, *tc.givenEventing))
+			require.True(t, testutils.HasOwnerReference(hpa, *testcase.givenEventing))
 		})
 	}
 }
@@ -511,8 +516,8 @@ func Test_DeletePublisherProxyResources(t *testing.T) {
 
 	// Iterate over the test cases.
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 			ctx := context.Background()
@@ -520,23 +525,23 @@ func Test_DeletePublisherProxyResources(t *testing.T) {
 			kubeClient := new(k8smocks.Client)
 
 			// define mocks behaviours.
-			if tc.wantError {
+			if testcase.wantError {
 				kubeClient.On("DeleteResource", ctx, mock.Anything).Return(ErrUseMeWithMocks)
 			} else {
-				kubeClient.On("DeleteResource", ctx, mock.Anything).Return(nil).Times(tc.wantDeletedResourcesCount)
+				kubeClient.On("DeleteResource", ctx, mock.Anything).Return(nil).Times(testcase.wantDeletedResourcesCount)
 			}
 
 			// initialize EventingManager object.
-			em := EventingManager{
+			mgr := EventingManager{
 				Client:     mockClient,
 				kubeClient: kubeClient,
 			}
 
 			// when
-			err := em.DeletePublisherProxyResources(ctx, tc.givenEventing)
+			err := mgr.DeletePublisherProxyResources(ctx, testcase.givenEventing)
 
 			// then
-			if tc.wantError {
+			if testcase.wantError {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
@@ -592,11 +597,12 @@ func Test_SubscriptionExists(t *testing.T) {
 
 	// Iterate over test cases
 	for _, tc := range testCases {
+		testcase := tc
 		// Create a new instance of the mock client
 		kubeClient := new(k8smocks.Client)
 
 		// Set up the behavior of the mock client
-		kubeClient.On("GetSubscriptions", mock.Anything).Return(tc.givenSubscriptions, tc.wantError)
+		kubeClient.On("GetSubscriptions", mock.Anything).Return(testcase.givenSubscriptions, testcase.wantError)
 
 		// Create a new instance of the EventingManager with the mock client
 		em := &EventingManager{
@@ -607,7 +613,7 @@ func Test_SubscriptionExists(t *testing.T) {
 		result, err := em.SubscriptionExists(context.Background())
 
 		// Assert the result of the method
-		require.Equal(t, tc.wantResult, result, tc.name)
-		require.Equal(t, tc.wantError, err, tc.name)
+		require.Equal(t, testcase.wantResult, result, testcase.name)
+		require.Equal(t, testcase.wantError, err, testcase.name)
 	}
 }

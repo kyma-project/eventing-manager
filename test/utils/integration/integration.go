@@ -667,7 +667,7 @@ func (env TestEnvironment) EnsureNATSResourceState(t *testing.T, nats *natsv1alp
 	env.setNATSCRStatus(t, nats, status)
 	require.Eventually(t, func() bool {
 		err := env.k8sClient.Get(context.Background(), types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
-		return err == nil && nats.Status.State == string(status)
+		return err == nil && nats.Status.State == status
 	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
 }
 
@@ -1094,13 +1094,13 @@ func (env TestEnvironment) GetEventingFromK8s(name, namespace string) (*v1alpha1
 }
 
 func (env TestEnvironment) DeleteEventingFromK8s(name, namespace string) error {
-	cr := &v1alpha1.Eventing{
+	eventing := &v1alpha1.Eventing{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 	}
-	return env.k8sClient.Delete(context.Background(), cr)
+	return env.k8sClient.Delete(context.Background(), eventing)
 }
 
 func (env TestEnvironment) DeleteSecretFromK8s(name, namespace string) error {

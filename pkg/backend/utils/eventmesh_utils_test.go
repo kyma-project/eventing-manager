@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec // not used for cryptography, but just to create a checksum for lookups
 	"fmt"
 	"strings"
 	"testing"
@@ -19,6 +19,7 @@ import (
 )
 
 func TestConvertKymaSubToEventMeshSub(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultProtocolSettings := &ProtocolSettings{
 		ContentMode: func() *string {
@@ -126,25 +127,25 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 	}
 
 	// execute test cases
-	for _, test := range testCases {
-		tc := test
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			eventTypeInfos := getTypeInfos(tc.givenSubscription.Spec.Types)
+			eventTypeInfos := getTypeInfos(testcase.givenSubscription.Spec.Types)
 
 			// when
 			gotEventMeshSubscription, err := ConvertKymaSubToEventMeshSub(
-				tc.givenSubscription, eventTypeInfos, tc.givenAPIRuleFunc(tc.givenSubscription), defaultWebhookAuth,
+				testcase.givenSubscription, eventTypeInfos, testcase.givenAPIRuleFunc(testcase.givenSubscription), defaultWebhookAuth,
 				defaultProtocolSettings, defaultNamespace, defaultNameMapper,
 			)
 
 			// then
-			if tc.wantError {
+			if testcase.wantError {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, *tc.wantEventMeshSubscriptionFunc(tc.givenSubscription), *gotEventMeshSubscription)
+				require.Equal(t, *testcase.wantEventMeshSubscriptionFunc(testcase.givenSubscription), *gotEventMeshSubscription)
 			}
 		})
 	}
@@ -214,18 +215,18 @@ func Test_setEventMeshProtocolSettings(t *testing.T) {
 	}
 
 	// execute test cases
-	for _, test := range testCases {
-		tc := test
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			eventMeshSubscription := tc.givenEventMeshSubscription
+			eventMeshSubscription := testcase.givenEventMeshSubscription
 
 			// when
-			setEventMeshProtocolSettings(tc.givenSubscription, eventMeshSubscription)
+			setEventMeshProtocolSettings(testcase.givenSubscription, eventMeshSubscription)
 
 			// then
-			require.Equal(t, tc.wantEventMeshSubscription, eventMeshSubscription)
+			require.Equal(t, testcase.wantEventMeshSubscription, eventMeshSubscription)
 		})
 	}
 }
@@ -275,17 +276,17 @@ func Test_getEventMeshWebhookAuth(t *testing.T) {
 	}
 
 	// execute test cases
-	for _, test := range testCases {
-		tc := test
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
 
 			// when
-			webhookAuth := getEventMeshWebhookAuth(tc.givenSubscription, defaultWebhookAuth)
+			webhookAuth := getEventMeshWebhookAuth(testcase.givenSubscription, defaultWebhookAuth)
 
 			// then
-			require.Equal(t, tc.wantWebhook, webhookAuth)
+			require.Equal(t, testcase.wantWebhook, webhookAuth)
 		})
 	}
 }
@@ -330,20 +331,20 @@ func TestGetCleanedEventMeshSubscription(t *testing.T) {
 func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	s1 := &eventingv1alpha2.Subscription{
+	subSameNS := &eventingv1alpha2.Subscription{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "subscription1",
 			Namespace: "my-namespace",
 		},
 	}
-	s2 := &eventingv1alpha2.Subscription{
+	subDifferentNS := &eventingv1alpha2.Subscription{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "mysub",
 			Namespace: "another-namespace",
 		},
 	}
 
-	s3 := &eventingv1alpha2.Subscription{
+	subWithSink3 := &eventingv1alpha2.Subscription{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "name1",
 			Namespace: "name2",
@@ -352,7 +353,7 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 			Sink: "sub3-sink",
 		},
 	}
-	s4 := &eventingv1alpha2.Subscription{
+	subWithSink4 := &eventingv1alpha2.Subscription{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "name1",
 			Namespace: "name2",
@@ -361,7 +362,7 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 			Sink: "sub4-sink",
 		},
 	}
-	s5 := &eventingv1alpha2.Subscription{
+	subName1NS := &eventingv1alpha2.Subscription{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "name2",
 			Namespace: "name1",
@@ -382,20 +383,20 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 		{
 			domainName: domain1,
 			maxLen:     50,
-			inputSub:   s1,
-			outputHash: hashSubscriptionFullName(domain1, s1.Namespace, s1.Name),
+			inputSub:   subSameNS,
+			outputHash: hashSubscriptionFullName(domain1, subSameNS.Namespace, subSameNS.Name),
 		},
 		{
 			domainName: domain2,
 			maxLen:     50,
-			inputSub:   s1,
-			outputHash: hashSubscriptionFullName(domain2, s1.Namespace, s1.Name),
+			inputSub:   subSameNS,
+			outputHash: hashSubscriptionFullName(domain2, subSameNS.Namespace, subSameNS.Name),
 		},
 		{
 			domainName: "",
 			maxLen:     50,
-			inputSub:   s2,
-			outputHash: hashSubscriptionFullName("", s2.Namespace, s2.Name),
+			inputSub:   subDifferentNS,
+			outputHash: hashSubscriptionFullName("", subDifferentNS.Namespace, subDifferentNS.Name),
 		},
 	}
 
@@ -408,28 +409,28 @@ func TestEventMeshSubscriptionNameMapper(t *testing.T) {
 
 	for _, test := range tests {
 		mapper := NewBEBSubscriptionNameMapper(test.domainName, test.maxLen)
-		s := mapper.MapSubscriptionName(test.inputSub.Name, test.inputSub.Namespace)
-		g.Expect(len(s)).To(BeNumerically("<=", test.maxLen))
+		mappedName := mapper.MapSubscriptionName(test.inputSub.Name, test.inputSub.Namespace)
+		g.Expect(len(mappedName)).To(BeNumerically("<=", test.maxLen))
 		// the mapped name should always end with the SHA1
-		g.Expect(strings.HasSuffix(s, test.outputHash)).To(BeTrue())
+		g.Expect(strings.HasSuffix(mappedName, test.outputHash)).To(BeTrue())
 		// and have the first 10 char of the name
 		prefixLen := minFunc(len(test.inputSub.Name), test.maxLen-hashLength)
-		g.Expect(s).To(HavePrefix(test.inputSub.Name[:prefixLen]))
+		g.Expect(mappedName).To(HavePrefix(test.inputSub.Name[:prefixLen]))
 	}
 
 	// Same domain and subscription name/namespace should map to the same name
 	mapper := NewBEBSubscriptionNameMapper(domain1, 50)
-	g.Expect(mapper.MapSubscriptionName(s3.Name, s3.Namespace)).To(
-		Equal(mapper.MapSubscriptionName(s4.Name, s4.Namespace)))
+	g.Expect(mapper.MapSubscriptionName(subWithSink3.Name, subWithSink3.Namespace)).To(
+		Equal(mapper.MapSubscriptionName(subWithSink4.Name, subWithSink4.Namespace)))
 
 	// If the same names are used in different order, they get mapped to different names
-	g.Expect(mapper.MapSubscriptionName(s4.Name, s4.Namespace)).ToNot(
-		Equal(mapper.MapSubscriptionName(s5.Name, s5.Namespace)))
+	g.Expect(mapper.MapSubscriptionName(subWithSink4.Name, subWithSink4.Namespace)).ToNot(
+		Equal(mapper.MapSubscriptionName(subName1NS.Name, subName1NS.Namespace)))
 }
 
 func TestShortenNameAndAppendHash(t *testing.T) {
 	g := NewGomegaWithT(t)
-	fakeHash := fmt.Sprintf("%x", sha1.Sum([]byte("myshootmynamespacemyname")))
+	fakeHash := fmt.Sprintf("%x", sha1.Sum([]byte("myshootmynamespacemyname"))) //nolint:gosec // strength of the algorithm is not important here
 
 	tests := []struct {
 		name   string
@@ -542,7 +543,7 @@ func TestIsEventMeshSubModified(t *testing.T) {
 	eventMeshSubscription2 := eventMeshSubscription1
 	eventMeshSubscription2.WebhookURL = "www.github.com"
 
-	tests := []struct {
+	testCases := []struct {
 		sub    types.Subscription
 		hash   int64
 		output bool
@@ -558,15 +559,16 @@ func TestIsEventMeshSubModified(t *testing.T) {
 			output: true,
 		},
 	}
-	for _, test := range tests {
+	for _, tc := range testCases {
+		testcase := tc
 		g.Expect(err).ShouldNot(HaveOccurred())
 
 		// then
-		result, err := IsEventMeshSubModified(&test.sub, test.hash)
+		result, err := IsEventMeshSubModified(&testcase.sub, testcase.hash)
 
 		// when
 		g.Expect(err).ShouldNot(HaveOccurred())
-		g.Expect(result).To(Equal(test.output))
+		g.Expect(result).To(Equal(testcase.output))
 	}
 }
 

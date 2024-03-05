@@ -361,13 +361,13 @@ func NewSubscription(name, namespace string) *eventingv1alpha2.Subscription {
 }
 
 func NewConfigMap(name, namespace string) *kcorev1.ConfigMap {
-	cm := &kcorev1.ConfigMap{
+	configMap := &kcorev1.ConfigMap{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 	}
-	return cm
+	return configMap
 }
 
 func FindObjectByKind(kind string, objects []client.Object) (client.Object, error) {

@@ -19,6 +19,7 @@ import (
 )
 
 func Test_getProcessedEventTypes(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	require.NoError(t, err)
@@ -135,29 +136,31 @@ func Test_getProcessedEventTypes(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			eventMesh := NewEventMesh(&OAuth2ClientCredentials{}, nameMapper, defaultLogger)
 			emCleaner := cleaner.NewEventMeshCleaner(defaultLogger)
-			err = eventMesh.Initialize(env.Config{EventTypePrefix: tc.givenEventTypePrefix})
+			err = eventMesh.Initialize(env.Config{EventTypePrefix: testcase.givenEventTypePrefix})
 			require.NoError(t, err)
 
 			// when
-			eventTypeInfos, err := eventMesh.getProcessedEventTypes(tc.givenSubscription, emCleaner)
+			eventTypeInfos, err := eventMesh.getProcessedEventTypes(testcase.givenSubscription, emCleaner)
 
 			// then
-			require.Equal(t, tc.wantError, err != nil)
-			if !tc.wantError {
-				require.Equal(t, tc.wantProcessedEventTypes, eventTypeInfos)
+			require.Equal(t, testcase.wantError, err != nil)
+			if !testcase.wantError {
+				require.Equal(t, testcase.wantProcessedEventTypes, eventTypeInfos)
 			}
 		})
 	}
 }
 
+//nolint:dupl // no duplicate as this tests the kyma side and not the eventmesh side
 func Test_handleKymaSubModified(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	require.NoError(t, err)
@@ -252,30 +255,32 @@ func Test_handleKymaSubModified(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			eventMesh := NewEventMesh(&OAuth2ClientCredentials{}, nameMapper, defaultLogger)
 			// Set a mock client interface for EventMesh
 			mockClient := new(emsclientmocks.PublisherManager)
-			mockClient.On("Delete", tc.givenEventMeshSub.Name).Return(tc.givenClientDeleteResponse, nil)
+			mockClient.On("Delete", testcase.givenEventMeshSub.Name).Return(testcase.givenClientDeleteResponse, nil)
 			eventMesh.client = mockClient
 
 			// when
-			isModified, err := eventMesh.handleKymaSubModified(tc.givenEventMeshSub, tc.givenKymaSub)
+			isModified, err := eventMesh.handleKymaSubModified(testcase.givenEventMeshSub, testcase.givenKymaSub)
 
 			// then
-			require.Equal(t, tc.wantError, err != nil)
-			if !tc.wantError {
-				require.Equal(t, tc.wantIsModified, isModified)
+			require.Equal(t, testcase.wantError, err != nil)
+			if !testcase.wantError {
+				require.Equal(t, testcase.wantIsModified, isModified)
 			}
 		})
 	}
 }
 
+//nolint:dupl // no duplicate as this tests the eventmesh side and not the kyma side
 func Test_handleEventMeshSubModified(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	require.NoError(t, err)
@@ -370,30 +375,31 @@ func Test_handleEventMeshSubModified(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			eventMesh := NewEventMesh(&OAuth2ClientCredentials{}, nameMapper, defaultLogger)
 			// Set a mock client interface for EventMesh
 			mockClient := new(emsclientmocks.PublisherManager)
-			mockClient.On("Delete", tc.givenEventMeshSub.Name).Return(tc.givenClientDeleteResponse, nil)
+			mockClient.On("Delete", testcase.givenEventMeshSub.Name).Return(testcase.givenClientDeleteResponse, nil)
 			eventMesh.client = mockClient
 
 			// when
-			isModified, err := eventMesh.handleEventMeshSubModified(tc.givenEventMeshSub, tc.givenKymaSub)
+			isModified, err := eventMesh.handleEventMeshSubModified(testcase.givenEventMeshSub, testcase.givenKymaSub)
 
 			// then
-			require.Equal(t, tc.wantError, err != nil)
-			if !tc.wantError {
-				require.Equal(t, tc.wantIsModified, isModified)
+			require.Equal(t, testcase.wantError, err != nil)
+			if !testcase.wantError {
+				require.Equal(t, testcase.wantIsModified, isModified)
 			}
 		})
 	}
 }
 
 func Test_handleCreateEventMeshSub(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	require.NoError(t, err)
@@ -466,34 +472,35 @@ func Test_handleCreateEventMeshSub(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			eventMesh := NewEventMesh(&OAuth2ClientCredentials{}, nameMapper, defaultLogger)
 			// Set a mock client interface for EventMesh
 			mockClient := new(emsclientmocks.PublisherManager)
-			mockClient.On("Create", tc.givenEventMeshSub).Return(tc.givenClientCreateResponse, nil)
-			mockClient.On("Get", tc.givenEventMeshSub.Name).Return(tc.givenEventMeshSub, &types.Response{
+			mockClient.On("Create", testcase.givenEventMeshSub).Return(testcase.givenClientCreateResponse, nil)
+			mockClient.On("Get", testcase.givenEventMeshSub.Name).Return(testcase.givenEventMeshSub, &types.Response{
 				StatusCode: http.StatusOK,
 				Message:    "",
 			}, nil)
 			eventMesh.client = mockClient
 
 			// when
-			_, err := eventMesh.handleCreateEventMeshSub(tc.givenEventMeshSub, tc.givenKymaSub)
+			_, err := eventMesh.handleCreateEventMeshSub(testcase.givenEventMeshSub, testcase.givenKymaSub)
 
 			// then
-			require.Equal(t, tc.wantError, err != nil)
-			if !tc.wantError {
-				require.Empty(t, tc.givenKymaSub.Status.Types)
+			require.Equal(t, testcase.wantError, err != nil)
+			if !testcase.wantError {
+				require.Empty(t, testcase.givenKymaSub.Status.Types)
 			}
 		})
 	}
 }
 
 func Test_handleKymaSubStatusUpdate(t *testing.T) {
+	t.Parallel()
 	// given
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	require.NoError(t, err)
@@ -554,21 +561,21 @@ func Test_handleKymaSubStatusUpdate(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			eventMesh := NewEventMesh(nil, nil, defaultLogger)
 
 			// when
-			isChanged, _ := eventMesh.handleKymaSubStatusUpdate(tc.givenEventMeshSub, tc.givenEventMeshSub, tc.givenKymaSub, tc.givenTypeInfos)
+			isChanged, _ := eventMesh.handleKymaSubStatusUpdate(testcase.givenEventMeshSub, testcase.givenEventMeshSub, testcase.givenKymaSub, testcase.givenTypeInfos)
 
 			// then
 			require.True(t, isChanged)
-			require.Equal(t, tc.wantEventTypes, tc.givenKymaSub.Status.Types)
-			require.Equal(t, tc.wantEventMeshTypes, tc.givenKymaSub.Status.Backend.EmsTypes)
-			require.Equal(t, tc.givenEventMeshSub.SubscriptionStatusReason, tc.givenKymaSub.Status.Backend.EventMeshSubscriptionStatus.StatusReason)
+			require.Equal(t, testcase.wantEventTypes, testcase.givenKymaSub.Status.Types)
+			require.Equal(t, testcase.wantEventMeshTypes, testcase.givenKymaSub.Status.Backend.EmsTypes)
+			require.Equal(t, testcase.givenEventMeshSub.SubscriptionStatusReason, testcase.givenKymaSub.Status.Backend.EventMeshSubscriptionStatus.StatusReason)
 		})
 	}
 }
@@ -635,13 +642,13 @@ func Test_SyncSubscription(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			subscription.Spec.Types[0] = tc.givenEventType
+			subscription.Spec.Types[0] = testcase.givenEventType
 			changed, err := eventMesh.SyncSubscription(subscription, cleaner.NewEventMeshCleaner(defaultLogger), apiRule)
 			require.NoError(t, err)
-			require.Equal(t, tc.wantIsChanged, changed)
+			require.Equal(t, testcase.wantIsChanged, changed)
 		})
 	}
 
@@ -687,9 +694,9 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			wantPutCount:    0,
 		},
 	}
-	for _, test := range tests {
-		test := test
-		t.Run(test.name, func(t *testing.T) {
+	for _, tc := range tests {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			mock.Reset()
 
 			// given
@@ -716,7 +723,7 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, emSub)
 
-			if test.givenSameHash {
+			if testcase.givenSameHash {
 				hash, hashErr := backendutils.GetWebhookAuthHash(emSub.WebhookAuth)
 				require.NoError(t, hashErr)
 				require.NotEqual(t, 0, hash)
@@ -738,9 +745,9 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			putURI := fmt.Sprintf("/messaging/events/subscriptions/%s/state", emSubName)
 
 			// then
-			require.Equal(t, test.wantDeleteCount, mock.CountRequests(http.MethodDelete, deleteURI))
-			require.Equal(t, test.wantPatchCount, mock.CountRequests(http.MethodPatch, patchURI))
-			require.Equal(t, test.wantPutCount, mock.CountRequests(http.MethodPut, putURI))
+			require.Equal(t, testcase.wantDeleteCount, mock.CountRequests(http.MethodDelete, deleteURI))
+			require.Equal(t, testcase.wantPatchCount, mock.CountRequests(http.MethodPatch, patchURI))
+			require.Equal(t, testcase.wantPutCount, mock.CountRequests(http.MethodPut, putURI))
 		})
 	}
 }

@@ -330,25 +330,25 @@ func getSecretForPublisher(eventMeshSecret *kcorev1.Secret) (*kcorev1.Secret, er
 		return nil, err
 	}
 
-	for _, m := range messages {
-		if m.Broker.BrokerType == "saprestmgw" {
-			if len(m.OA2.ClientID) == 0 {
+	for _, msg := range messages {
+		if msg.Broker.BrokerType == "saprestmgw" {
+			if len(msg.OA2.ClientID) == 0 {
 				return nil, errors.New("client ID is missing")
 			}
-			if len(m.OA2.ClientSecret) == 0 {
+			if len(msg.OA2.ClientSecret) == 0 {
 				return nil, errors.New("client secret is missing")
 			}
-			if len(m.OA2.TokenEndpoint) == 0 {
+			if len(msg.OA2.TokenEndpoint) == 0 {
 				return nil, errors.New("tokenendpoint is missing")
 			}
-			if len(m.OA2.GrantType) == 0 {
+			if len(msg.OA2.GrantType) == 0 {
 				return nil, errors.New("granttype is missing")
 			}
-			if len(m.URI) == 0 {
+			if len(msg.URI) == 0 {
 				return nil, errors.New("publish URL is missing")
 			}
 
-			secret.StringData = getSecretStringData(m.OA2.ClientID, m.OA2.ClientSecret, m.OA2.TokenEndpoint, m.OA2.GrantType, m.URI, string(namespaceBytes))
+			secret.StringData = getSecretStringData(msg.OA2.ClientID, msg.OA2.ClientSecret, msg.OA2.TokenEndpoint, msg.OA2.GrantType, msg.URI, string(namespaceBytes))
 			break
 		}
 	}

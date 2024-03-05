@@ -73,7 +73,6 @@ const (
 
 //nolint:gochecknoglobals // only used in tests
 var (
-	emTestEnsemble   *eventMeshTestEnsemble
 	k8sCancelFn      context.CancelFunc
 	eventMeshBackend *backendeventmesh.EventMesh
 	testReconciler   *subscriptioncontrollereventmesh.Reconciler
@@ -85,22 +84,22 @@ var (
 	}
 )
 
-func setupSuite() error {
+func setupSuite() (*eventMeshTestEnsemble, error) {
 	featureflags.SetEventingWebhookAuthEnabled(true)
-	emTestEnsemble = &eventMeshTestEnsemble{}
+	emTestEnsemble := &eventMeshTestEnsemble{}
 
 	// define logger
 	var err error
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	kctrllog.SetLogger(zapr.NewLogger(defaultLogger.WithContext().Desugar()))
 
 	// setup test Env
-	cfg, err := startTestEnv()
+	cfg, err := startTestEnv(emTestEnsemble)
 	if err != nil || cfg == nil {
-		return err
+		return nil, err
 	}
 
 	// start event mesh mock
@@ -108,18 +107,18 @@ func setupSuite() error {
 
 	// add schemes
 	if err = eventingv1alpha2.AddToScheme(scheme.Scheme); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = apigatewayv1beta1.AddToScheme(scheme.Scheme); err != nil {
-		return err
+		return nil, err
 	}
 	// +kubebuilder:scaffold:scheme
 
 	// start eventMesh manager instance
-	k8sManager, webhookInstallOptions, err := setupManager(cfg)
+	k8sManager, webhookInstallOptions, err := setupManager(emTestEnsemble, cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// setup nameMapper for EventMesh
@@ -129,14 +128,14 @@ func setupSuite() error {
 	// setup eventMesh reconciler
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller")
 	sinkValidator := sink.NewValidator(k8sManager.GetClient(), recorder)
-	emTestEnsemble.envConfig = getEnvConfig()
+	emTestEnsemble.envConfig = getEnvConfig(emTestEnsemble)
 	eventMeshBackend = backendeventmesh.NewEventMesh(credentials, emTestEnsemble.nameMapper, defaultLogger)
 	col := metrics.NewCollector()
 	testReconciler = subscriptioncontrollereventmesh.NewReconciler(
 		k8sManager.GetClient(),
 		defaultLogger,
 		recorder,
-		getEnvConfig(),
+		getEnvConfig(emTestEnsemble),
 		cleaner.NewEventMeshCleaner(defaultLogger),
 		eventMeshBackend,
 		credentials,
@@ -147,7 +146,7 @@ func setupSuite() error {
 	)
 
 	if err = testReconciler.SetupUnmanaged(context.Background(), k8sManager); err != nil {
-		return err
+		return nil, err
 	}
 
 	// start k8s client
@@ -162,12 +161,12 @@ func setupSuite() error {
 
 	emTestEnsemble.k8sClient = k8sManager.GetClient()
 
-	return startAndWaitForWebhookServer(k8sManager, webhookInstallOptions)
+	return emTestEnsemble, startAndWaitForWebhookServer(k8sManager, webhookInstallOptions)
 }
 
-func setupManager(cfg *rest.Config) (manager.Manager, *envtest.WebhookInstallOptions, error) {
+func setupManager(ensemble *eventMeshTestEnsemble, cfg *rest.Config) (manager.Manager, *envtest.WebhookInstallOptions, error) {
 	syncPeriod := syncPeriodSeconds * time.Second
-	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
+	webhookInstallOptions := &ensemble.testEnv.WebhookInstallOptions
 	k8sManager, err := kctrl.NewManager(cfg, kctrl.Options{
 		Scheme:                 scheme.Scheme,
 		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
@@ -199,8 +198,8 @@ func startAndWaitForWebhookServer(manager manager.Manager, installOpts *envtest.
 	return err
 }
 
-func startTestEnv() (*rest.Config, error) {
-	emTestEnsemble.testEnv = &envtest.Environment{
+func startTestEnv(ensemble *eventMeshTestEnsemble) (*rest.Config, error) {
+	ensemble.testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("../../../../../../", "config", "crd", "bases"),
 			filepath.Join("../../../../../../", "config", "crd", "for-tests"),
@@ -220,7 +219,7 @@ func startTestEnv() (*rest.Config, error) {
 			}
 		}()
 
-		cfgLocal, startErr := emTestEnsemble.testEnv.Start()
+		cfgLocal, startErr := ensemble.testEnv.Start()
 		cfg = cfgLocal
 		return startErr
 	},
@@ -229,7 +228,7 @@ func startTestEnv() (*rest.Config, error) {
 		retry.Attempts(testEnvStartAttempts),
 		retry.OnRetry(func(n uint, err error) {
 			log.Printf("[%v] try failed to start testenv: %s", n, err)
-			if stopErr := emTestEnsemble.testEnv.Stop(); stopErr != nil {
+			if stopErr := ensemble.testEnv.Stop(); stopErr != nil {
 				log.Printf("failed to stop testenv: %s", stopErr)
 			}
 		}),
@@ -237,12 +236,12 @@ func startTestEnv() (*rest.Config, error) {
 	return cfg, err
 }
 
-func getEnvConfig() env.Config {
+func getEnvConfig(ensemble *eventMeshTestEnsemble) env.Config {
 	return env.Config{
-		BEBAPIURL:                emTestEnsemble.eventMeshMock.MessagingURL,
+		BEBAPIURL:                ensemble.eventMeshMock.MessagingURL,
 		ClientID:                 "foo-id",
 		ClientSecret:             "foo-secret",
-		TokenEndpoint:            emTestEnsemble.eventMeshMock.TokenURL,
+		TokenEndpoint:            ensemble.eventMeshMock.TokenURL,
 		WebhookActivationTimeout: 0,
 		EventTypePrefix:          eventingtesting.EventMeshPrefix,
 		BEBNamespace:             eventingtesting.EventMeshNamespaceNS,
@@ -250,12 +249,12 @@ func getEnvConfig() env.Config {
 	}
 }
 
-func tearDownSuite() error {
+func tearDownSuite(ensemble *eventMeshTestEnsemble) error {
 	if k8sCancelFn != nil {
 		k8sCancelFn()
 	}
-	err := emTestEnsemble.testEnv.Stop()
-	emTestEnsemble.eventMeshMock.Stop()
+	err := ensemble.testEnv.Stop()
+	ensemble.eventMeshMock.Stop()
 	return err
 }
 
@@ -269,14 +268,14 @@ func getTestNamespace() string {
 	return fmt.Sprintf("ns-%s", utils.GetRandString(namespacePrefixLength))
 }
 
-func ensureNamespaceCreated(ctx context.Context, t *testing.T, namespace string) {
+func ensureNamespaceCreated(ctx context.Context, t *testing.T, ensemble *eventMeshTestEnsemble, namespace string) {
 	t.Helper()
 	if namespace == "default" {
 		return
 	}
 	// create namespace
 	ns := fixtureNamespace(namespace)
-	err := emTestEnsemble.k8sClient.Create(ctx, ns)
+	err := ensemble.k8sClient.Create(ctx, ns)
 	if !kerrors.IsAlreadyExists(err) {
 		require.NoError(t, err)
 	}
@@ -295,12 +294,12 @@ func fixtureNamespace(name string) *kcorev1.Namespace {
 	return &namespace
 }
 
-func ensureK8sResourceCreated(ctx context.Context, t *testing.T, obj client.Object) {
+func ensureK8sResourceCreated(ctx context.Context, t *testing.T, ensemble *eventMeshTestEnsemble, obj client.Object) {
 	t.Helper()
-	require.NoError(t, emTestEnsemble.k8sClient.Create(ctx, obj))
+	require.NoError(t, ensemble.k8sClient.Create(ctx, obj))
 }
 
-func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscription *eventingv1alpha2.Subscription) {
+func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, ensemble *eventMeshTestEnsemble, subscription *eventingv1alpha2.Subscription) {
 	t.Helper()
 	require.Eventually(t, func() bool {
 		latestSubscription := &eventingv1alpha2.Subscription{}
@@ -308,20 +307,20 @@ func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscriptio
 			Namespace: subscription.Namespace,
 			Name:      subscription.Name,
 		}
-		require.NoError(t, emTestEnsemble.k8sClient.Get(ctx, lookupKey, latestSubscription))
+		require.NoError(t, ensemble.k8sClient.Get(ctx, lookupKey, latestSubscription))
 		require.NotEmpty(t, latestSubscription.Name)
 		latestSubscription.Spec = subscription.Spec
 		latestSubscription.Labels = subscription.Labels
-		require.NoError(t, emTestEnsemble.k8sClient.Update(ctx, latestSubscription))
+		require.NoError(t, ensemble.k8sClient.Update(ctx, latestSubscription))
 		return true
 	}, bigTimeOut, bigPollingInterval)
 }
 
 // ensureAPIRuleStatusUpdatedWithStatusReady updates the status fof the APIRule (mocking APIGateway controller).
-func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
+func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, ensemble *eventMeshTestEnsemble, apiRule *apigatewayv1beta1.APIRule) {
 	t.Helper()
 	require.Eventually(t, func() bool {
-		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
+		fetchedAPIRule, err := getAPIRule(ctx, ensemble, apiRule)
 		if err != nil {
 			return false
 		}
@@ -331,27 +330,27 @@ func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T
 		eventingtesting.MarkReady(newAPIRule)
 
 		// update ApiRule status on k8s
-		err = emTestEnsemble.k8sClient.Status().Update(ctx, newAPIRule)
+		err = ensemble.k8sClient.Status().Update(ctx, newAPIRule)
 		return err == nil
 	}, bigTimeOut, bigPollingInterval)
 }
 
-func getAPIRule(ctx context.Context, apiRule *apigatewayv1beta1.APIRule) (*apigatewayv1beta1.APIRule, error) {
+func getAPIRule(ctx context.Context, ensemble *eventMeshTestEnsemble, apiRule *apigatewayv1beta1.APIRule) (*apigatewayv1beta1.APIRule, error) {
 	lookUpKey := types.NamespacedName{
 		Namespace: apiRule.Namespace,
 		Name:      apiRule.Name,
 	}
-	err := emTestEnsemble.k8sClient.Get(ctx, lookUpKey, apiRule)
+	err := ensemble.k8sClient.Get(ctx, lookUpKey, apiRule)
 	return apiRule, err
 }
 
-func getEventMeshSubFromMock(subscriptionName, subscriptionNamespace string) *emstypes.Subscription {
-	key := getEventMeshSubKeyForMock(subscriptionName, subscriptionNamespace)
-	return emTestEnsemble.eventMeshMock.Subscriptions.GetSubscription(key)
+func getEventMeshSubFromMock(subscriptionName, subscriptionNamespace string, ensemble *eventMeshTestEnsemble) *emstypes.Subscription {
+	key := getEventMeshSubKeyForMock(subscriptionName, subscriptionNamespace, ensemble)
+	return ensemble.eventMeshMock.Subscriptions.GetSubscription(key)
 }
 
-func getEventMeshSubKeyForMock(subscriptionName, subscriptionNamespace string) string {
-	nm1 := emTestEnsemble.nameMapper.MapSubscriptionName(subscriptionName, subscriptionNamespace)
+func getEventMeshSubKeyForMock(subscriptionName, subscriptionNamespace string, ensemble *eventMeshTestEnsemble) string {
+	nm1 := ensemble.nameMapper.MapSubscriptionName(subscriptionName, subscriptionNamespace)
 	return fmt.Sprintf("%s/%s", eventMeshMockKeyPrefix, nm1)
 }
 

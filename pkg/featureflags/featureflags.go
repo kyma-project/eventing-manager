@@ -1,6 +1,6 @@
 package featureflags
 
-//nolint:gochecknoglobals // This is global only inside the package.
+//nolint:gochecknoglobals,varnamelen // This is global only inside the package.
 var f = &flags{
 	eventingWebhookAuthEnabled: true,
 }

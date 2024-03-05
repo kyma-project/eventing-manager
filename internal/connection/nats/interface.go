@@ -8,7 +8,7 @@ import (
 type Interface interface {
 	// Connect connects to NATS and returns an error if it cannot connect.
 	// It also registers both the connect and disconnect handlers.
-	Connect(natsio.ConnHandler, natsio.ConnErrHandler) error
+	Connect(handler natsio.ConnHandler, errorHandler natsio.ConnErrHandler) error
 
 	// Disconnect disconnects the NATS connection.
 	Disconnect()

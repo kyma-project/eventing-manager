@@ -14,13 +14,14 @@ import (
 // getSubscriptionAssert fetches a subscription using the lookupKey and allows making assertions on it.
 func getSubscriptionAssert(ctx context.Context, g *gomega.GomegaWithT,
 	subscription *eventingv1alpha2.Subscription,
+	ensemble *eventMeshTestEnsemble,
 ) gomega.AsyncAssertion {
 	return g.Eventually(func() *eventingv1alpha2.Subscription {
 		lookupKey := types.NamespacedName{
 			Namespace: subscription.Namespace,
 			Name:      subscription.Name,
 		}
-		if err := emTestEnsemble.k8sClient.Get(ctx, lookupKey, subscription); err != nil {
+		if err := ensemble.k8sClient.Get(ctx, lookupKey, subscription); err != nil {
 			log.Printf("fetch subscription %s failed: %v", lookupKey.String(), err)
 			return &eventingv1alpha2.Subscription{}
 		}
@@ -31,9 +32,10 @@ func getSubscriptionAssert(ctx context.Context, g *gomega.GomegaWithT,
 // getAPIRuleAssert fetches an apiRule and allows making assertions on it.
 func getAPIRuleAssert(ctx context.Context, g *gomega.GomegaWithT,
 	apiRule *apigatewayv1beta1.APIRule,
+	ensemble *eventMeshTestEnsemble,
 ) gomega.AsyncAssertion {
 	return g.Eventually(func() apigatewayv1beta1.APIRule {
-		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
+		fetchedAPIRule, err := getAPIRule(ctx, ensemble, apiRule)
 		if err != nil {
 			log.Printf("fetch APIRule %s/%s failed: %v", apiRule.Namespace, apiRule.Name, err)
 			return apigatewayv1beta1.APIRule{}

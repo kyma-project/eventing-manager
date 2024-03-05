@@ -64,9 +64,9 @@ const (
 	NatsServerNotAvailableMsg = "NATS server is not available"
 	natsClientPort            = 4222
 
-	PublisherSecretEMSHostKey = "ems-publish-host"
+	PublisherSecretEMSHostKey = "ems-publish-host" //nolint:gosec // no hardcoded secret, just the key where to find it
 
-	TokenEndpointFormat                   = "%s?grant_type=%s&response_type=token"
+	TokenEndpointFormat                   = "%s?grant_type=%s&response_type=token" //nolint:gosec // no hardcoded secret, just the format for specifying it in the URL
 	NamespacePrefix                       = "/"
 	EventMeshPublishEndpointForSubscriber = "/sap/ems/v1"
 	EventMeshPublishEndpointForPublisher  = "/sap/ems/v1/events"
@@ -257,15 +257,15 @@ func (r *Reconciler) SkipEnqueueOnCreate() func(event.CreateEvent) bool {
 }
 
 func (r *Reconciler) SkipEnqueueOnUpdateAfterSemanticCompare(resourceType, nameFilter string) func(event.UpdateEvent) bool {
-	return func(e event.UpdateEvent) bool {
+	return func(evnt event.UpdateEvent) bool {
 		// skip enqueue if the resource is not related to Eventing
-		if !strings.Contains(e.ObjectOld.GetName(), nameFilter) {
+		if !strings.Contains(evnt.ObjectOld.GetName(), nameFilter) {
 			return false
 		}
 
 		// enqueue only if the resource changed
-		enqueue := !object.Semantic.DeepEqual(e.ObjectOld, e.ObjectNew)
-		r.logEventForResource(e.ObjectOld.GetName(), e.ObjectOld.GetNamespace(), resourceType, "Update", enqueue)
+		enqueue := !object.Semantic.DeepEqual(evnt.ObjectOld, evnt.ObjectNew)
+		r.logEventForResource(evnt.ObjectOld.GetName(), evnt.ObjectOld.GetNamespace(), resourceType, "Update", enqueue)
 		return enqueue
 	}
 }

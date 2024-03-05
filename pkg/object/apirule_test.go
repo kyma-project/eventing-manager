@@ -63,7 +63,7 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 		givenDst *apigatewayv1beta1.APIRule
 		wantDst  *apigatewayv1beta1.APIRule
 	}
-	tests := []struct {
+	testCases := []struct {
 		name string
 		args args
 	}{
@@ -100,17 +100,18 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			ApplyExistingAPIRuleAttributes(tt.args.givenSrc, tt.args.givenDst)
+			ApplyExistingAPIRuleAttributes(testcase.args.givenSrc, testcase.args.givenDst)
 
 			// then
-			require.Equal(t, tt.args.wantDst.Name, tt.args.givenDst.Name)
-			require.Equal(t, tt.args.wantDst.GenerateName, tt.args.givenDst.GenerateName)
-			require.Equal(t, tt.args.wantDst.ResourceVersion, tt.args.givenDst.ResourceVersion)
-			require.Equal(t, tt.args.wantDst.Spec, tt.args.givenDst.Spec)
-			require.Equal(t, tt.args.wantDst.Status, tt.args.givenDst.Status)
+			require.Equal(t, testcase.args.wantDst.Name, testcase.args.givenDst.Name)
+			require.Equal(t, testcase.args.wantDst.GenerateName, testcase.args.givenDst.GenerateName)
+			require.Equal(t, testcase.args.wantDst.ResourceVersion, testcase.args.givenDst.ResourceVersion)
+			require.Equal(t, testcase.args.wantDst.Spec, testcase.args.givenDst.Spec)
+			require.Equal(t, testcase.args.wantDst.Status, testcase.args.givenDst.Status)
 		})
 	}
 }
@@ -269,7 +270,7 @@ func TestWithGateway(t *testing.T) {
 		givenGateway string
 		givenObject  *apigatewayv1beta1.APIRule
 	}
-	tests := []struct {
+	testCases := []struct {
 		name       string
 		args       args
 		wantObject *apigatewayv1beta1.APIRule
@@ -287,13 +288,14 @@ func TestWithGateway(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			WithGateway(tt.args.givenGateway)(tt.args.givenObject)
+			WithGateway(testcase.args.givenGateway)(testcase.args.givenObject)
 
 			// then
-			require.Equal(t, tt.wantObject.Spec.Gateway, tt.args.givenObject.Spec.Gateway)
+			require.Equal(t, testcase.wantObject.Spec.Gateway, testcase.args.givenObject.Spec.Gateway)
 		})
 	}
 }
@@ -304,7 +306,7 @@ func TestWithLabels(t *testing.T) {
 		givenLabels map[string]string
 		givenObject *apigatewayv1beta1.APIRule
 	}
-	tests := []struct {
+	testCases := []struct {
 		name       string
 		args       args
 		wantObject *apigatewayv1beta1.APIRule
@@ -373,13 +375,14 @@ func TestWithLabels(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			WithLabels(tt.args.givenLabels)(tt.args.givenObject)
+			WithLabels(testcase.args.givenLabels)(testcase.args.givenObject)
 
 			// then
-			require.Equal(t, tt.wantObject.GetLabels(), tt.args.givenObject.GetLabels())
+			require.Equal(t, testcase.wantObject.GetLabels(), testcase.args.givenObject.GetLabels())
 		})
 	}
 }
@@ -569,14 +572,15 @@ func TestWithOwnerReference(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range tests {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			WithOwnerReference(tt.args.givenSubs)(tt.args.givenObject)
-			gotOwnerReferences := tt.args.givenObject.GetOwnerReferences()
+			WithOwnerReference(testcase.args.givenSubs)(testcase.args.givenObject)
+			gotOwnerReferences := testcase.args.givenObject.GetOwnerReferences()
 
 			// then
-			require.Equal(t, tt.wantObject.GetOwnerReferences(), gotOwnerReferences)
+			require.Equal(t, testcase.wantObject.GetOwnerReferences(), gotOwnerReferences)
 		})
 	}
 }
@@ -683,13 +687,14 @@ func TestWithRules(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range tests {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			WithRules(tt.args.givenCertsURL, tt.args.givenSubs, tt.args.givenSvc, tt.args.givenMethods...)(tt.args.givenObject)
+			WithRules(testcase.args.givenCertsURL, testcase.args.givenSubs, testcase.args.givenSvc, testcase.args.givenMethods...)(testcase.args.givenObject)
 
 			// then
-			require.Equal(t, tt.wantObject.Spec.Rules, tt.args.givenObject.Spec.Rules)
+			require.Equal(t, testcase.wantObject.Spec.Rules, testcase.args.givenObject.Spec.Rules)
 		})
 	}
 }
@@ -734,13 +739,14 @@ func TestWithService(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range tests {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			WithService(tt.args.givenHost, tt.args.givenSvcName, tt.args.givenPort)(tt.args.givenObject)
+			WithService(testcase.args.givenHost, testcase.args.givenSvcName, testcase.args.givenPort)(testcase.args.givenObject)
 
 			// then
-			require.Equal(t, tt.wantObject, tt.args.givenObject)
+			require.Equal(t, testcase.wantObject, testcase.args.givenObject)
 		})
 	}
 }

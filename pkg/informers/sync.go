@@ -29,7 +29,7 @@ func WaitForCacheSyncOrDie(ctx context.Context, dc dynamicinformer.DynamicShared
 	cancel()
 }
 
-func hasSynced(ctx context.Context, fn waitForCacheSyncFunc) error {
+func hasSynced(ctx context.Context, syncFunc waitForCacheSyncFunc) error {
 	// synced gets closed as soon as fn returns
 	synced := make(chan struct{})
 	// closing stopWait forces fn to return, which happens whenever ctx
@@ -39,7 +39,7 @@ func hasSynced(ctx context.Context, fn waitForCacheSyncFunc) error {
 
 	// close the synced channel if the `WaitForCacheSync()` finished the execution cleanly
 	go func() {
-		informersCacheSync := fn(stopWait)
+		informersCacheSync := syncFunc(stopWait)
 		res := true
 		for _, sync := range informersCacheSync {
 			if !sync {

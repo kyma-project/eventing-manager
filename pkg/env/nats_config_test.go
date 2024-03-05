@@ -89,7 +89,7 @@ func Test_GetNATSConfig(t *testing.T) {
 		reconnectWait time.Duration
 		envs          map[string]string
 	}
-	tests := []struct {
+	testCases := []struct {
 		name    string
 		args    args
 		want    NATSConfig
@@ -155,8 +155,9 @@ func Test_GetNATSConfig(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// Store the current environ and restore it after this test.
 			// A wrongly set up environment would break this test otherwise.
 			env := os.Environ()
@@ -171,17 +172,17 @@ func Test_GetNATSConfig(t *testing.T) {
 
 			// Clean the environment to make this test reliable.
 			os.Clearenv()
-			for k, v := range tt.args.envs {
+			for k, v := range testcase.args.envs {
 				t.Setenv(k, v)
 			}
 
-			got, err := GetNATSConfig(tt.args.maxReconnects, tt.args.reconnectWait)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetNATSConfig() error = %v, wantErr %v", err, tt.wantErr)
+			got, err := GetNATSConfig(testcase.args.maxReconnects, testcase.args.reconnectWait)
+			if (err != nil) != testcase.wantErr {
+				t.Errorf("GetNATSConfig() error = %v, wantErr %v", err, testcase.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetNATSConfig() got = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got, testcase.want) {
+				t.Errorf("GetNATSConfig() got = %v, want %v", got, testcase.want)
 			}
 		})
 	}

@@ -27,7 +27,7 @@ func Test_applySelectors(t *testing.T) {
 	type args struct {
 		options cache.Options
 	}
-	tests := []struct {
+	testCases := []struct {
 		name string
 		args args
 		want cache.Options
@@ -48,13 +48,14 @@ func Test_applySelectors(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			got := applySelectors(tt.args.options)
+			got := applySelectors(testcase.args.options)
 
 			// then
-			require.True(t, deepEqualOptions(tt.want, got))
+			require.True(t, deepEqualOptions(testcase.want, got))
 		})
 	}
 }
@@ -78,26 +79,26 @@ func deepEqualByObject(a, b map[client.Object]cache.ByObject) bool {
 
 func computeTypeMap(byObjectMap map[client.Object]cache.ByObject, typeMap map[string]cache.ByObject) {
 	keyOf := func(i interface{}) string { return fmt.Sprintf(">>> %T", i) }
-	for k, v := range byObjectMap {
-		if obj, ok := k.(*kappsv1.Deployment); ok {
-			key := keyOf(obj)
-			typeMap[key] = v
+	for key, value := range byObjectMap {
+		if obj, ok := key.(*kappsv1.Deployment); ok {
+			k := keyOf(obj)
+			typeMap[k] = value
 		}
-		if obj, ok := k.(*kcorev1.ServiceAccount); ok {
-			key := keyOf(obj)
-			typeMap[key] = v
+		if obj, ok := key.(*kcorev1.ServiceAccount); ok {
+			k := keyOf(obj)
+			typeMap[k] = value
 		}
-		if obj, ok := k.(*krbacv1.ClusterRole); ok {
-			key := keyOf(obj)
-			typeMap[key] = v
+		if obj, ok := key.(*krbacv1.ClusterRole); ok {
+			k := keyOf(obj)
+			typeMap[k] = value
 		}
-		if obj, ok := k.(*krbacv1.ClusterRoleBinding); ok {
-			key := keyOf(obj)
-			typeMap[key] = v
+		if obj, ok := key.(*krbacv1.ClusterRoleBinding); ok {
+			k := keyOf(obj)
+			typeMap[k] = value
 		}
-		if obj, ok := k.(*kautoscalingv1.HorizontalPodAutoscaler); ok {
-			key := keyOf(obj)
-			typeMap[key] = v
+		if obj, ok := key.(*kautoscalingv1.HorizontalPodAutoscaler); ok {
+			k := keyOf(obj)
+			typeMap[k] = value
 		}
 	}
 }
@@ -107,7 +108,7 @@ func Test_fromLabelSelector(t *testing.T) {
 	type args struct {
 		label labels.Selector
 	}
-	tests := []struct {
+	testCases := []struct {
 		name string
 		args args
 		want cache.ByObject
@@ -122,13 +123,14 @@ func Test_fromLabelSelector(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			got := fromLabelSelector(tt.args.label)
+			got := fromLabelSelector(testcase.args.label)
 
 			// then
-			require.Equal(t, tt.want, got)
+			require.Equal(t, testcase.want, got)
 		})
 	}
 }

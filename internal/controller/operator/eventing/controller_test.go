@@ -69,26 +69,26 @@ func Test_handleEventingCRAllowedCheck(t *testing.T) {
 
 	// run test cases
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
-			testEnv := NewMockedUnitTestEnvironment(t, tc.givenEventing)
+			testEnv := NewMockedUnitTestEnvironment(t, testcase.givenEventing)
 			testEnv.Reconciler.allowedEventingCR = givenAllowedEventingCR
 			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
 			// when
-			result, err := testEnv.Reconciler.handleEventingCRAllowedCheck(context.Background(), tc.givenEventing, logger)
+			result, err := testEnv.Reconciler.handleEventingCRAllowedCheck(context.Background(), testcase.givenEventing, logger)
 
 			// then
 			require.NoError(t, err)
-			require.Equal(t, tc.wantCheckResult, result)
+			require.Equal(t, testcase.wantCheckResult, result)
 
 			// if the Eventing CR is not allowed then check if the CR status is correctly updated or not.
-			gotEventing, err := testEnv.GetEventing(tc.givenEventing.Name, tc.givenEventing.Namespace)
+			gotEventing, err := testEnv.GetEventing(testcase.givenEventing.Name, testcase.givenEventing.Namespace)
 			require.NoError(t, err)
-			if !tc.wantCheckResult {
+			if !testcase.wantCheckResult {
 				// check eventing.status.state
 				require.Equal(t, operatorv1alpha1.StateError, gotEventing.Status.State)
 
@@ -286,9 +286,9 @@ func Test_handleBackendSwitching(t *testing.T) {
 	}
 
 	// run test cases
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+	for _, testCase := range testCases {
+		testcase := testCase
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
@@ -298,15 +298,15 @@ func Test_handleBackendSwitching(t *testing.T) {
 			testEnv.Reconciler.isEventMeshSubManagerStarted = true
 
 			mockNatsWatcher := new(watchermocks.Watcher)
-			if tc.wantNATSStopped {
+			if testcase.wantNATSStopped {
 				mockNatsWatcher.On("Stop").Once()
 			}
-			testEnv.Reconciler.natsWatchers[tc.givenEventing.Namespace] = mockNatsWatcher
+			testEnv.Reconciler.natsWatchers[testcase.givenEventing.Namespace] = mockNatsWatcher
 
 			// get mocks from test-case.
-			givenNATSSubManagerMock := tc.givenNATSSubManagerMock()
-			givenEventMeshSubManagerMock := tc.givenEventMeshSubManagerMock()
-			givenEventingManagerMock := tc.givenEventingManagerMock()
+			givenNATSSubManagerMock := testcase.givenNATSSubManagerMock()
+			givenEventMeshSubManagerMock := testcase.givenEventMeshSubManagerMock()
+			givenEventingManagerMock := testcase.givenEventingManagerMock()
 
 			// connect mocks with reconciler.
 			testEnv.Reconciler.natsSubManager = givenNATSSubManagerMock
@@ -314,26 +314,26 @@ func Test_handleBackendSwitching(t *testing.T) {
 			testEnv.Reconciler.eventingManager = givenEventingManagerMock
 
 			// when
-			err := testEnv.Reconciler.handleBackendSwitching(context.TODO(), tc.givenEventing, logger)
+			err := testEnv.Reconciler.handleBackendSwitching(context.TODO(), testcase.givenEventing, logger)
 
 			// then
-			if tc.wantError != nil {
+			if testcase.wantError != nil {
 				require.Error(t, err)
-				require.Equal(t, tc.wantError.Error(), err.Error())
+				require.Equal(t, testcase.wantError.Error(), err.Error())
 			} else {
 				require.NoError(t, err)
 			}
 
 			// check CR status.
-			require.Equal(t, tc.wantEventingState, tc.givenEventing.Status.State)
-			require.Len(t, tc.givenEventing.Status.Conditions, tc.wantEventingConditionsLen)
+			require.Equal(t, testcase.wantEventingState, testcase.givenEventing.Status.State)
+			require.Len(t, testcase.givenEventing.Status.Conditions, testcase.wantEventingConditionsLen)
 
 			// check assertions for mocks.
 			givenNATSSubManagerMock.AssertExpectations(t)
 			givenEventMeshSubManagerMock.AssertExpectations(t)
 
 			// NATS
-			if tc.wantNATSStopped {
+			if testcase.wantNATSStopped {
 				require.Nil(t, testEnv.Reconciler.natsSubManager)
 				require.False(t, testEnv.Reconciler.isNATSSubManagerStarted)
 				givenEventingManagerMock.AssertExpectations(t)
@@ -343,7 +343,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 			}
 
 			// EventMesh
-			if tc.wantEventMeshStopped {
+			if testcase.wantEventMeshStopped {
 				require.Nil(t, testEnv.Reconciler.eventMeshSubManager)
 				require.False(t, testEnv.Reconciler.isEventMeshSubManagerStarted)
 				givenEventingManagerMock.AssertExpectations(t)
@@ -380,10 +380,11 @@ func Test_startNatsCRWatch(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t)
-			testEnv.Reconciler.natsCRWatchStarted = tc.watchStarted
+			testEnv.Reconciler.natsCRWatchStarted = testcase.watchStarted
 
 			// Create a fake Eventing CR
 			eventing := testutils.NewEventingCR(
@@ -393,13 +394,13 @@ func Test_startNatsCRWatch(t *testing.T) {
 
 			// Create mock watcher and controller
 			natsWatcher := new(watchermocks.Watcher)
-			natsWatcher.On("IsStarted").Return(tc.watchStarted)
+			natsWatcher.On("IsStarted").Return(testcase.watchStarted)
 			mockController := new(watchermocks.Controller)
-			if !tc.watchStarted {
+			if !testcase.watchStarted {
 				natsWatcher.On("Start").Once()
 				natsWatcher.On("GetEventsChannel").Return(make(<-chan event.GenericEvent)).Once()
 
-				mockController.On("Watch", mock.Anything, mock.Anything, mock.Anything).Return(tc.watchErr).Once()
+				mockController.On("Watch", mock.Anything, mock.Anything, mock.Anything).Return(testcase.watchErr).Once()
 			}
 			testEnv.Reconciler.natsWatchers[eventing.Namespace] = natsWatcher
 			testEnv.Reconciler.controller = mockController
@@ -408,9 +409,9 @@ func Test_startNatsCRWatch(t *testing.T) {
 			err := testEnv.Reconciler.startNATSCRWatch(eventing)
 
 			// then
-			require.Equal(t, tc.watchErr, err)
+			require.Equal(t, testcase.watchErr, err)
 			require.NotNil(t, testEnv.Reconciler.natsWatchers[eventing.Namespace])
-			if tc.watchErr != nil {
+			if testcase.watchErr != nil {
 				require.False(t, testEnv.Reconciler.natsWatchers[eventing.Namespace].IsStarted())
 			}
 		})
@@ -431,10 +432,11 @@ func Test_stopNatsCRWatch(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t)
-			testEnv.Reconciler.natsCRWatchStarted = tc.natsCRWatchStarted
+			testEnv.Reconciler.natsCRWatchStarted = testcase.natsCRWatchStarted
 
 			// Create a fake Watcher
 			natsWatcher := new(watchermocks.Watcher)
@@ -450,8 +452,8 @@ func Test_stopNatsCRWatch(t *testing.T) {
 			testEnv.Reconciler.stopNATSCRWatch(eventing)
 
 			// Check the results
-			require.Equal(t, nil, tc.watchNatsWatcher)
-			require.False(t, tc.natsCRWatchStarted)
+			require.Equal(t, nil, testcase.watchNatsWatcher)
+			require.False(t, testcase.natsCRWatchStarted)
 		})
 	}
 }

@@ -56,7 +56,6 @@ const (
 	MaxReconnects            = 10
 )
 
-//nolint:gochecknoglobals // these are required across the whole test package
 var (
 	k8sCancelFn    context.CancelFunc
 	jsTestEnsemble *jetStreamTestEnsemble
@@ -564,7 +563,10 @@ func StartAndWaitForWebhookServer(k8sManager manager.Manager, webhookInstallOpts
 	dialer := &net.Dialer{Timeout: time.Second}
 	addrPort := fmt.Sprintf("%s:%d", webhookInstallOpts.LocalServingHost, webhookInstallOpts.LocalServingPort)
 	err := retry.Do(func() error {
-		conn, connErr := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+		conn, connErr := tls.DialWithDialer(dialer, "tcp", addrPort,
+			&tls.Config{
+				InsecureSkipVerify: true, //nolint:gosec // TLS check can be skipped for this integration test suit
+			})
 		if connErr != nil {
 			return connErr
 		}

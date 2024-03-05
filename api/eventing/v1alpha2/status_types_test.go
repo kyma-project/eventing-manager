@@ -8,13 +8,13 @@ import (
 
 func TestBackend_CopyHashes(t *testing.T) {
 	// given
-	b := Backend{}
+	backend := Backend{}
 
 	// then
-	require.Equal(t, int64(0), b.Ev2hash)
-	require.Equal(t, int64(0), b.EventMeshHash)
-	require.Equal(t, int64(0), b.WebhookAuthHash)
-	require.Equal(t, int64(0), b.EventMeshLocalHash)
+	require.Equal(t, int64(0), backend.Ev2hash)
+	require.Equal(t, int64(0), backend.EventMeshHash)
+	require.Equal(t, int64(0), backend.WebhookAuthHash)
+	require.Equal(t, int64(0), backend.EventMeshLocalHash)
 
 	// given
 	src := Backend{
@@ -25,11 +25,11 @@ func TestBackend_CopyHashes(t *testing.T) {
 	}
 
 	// when
-	b.CopyHashes(src)
+	backend.CopyHashes(src)
 
 	// then
-	require.Equal(t, src.Ev2hash, b.Ev2hash)
-	require.Equal(t, src.EventMeshHash, b.EventMeshHash)
-	require.Equal(t, src.WebhookAuthHash, b.WebhookAuthHash)
-	require.Equal(t, src.EventMeshLocalHash, b.EventMeshLocalHash)
+	require.Equal(t, src.Ev2hash, backend.Ev2hash)
+	require.Equal(t, src.EventMeshHash, backend.EventMeshHash)
+	require.Equal(t, src.WebhookAuthHash, backend.WebhookAuthHash)
+	require.Equal(t, src.EventMeshLocalHash, backend.EventMeshLocalHash)
 }

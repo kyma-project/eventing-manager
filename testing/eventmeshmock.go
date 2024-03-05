@@ -22,8 +22,8 @@ import (
 	// gcp auth etc.
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	. "github.com/onsi/ginkgo" //nolint:revive,stylecheck // using . import for convenience
-	. "github.com/onsi/gomega" //nolint:revive,stylecheck // using . import for convenience
+	. "github.com/onsi/ginkgo" //nolint:stylecheck // using '.' import for convenience
+	. "github.com/onsi/gomega" //nolint:stylecheck // using '.' import for convenience
 )
 
 const (
@@ -123,7 +123,7 @@ func (m *EventMeshMock) Start() string {
 		m.log.V(1).Info(r.RequestURI)
 	})
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer GinkgoRecover()
 
 		// store request
@@ -143,8 +143,8 @@ func (m *EventMeshMock) Start() string {
 		w.Header().Set("Content-Type", "application/json")
 		mux.ServeHTTP(w, r)
 	}))
-	uri := ts.URL
-	m.server = ts
+	uri := server.URL
+	m.server = server
 	m.MessagingURL = m.server.URL + MessagingURLPath
 	m.TokenURL = m.server.URL + TokenURLPath
 	return uri
@@ -275,9 +275,9 @@ func UpdateSubscriptionResponse(m *EventMeshMock) ResponseUpdateReq {
 }
 
 // UpdateSubscriptionStateResponse updates the EventMesh subscription status in the mock.
-func UpdateSubscriptionStateResponse(m *EventMeshMock) ResponseUpdateStateReq {
+func UpdateSubscriptionStateResponse(mock *EventMeshMock) ResponseUpdateStateReq {
 	return func(w http.ResponseWriter, key string, state emstypes.State) error {
-		if subscription := m.Subscriptions.GetSubscription(key); subscription != nil {
+		if subscription := mock.Subscriptions.GetSubscription(key); subscription != nil {
 			switch state.Action {
 			case emstypes.StateActionPause:
 				{
@@ -294,7 +294,7 @@ func UpdateSubscriptionStateResponse(m *EventMeshMock) ResponseUpdateStateReq {
 				}
 			}
 
-			m.Subscriptions.PutSubscription(key, subscription)
+			mock.Subscriptions.PutSubscription(key, subscription)
 			w.WriteHeader(http.StatusAccepted)
 
 			err := json.NewEncoder(w).Encode(*subscription)

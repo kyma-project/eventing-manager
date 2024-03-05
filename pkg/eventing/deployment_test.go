@@ -52,25 +52,25 @@ func TestNewDeployment(t *testing.T) {
 	publisherName := fmt.Sprintf("%s-%s", "test-name", publisherProxySuffix)
 	publisherNamespace := "test-namespace"
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			var deployment *kappsv1.Deployment
 			var natsConfig env.NATSConfig
 
-			switch tc.givenBackendType {
+			switch testcase.givenBackendType {
 			case v1alpha1.NatsBackendType:
 				natsConfig = env.NATSConfig{
 					JSStreamName: "kyma",
 					URL:          natsURL,
 				}
 				deployment = newNATSPublisherDeployment(testutils.NewEventingCR(
-					testutils.WithEventingCRName(tc.givenPublisherName),
+					testutils.WithEventingCRName(testcase.givenPublisherName),
 					testutils.WithEventingCRNamespace(publisherNamespace),
 					testutils.WithEventingEventTypePrefix(eventTypePrefix),
 				), natsConfig, publisherConfig)
 			case v1alpha1.EventMeshBackendType:
 				deployment = newEventMeshPublisherDeployment(testutils.NewEventingCR(
-					testutils.WithEventingCRName(tc.givenPublisherName),
+					testutils.WithEventingCRName(testcase.givenPublisherName),
 					testutils.WithEventingCRNamespace(publisherNamespace),
 					testutils.WithEventMeshBackend("test-namespace/test-name"),
 				), publisherConfig)
@@ -79,7 +79,7 @@ func TestNewDeployment(t *testing.T) {
 			}
 
 			// the right backendType should be set
-			assert.Equal(t, deployment.ObjectMeta.Labels[label.KeyBackend], string(getECBackendType(tc.givenBackendType)))
+			assert.Equal(t, deployment.ObjectMeta.Labels[label.KeyBackend], string(getECBackendType(testcase.givenBackendType)))
 			assert.Equal(t, deployment.ObjectMeta.Labels[label.KeyName], publisherName)
 
 			// check the container properties were set properly
@@ -90,7 +90,7 @@ func TestNewDeployment(t *testing.T) {
 			assert.Equal(t, container.Image, publisherConfig.Image)
 			assert.Equal(t, fmt.Sprint(container.ImagePullPolicy), publisherConfig.ImagePullPolicy)
 
-			tc.wantBackendAssertions(t, publisherName, *deployment)
+			testcase.wantBackendAssertions(t, publisherName, *deployment)
 		})
 	}
 }
@@ -163,15 +163,16 @@ func Test_GetNATSEnvVars(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			for k, v := range tc.givenEnvs {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			for k, v := range testcase.givenEnvs {
 				t.Setenv(k, v)
 			}
 			backendConfig := env.GetBackendConfig()
-			envVars := getNATSEnvVars(tc.givenNATSConfig, backendConfig.PublisherConfig, tc.givenEventing)
+			envVars := getNATSEnvVars(testcase.givenNATSConfig, backendConfig.PublisherConfig, testcase.givenEventing)
 
 			// ensure the right envs were set
-			require.Equal(t, tc.wantEnvs, envVars)
+			require.Equal(t, testcase.wantEnvs, envVars)
 		})
 	}
 }
@@ -214,12 +215,13 @@ func Test_GetLogEnvVars(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			backendConfig := env.GetBackendConfig()
-			envVars := getLogEnvVars(backendConfig.PublisherConfig, tc.givenEventing)
+			envVars := getLogEnvVars(backendConfig.PublisherConfig, testcase.givenEventing)
 
 			// ensure the right envs were set
-			require.Equal(t, tc.wantEnvs, envVars)
+			require.Equal(t, testcase.wantEnvs, envVars)
 		})
 	}
 }
@@ -270,15 +272,16 @@ func Test_GetEventMeshEnvVars(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			for k, v := range tc.givenEnvs {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			for k, v := range testcase.givenEnvs {
 				t.Setenv(k, v)
 			}
 			backendConfig := env.GetBackendConfig()
-			envVars := getEventMeshEnvVars("test-name", backendConfig.PublisherConfig, tc.givenEventing)
+			envVars := getEventMeshEnvVars("test-name", backendConfig.PublisherConfig, testcase.givenEventing)
 
 			// ensure the right envs were set
-			for index, val := range tc.wantEnvs {
+			for index, val := range testcase.wantEnvs {
 				gotEnv := test.FindEnvVar(envVars, index)
 				assert.NotNil(t, gotEnv)
 				assert.Equal(t, val, gotEnv.Value)
@@ -402,12 +405,13 @@ func Test_getLabels(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		testcase := tt
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			got := getLabels(tt.args.publisherName, tt.args.backendType)
+			got := getLabels(testcase.args.publisherName, testcase.args.backendType)
 
 			// then
-			require.Equal(t, tt.want, got)
+			require.Equal(t, testcase.want, got)
 		})
 	}
 }
@@ -420,7 +424,7 @@ func Test_getSelector(t *testing.T) {
 	type args struct {
 		publisherName string
 	}
-	tests := []struct {
+	testCases := []struct {
 		name string
 		args args
 		want *kmetav1.LabelSelector
@@ -439,13 +443,14 @@ func Test_getSelector(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			got := getSelector(tt.args.publisherName)
+			got := getSelector(testcase.args.publisherName)
 
 			// then
-			require.Equal(t, tt.want, got)
+			require.Equal(t, testcase.want, got)
 		})
 	}
 }

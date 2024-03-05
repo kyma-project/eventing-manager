@@ -178,10 +178,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 }
 
 func (r *Reconciler) updateSubscriptionMetrics(current, desired *eventingv1alpha2.Subscription) {
-	for _, cc := range current.Status.Backend.Types {
+	for _, currentType := range current.Status.Backend.Types {
 		found := false
 		for _, dc := range desired.Status.Backend.Types {
-			if cc.ConsumerName == dc.ConsumerName {
+			if currentType.ConsumerName == dc.ConsumerName {
 				found = true
 			}
 		}
@@ -190,16 +190,16 @@ func (r *Reconciler) updateSubscriptionMetrics(current, desired *eventingv1alpha
 				current.Name,
 				current.Namespace,
 				backendType,
-				cc.ConsumerName,
+				currentType.ConsumerName,
 				r.Backend.GetConfig().JSStreamName)
 		}
 	}
-	for _, dc := range desired.Status.Backend.Types {
+	for _, desiredType := range desired.Status.Backend.Types {
 		r.collector.RecordSubscriptionStatus(desired.Status.Ready,
 			desired.Name,
 			desired.Namespace,
 			backendType,
-			dc.ConsumerName,
+			desiredType.ConsumerName,
 			r.Backend.GetConfig().JSStreamName,
 		)
 	}

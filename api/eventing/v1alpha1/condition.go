@@ -158,7 +158,9 @@ func containConditionType(conditions []Condition, conditionType ConditionType) b
 	return false
 }
 
-func MakeCondition(conditionType ConditionType, reason ConditionReason, status kcorev1.ConditionStatus, message string) Condition {
+func MakeCondition(conditionType ConditionType, reason ConditionReason,
+	status kcorev1.ConditionStatus, message string,
+) Condition {
 	return Condition{
 		Type:               conditionType,
 		Status:             status,

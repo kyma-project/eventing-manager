@@ -10,11 +10,11 @@ import (
 )
 
 func Test_GetRestAPIObject(t *testing.T) {
-	g := NewGomegaWithT(t)
+	gomega := NewGomegaWithT(t)
 
 	urlString := "/messaging/events/subscriptions/my-subscription"
 	urlObject, err := url.Parse(urlString)
-	g.Expect(err).ShouldNot(HaveOccurred())
+	gomega.Expect(err).ShouldNot(HaveOccurred())
 	restObject := eventingtesting.GetRestAPIObject(urlObject)
-	g.Expect(restObject).To(Equal("my-subscription"))
+	gomega.Expect(restObject).To(Equal("my-subscription"))
 }

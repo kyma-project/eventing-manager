@@ -55,9 +55,9 @@ func (sc *SinkClient) GetEventFromSinkWithRetries(id string, attempts int, inter
 	return gotEvent, err
 }
 
-func (sc *SinkClient) GetEventFromSink(id string) (*SinkEvent, error) {
-	url := sc.EventsEndpoint(id)
-	sc.logger.Debug(fmt.Sprintf("Fetching event with ID: %s from the sink URL: %s", id, url))
+func (sc *SinkClient) GetEventFromSink(eventID string) (*SinkEvent, error) {
+	url := sc.EventsEndpoint(eventID)
+	sc.logger.Debug(fmt.Sprintf("Fetching event with ID: %s from the sink URL: %s", eventID, url))
 
 	ctx := context.Background()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, bytes.NewBuffer([]byte{}))
@@ -91,7 +91,7 @@ func (sc *SinkClient) GetEventFromSink(id string) (*SinkEvent, error) {
 
 	// if not success, then return error.
 	if !Is2XX(resp.StatusCode) {
-		err = errors.New(fmt.Sprintf("Failed to fetch eventID:[%s] response:[%d] body:[%s]", id,
+		err = errors.New(fmt.Sprintf("Failed to fetch eventID:[%s] response:[%d] body:[%s]", eventID,
 			resp.StatusCode, string(respBody)))
 		sc.logger.Debug(err.Error())
 		return nil, err

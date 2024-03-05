@@ -433,22 +433,22 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// create a new subscription with no filters
 			sub := eventingtesting.NewSubscription(fmt.Sprintf("sub%v", i), "foo",
-				tc.subOpts...,
+				testcase.subOpts...,
 			)
 			AddJSCleanEventTypesToStatus(sub, testEnvironment.cleaner)
 
 			// when
 			err := jsBackend.SyncSubscription(sub)
 			require.NoError(t, err)
-			require.Len(t, jsBackend.subscriptions, tc.wantNatsSubsLen)
+			require.Len(t, jsBackend.subscriptions, testcase.wantNatsSubsLen)
 
-			if tc.givenManuallyDeleteSubscription {
+			if testcase.givenManuallyDeleteSubscription {
 				// manually delete the subscription from map
-				jsSubject := jsBackend.GetJetStreamSubject(sub.Spec.Source, tc.givenFilterToDelete, sub.Spec.TypeMatching)
+				jsSubject := jsBackend.GetJetStreamSubject(sub.Spec.Source, testcase.givenFilterToDelete, sub.Spec.TypeMatching)
 				jsSubKey := NewSubscriptionSubjectIdentifier(sub, jsSubject)
 				delete(jsBackend.subscriptions, jsSubKey)
 			}
@@ -456,12 +456,12 @@ func TestJetStream_NATSSubscriptionCount(t *testing.T) {
 			err = jsBackend.SyncSubscription(sub)
 			testEnvironment.logger.WithContext().Error(err)
 
-			if tc.wantErr != nil {
+			if testcase.wantErr != nil {
 				// the createConsumer function won't create a new Subscription,
 				// because the subscription was manually deleted from the js.subscriptions map
 				// hence the consumer will be shown in the NATS Backend as still bound
 				err = jsBackend.SyncSubscription(sub)
-				require.ErrorIs(t, err, tc.wantErr)
+				require.ErrorIs(t, err, testcase.wantErr)
 			}
 
 			// empty the js.subscriptions map
@@ -506,21 +506,21 @@ func TestJetStream_ServerRestart(t *testing.T) {
 	}
 
 	for id, tc := range testCases {
-		tc, id := tc, id
-		t.Run(tc.name, func(t *testing.T) {
+		testcase, testcaseID := tc, id
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			testEnvironment := setupTestEnvironment(t)
 			defer testEnvironment.natsServer.Shutdown()
 			defer testEnvironment.jsClient.natsConn.Close()
 			defer func() { _ = testEnvironment.jsClient.DeleteStream(testEnvironment.natsConfig.JSStreamName) }()
 			var err error
-			testEnvironment.jsBackend.Config.JSStreamStorageType = tc.givenStorageType
-			testEnvironment.jsBackend.Config.MaxReconnects = tc.givenMaxReconnects
+			testEnvironment.jsBackend.Config.JSStreamStorageType = testcase.givenStorageType
+			testEnvironment.jsBackend.Config.MaxReconnects = testcase.givenMaxReconnects
 			err = testEnvironment.jsBackend.Initialize(nil)
 			require.NoError(t, err)
 
 			// Create a subscription
-			subName := fmt.Sprintf("%s%d", "sub", id)
+			subName := fmt.Sprintf("%s%d", "sub", testcaseID)
 			subv2 := eventingtesting.NewSubscription(subName, "foo",
 				eventingtesting.WithNotCleanEventSourceAndType(),
 				eventingtesting.WithSinkURL(subscriber.SinkURL),
@@ -535,7 +535,7 @@ func TestJetStream_ServerRestart(t *testing.T) {
 			// then
 			require.NoError(t, err)
 
-			ev1data := fmt.Sprintf("%s%d", "sampledata", id)
+			ev1data := fmt.Sprintf("%s%d", "sampledata", testcaseID)
 			require.NoError(t, SendEventToJetStream(testEnvironment.jsBackend, ev1data))
 			expectedEv1Data := fmt.Sprintf("%q", ev1data)
 			require.NoError(t, subscriber.CheckEvent(expectedEv1Data))
@@ -552,14 +552,14 @@ func TestJetStream_ServerRestart(t *testing.T) {
 				eventingtesting.WithJetStreamEnabled())
 
 			// then
-			if tc.givenMaxReconnects > 0 {
+			if testcase.givenMaxReconnects > 0 {
 				require.Eventually(t, func() bool {
 					return testEnvironment.jsBackend.Conn.IsConnected()
 				}, 30*time.Second, 2*time.Second)
 			}
 
 			_, err = testEnvironment.jsClient.StreamInfo(testEnvironment.natsConfig.JSStreamName)
-			if tc.givenStorageType == StorageTypeMemory && tc.givenMaxReconnects == 0 {
+			if testcase.givenStorageType == StorageTypeMemory && testcase.givenMaxReconnects == 0 {
 				// for memory storage with reconnects disabled
 				require.ErrorIs(t, nats.ErrStreamNotFound, err)
 			} else {
@@ -577,7 +577,7 @@ func TestJetStream_ServerRestart(t *testing.T) {
 			_, err = testEnvironment.jsClient.StreamInfo(testEnvironment.natsConfig.JSStreamName)
 			require.NoError(t, err)
 
-			ev2data := fmt.Sprintf("%s%d", "newsampledata", id)
+			ev2data := fmt.Sprintf("%s%d", "newsampledata", testcaseID)
 			require.NoError(t, SendEventToJetStream(testEnvironment.jsBackend, ev2data))
 			expectedEv2Data := fmt.Sprintf("%q", ev2data)
 			require.NoError(t, subscriber.CheckEvent(expectedEv2Data))

@@ -100,17 +100,17 @@ func Test_ValidationWebhook(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			t.Log("creating the k8s subscription")
-			sub := NewSubscription(jsTestEnsemble.Ensemble, tc.givenSubscriptionOpts...)
+			sub := NewSubscription(jsTestEnsemble.Ensemble, testcase.givenSubscriptionOpts...)
 
 			EnsureNamespaceCreatedForSub(t, jsTestEnsemble.Ensemble, sub)
 
 			// attempt to create subscription
-			EnsureK8sResourceNotCreated(t, jsTestEnsemble.Ensemble, sub, tc.wantError(sub.Name))
+			EnsureK8sResourceNotCreated(t, jsTestEnsemble.Ensemble, sub, testcase.wantError(sub.Name))
 		})
 	}
 }
@@ -300,22 +300,22 @@ func Test_CreateSubscription(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			g := gomega.NewGomegaWithT(t)
 
 			t.Log("creating the k8s subscription")
-			sub := CreateSubscription(t, jsTestEnsemble.Ensemble, tc.givenSubscriptionOpts...)
+			sub := CreateSubscription(t, jsTestEnsemble.Ensemble, testcase.givenSubscriptionOpts...)
 
 			t.Log("testing the k8s subscription")
-			CheckSubscriptionOnK8s(g, jsTestEnsemble.Ensemble, sub, tc.want.K8sSubscription...)
+			CheckSubscriptionOnK8s(g, jsTestEnsemble.Ensemble, sub, testcase.want.K8sSubscription...)
 
 			t.Log("testing the k8s events")
-			CheckEventsOnK8s(g, jsTestEnsemble.Ensemble, tc.want.K8sEvents...)
+			CheckEventsOnK8s(g, jsTestEnsemble.Ensemble, testcase.want.K8sEvents...)
 
 			t.Log("testing the nats subscriptions")
-			for eventType, matchers := range tc.want.NatsSubscriptions {
+			for eventType, matchers := range testcase.want.NatsSubscriptions {
 				log.Printf("eventType: %v", eventType)
 				testSubscriptionOnNATS(g, sub, eventType, matchers...)
 			}
@@ -510,24 +510,24 @@ func Test_ChangeSubscription(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// given
 			g := gomega.NewGomegaWithT(t)
 
 			t.Log("creating the k8s subscription")
-			sub := CreateSubscription(t, jsTestEnsemble.Ensemble, tc.givenSubscriptionOpts...)
+			sub := CreateSubscription(t, jsTestEnsemble.Ensemble, testcase.givenSubscriptionOpts...)
 
 			t.Log("testing the k8s subscription")
-			CheckSubscriptionOnK8s(g, jsTestEnsemble.Ensemble, sub, tc.wantBefore.K8sSubscription...)
+			CheckSubscriptionOnK8s(g, jsTestEnsemble.Ensemble, sub, testcase.wantBefore.K8sSubscription...)
 
 			t.Log("testing the k8s events")
-			CheckEventsOnK8s(g, jsTestEnsemble.Ensemble, tc.wantBefore.K8sEvents...)
+			CheckEventsOnK8s(g, jsTestEnsemble.Ensemble, testcase.wantBefore.K8sEvents...)
 
 			t.Log("testing the nats subscriptions")
-			for eventType, matchers := range tc.wantBefore.NatsSubscriptions {
+			for eventType, matchers := range testcase.wantBefore.NatsSubscriptions {
 				testSubscriptionOnNATS(g, sub, eventType, matchers...)
 			}
 
@@ -535,19 +535,19 @@ func Test_ChangeSubscription(t *testing.T) {
 			t.Log("change and update the subscription")
 			require.NoError(t, EventuallyUpdateSubscriptionOnK8s(context.Background(), jsTestEnsemble.Ensemble,
 				sub, func(sub *eventingv1alpha2.Subscription) error {
-					tc.changeSubscription(sub)
+					testcase.changeSubscription(sub)
 					return jsTestEnsemble.K8sClient.Update(context.Background(), sub)
 				}))
 
 			// then
 			t.Log("testing the k8s subscription")
-			CheckSubscriptionOnK8s(g, jsTestEnsemble.Ensemble, sub, tc.wantAfter.K8sSubscription...)
+			CheckSubscriptionOnK8s(g, jsTestEnsemble.Ensemble, sub, testcase.wantAfter.K8sSubscription...)
 
 			t.Log("testing the k8s events")
-			CheckEventsOnK8s(g, jsTestEnsemble.Ensemble, tc.wantAfter.K8sEvents...)
+			CheckEventsOnK8s(g, jsTestEnsemble.Ensemble, testcase.wantAfter.K8sEvents...)
 
 			t.Log("testing the nats subscriptions")
-			for eventType, matchers := range tc.wantAfter.NatsSubscriptions {
+			for eventType, matchers := range testcase.wantAfter.NatsSubscriptions {
 				testSubscriptionOnNATS(g, sub, eventType, matchers...)
 			}
 

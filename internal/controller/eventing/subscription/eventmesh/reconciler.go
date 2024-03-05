@@ -701,14 +701,14 @@ func replaceStatusCondition(subscription *eventingv1alpha2.Subscription,
 
 	// compile list of desired conditions
 	desiredConditions := make([]eventingv1alpha2.Condition, 0)
-	for _, c := range subscription.Status.Conditions {
+	for _, cond := range subscription.Status.Conditions {
 		var chosenCondition eventingv1alpha2.Condition
-		if c.Type == condition.Type {
+		if cond.Type == condition.Type {
 			// take given condition
 			chosenCondition = condition
 		} else {
 			// take already present condition
-			chosenCondition = c
+			chosenCondition = cond
 		}
 		desiredConditions = append(desiredConditions, chosenCondition)
 		if string(chosenCondition.Status) != string(kmetav1.ConditionTrue) {
@@ -778,17 +778,17 @@ func (r *Reconciler) checkStatusActive(subscription *eventingv1alpha2.Subscripti
 		return true, nil
 	}
 
-	t1 := time.Now()
+	now := time.Now()
 	if len(subscription.Status.Backend.FailedActivation) == 0 {
 		// it's the first time
-		subscription.Status.Backend.FailedActivation = t1.Format(time.RFC3339)
+		subscription.Status.Backend.FailedActivation = now.Format(time.RFC3339)
 		return false, nil
 	}
 
 	// check the timeout
-	if t0, err := time.Parse(time.RFC3339, subscription.Status.Backend.FailedActivation); err != nil {
+	if activationTime, err := time.Parse(time.RFC3339, subscription.Status.Backend.FailedActivation); err != nil {
 		return false, err
-	} else if t1.Sub(t0) > timeoutRetryActiveEmsStatus {
+	} else if now.Sub(activationTime) > timeoutRetryActiveEmsStatus {
 		return false, errors.Errorf("timeout waiting for the subscription to be active: %s", subscription.Name)
 	}
 

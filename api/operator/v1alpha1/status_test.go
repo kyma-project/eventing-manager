@@ -54,13 +54,14 @@ func TestClearPublisherService(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
 			// when
-			tc.givenStatus.ClearPublisherService()
+			testcase.givenStatus.ClearPublisherService()
 
 			// then
-			require.Equal(t, tc.wantStatus, tc.givenStatus)
+			require.Equal(t, testcase.wantStatus, testcase.givenStatus)
 		})
 	}
 }
@@ -88,13 +89,14 @@ func TestSetPublisherService(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
 			// when
-			tc.givenStatus.SetPublisherService(tc.givenServiceName, tc.givenServiceNamespace)
+			testcase.givenStatus.SetPublisherService(testcase.givenServiceName, testcase.givenServiceNamespace)
 
 			// then
-			require.Equal(t, tc.wantStatus, tc.givenStatus)
+			require.Equal(t, testcase.wantStatus, testcase.givenStatus)
 		})
 	}
 }

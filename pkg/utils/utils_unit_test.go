@@ -59,14 +59,15 @@ func Test_GetPortNumberFromURL(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		gotPort, err := GetPortNumberFromURL(tc.givenURL)
+		testcase := tc
+		gotPort, err := GetPortNumberFromURL(testcase.givenURL)
 		if err != nil {
 			t.Errorf("test failed with error: [%v]", err)
 			continue
 		}
-		if tc.wantPort != gotPort {
+		if testcase.wantPort != gotPort {
 			t.Errorf("test failed with given URL: {Scheme:%s Host:%s}, want port: [%d] but got: [%d]",
-				tc.givenURL.Scheme, tc.givenURL.Host, tc.wantPort, gotPort)
+				testcase.givenURL.Scheme, testcase.givenURL.Host, testcase.wantPort, gotPort)
 		}
 	}
 }
@@ -169,12 +170,12 @@ func TestIsValidScheme(t *testing.T) {
 			wantValid: true,
 		},
 	}
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			gotValid := IsValidScheme(tc.givenSink)
-			require.Equal(t, tc.wantValid, gotValid)
+			gotValid := IsValidScheme(testcase.givenSink)
+			require.Equal(t, testcase.wantValid, gotValid)
 		})
 	}
 }
@@ -201,14 +202,14 @@ func TestGetSinkData(t *testing.T) {
 			wantSubDomains:  []string{"valid1", "valid2"},
 		},
 	}
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			gotTrimmedHost, gotSubDomain, gotErr := GetSinkData(tc.givenSink)
-			require.ErrorIs(t, gotErr, tc.wantError)
-			require.Equal(t, tc.wantTrimmedHost, gotTrimmedHost)
-			require.Equal(t, tc.wantSubDomains, gotSubDomain)
+			gotTrimmedHost, gotSubDomain, gotErr := GetSinkData(testcase.givenSink)
+			require.ErrorIs(t, gotErr, testcase.wantError)
+			require.Equal(t, testcase.wantTrimmedHost, gotTrimmedHost)
+			require.Equal(t, testcase.wantSubDomains, gotSubDomain)
 		})
 	}
 }

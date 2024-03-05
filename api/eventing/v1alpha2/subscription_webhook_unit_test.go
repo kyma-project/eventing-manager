@@ -69,12 +69,12 @@ func Test_Default(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			tc.givenSub.Default()
-			require.Equal(t, tc.wantSub, tc.givenSub)
+			testcase.givenSub.Default()
+			require.Equal(t, testcase.wantSub, testcase.givenSub)
 		})
 	}
 }

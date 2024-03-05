@@ -10,7 +10,7 @@ import (
 )
 
 func TestUnitValidate_For_Errors(t *testing.T) {
-	tests := []struct {
+	testCases := []struct {
 		name        string
 		givenConfig env.NATSConfig
 		wantError   error
@@ -54,7 +54,7 @@ func TestUnitValidate_For_Errors(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := Validate(tc.givenConfig)
 			require.ErrorIs(t, err, tc.wantError)

@@ -60,12 +60,12 @@ func TestGetMaxInFlightMessages(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
-			result := tc.givenSubscription.GetMaxInFlightMessages(&defaultSubConfig)
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
+			result := testcase.givenSubscription.GetMaxInFlightMessages(&defaultSubConfig)
 
-			assert.Equal(t, tc.wantResult, result)
+			assert.Equal(t, testcase.wantResult, result)
 		})
 	}
 }

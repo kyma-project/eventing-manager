@@ -12,6 +12,7 @@ import (
 )
 
 func Test_IsEventTypeSegmentsOverLimit(t *testing.T) {
+	t.Parallel()
 	// cases
 	testCases := []struct {
 		name           string
@@ -31,15 +32,16 @@ func Test_IsEventTypeSegmentsOverLimit(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			require.Equal(t, tc.wantResult, isEventTypeSegmentsOverLimit(tc.givenEventType))
+			require.Equal(t, testcase.wantResult, isEventTypeSegmentsOverLimit(testcase.givenEventType))
 		})
 	}
 }
 
 func Test_GetEventMeshSubject(t *testing.T) {
+	t.Parallel()
 	// cases
 	testCases := []struct {
 		name                 string
@@ -58,15 +60,16 @@ func Test_GetEventMeshSubject(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			require.Equal(t, tc.wantEventMeshSubject, getEventMeshSubject(tc.givenSource, tc.givenSubject, tc.givenEventMeshPrefix))
+			require.Equal(t, testcase.wantEventMeshSubject, getEventMeshSubject(testcase.givenSource, testcase.givenSubject, testcase.givenEventMeshPrefix))
 		})
 	}
 }
 
 func Test_statusCleanEventTypes(t *testing.T) {
+	t.Parallel()
 	// cases
 	testCases := []struct {
 		name           string
@@ -101,10 +104,10 @@ func Test_statusCleanEventTypes(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			require.Equal(t, tc.wantEventTypes, statusCleanEventTypes(tc.givenTypeInfos))
+			require.Equal(t, testcase.wantEventTypes, statusCleanEventTypes(testcase.givenTypeInfos))
 		})
 	}
 }

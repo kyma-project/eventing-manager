@@ -30,7 +30,7 @@ func Test_getECBackendType(t *testing.T) {
 	type args struct {
 		backendType v1alpha1.BackendType
 	}
-	tests := []struct {
+	testCases := []struct {
 		name string
 		args args
 		want v1alpha1.BackendType
@@ -57,13 +57,14 @@ func Test_getECBackendType(t *testing.T) {
 			want: "NATS",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// when
-			got := getECBackendType(tt.args.backendType)
+			got := getECBackendType(testcase.args.backendType)
 
 			// then
-			require.Equal(t, tt.want, got)
+			require.Equal(t, testcase.want, got)
 		})
 	}
 }

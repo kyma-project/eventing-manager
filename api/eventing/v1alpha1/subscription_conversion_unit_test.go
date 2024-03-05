@@ -236,7 +236,8 @@ func Test_Conversion(t *testing.T) {
 
 // Test_CleanupInV1ToV2Conversion test the cleaning from non-alphanumeric characters
 // and also merging of segments in event types if they exceed the limit.
-// nolint:goconst // the event types used here in tests do not get more readable by extracting them to constants
+//
+//nolint:goconst // the event types used here in tests do not get more readable by extracting them to constants
 func Test_CleanupInV1ToV2Conversion(t *testing.T) {
 	type TestCase struct {
 		name           string
@@ -338,28 +339,28 @@ func Test_CleanupInV1ToV2Conversion(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		testcase := tc
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			testLogger, err := logger.New("json", "info")
 			require.NoError(t, err)
 
 			// initialize dummy cleaner
-			cleaner := eventtype.NewSimpleCleaner(tc.givenPrefix, testLogger)
+			cleaner := eventtype.NewSimpleCleaner(testcase.givenPrefix, testLogger)
 			v1alpha1.InitializeEventTypeCleaner(cleaner)
 
 			// initialize v1alpha2 Subscription instance
 			convertedV1Alpha2 := &v1alpha2.Subscription{}
 
 			// when
-			err = v1alpha1.V1ToV2(tc.givenAlpha1Sub, convertedV1Alpha2)
+			err = v1alpha1.V1ToV2(testcase.givenAlpha1Sub, convertedV1Alpha2)
 
 			// then
-			if tc.wantError {
+			if testcase.wantError {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tc.wantTypes, convertedV1Alpha2.Spec.Types)
+				require.Equal(t, testcase.wantTypes, convertedV1Alpha2.Spec.Types)
 			}
 		})
 	}
