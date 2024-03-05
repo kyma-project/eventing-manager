@@ -21,9 +21,8 @@ import (
 )
 
 // Test_NATSConnection tests the Eventing CR status when connecting to NATS.
-//
-//nolint:tparallel // lets not make this test parallel for now
 func Test_NATSConnection(t *testing.T) {
+	t.Parallel()
 	// given
 
 	ErrAny := errors.New("any")
