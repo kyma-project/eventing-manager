@@ -40,7 +40,7 @@ verify-kyma: ## Wait for Kyma CR to be in Ready state.
 
 .PHONY: install-k3d-tools
 install-k3d-tools: ## Create k3d with kyma CRDs.
-	curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=${K3D_VERSION} bash
+	curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 .PHONY: apply-peerauthentication-crd
 apply-peerauthentication-crd:
