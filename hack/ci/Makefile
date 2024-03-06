@@ -68,7 +68,7 @@ wait-api-gateway-cr-ready:
 
 .PHONY: provision-gardener-cluster
 provision-gardener-cluster:
-	PROJECT_ROOT="${PROJECT_ROOT}" KYMA_CLI="${KYMA_CLI}" ${PROJECT_ROOT}/scripts/gardener/aws/provision.sh
+	GARDENER_CLUSTER_VERSION="${K3D_VERSION}" PROJECT_ROOT="${PROJECT_ROOT}" KYMA_CLI="${KYMA_CLI}" ${PROJECT_ROOT}/scripts/gardener/aws/provision.sh
 
 .PHONY: deprovision-gardener-cluster
 deprovision-gardener-cluster:
