@@ -109,6 +109,8 @@ func NewAPIRuleCRD() *kapiextensionsv1.CustomResourceDefinition {
 	return result
 }
 
+// NewEventingCR creates a new Eventing CR with the given options.
+// If no options are provided, the default (e. g. random name and namespace) will be used.
 func NewEventingCR(opts ...EventingOption) *v1alpha1.Eventing {
 	name := fmt.Sprintf(NameFormat, GetRandString(randomNameLen))
 	namespace := fmt.Sprintf(NamespaceFormat, GetRandString(randomNameLen))
@@ -263,6 +265,17 @@ func NewDeployment(name, namespace string, annotations map[string]string) *kapps
 				},
 			},
 		},
+	}
+}
+
+func NewEventMeshSecretWithData(name, namespace string, data map[string][]byte) *kcorev1.Secret {
+	return &kcorev1.Secret{
+		ObjectMeta: kmetav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+		Data: data,
+		Type: "Opaque",
 	}
 }
 

@@ -2,7 +2,6 @@ package controller_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	kappsv1 "k8s.io/api/apps/v1"
-	kcorev1 "k8s.io/api/core/v1"
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -580,72 +578,118 @@ func Test_WatcherEventingCRK8sObjects(t *testing.T) {
 }
 
 func Test_EventMesh_MalformattedSecret(t *testing.T) {
-
 	testCases := []struct {
-		name                    string
-		givenObjName            string
-		givenEventMeshNamespace string
-		givenMessages           []eventingcontroller.Message
+		name            string
+		givenSecretData map[string][]byte
+		wantMatcher     gomegatypes.GomegaMatcher
 	}{
 		{
-			name:                    "should have ready state when EventMesh secret is malformatted",
-			givenObjName:            "something",
-			givenEventMeshNamespace: "event-mesh-namespace",
-			givenMessages: []eventingcontroller.Message{
-				{
-					Broker: eventingcontroller.Broker{
-						BrokerType: "broker-type",
-					},
-					OA2: eventingcontroller.OAuthCredentials{
-						ClientID:      "client-id",
-						ClientSecret:  "client-secret",
-						GrantType:     "grant-type",
-						TokenEndpoint: "token-endpoint",
-					},
-					URI: "uri",
-				}},
+			name: "should have ready state when EventMesh secret is malformatted",
+			givenSecretData: map[string][]byte{
+				"management": []byte("foo"),
+				"messaging": []byte(`[
+			  {
+				"broker": {
+				  "type": "bar"
+				},
+				"oa2": {
+				  "clientid": "foo",
+				  "clientsecret": "foo",
+				  "granttype": "client_credentials",
+				  "tokenendpoint": "bar"
+				},
+				"protocol": [
+				  "amqp10ws"
+				],
+				"uri": "foo"
+			  },
+			  {
+				"broker": {
+				  "type": "foo"
+				},
+				"oa2": {
+				  "clientid": "bar",
+				  "clientsecret": "bar",
+				  "granttype": "client_credentials",
+				  "tokenendpoint": "foo"
+				},
+				"protocol": [
+				  "bar"
+				],
+				"uri": "bar"
+			  },
+			  {
+				"broker": {
+				  "type": "foo"
+				},
+				"oa2": {
+				  "clientid": "foo",
+				  "clientsecret": "bar",
+				  "granttype": "client_credentials",
+				  "tokenendpoint": "foo"
+				},
+				"protocol": [
+				  "httprest"
+				],
+				"uri": "bar"
+			  }
+			]`),
+				"namespace":         []byte("bar"),
+				"serviceinstanceid": []byte("foo"),
+				"xsappname":         []byte("bar"),
+			},
+			wantMatcher: gomega.And(
+				matchers.HaveStatusReady(),
+			),
 		},
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			// given
+			g := gomega.NewWithT(t)
+
+			// Given:
+			// Make the Deployment always beeing ready.
 			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
 				return true
 			}
 
-			// Create an unique namespace for this test run.
-			givenNamespace := fmt.Sprintf("namespace-%s", tc.givenObjName)
-			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
-
-			// Create an Eventing CR. We do not care about the details.
-			givenEveningCR := utils.NewEventingCR(
-				utils.WithEventMeshBackend(fmt.Sprintf("test-%s", tc.givenObjName)),
+			// Create an Eventing CR. We do not care about the details in this test.
+			givenEventingCR := utils.NewEventingCR(
+				utils.WithEventMeshBackend("test-secret-name"),
 				utils.WithEventingPublisherData(1, 1, "199m", "99Mi", "399m", "199Mi"),
 				utils.WithEventingEventTypePrefix("test-prefix"),
 			)
 
-			// Create a EventMesh Secret. This is the crucial part of the test.
-			// If the Secret is malformatted, the Eventing CR should have a warning state.
-			secretData, err := json.Marshal(tc.givenMessages)
-			if err != nil {
-				t.Fail()
-			}
-			secret := kcorev1.Secret{
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name:      fmt.Sprintf("test-%s", tc.givenObjName),
-					Namespace: givenNamespace,
-				},
-				Data: map[string][]byte{
-					"namespace": []byte(tc.givenEventMeshNamespace),
-					"message":   secretData,
-				},
-			}
-			testEnvironment.EnsuretEventMeshSecretCreated(t, givenEveningCR, &secret)
+			// Create an unique Namespace for this test run.
+			givenNamespace := givenEventingCR.Namespace
+			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
-			// when
+			// // Create an EventMesh Secret. This is the crucial part of the test;
+			// // if the Secret is malformatted, Eventing should have the warning status.
+			// // Frist we need to extract the Secret name and namespace from the given Eventing CR.
+			// subArray := strings.Split(givenEventingCR.Spec.Backend.Config.EventMeshSecret, "/")
+			// secretName, secretNameSpace := subArray[1], subArray[0]
+			// // Now we can assemble the Secret.
+			// secret := kcorev1.Secret{
+			// 	ObjectMeta: kmetav1.ObjectMeta{
+			// 		Name:      secretName,
+			// 		Namespace: secretNameSpace,
+			// 	},
+			// 	Data: tc.givenSecretData,
+			// 	Type: "Opaque",
+			// }
+			// // Finally, we create the Secret in the K8s cluster.
+			// testEnvironment.EnsureEventMeshSecretCreated(t, &secret)
+			testEnvironment.EnsureDefaultEventMeshSecretCreated(t, givenEventingCR)
 
+			// When:
+			// Create the Eventing CR with the given EventMesh Secret.
+			testEnvironment.EnsureK8sResourceCreated(t, givenEventingCR)
+
+			// Then:
+			// Check the Eventing CR status against the expected status.
+			testEnvironment.GetEventingAssert(g, givenEventingCR).Should(tc.wantMatcher)
 		})
 	}
 }
