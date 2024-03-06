@@ -2,6 +2,7 @@ PROJECT_ROOT ?= ../..
 KYMA_CLI ?= "${PROJECT_ROOT}/${KYMA}"
 CLUSTER_NAME ?= kyma
 REGISTRY_PORT ?= 5001
+K3D_VERSION ?= 1.28.7
 
 .PHONY: create-kyma-system-ns
 create-kyma-system-ns: ## Create kyma-system namespace.
@@ -9,7 +10,7 @@ create-kyma-system-ns: ## Create kyma-system namespace.
 
 .PHONY: create-k3d
 create-k3d: ## Create k3d with kyma CRDs.
-	"${KYMA_CLI}" provision k3d -p 8081:80@loadbalancer -p 8443:443@loadbalancer --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
+	"${KYMA_CLI}" provision k3d -p 8081:80@loadbalancer -p 8443:443@loadbalancer --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} -k ${K3D_VERSION} --ci 
 
 .PHONY: install-nats-module
 install-nats-module:
@@ -39,7 +40,7 @@ verify-kyma: ## Wait for Kyma CR to be in Ready state.
 
 .PHONY: install-k3d-tools
 install-k3d-tools: ## Create k3d with kyma CRDs.
-	curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=${K3D_VERSION} bash
+	curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 .PHONY: apply-peerauthentication-crd
 apply-peerauthentication-crd:
@@ -67,7 +68,7 @@ wait-api-gateway-cr-ready:
 
 .PHONY: provision-gardener-cluster
 provision-gardener-cluster:
-	PROJECT_ROOT="${PROJECT_ROOT}" KYMA_CLI="${KYMA_CLI}" ${PROJECT_ROOT}/scripts/gardener/aws/provision.sh
+	GARDENER_CLUSTER_VERSION="${K3D_VERSION}" PROJECT_ROOT="${PROJECT_ROOT}" KYMA_CLI="${KYMA_CLI}" ${PROJECT_ROOT}/scripts/gardener/aws/provision.sh
 
 .PHONY: deprovision-gardener-cluster
 deprovision-gardener-cluster:
