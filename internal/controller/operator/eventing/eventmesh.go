@@ -343,21 +343,21 @@ func getSecretForPublisher(eventMeshSecret *kcorev1.Secret) (*kcorev1.Secret, er
 		return nil, newMalformattedSecretErr(err.Error())
 	}
 
-	for _, m := range messages {
-		if m.Broker.BrokerType == "saprestmgw" {
-			if len(m.OA2.ClientID) == 0 {
+	for _, msg := range messages {
+		if msg.Broker.BrokerType == "saprestmgw" {
+			if len(msg.OA2.ClientID) == 0 {
 				return nil, newMalformattedSecretErr("client ID is missing")
 			}
-			if len(m.OA2.ClientSecret) == 0 {
+			if len(msg.OA2.ClientSecret) == 0 {
 				return nil, newMalformattedSecretErr("client secret is missing")
 			}
-			if len(m.OA2.TokenEndpoint) == 0 {
+			if len(msg.OA2.TokenEndpoint) == 0 {
 				return nil, newMalformattedSecretErr("tokenendpoint is missing")
 			}
-			if len(m.OA2.GrantType) == 0 {
+			if len(msg.OA2.GrantType) == 0 {
 				return nil, newMalformattedSecretErr("granttype is missing")
 			}
-			if len(m.URI) == 0 {
+			if len(msg.URI) == 0 {
 				return nil, newMalformattedSecretErr("publish URL is missing")
 			}
 
