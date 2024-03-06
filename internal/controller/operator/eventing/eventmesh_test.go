@@ -1120,32 +1120,29 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 }
 
 // Test_IsMalfromattedSecret verifies that the function IsMalformattedSecretErr asses correctly
-// if a given error is a malformatted secret error.
+// if a given error is a malformatted secret error or not.
 func Test_IsMalfromattedSecret(t *testing.T) {
-	t.Parallel()
-
 	testCases := []struct {
 		name       string
 		givenErr   error
 		wantResult bool
 	}{
 		{
-			name:       "should return true when error is ErrMalformedSecret",
+			name:       "should return true when an error is an ErrMalformedSecret",
 			givenErr:   ErrEventMeshSecretMalformatted,
 			wantResult: true,
 		}, {
-			name:       "should return true when error is a wrapped ErrMalformedSecret",
+			name:       "should return true when an error is a wrapped ErrMalformedSecret",
 			givenErr:   newMalformattedSecretErr("this error will wrap ErrMalformedSecret"),
 			wantResult: true,
 		}, {
-			name:       "should return false when error is not ErrMalformedSecret",
+			name:       "should return false when an error is not an ErrMalformedSecret",
 			givenErr:   fmt.Errorf("this is not a malformed secret error"),
 			wantResult: false,
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Parallel()
 		t.Run(tc.name, func(t *testing.T) {
 			// when
 			result := IsMalformattedSecretErr(tc.givenErr)
