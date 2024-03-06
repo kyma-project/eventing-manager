@@ -2,7 +2,7 @@ PROJECT_ROOT ?= ../..
 KYMA_CLI ?= "${PROJECT_ROOT}/${KYMA}"
 CLUSTER_NAME ?= kyma
 REGISTRY_PORT ?= 5001
-K3D_VERSION ?= 1.28.0
+K3D_VERSION ?= 1.28.7
 
 .PHONY: create-kyma-system-ns
 create-kyma-system-ns: ## Create kyma-system namespace.
