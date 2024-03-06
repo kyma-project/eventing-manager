@@ -28,13 +28,17 @@ const (
 	secretKeyTokenURL     = "token_url"
 	secretKeyCertsURL     = "certs_url"
 
+	EMSecretMessagingMissing      = "messaging is missing from EM secret"
+	EMSecretNamespaceMissing      = "namespace is missing from EM secret"
 	EventMeshSecretMissingMessage = "The specified EventMesh secret is not found. Please provide an existing secret."
+	EventMeshSecretMalformatted   = "The EventMesh secret data is not formatted properly."
 )
 
 var (
-	ErrEMSecretMessagingMissing = errors.New("messaging is missing from EM secret")
-	ErrEMSecretNamespaceMissing = errors.New("namespace is missing from EM secret")
-	ErrEventMeshSecretMissing   = errors.New(EventMeshSecretMissingMessage)
+	ErrEMSecretMessagingMissing    = errors.New(EMSecretMessagingMissing)
+	ErrEMSecretNamespaceMissing    = errors.New(EMSecretNamespaceMissing)
+	ErrEventMeshSecretMissing      = errors.New(EventMeshSecretMissingMessage)
+	ErrEventMeshSecretMalformatted = errors.New(EventMeshSecretMalformatted)
 )
 
 type oauth2Credentials struct {
@@ -42,6 +46,15 @@ type oauth2Credentials struct {
 	clientSecret []byte
 	tokenURL     []byte
 	certsURL     []byte
+}
+
+func newMalformattedSecretErr(e string) error {
+	// The new error is handled as a string (%s), the malformation error is wrapped as an Err.
+	return fmt.Errorf("%s: %w", e, ErrEventMeshSecretMalformatted)
+}
+
+func IsMalformattedSecretErr(err error) bool {
+	return errors.Is(err, ErrEventMeshSecretMalformatted)
 }
 
 func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing *v1alpha1.Eventing, eventMeshSecret *kcorev1.Secret) error {
@@ -314,38 +327,38 @@ func getSecretForPublisher(eventMeshSecret *kcorev1.Secret) (*kcorev1.Secret, er
 		label.KeyName: label.ValueEventingPublisherProxy,
 	}
 
-	if _, ok := eventMeshSecret.Data["messaging"]; !ok {
-		return nil, ErrEMSecretMessagingMissing
-	}
-	messagingBytes := eventMeshSecret.Data["messaging"]
-
 	if _, ok := eventMeshSecret.Data["namespace"]; !ok {
-		return nil, ErrEMSecretNamespaceMissing
+		return nil, newMalformattedSecretErr(EMSecretNamespaceMissing)
 	}
 	namespaceBytes := eventMeshSecret.Data["namespace"]
+
+	if _, ok := eventMeshSecret.Data["messaging"]; !ok {
+		return nil, newMalformattedSecretErr(EMSecretMessagingMissing)
+	}
+	messagingBytes := eventMeshSecret.Data["messaging"]
 
 	var messages []Message
 	err := json.Unmarshal(messagingBytes, &messages)
 	if err != nil {
-		return nil, err
+		return nil, newMalformattedSecretErr(err.Error())
 	}
 
 	for _, msg := range messages {
 		if msg.Broker.BrokerType == "saprestmgw" {
 			if len(msg.OA2.ClientID) == 0 {
-				return nil, errors.New("client ID is missing")
+				return nil, newMalformattedSecretErr("client ID is missing")
 			}
 			if len(msg.OA2.ClientSecret) == 0 {
-				return nil, errors.New("client secret is missing")
+				return nil, newMalformattedSecretErr("client secret is missing")
 			}
 			if len(msg.OA2.TokenEndpoint) == 0 {
-				return nil, errors.New("tokenendpoint is missing")
+				return nil, newMalformattedSecretErr("tokenendpoint is missing")
 			}
 			if len(msg.OA2.GrantType) == 0 {
-				return nil, errors.New("granttype is missing")
+				return nil, newMalformattedSecretErr("granttype is missing")
 			}
 			if len(msg.URI) == 0 {
-				return nil, errors.New("publish URL is missing")
+				return nil, newMalformattedSecretErr("publish URL is missing")
 			}
 
 			secret.StringData = getSecretStringData(msg.OA2.ClientID, msg.OA2.ClientSecret, msg.OA2.TokenEndpoint, msg.OA2.GrantType, msg.URI, string(namespaceBytes))

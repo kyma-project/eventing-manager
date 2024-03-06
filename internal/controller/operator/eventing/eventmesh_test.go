@@ -702,7 +702,8 @@ func Test_GetSecretForPublisher(t *testing.T) {
 			gotPublisherSecret, err := getSecretForPublisher(publisherSecret)
 			if testcase.expectedError != nil {
 				require.Error(t, err)
-				require.ErrorContains(t, err, testcase.expectedError.Error())
+				require.ErrorIs(t, err, ErrEventMeshSecretMalformatted)
+				require.ErrorContains(t, err, tc.expectedError.Error())
 				return
 			}
 			require.NoError(t, err)
@@ -1114,6 +1115,40 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 			require.Equal(t, testcase.givenSubManagerStarted, testEnv.Reconciler.isEventMeshSubManagerStarted)
 			require.Equal(t, testcase.shouldEventMeshSubManagerExist, testEnv.Reconciler.eventMeshSubManager != nil)
 			require.Equal(t, *testcase.wantCredentials, testEnv.Reconciler.oauth2credentials)
+		})
+	}
+}
+
+// Test_IsMalfromattedSecret verifies that the function IsMalformattedSecretErr asses correctly
+// if a given error is a malformatted secret error or not.
+func Test_IsMalfromattedSecret(t *testing.T) {
+	testCases := []struct {
+		name       string
+		givenErr   error
+		wantResult bool
+	}{
+		{
+			name:       "should return true when an error is an ErrMalformedSecret",
+			givenErr:   ErrEventMeshSecretMalformatted,
+			wantResult: true,
+		}, {
+			name:       "should return true when an error is a wrapped ErrMalformedSecret",
+			givenErr:   newMalformattedSecretErr("this error will wrap ErrMalformedSecret"),
+			wantResult: true,
+		}, {
+			name:       "should return false when an error is not an ErrMalformedSecret",
+			givenErr:   fmt.Errorf("this is not a malformed secret error"),
+			wantResult: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// when
+			result := IsMalformattedSecretErr(tc.givenErr)
+
+			// then
+			require.Equal(t, tc.wantResult, result)
 		})
 	}
 }
