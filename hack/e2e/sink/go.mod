@@ -3,7 +3,7 @@ module github.com/kyma-project/eventing-manager/sink
 go 1.20
 
 require (
-	github.com/cloudevents/sdk-go/v2 v2.14.0
+	github.com/cloudevents/sdk-go/v2 v2.15.2
 	github.com/gorilla/mux v1.8.0
 	go.uber.org/zap v1.10.0
 )
