@@ -999,6 +999,18 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 				matchers.HaveStatusWarning(),
 			),
 		},
+		{
+			name: "EventingCR should have the `warning` status when EventMesh secret data misses the `messaging` key",
+			givenData: map[string][]byte{
+				"management":        []byte("foo"),
+				"serviceinstanceid": []byte("foo"),
+				"xsappname":         []byte("bar"),
+				"namespace":         []byte("bar"),
+			},
+			wantMatcher: gomega.And(
+				matchers.HaveStatusWarning(),
+			),
+		},
 	}
 
 	for _, tc := range testcases {
