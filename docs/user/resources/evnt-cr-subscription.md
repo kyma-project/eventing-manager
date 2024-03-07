@@ -81,68 +81,6 @@ This table lists all the possible parameters of a given resource together with t
 | **types.&#x200b;cleanType** (required) | string | Event type after it was cleaned up from backend compatible characters. |
 | **types.&#x200b;originalType** (required) | string | Event type as specified in the Subscription spec. |
 
-### Subscription.eventing.kyma-project.io/v1alpha1
-
->**CAUTION**: The v1alpha1 API version is deprecated as of Kyma 2.14.X.
-
-**Spec:**
-
-| Parameter | Type | Description |
-| ---- | ----------- | ---- |
-| **config**  | object | Defines additional configuration for the active backend. |
-| **config.&#x200b;maxInFlightMessages**  | integer | Defines how many not-ACKed messages can be in flight simultaneously. |
-| **filter** (required) | object | Defines which events will be sent to the sink. |
-| **filter.&#x200b;dialect**  | string | Contains a `URI-reference` to the CloudEvent filter dialect. See [here](https://github.com/cloudevents/spec/blob/main/subscriptions/spec.md#3241-filter-dialects) for more details. |
-| **filter.&#x200b;filters** (required) | \[\]object | Defines the BEB filter element as a combination of two CE filter elements. |
-| **filter.&#x200b;filters.&#x200b;eventSource** (required) | object | Defines the source of the CE filter. |
-| **filter.&#x200b;filters.&#x200b;eventSource.&#x200b;property** (required) | string | Defines the property of the filter. |
-| **filter.&#x200b;filters.&#x200b;eventSource.&#x200b;type**  | string | Defines the type of the filter. |
-| **filter.&#x200b;filters.&#x200b;eventSource.&#x200b;value** (required) | string | Defines the value of the filter. |
-| **filter.&#x200b;filters.&#x200b;eventType** (required) | object | Defines the type of the CE filter. |
-| **filter.&#x200b;filters.&#x200b;eventType.&#x200b;property** (required) | string | Defines the property of the filter. |
-| **filter.&#x200b;filters.&#x200b;eventType.&#x200b;type**  | string | Defines the type of the filter. |
-| **filter.&#x200b;filters.&#x200b;eventType.&#x200b;value** (required) | string | Defines the value of the filter. |
-| **id**  | string | Unique identifier of the Subscription, read-only. |
-| **protocol**  | string | Defines the CE protocol specification implementation. |
-| **protocolsettings**  | object | Defines the CE protocol settings specification implementation. |
-| **protocolsettings.&#x200b;contentMode**  | string | Defines the content mode for eventing based on BEB. The value is either `BINARY`, or `STRUCTURED`. |
-| **protocolsettings.&#x200b;exemptHandshake**  | boolean | Defines if the exempt handshake for eventing is based on BEB. |
-| **protocolsettings.&#x200b;qos**  | string | Defines the quality of service for eventing based on BEB. |
-| **protocolsettings.&#x200b;webhookAuth**  | object | Defines the Webhook called by an active subscription on BEB. |
-| **protocolsettings.&#x200b;webhookAuth.&#x200b;clientId** (required) | string | Defines the clientID for OAuth2. |
-| **protocolsettings.&#x200b;webhookAuth.&#x200b;clientSecret** (required) | string | Defines the Client Secret for OAuth2. |
-| **protocolsettings.&#x200b;webhookAuth.&#x200b;grantType** (required) | string | Defines the grant type for OAuth2. |
-| **protocolsettings.&#x200b;webhookAuth.&#x200b;scope**  | \[\]string | Defines the scope for OAuth2. |
-| **protocolsettings.&#x200b;webhookAuth.&#x200b;tokenUrl** (required) | string | Defines the token URL for OAuth2. |
-| **protocolsettings.&#x200b;webhookAuth.&#x200b;type**  | string | Defines the authentication type. |
-| **sink** (required) | string | Kubernetes Service that should be used as a target for the events that match the Subscription. Must exist in the same Namespace as the Subscription. |
-
-**Status:**
-
-| Parameter | Type | Description |
-| ---- | ----------- | ---- |
-| **apiRuleName**  | string | Defines the name of the APIRule which is used by the Subscription. |
-| **cleanEventTypes** (required) | \[\]string | CleanEventTypes defines the filter's event types after cleanup to use it with the configured backend. |
-| **conditions**  | \[\]object | Current state of the Subscription. |
-| **conditions.&#x200b;lastTransitionTime**  | string | Defines the date of the last condition status change. |
-| **conditions.&#x200b;message**  | string | Provides more details about the condition status change. |
-| **conditions.&#x200b;reason**  | string | Defines the reason for the condition status change. |
-| **conditions.&#x200b;status** (required) | string | Status of the condition. The value is either `True`, `False`, or `Unknown`. |
-| **conditions.&#x200b;type**  | string | Short description of the condition. |
-| **config**  | object | Defines the configurations that have been applied to the eventing backend when creating this Subscription. |
-| **config.&#x200b;maxInFlightMessages**  | integer | Defines how many not-ACKed messages can be in flight simultaneously. |
-| **emsSubscriptionStatus**  | object | Defines the status of the Subscription in EventMesh. |
-| **emsSubscriptionStatus.&#x200b;lastFailedDelivery**  | string | Timestamp of the last failed delivery. |
-| **emsSubscriptionStatus.&#x200b;lastFailedDeliveryReason**  | string | Reason for the last failed delivery. |
-| **emsSubscriptionStatus.&#x200b;lastSuccessfulDelivery**  | string | Timestamp of the last successful delivery. |
-| **emsSubscriptionStatus.&#x200b;subscriptionStatus**  | string | Status of the Subscription as reported by EventMesh. |
-| **emsSubscriptionStatus.&#x200b;subscriptionStatusReason**  | string | Reason for the current status. |
-| **emshash**  | integer | Defines the checksum for the Subscription in EventMesh. |
-| **ev2hash**  | integer | Defines the checksum for the Subscription CR. |
-| **externalSink**  | string | Defines the webhook URL which is used by EventMesh to trigger subscribers. |
-| **failedActivation**  | string | Defines the reason if a Subscription failed activation in EventMesh. |
-| **ready** (required) | boolean | Overall readiness of the Subscription. |
-
 <!-- TABLE-END -->
 
 ## Related Resources and Components
