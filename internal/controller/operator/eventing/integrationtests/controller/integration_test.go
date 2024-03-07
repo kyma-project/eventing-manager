@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
@@ -14,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	kappsv1 "k8s.io/api/apps/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -863,6 +865,201 @@ func Test_DeleteEventingCR(t *testing.T) {
 				testEnvironment.EnsureK8sClusterRoleBindingNotFound(t,
 					eventing.GetPublisherClusterRoleBindingName(*testcase.givenEventing), givenNamespace)
 			}
+		})
+	}
+}
+
+func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
+	testcases := []struct {
+		name        string
+		givenData   map[string][]byte
+		wantMatcher gomegatypes.GomegaMatcher
+	}{
+		{
+			name: "EventingCR should have the `ready` status when EventMesh secret is valid",
+			givenData: map[string][]byte{
+				"management": []byte("foo"),
+				"messaging": []byte(`[
+				  {
+					"broker": {
+					  "type": "bar"
+					},
+					"oa2": {
+					  "clientid": "foo",
+					  "clientsecret": "foo",
+					  "granttype": "client_credentials",
+					  "tokenendpoint": "bar"
+					},
+					"protocol": [
+					  "amqp10ws"
+					],
+					"uri": "foo"
+				  },
+				  {
+					"broker": {
+					  "type": "foo"
+					},
+					"oa2": {
+					  "clientid": "bar",
+					  "clientsecret": "bar",
+					  "granttype": "client_credentials",
+					  "tokenendpoint": "foo"
+					},
+					"protocol": [
+					  "bar"
+					],
+					"uri": "bar"
+				  },
+				  {
+					"broker": {
+					  "type": "foo"
+					},
+					"oa2": {
+					  "clientid": "foo",
+					  "clientsecret": "bar",
+					  "granttype": "client_credentials",
+					  "tokenendpoint": "foo"
+					},
+					"protocol": [
+					  "httprest"
+					],
+					"uri": "bar"
+				  }
+				]`),
+				"namespace":         []byte("bar"),
+				"serviceinstanceid": []byte("foo"),
+				"xsappname":         []byte("bar"),
+			},
+			wantMatcher: gomega.And(
+				matchers.HaveStatusReady(),
+			),
+		},
+		{
+			name:      "EventingCR should be have the `warning` status when EventMesh secret data is empty",
+			givenData: map[string][]byte{},
+			wantMatcher: gomega.And(
+				matchers.HaveStatusWarning(),
+			),
+		},
+		{
+			name: "EventingCR should have the `warning` status when EventMesh secret data misses the `namespace` key",
+			givenData: map[string][]byte{
+				"management": []byte("foo"),
+				"messaging": []byte(`[
+				  {
+					"broker": {
+					  "type": "bar"
+					},
+					"oa2": {
+					  "clientid": "foo",
+					  "clientsecret": "foo",
+					  "granttype": "client_credentials",
+					  "tokenendpoint": "bar"
+					},
+					"protocol": [
+					  "amqp10ws"
+					],
+					"uri": "foo"
+				  },
+				  {
+					"broker": {
+					  "type": "foo"
+					},
+					"oa2": {
+					  "clientid": "bar",
+					  "clientsecret": "bar",
+					  "granttype": "client_credentials",
+					  "tokenendpoint": "foo"
+					},
+					"protocol": [
+					  "bar"
+					],
+					"uri": "bar"
+				  },
+				  {
+					"broker": {
+					  "type": "foo"
+					},
+					"oa2": {
+					  "clientid": "foo",
+					  "clientsecret": "bar",
+					  "granttype": "client_credentials",
+					  "tokenendpoint": "foo"
+					},
+					"protocol": [
+					  "httprest"
+					],
+					"uri": "bar"
+				  }
+				]`),
+				"serviceinstanceid": []byte("foo"),
+				"xsappname":         []byte("bar"),
+			},
+			wantMatcher: gomega.And(
+				matchers.HaveStatusWarning(),
+			),
+		},
+		{
+			name: "EventingCR should have the `warning` status when EventMesh secret data misses the `messaging` key",
+			givenData: map[string][]byte{
+				"management":        []byte("foo"),
+				"serviceinstanceid": []byte("foo"),
+				"xsappname":         []byte("bar"),
+				"namespace":         []byte("bar"),
+			},
+			wantMatcher: gomega.And(
+				matchers.HaveStatusWarning(),
+			),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Given:
+			// We need to mock the deployment readiness check.
+			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
+				return true
+			}
+
+			// Create an eventing CR with EventMesh backend.
+			givenEventingCR := utils.NewEventingCR(
+				utils.WithEventMeshBackend("test-secret-name2"),
+				utils.WithEventingPublisherData(2, 2, "199m", "99Mi", "399m", "199Mi"),
+				utils.WithEventingEventTypePrefix("test-prefix"),
+				utils.WithEventingDomain(utils.Domain),
+			)
+
+			// Create an unique namespace for this test run.
+			givenNamespace := givenEventingCR.Namespace
+			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
+
+			// Create an eventing-webhook-auth Secret.
+			testEnvironment.EnsureOAuthSecretCreated(t, givenEventingCR)
+
+			// Create EventMesh secret. This is the crucial part of the test.
+			// First we need to extract the expected Secret name and namespace from the Eventing CR.
+			a := strings.Split(givenEventingCR.Spec.Backend.Config.EventMeshSecret, "/")
+			name, namespace := a[1], a[0]
+			// Now we can assemble the EventMesh Secret with the given data.
+			secret := &kcorev1.Secret{
+				ObjectMeta: kmetav1.ObjectMeta{
+					Name:      name,
+					Namespace: namespace,
+				},
+				Data: tc.givenData,
+				Type: "Opaque",
+			}
+			// Finally, we can create the EventMesh Secret on the cluster.
+			testEnvironment.EnsureK8sResourceCreated(t, secret)
+
+			// When:
+			// Create the Eventing CR on the cluster.
+			testEnvironment.EnsureK8sResourceCreated(t, givenEventingCR)
+
+			// Then:
+			// Check if the EventingCR status has the expected status, caused by the EventMesh Secret.
+			g := gomega.NewWithT(t)
+			testEnvironment.GetEventingAssert(g, givenEventingCR).Should(tc.wantMatcher)
 		})
 	}
 }
