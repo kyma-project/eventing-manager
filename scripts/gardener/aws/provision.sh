@@ -58,12 +58,12 @@ gardener::validate_and_default() {
     fi
 
     if [ -z "$GARDENER_CLUSTER_VERSION" ]; then
-        # grep the default kube-version defined in kyma CLI.
-        export GARDENER_CLUSTER_VERSION="$(${KYMA_CLI} provision gardener aws --help | grep "kube-version string" | awk -F "\"" '{print $2}')"
+        # Detect supported kube-version.
+        export GARDENER_CLUSTER_VERSION=$(kubectl --kubeconfig="${GARDENER_KUBECONFIG}" get cloudprofiles.core.gardener.cloud aws -o go-template='{{range .spec.kubernetes.versions}}{{if eq .classification "supported"}}{{.version}}{{break}}{{end}}{{end}}')
     fi
 
     # Detect supported linux version.
-    GARDEN_LINUX_VERSION=$(kubectl --kubeconfig="${GARDENER_KUBECONFIG}" get cloudprofiles.core.gardener.cloud gcp -o go-template='{{range .spec.machineImages}}{{if eq .name "gardenlinux"}}{{range .versions}}{{if eq .classification "supported"}}{{.version}}{{end}}{{end}}{{end}}{{end}}')
+    GARDEN_LINUX_VERSION=$(kubectl --kubeconfig="${GARDENER_KUBECONFIG}" get cloudprofiles.core.gardener.cloud aws -o go-template='{{range .spec.machineImages}}{{if eq .name "gardenlinux"}}{{range .versions}}{{if eq .classification "supported"}}{{.version}}{{end}}{{end}}{{end}}{{end}}')
 
     # print configurations for debugging purposes:
     log::banner "Configurations:"
