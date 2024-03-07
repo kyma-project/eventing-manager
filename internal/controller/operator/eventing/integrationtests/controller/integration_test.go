@@ -941,6 +941,64 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 				matchers.HaveStatusWarning(),
 			),
 		},
+		{
+			name: "EventingCR should have the `warning` status when EventMesh secret data misses the `namespace` key",
+			givenData: map[string][]byte{
+				"management": []byte("foo"),
+				"messaging": []byte(`[
+				  {
+					"broker": {
+					  "type": "bar"
+					},
+					"oa2": {
+					  "clientid": "foo",
+					  "clientsecret": "foo",
+					  "granttype": "client_credentials",
+					  "tokenendpoint": "bar"
+					},
+					"protocol": [
+					  "amqp10ws"
+					],
+					"uri": "foo"
+				  },
+				  {
+					"broker": {
+					  "type": "foo"
+					},
+					"oa2": {
+					  "clientid": "bar",
+					  "clientsecret": "bar",
+					  "granttype": "client_credentials",
+					  "tokenendpoint": "foo"
+					},
+					"protocol": [
+					  "bar"
+					],
+					"uri": "bar"
+				  },
+				  {
+					"broker": {
+					  "type": "foo"
+					},
+					"oa2": {
+					  "clientid": "foo",
+					  "clientsecret": "bar",
+					  "granttype": "client_credentials",
+					  "tokenendpoint": "foo"
+					},
+					"protocol": [
+					  "httprest"
+					],
+					"uri": "bar"
+				  }
+				]`),
+				"serviceinstanceid": []byte("foo"),
+				"xsappname":         []byte("bar"),
+			},
+			wantMatcher: gomega.And(
+				matchers.HaveStatusWarning(),
+			),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -959,7 +1017,7 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 				utils.WithEventingDomain(utils.Domain),
 			)
 
-			// Create an unique Namespace for this test run.
+			// Create an unique namespace for this test run.
 			givenNamespace := givenEventingCR.Namespace
 			testEnvironment.EnsureNamespaceCreation(t, givenNamespace)
 
@@ -967,8 +1025,10 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 			testEnvironment.EnsureOAuthSecretCreated(t, givenEventingCR)
 
 			// Create EventMesh secret. This is the crucial part of the test.
+			// First we need to extract the expected Secret name and namespace from the Eventing CR.
 			a := strings.Split(givenEventingCR.Spec.Backend.Config.EventMeshSecret, "/")
 			name, namespace := a[1], a[0]
+			// Now we can assemble the EventMesh Secret with the given data.
 			secret := &kcorev1.Secret{
 				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      name,
@@ -977,6 +1037,7 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 				Data: tc.givenData,
 				Type: "Opaque",
 			}
+			// Finally, we can create the EventMesh Secret on the cluster.
 			testEnvironment.EnsureK8sResourceCreated(t, secret)
 
 			// When:
@@ -984,7 +1045,7 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 			testEnvironment.EnsureK8sResourceCreated(t, givenEventingCR)
 
 			// Then:
-			// Check if the EventingCR status has the expected status.
+			// Check if the EventingCR status has the expected status, caused by the EventMesh Secret.
 			g := gomega.NewWithT(t)
 			testEnvironment.GetEventingAssert(g, givenEventingCR).Should(tc.wantMatcher)
 		})
