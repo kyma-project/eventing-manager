@@ -695,19 +695,18 @@ func Test_GetSecretForPublisher(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		testcase := tc
-		t.Run(testcase.name, func(t *testing.T) {
-			publisherSecret := secretFor(testcase.messagingData, testcase.namespaceData)
+		t.Run(tc.name, func(t *testing.T) {
+			publisherSecret := secretFor(tc.messagingData, tc.namespaceData)
 
 			gotPublisherSecret, err := getSecretForPublisher(publisherSecret)
-			if testcase.expectedError != nil {
+			if tc.expectedError != nil {
 				require.Error(t, err)
 				require.ErrorIs(t, err, ErrEventMeshSecretMalformatted)
 				require.ErrorContains(t, err, tc.expectedError.Error())
 				return
 			}
 			require.NoError(t, err)
-			require.Equal(t, testcase.expectedSecret, gotPublisherSecret, "invalid publisher secret")
+			require.Equal(t, tc.expectedSecret, gotPublisherSecret, "invalid publisher secret")
 		})
 	}
 }
