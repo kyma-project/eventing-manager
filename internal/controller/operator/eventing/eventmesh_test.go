@@ -1144,10 +1144,10 @@ func Test_IsMalfromattedSecret(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// when
+			// When:
 			result := IsMalformattedSecretErr(tc.givenErr)
 
-			// then
+			// Then:
 			require.Equal(t, tc.wantResult, result)
 		})
 	}

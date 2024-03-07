@@ -53,6 +53,7 @@ func newMalformattedSecretErr(e string) error {
 	return fmt.Errorf("%s: %w", e, ErrEventMeshSecretMalformatted)
 }
 
+// IsMalformattedSecretErr checks if the error is of type ErrEventMeshSecretMalformatted.
 func IsMalformattedSecretErr(err error) bool {
 	return errors.Is(err, ErrEventMeshSecretMalformatted)
 }
