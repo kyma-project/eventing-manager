@@ -113,4 +113,4 @@ Follow these steps to detect the source of the problem:
 2. Check if the stream and consumers exist in NATS JetStream by following the [JetStream troubleshooting guide](evnt-02-jetstream-troubleshooting.md).
 
 
-If you can't find a solution, don't hesitate to create a [GitHub](https://github.com/kyma-project/kyma/issues) issue or reach out to our [Slack channel](http://slack.kyma-project.io/) to get direct support from the community.
+If you can't find a solution, don't hesitate to create a [GitHub](https://github.com/kyma-project/kyma/issues) issue or reach out to our [Slack channel](https://kyma-community.slack.com/) to get direct support from the community.
