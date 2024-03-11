@@ -165,6 +165,15 @@ func V1Alpha2SubscriptionsToTest() []eventing.TestSubscriptionInfo {
 				"order.testing.v1",
 			},
 		},
+		{
+			Name:        "test-sub-4-with-multiple-types-v1alpha2",
+			Description: "multiple types in same subscription",
+			Source:      "test-evnt",
+			Types: []string{
+				"New.Some-Other.Order-äöüÄÖÜβ.Final.C-r-e-a-t-e-d.v1",
+				"DocuSing_BO.Account_DocuSign.Updated.v1",
+			},
+		},
 	}
 }
 
