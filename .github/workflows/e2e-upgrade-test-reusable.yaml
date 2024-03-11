@@ -77,6 +77,11 @@ jobs:
           echo "Pre-upgrade image: $pre_upgrade_image"
           make deploy IMG=$pre_upgrade_image
 
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit-sha }}
+
       - name: Create test resources and wait for eventing CR readiness
         run: |
           export MANAGER_IMAGE=$DOCKER_IMAGE_REPO:${{ inputs.pre-upgrade-image-tag }}
@@ -96,11 +101,6 @@ jobs:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           GITHUB_OWNER: "${{ github.repository_owner }}"
           GITHUB_REPO: "eventing-manager"
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.commit-sha }}
 
       - name: Upgrade Eventing manager
         id: upgrade-eventing-manager
