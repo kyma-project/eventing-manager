@@ -346,7 +346,7 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 	})
 }
 
-func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string, subCRVersion fixtures.SubscriptionCRVersion) error {
+func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string) error {
 	// define the event
 	evntID, legacyEventSource, legacyEventType, payload := eventing.NewLegacyEvent(eventSource, eventType)
 

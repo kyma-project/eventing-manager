@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
 )
@@ -120,31 +121,59 @@ func PublisherSpec() operatorv1alpha1.Publisher {
 
 func V1Alpha2SubscriptionsToTest() []eventing.TestSubscriptionInfo {
 	return []eventing.TestSubscriptionInfo{
+		// type matching exact
 		{
-			Name:        "test-sub-1-v1alpha2",
-			Description: "event type and source without any alpha-numeric characters",
-			Source:      "noapp",
-			Types:       []string{"order.modified.v1"},
+			Name:         "test-v1alpha2-exact1",
+			Description:  "single event type",
+			TypeMatching: eventingv1alpha2.TypeMatchingExact,
+			Source:       "commerce",
+			Types: []string{
+				"sap.kyma.custom.commerce.order.created.v1",
+			},
 		},
 		{
-			Name:        "test-sub-2-v1alpha2",
-			Description: "event type and source with alpha-numeric characters",
-			Source:      "test-app",
-			Types:       []string{"Order-$.third.R-e-c-e-i-v-e-d.v1"},
+			Name:         "test-v1alpha2-exact2-with-multiple-types",
+			Description:  "multiple event types",
+			TypeMatching: eventingv1alpha2.TypeMatchingExact,
+			Source:       "MyApp",
+			Types: []string{
+				"sap.kyma.custom.MyApp.Process.Created.v1",
+				"sap.kyma.custom.MyApp.Process.Updated.v1",
+				"sap.kyma.custom.MyApp.Process.Cancelled.v1",
+				"sap.kyma.custom.MyApp.Process.Paused.v1",
+				"sap.kyma.custom.MyApp.Process.Deleted.v1",
+			},
+		},
+		// type matching standard
+		{
+			Name:         "test-v1alpha2-standard1",
+			Description:  "event type and source without any alpha-numeric characters",
+			TypeMatching: eventingv1alpha2.TypeMatchingStandard,
+			Source:       "noapp",
+			Types:        []string{"order.modified.v1"},
 		},
 		{
-			Name:        "test-sub-3-with-multiple-types-v1alpha2",
-			Description: "multiple types in same subscription",
-			Source:      "test-evnt",
+			Name:         "test-v1alpha2-standard2",
+			Description:  "event type and source with alpha-numeric characters",
+			TypeMatching: eventingv1alpha2.TypeMatchingStandard,
+			Source:       "test-app",
+			Types:        []string{"Order-$.third.R-e-c-e-i-v-e-d.v1"},
+		},
+		{
+			Name:         "test-v1alpha2-standard3-with-multiple-types",
+			Description:  "multiple types in same subscription",
+			TypeMatching: eventingv1alpha2.TypeMatchingStandard,
+			Source:       "test-evnt",
 			Types: []string{
 				"or-der.crea-ted.one.two.three.four.v4",
 				"order.testing.v1",
 			},
 		},
 		{
-			Name:        "test-sub-4-with-multiple-types-v1alpha2",
-			Description: "multiple types in same subscription",
-			Source:      "test-evnt",
+			Name:         "test-v1alpha2-standard4-with-multiple-types",
+			Description:  "multiple types in same subscription",
+			TypeMatching: eventingv1alpha2.TypeMatchingStandard,
+			Source:       "test-evnt",
 			Types: []string{
 				"New.Some-Other.Order-äöüÄÖÜβ.Final.C-r-e-a-t-e-d.v1",
 				"DocuSing_BO.Account_DocuSign.Updated.v1",

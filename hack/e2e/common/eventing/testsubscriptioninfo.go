@@ -7,10 +7,11 @@ import (
 )
 
 type TestSubscriptionInfo struct {
-	Name        string
-	Description string
-	Source      string
-	Types       []string
+	Name         string
+	Description  string
+	TypeMatching eventingv1alpha2.TypeMatching
+	Source       string
+	Types        []string
 }
 
 func (s TestSubscriptionInfo) ToSubscriptionV1Alpha2(sink, namespace string) *eventingv1alpha2.Subscription {
@@ -21,7 +22,7 @@ func (s TestSubscriptionInfo) ToSubscriptionV1Alpha2(sink, namespace string) *ev
 		},
 		Spec: eventingv1alpha2.SubscriptionSpec{
 			Sink:         sink,
-			TypeMatching: eventingv1alpha2.TypeMatchingStandard,
+			TypeMatching: s.TypeMatching,
 			Source:       s.Source,
 			Types:        s.Types,
 		},
