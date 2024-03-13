@@ -34,7 +34,6 @@ const (
 type SubscriptionCRVersion string
 
 const (
-	V1Alpha1SubscriptionCRVersion SubscriptionCRVersion = "v1alpha1"
 	V1Alpha2SubscriptionCRVersion SubscriptionCRVersion = "v1alpha2"
 )
 
@@ -114,29 +113,6 @@ func PublisherSpec() operatorv1alpha1.Publisher {
 			Requests: kcorev1.ResourceList{
 				"cpu":    resource.MustParse("100m"),
 				"memory": resource.MustParse("156Mi"),
-			},
-		},
-	}
-}
-
-func V1Alpha1SubscriptionsToTest() []eventing.TestSubscriptionInfo {
-	return []eventing.TestSubscriptionInfo{
-		{
-			Name:        "test-sub-1-v1alpha1",
-			Description: "event type and source without any alpha-numeric characters",
-			Types:       []string{"sap.kyma.custom.noapp.order.tested.v1"},
-		},
-		{
-			Name:        "test-sub-2-v1alpha1",
-			Description: "event type and source with alpha-numeric characters",
-			Types:       []string{"sap.kyma.custom.test-app.order-$.second.R-e-c-e-i-v-e-d.v1"},
-		},
-		{
-			Name:        "test-sub-3-with-multiple-types-v1alpha1",
-			Description: "multiple types in same subscription",
-			Types: []string{
-				"sap.kyma.custom.connected-app.order.tested.v1",
-				"sap.kyma.custom.connected-app2.or-der.crea-ted.one.two.three.v4",
 			},
 		},
 	}

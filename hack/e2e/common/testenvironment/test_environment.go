@@ -137,25 +137,11 @@ func (te *TestEnvironment) InitSinkClient() error {
 }
 
 func (te *TestEnvironment) CreateAllSubscriptions() error {
-	ctx := context.TODO()
-	// Create v1alpha1 subscriptions if not exists.
-	err := te.CreateV1Alpha1Subscriptions(ctx, fixtures.V1Alpha1SubscriptionsToTest())
-	if err != nil {
-		return err
-	}
-
 	// Create v1alpha2 subscriptions if not exists.
-	return te.CreateV1Alpha2Subscriptions(ctx, fixtures.V1Alpha2SubscriptionsToTest())
+	return te.CreateV1Alpha2Subscriptions(context.TODO(), fixtures.V1Alpha2SubscriptionsToTest())
 }
 
 func (te *TestEnvironment) DeleteAllSubscriptions() error {
-	// delete v1alpha1 subscriptions if not exists.
-	for _, subToTest := range fixtures.V1Alpha1SubscriptionsToTest() {
-		if err := te.DeleteSubscriptionFromK8s(subToTest.Name, te.TestConfigs.TestNamespace); err != nil {
-			return err
-		}
-	}
-
 	// Delete v1alpha2 subscriptions if not exists.
 	for _, subToTest := range fixtures.V1Alpha2SubscriptionsToTest() {
 		if err := te.DeleteSubscriptionFromK8s(subToTest.Name, te.TestConfigs.TestNamespace); err != nil {
@@ -166,29 +152,8 @@ func (te *TestEnvironment) DeleteAllSubscriptions() error {
 }
 
 func (te *TestEnvironment) WaitForAllSubscriptions() error {
-	ctx := context.TODO()
-	// Wait for v1alpha1 subscriptions to get ready.
-	err := te.WaitForSubscriptions(ctx, fixtures.V1Alpha1SubscriptionsToTest())
-	if err != nil {
-		return err
-	}
-
 	// wait for v1alpha2 subscriptions to get ready
-	return te.WaitForSubscriptions(ctx, fixtures.V1Alpha1SubscriptionsToTest())
-}
-
-func (te *TestEnvironment) CreateV1Alpha1Subscriptions(ctx context.Context, subList []eventing.TestSubscriptionInfo) error {
-	for _, subInfo := range subList {
-		err := common.Retry(FewAttempts, SmallInterval, func() error {
-			newSub := subInfo.ToSubscriptionV1Alpha1(te.TestConfigs.SubscriptionSinkURL, te.TestConfigs.TestNamespace)
-			return client.IgnoreAlreadyExists(te.K8sClient.Create(ctx, newSub))
-		})
-		// Return error if all retries are exhausted.
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return te.WaitForSubscriptions(context.TODO(), fixtures.V1Alpha2SubscriptionsToTest())
 }
 
 func (te *TestEnvironment) CreateV1Alpha2Subscriptions(ctx context.Context, subList []eventing.TestSubscriptionInfo) error {
@@ -383,12 +348,7 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 
 func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string, subCRVersion fixtures.SubscriptionCRVersion) error {
 	// define the event
-	var evntID, legacyEventSource, legacyEventType, payload string
-	if subCRVersion == fixtures.V1Alpha1SubscriptionCRVersion {
-		evntID, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEventForV1Alpha1(eventType, te.TestConfigs.EventTypePrefix)
-	} else {
-		evntID, legacyEventSource, legacyEventType, payload = eventing.NewLegacyEvent(eventSource, eventType)
-	}
+	evntID, legacyEventSource, legacyEventType, payload := eventing.NewLegacyEvent(eventSource, eventType)
 
 	// publish the event
 	if err := te.EventPublisher.SendLegacyEventWithRetries(legacyEventSource, legacyEventType, payload, FewAttempts, Interval); err != nil {
@@ -471,11 +431,6 @@ func (te *TestEnvironment) CompareCloudEvents(expectedEvent cloudevents.Event, g
 		msg := fmt.Sprintf("expected event data: %s, got event data: %s",
 			string(expectedEvent.Data()), string(gotEvent.Data()))
 		resultError = fixtures.AppendMsgToError(resultError, msg)
-	}
-
-	// if it is a v1alpha1 Subscription event, then we do not check further.
-	if strings.HasPrefix(gotEvent.Type(), te.TestConfigs.EventTypePrefix) {
-		return resultError
 	}
 
 	// check in detail further the source and type.

@@ -56,26 +56,10 @@ func TestMain(m *testing.M) {
 
 // ++ Tests
 
-func Test_LegacyEvents_SubscriptionV1Alpha1(t *testing.T) {
-	t.Parallel()
-	// binding.EncodingUnknown means legacy event.
-	testEventDelivery(t, LegacyEventCase, fixtures.V1Alpha1SubscriptionsToTest(), binding.EncodingUnknown, fixtures.V1Alpha1SubscriptionCRVersion)
-}
-
 func Test_LegacyEvents(t *testing.T) {
 	t.Parallel()
 	// binding.EncodingUnknown means legacy event.
 	testEventDelivery(t, LegacyEventCase, fixtures.V1Alpha2SubscriptionsToTest(), binding.EncodingUnknown, fixtures.V1Alpha2SubscriptionCRVersion)
-}
-
-func Test_StructuredCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
-	t.Parallel()
-	testEventDelivery(t, StructuredCloudEventCase, fixtures.V1Alpha1SubscriptionsToTest(), binding.EncodingStructured, fixtures.V1Alpha1SubscriptionCRVersion)
-}
-
-func Test_BinaryCloudEvents_SubscriptionV1Alpha1(t *testing.T) {
-	t.Parallel()
-	testEventDelivery(t, BinaryCloudEventCase, fixtures.V1Alpha1SubscriptionsToTest(), binding.EncodingBinary, fixtures.V1Alpha1SubscriptionCRVersion)
 }
 
 func Test_StructuredCloudEvents(t *testing.T) {
@@ -110,10 +94,6 @@ func testEventDelivery(t *testing.T,
 
 				// given
 				eventSourceToUse := subToTest.Source
-				if subCRVersion == fixtures.V1Alpha1SubscriptionCRVersion {
-					// For EventMesh with Subscription v1alpha1, the eventSource should be EventMesh NameSpace.
-					eventSourceToUse = testEnvironment.TestConfigs.EventMeshNamespace
-				}
 
 				// when
 				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
