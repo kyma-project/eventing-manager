@@ -135,13 +135,11 @@ func V1Alpha2SubscriptionsToTest() []eventing.TestSubscriptionInfo {
 			Name:         "test-v1alpha2-exact2-with-multiple-types",
 			Description:  "multiple event types",
 			TypeMatching: eventingv1alpha2.TypeMatchingExact,
-			Source:       "MyApp",
+			Source:       "app",
 			Types: []string{
-				"sap.kyma.custom.MyApp.Process.Created.v1",
-				"sap.kyma.custom.MyApp.Process.Updated.v1",
-				"sap.kyma.custom.MyApp.Process.Cancelled.v1",
-				"sap.kyma.custom.MyApp.Process.Paused.v1",
-				"sap.kyma.custom.MyApp.Process.Deleted.v1",
+				"sap.kyma.custom.app.event.created.v1",
+				"sap.kyma.custom.app.event.updated.v1",
+				"sap.kyma.custom.app.event.deleted.v1",
 			},
 		},
 		// type matching standard

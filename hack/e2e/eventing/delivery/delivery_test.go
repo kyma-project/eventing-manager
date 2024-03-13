@@ -8,14 +8,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
-
 	"github.com/cloudevents/sdk-go/v2/binding"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
-
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
 )
 
@@ -98,9 +96,9 @@ func testEventDelivery(t *testing.T,
 				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
 					if encoding == binding.EncodingUnknown {
 						// binding.EncodingUnknown means legacy event.
-						return testEnvironment.TestDeliveryOfLegacyEvent(eventSourceToUse, eventTypeToTest)
+						return testEnvironment.TestDeliveryOfLegacyEvent(eventSourceToUse, eventTypeToTest, subToTest.TypeMatching)
 					}
-					return testEnvironment.TestDeliveryOfCloudEvent(eventSourceToUse, eventTypeToTest, encoding)
+					return testEnvironment.TestDeliveryOfCloudEvent(eventSourceToUse, eventTypeToTest, encoding, subToTest.TypeMatching)
 				})
 
 				// then
