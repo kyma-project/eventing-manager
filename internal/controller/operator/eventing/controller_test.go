@@ -431,11 +431,11 @@ func Test_stopNatsCRWatch(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, testcase := range testCases {
+		t.Run(testcase.name, func(t *testing.T) {
 			// given
 			testEnv := NewMockedUnitTestEnvironment(t)
-			testEnv.Reconciler.natsCRWatchStarted = tc.natsCRWatchStarted
+			testEnv.Reconciler.natsCRWatchStarted = testcase.natsCRWatchStarted
 
 			// Create a fake Watcher
 			natsWatcher := new(watchermocks.Watcher)
@@ -451,8 +451,8 @@ func Test_stopNatsCRWatch(t *testing.T) {
 			testEnv.Reconciler.stopNATSCRWatch(eventing)
 
 			// Check the results
-			require.Nil(t, tc.watchNatsWatcher)
-			require.False(t, tc.natsCRWatchStarted)
+			require.Nil(t, testcase.watchNatsWatcher)
+			require.False(t, testcase.natsCRWatchStarted)
 		})
 	}
 }

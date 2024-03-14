@@ -1,21 +1,35 @@
-name: golangci-lint
+name: Lint Go code
 
 on:
   pull_request:
     branches:
-      - main
-      - "release-**"
+      - "main"
+      - "release-*"
     paths-ignore:
-      - "docs/**"
-      - "**.md"
-      - "sec-scanners-config.yaml"
+      - 'docs/**'
+      - '**.md'
+      - 'sec-scanners-config.yaml'
 
 permissions:
   contents: read
   # Optional: allow read access to pull request. Use with `only-new-issues` option.
   pull-requests: read
+  # Optional: Allow write access to checks to allow the action to annotate code in the PR.
+  checks: write
 
 jobs:
-  unit-test:
+  code-linter:
     name: "Run golangci-lint"
-    uses: kyma-project/eventing-tools/.github/workflows/lint-go-reusable.yml@main
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21 # This can be a specific version. E.g. 1.19 or 1.21.x
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.55

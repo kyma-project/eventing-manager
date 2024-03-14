@@ -31,7 +31,7 @@ const (
 	EMSecretMessagingMissing      = "messaging is missing from EM secret"
 	EMSecretNamespaceMissing      = "namespace is missing from EM secret"
 	EventMeshSecretMissingMessage = "The specified EventMesh secret is not found. Please provide an existing secret."
-	EventMeshSecretMalformatted   = "The EventMesh secret data is not formatted properly."
+	EventMeshSecretMalformatted   = "The EventMesh secret data is not formatted properly." //nolint:gosec // just an error message
 )
 
 var (
