@@ -7,6 +7,12 @@ on:
       - 'docs/**'
       - '**.md'
       - 'sec-scanners-config.yaml'
+      - CODEOWNERS
+      - LICENSE
+      - LICENSES
+      - OWNERS
+      - OWNERS_ALIASES
+      - PROJECT
 
 jobs:
   upgrade-test:
