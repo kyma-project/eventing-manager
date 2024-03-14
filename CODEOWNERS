@@ -9,10 +9,10 @@
 
 *.md @kyma-project/technical-writers
 
-*.sh @kyma-project/eventing @the1bit
+*.sh @kyma-project/eventing
 
-/.github/ @kyma-project/eventing @the1bit
+/.github/ @kyma-project/eventing
 
-/.version @kyma-project/eventing @the1bit
+/.version @kyma-project/eventing
 
-/.sec-scanners-config.yaml @kyma-project/eventing @the1bit
+/.sec-scanners-config.yaml @kyma-project/eventing
