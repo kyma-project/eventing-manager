@@ -16,16 +16,17 @@ on:
       - OWNERS_ALIASES
       - PROJECT
 
-permissions:
-  contents: read
-  # Optional: allow read access to pull request. Use with `only-new-issues` option.
-  pull-requests: read
-  # Optional: Allow write access to checks to allow the action to annotate code in the PR.
-  checks: write
 
 jobs:
   code-linter:
     name: "Run golangci-lint"
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
+
     steps:
       - name: Setup Go
         uses: actions/setup-go@v5
