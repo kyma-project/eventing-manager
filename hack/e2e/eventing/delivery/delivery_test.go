@@ -8,14 +8,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
-
 	"github.com/cloudevents/sdk-go/v2/binding"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/eventing-manager/hack/e2e/common"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/eventing"
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
-
 	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
 )
 
@@ -59,17 +57,17 @@ func TestMain(m *testing.M) {
 func Test_LegacyEvents(t *testing.T) {
 	t.Parallel()
 	// binding.EncodingUnknown means legacy event.
-	testEventDelivery(t, LegacyEventCase, fixtures.V1Alpha2SubscriptionsToTest(), binding.EncodingUnknown, fixtures.V1Alpha2SubscriptionCRVersion)
+	testEventDelivery(t, LegacyEventCase, fixtures.V1Alpha2SubscriptionsToTest(), binding.EncodingUnknown)
 }
 
 func Test_StructuredCloudEvents(t *testing.T) {
 	t.Parallel()
-	testEventDelivery(t, StructuredCloudEventCase, fixtures.V1Alpha2SubscriptionsToTest(), binding.EncodingStructured, fixtures.V1Alpha2SubscriptionCRVersion)
+	testEventDelivery(t, StructuredCloudEventCase, fixtures.V1Alpha2SubscriptionsToTest(), binding.EncodingStructured)
 }
 
 func Test_BinaryCloudEvents(t *testing.T) {
 	t.Parallel()
-	testEventDelivery(t, BinaryCloudEventCase, fixtures.V1Alpha2SubscriptionsToTest(), binding.EncodingBinary, fixtures.V1Alpha2SubscriptionCRVersion)
+	testEventDelivery(t, BinaryCloudEventCase, fixtures.V1Alpha2SubscriptionsToTest(), binding.EncodingBinary)
 }
 
 // ++ Helper functions
@@ -77,8 +75,7 @@ func Test_BinaryCloudEvents(t *testing.T) {
 func testEventDelivery(t *testing.T,
 	testCase EventTestCase,
 	subsToTest []eventing.TestSubscriptionInfo,
-	encoding binding.Encoding,
-	subCRVersion fixtures.SubscriptionCRVersion) {
+	encoding binding.Encoding) {
 	// In each subscription, we need to run the tests for each event type.
 	// loop over each subscription.
 	for _, subToTest := range subsToTest {
@@ -99,9 +96,9 @@ func testEventDelivery(t *testing.T,
 				err := common.Retry(testenvironment.ThreeAttempts, testenvironment.Interval, func() error {
 					if encoding == binding.EncodingUnknown {
 						// binding.EncodingUnknown means legacy event.
-						return testEnvironment.TestDeliveryOfLegacyEvent(eventSourceToUse, eventTypeToTest, subCRVersion)
+						return testEnvironment.TestDeliveryOfLegacyEvent(eventSourceToUse, eventTypeToTest, subToTest.TypeMatching)
 					}
-					return testEnvironment.TestDeliveryOfCloudEvent(eventSourceToUse, eventTypeToTest, encoding)
+					return testEnvironment.TestDeliveryOfCloudEvent(eventSourceToUse, eventTypeToTest, encoding, subToTest.TypeMatching)
 				})
 
 				// then

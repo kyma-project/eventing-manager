@@ -18,12 +18,10 @@ import (
 	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
-	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
@@ -44,9 +42,6 @@ var (
 // AddToScheme adds the own schemes to the runtime scheme.
 func AddToScheme(scheme *runtime.Scheme) error {
 	if err := kkubernetesscheme.AddToScheme(scheme); err != nil {
-		return err
-	}
-	if err := eventingv1alpha1.AddToScheme(scheme); err != nil {
 		return err
 	}
 	if err := apigatewayv1beta1.AddToScheme(scheme); err != nil {
@@ -120,10 +115,6 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subm
 
 	client := c.mgr.GetClient()
 	recorder := c.mgr.GetEventRecorderFor("eventing-controller-beb")
-
-	// Initialize v1alpha1 event type cleaner for conversion webhook
-	simpleCleaner := eventtype.NewSimpleCleaner(c.envCfg.EventTypePrefix, c.logger)
-	eventingv1alpha1.InitializeEventTypeCleaner(simpleCleaner)
 
 	// Initialize v1alpha2 handler for EventMesh
 	eventMeshHandler := backendeventmesh.NewEventMesh(oauth2credential, nameMapper, c.logger)

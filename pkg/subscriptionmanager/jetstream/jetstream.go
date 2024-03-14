@@ -16,11 +16,9 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
-	"github.com/kyma-project/eventing-manager/pkg/backend/eventtype"
 	backendjetstream "github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
@@ -37,9 +35,6 @@ const (
 // AddToScheme adds all types of clientset and eventing into the given scheme.
 func AddToScheme(scheme *runtime.Scheme) error {
 	if err := kkubernetesscheme.AddToScheme(scheme); err != nil {
-		return err
-	}
-	if err := eventingv1alpha1.AddToScheme(scheme); err != nil {
 		return err
 	}
 	return nil
@@ -95,10 +90,6 @@ func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionCo
 
 	client := sm.mgr.GetClient()
 	recorder := sm.mgr.GetEventRecorderFor("eventing-controller-jetstream")
-
-	// Initialize v1alpha1 event type cleaner for conversion webhook
-	simpleCleaner := eventtype.NewSimpleCleaner(sm.envCfg.EventTypePrefix, sm.logger)
-	eventingv1alpha1.InitializeEventTypeCleaner(simpleCleaner)
 
 	// Initialize v1alpha2 event type cleaner
 	jsCleaner := cleaner.NewJetStreamCleaner(sm.logger)

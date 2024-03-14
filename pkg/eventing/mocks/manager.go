@@ -135,9 +135,9 @@ func (_c *Manager_DeployPublisherProxy_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// DeployPublisherProxyResources provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Manager) DeployPublisherProxyResources(_a0 context.Context, _a1 *v1alpha1.Eventing, _a2 *v1.Deployment) error {
-	ret := _m.Called(_a0, _a1, _a2)
+// DeployPublisherProxyResources provides a mock function with given fields: ctx, _a1, deploy
+func (_m *Manager) DeployPublisherProxyResources(ctx context.Context, _a1 *v1alpha1.Eventing, deploy *v1.Deployment) error {
+	ret := _m.Called(ctx, _a1, deploy)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeployPublisherProxyResources")
@@ -145,7 +145,7 @@ func (_m *Manager) DeployPublisherProxyResources(_a0 context.Context, _a1 *v1alp
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.Eventing, *v1.Deployment) error); ok {
-		r0 = rf(_a0, _a1, _a2)
+		r0 = rf(ctx, _a1, deploy)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -159,14 +159,14 @@ type Manager_DeployPublisherProxyResources_Call struct {
 }
 
 // DeployPublisherProxyResources is a helper method to define mock.On call
-//   - _a0 context.Context
+//   - ctx context.Context
 //   - _a1 *v1alpha1.Eventing
-//   - _a2 *v1.Deployment
-func (_e *Manager_Expecter) DeployPublisherProxyResources(_a0 interface{}, _a1 interface{}, _a2 interface{}) *Manager_DeployPublisherProxyResources_Call {
-	return &Manager_DeployPublisherProxyResources_Call{Call: _e.mock.On("DeployPublisherProxyResources", _a0, _a1, _a2)}
+//   - deploy *v1.Deployment
+func (_e *Manager_Expecter) DeployPublisherProxyResources(ctx interface{}, _a1 interface{}, deploy interface{}) *Manager_DeployPublisherProxyResources_Call {
+	return &Manager_DeployPublisherProxyResources_Call{Call: _e.mock.On("DeployPublisherProxyResources", ctx, _a1, deploy)}
 }
 
-func (_c *Manager_DeployPublisherProxyResources_Call) Run(run func(_a0 context.Context, _a1 *v1alpha1.Eventing, _a2 *v1.Deployment)) *Manager_DeployPublisherProxyResources_Call {
+func (_c *Manager_DeployPublisherProxyResources_Call) Run(run func(ctx context.Context, _a1 *v1alpha1.Eventing, deploy *v1.Deployment)) *Manager_DeployPublisherProxyResources_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*v1alpha1.Eventing), args[2].(*v1.Deployment))
 	})
@@ -287,9 +287,9 @@ func (_c *Manager_IsNATSAvailable_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
-// SetBackendConfig provides a mock function with given fields: _a0
-func (_m *Manager) SetBackendConfig(_a0 env.BackendConfig) {
-	_m.Called(_a0)
+// SetBackendConfig provides a mock function with given fields: config
+func (_m *Manager) SetBackendConfig(config env.BackendConfig) {
+	_m.Called(config)
 }
 
 // Manager_SetBackendConfig_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetBackendConfig'
@@ -298,12 +298,12 @@ type Manager_SetBackendConfig_Call struct {
 }
 
 // SetBackendConfig is a helper method to define mock.On call
-//   - _a0 env.BackendConfig
-func (_e *Manager_Expecter) SetBackendConfig(_a0 interface{}) *Manager_SetBackendConfig_Call {
-	return &Manager_SetBackendConfig_Call{Call: _e.mock.On("SetBackendConfig", _a0)}
+//   - config env.BackendConfig
+func (_e *Manager_Expecter) SetBackendConfig(config interface{}) *Manager_SetBackendConfig_Call {
+	return &Manager_SetBackendConfig_Call{Call: _e.mock.On("SetBackendConfig", config)}
 }
 
-func (_c *Manager_SetBackendConfig_Call) Run(run func(_a0 env.BackendConfig)) *Manager_SetBackendConfig_Call {
+func (_c *Manager_SetBackendConfig_Call) Run(run func(config env.BackendConfig)) *Manager_SetBackendConfig_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(env.BackendConfig))
 	})

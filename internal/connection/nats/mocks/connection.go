@@ -20,9 +20,9 @@ func (_m *Connection) EXPECT() *Connection_Expecter {
 	return &Connection_Expecter{mock: &_m.Mock}
 }
 
-// Connect provides a mock function with given fields: _a0, _a1
-func (_m *Connection) Connect(_a0 nats.ConnHandler, _a1 nats.ConnErrHandler) error {
-	ret := _m.Called(_a0, _a1)
+// Connect provides a mock function with given fields: handler, errorHandler
+func (_m *Connection) Connect(handler nats.ConnHandler, errorHandler nats.ConnErrHandler) error {
+	ret := _m.Called(handler, errorHandler)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Connect")
@@ -30,7 +30,7 @@ func (_m *Connection) Connect(_a0 nats.ConnHandler, _a1 nats.ConnErrHandler) err
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(nats.ConnHandler, nats.ConnErrHandler) error); ok {
-		r0 = rf(_a0, _a1)
+		r0 = rf(handler, errorHandler)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -44,13 +44,13 @@ type Connection_Connect_Call struct {
 }
 
 // Connect is a helper method to define mock.On call
-//   - _a0 nats.ConnHandler
-//   - _a1 nats.ConnErrHandler
-func (_e *Connection_Expecter) Connect(_a0 interface{}, _a1 interface{}) *Connection_Connect_Call {
-	return &Connection_Connect_Call{Call: _e.mock.On("Connect", _a0, _a1)}
+//   - handler nats.ConnHandler
+//   - errorHandler nats.ConnErrHandler
+func (_e *Connection_Expecter) Connect(handler interface{}, errorHandler interface{}) *Connection_Connect_Call {
+	return &Connection_Connect_Call{Call: _e.mock.On("Connect", handler, errorHandler)}
 }
 
-func (_c *Connection_Connect_Call) Run(run func(_a0 nats.ConnHandler, _a1 nats.ConnErrHandler)) *Connection_Connect_Call {
+func (_c *Connection_Connect_Call) Run(run func(handler nats.ConnHandler, errorHandler nats.ConnErrHandler)) *Connection_Connect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(nats.ConnHandler), args[1].(nats.ConnErrHandler))
 	})

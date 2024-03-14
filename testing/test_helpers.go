@@ -16,11 +16,9 @@ import (
 	"k8s.io/client-go/dynamic"
 	kdynamicfake "k8s.io/client-go/dynamic/fake"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/object"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
 
 const (
@@ -88,113 +86,6 @@ func GetFreePort() (int, error) {
 	port := l.Addr().(*net.TCPAddr).Port //nolint:forcetypeassert // will always return a TCPAddr according to documentation
 	l.Close()
 	return port, err
-}
-
-type ProtoOpt func(p *eventingv1alpha1.ProtocolSettings)
-
-func NewProtocolSettings(opts ...ProtoOpt) *eventingv1alpha1.ProtocolSettings {
-	protoSettings := &eventingv1alpha1.ProtocolSettings{}
-	for _, o := range opts {
-		o(protoSettings)
-	}
-	return protoSettings
-}
-
-func WithAtLeastOnceQOS() ProtoOpt {
-	return func(p *eventingv1alpha1.ProtocolSettings) {
-		p.Qos = utils.StringPtr(string(types.QosAtLeastOnce))
-	}
-}
-
-func WithRequiredWebhookAuth() ProtoOpt {
-	return func(p *eventingv1alpha1.ProtocolSettings) {
-		p.WebhookAuth = &eventingv1alpha1.WebhookAuth{
-			GrantType:    "client_credentials",
-			ClientID:     "xxx",
-			ClientSecret: "xxx",
-			TokenURL:     "https://oauth2.xxx.com/oauth2/token",
-		}
-	}
-}
-
-type SubscriptionV1alpha1Opt func(subscription *eventingv1alpha1.Subscription)
-
-func WithStatusCleanEventTypes(cleanEventTypes []string) SubscriptionV1alpha1Opt {
-	return func(sub *eventingv1alpha1.Subscription) {
-		if cleanEventTypes == nil {
-			sub.Status.InitializeCleanEventTypes()
-		} else {
-			sub.Status.CleanEventTypes = cleanEventTypes
-		}
-	}
-}
-
-func WithV1alpha1ProtocolEventMesh() SubscriptionV1alpha1Opt {
-	return func(s *eventingv1alpha1.Subscription) {
-		s.Spec.Protocol = EventMeshProtocol
-	}
-}
-
-func WithV1alpha1ProtocolSettings(p *eventingv1alpha1.ProtocolSettings) SubscriptionV1alpha1Opt {
-	return func(s *eventingv1alpha1.Subscription) {
-		s.Spec.ProtocolSettings = p
-	}
-}
-
-// AddV1alpha1Filter creates a new Filter from eventSource and eventType and adds it to the subscription.
-func AddV1alpha1Filter(eventSource, eventType string, subscription *eventingv1alpha1.Subscription) {
-	if subscription.Spec.Filter == nil {
-		subscription.Spec.Filter = &eventingv1alpha1.BEBFilters{
-			Filters: []*eventingv1alpha1.EventMeshFilter{},
-		}
-	}
-
-	filter := &eventingv1alpha1.EventMeshFilter{
-		EventSource: &eventingv1alpha1.Filter{
-			Type:     "exact",
-			Property: "source",
-			Value:    eventSource,
-		},
-		EventType: &eventingv1alpha1.Filter{
-			Type:     "exact",
-			Property: "type",
-			Value:    eventType,
-		},
-	}
-
-	subscription.Spec.Filter.Filters = append(subscription.Spec.Filter.Filters, filter)
-}
-
-// WithV1alpha1Filter is a SubscriptionOpt for creating a Subscription with a specific event type filter,
-// that itself gets created from the passed eventSource and eventType.
-func WithV1alpha1Filter(eventSource, eventType string) SubscriptionV1alpha1Opt {
-	return func(subscription *eventingv1alpha1.Subscription) {
-		AddV1alpha1Filter(eventSource, eventType, subscription)
-	}
-}
-
-// WithV1alpha1EmptyFilter is a SubscriptionOpt for creating a subscription with an empty event type filter.
-// Note that this is different from setting Filter to nil.
-func WithV1alpha1EmptyFilter() SubscriptionV1alpha1Opt {
-	return func(subscription *eventingv1alpha1.Subscription) {
-		subscription.Spec.Filter = &eventingv1alpha1.BEBFilters{
-			Filters: []*eventingv1alpha1.EventMeshFilter{},
-		}
-	}
-}
-
-func WithV1alpha1EmptyStatus() SubscriptionV1alpha1Opt {
-	return func(subscription *eventingv1alpha1.Subscription) {
-		subscription.Status = eventingv1alpha1.SubscriptionStatus{
-			CleanEventTypes: []string{},
-		}
-	}
-}
-
-func WithV1alpha1EmptyConfig() SubscriptionV1alpha1Opt {
-	return func(subscription *eventingv1alpha1.Subscription) {
-		subscription.Spec.Config = nil
-	}
 }
 
 func NewBEBMessagingSecret(name, namespace string) *kcorev1.Secret {
@@ -269,58 +160,6 @@ func GetBinaryMessageHeaders() http.Header {
 	headers.Add(CeSourceHeader, CloudEventSource)
 	headers.Add(CeSpecVersionHeader, CloudEventSpecVersion)
 	return headers
-}
-
-func PublisherProxyDefaultReadyCondition() eventingv1alpha1.Condition {
-	return eventingv1alpha1.MakeCondition(eventingv1alpha1.ConditionPublisherProxyReady,
-		eventingv1alpha1.ConditionReasonPublisherDeploymentReady,
-		kcorev1.ConditionTrue, "")
-}
-
-func PublisherProxyDefaultNotReadyCondition() eventingv1alpha1.Condition {
-	return eventingv1alpha1.MakeCondition(eventingv1alpha1.ConditionPublisherProxyReady,
-		eventingv1alpha1.ConditionReasonPublisherDeploymentNotReady,
-		kcorev1.ConditionFalse, "")
-}
-
-func SubscriptionControllerDefaultReadyCondition() eventingv1alpha1.Condition {
-	return eventingv1alpha1.MakeCondition(eventingv1alpha1.ConditionControllerReady,
-		eventingv1alpha1.ConditionReasonSubscriptionControllerReady,
-		kcorev1.ConditionTrue, "")
-}
-
-func SubscriptionControllerReadyConditionWith(ready kcorev1.ConditionStatus,
-	reason eventingv1alpha1.ConditionReason,
-) eventingv1alpha1.Condition {
-	return eventingv1alpha1.MakeCondition(eventingv1alpha1.ConditionControllerReady, reason, ready, "")
-}
-
-func SubscriptionControllerReadyEvent() kcorev1.Event {
-	return kcorev1.Event{
-		Reason: string(eventingv1alpha1.ConditionReasonSubscriptionControllerReady),
-		Type:   kcorev1.EventTypeNormal,
-	}
-}
-
-func SubscriptionControllerNotReadyEvent() kcorev1.Event {
-	return kcorev1.Event{
-		Reason: string(eventingv1alpha1.ConditionReasonSubscriptionControllerNotReady),
-		Type:   kcorev1.EventTypeWarning,
-	}
-}
-
-func PublisherDeploymentReadyEvent() kcorev1.Event {
-	return kcorev1.Event{
-		Reason: string(eventingv1alpha1.ConditionReasonPublisherDeploymentReady),
-		Type:   kcorev1.EventTypeNormal,
-	}
-}
-
-func PublisherDeploymentNotReadyEvent() kcorev1.Event {
-	return kcorev1.Event{
-		Reason: string(eventingv1alpha1.ConditionReasonPublisherDeploymentNotReady),
-		Type:   kcorev1.EventTypeWarning,
-	}
 }
 
 // NewAPIRule returns a valid APIRule.

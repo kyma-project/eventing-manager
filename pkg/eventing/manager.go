@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha1"
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
@@ -283,15 +282,4 @@ func (em *EventingManager) SubscriptionExists(ctx context.Context) (bool, error)
 		return true, nil
 	}
 	return false, nil
-}
-
-func convertECBackendType(backendType v1alpha1.BackendType) (eventingv1alpha1.BackendType, error) {
-	switch backendType {
-	case v1alpha1.EventMeshBackendType:
-		return eventingv1alpha1.BEBBackendType, nil
-	case v1alpha1.NatsBackendType:
-		return eventingv1alpha1.NatsBackendType, nil
-	default:
-		return "", fmt.Errorf("%w: %s", ErrUnknownBackendType, backendType)
-	}
 }

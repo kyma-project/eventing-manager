@@ -160,6 +160,10 @@ func (te *TestEnvironment) CreateV1Alpha2Subscriptions(ctx context.Context, subL
 	for _, subInfo := range subList {
 		err := common.Retry(FewAttempts, SmallInterval, func() error {
 			newSub := subInfo.ToSubscriptionV1Alpha2(te.TestConfigs.SubscriptionSinkURL, te.TestConfigs.TestNamespace)
+			// create subscription with an empty source in case of exact type matching
+			if subInfo.TypeMatching == eventingv1alpha2.TypeMatchingExact {
+				newSub.Spec.Source = ""
+			}
 			return client.IgnoreAlreadyExists(te.K8sClient.Create(ctx, newSub))
 		})
 		// return error if all retries are exhausted.
@@ -346,9 +350,9 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 	})
 }
 
-func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string, subCRVersion fixtures.SubscriptionCRVersion) error {
+func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string, typeMatching eventingv1alpha2.TypeMatching) error {
 	// define the event
-	evntID, legacyEventSource, legacyEventType, payload := eventing.NewLegacyEvent(eventSource, eventType)
+	evntID, legacyEventSource, legacyEventType, payload := eventing.NewLegacyEvent(eventSource, eventType, typeMatching)
 
 	// publish the event
 	if err := te.EventPublisher.SendLegacyEventWithRetries(legacyEventSource, legacyEventType, payload, FewAttempts, Interval); err != nil {
@@ -361,7 +365,12 @@ func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType stri
 	return te.VerifyLegacyEventReceivedBySink(evntID, eventType, eventSource, payload)
 }
 
-func (te *TestEnvironment) TestDeliveryOfCloudEvent(eventSource, eventType string, encoding binding.Encoding) error {
+func (te *TestEnvironment) TestDeliveryOfCloudEvent(eventSource, eventType string, encoding binding.Encoding, typeMatching eventingv1alpha2.TypeMatching) error {
+	// use the configured source in case of the exact type matching
+	if typeMatching == eventingv1alpha2.TypeMatchingExact {
+		eventSource = te.TestConfigs.EventMeshNamespace
+	}
+
 	// define the event
 	ceEvent, err := eventing.NewCloudEvent(eventSource, eventType, encoding)
 	if err != nil {
