@@ -537,6 +537,7 @@ func Test_stopEventMeshSubManager(t *testing.T) {
 // TestGetSecretForPublisher verifies the successful and failing retrieval
 // of secrets.
 func Test_GetSecretForPublisher(t *testing.T) {
+	eventingNS := "eventingNS"
 	secretFor := func(message, namespace []byte) *kcorev1.Secret {
 		secret := &kcorev1.Secret{
 			ObjectMeta: kmetav1.ObjectMeta{
@@ -621,7 +622,7 @@ func Test_GetSecretForPublisher(t *testing.T) {
 				},
 				ObjectMeta: kmetav1.ObjectMeta{
 					Name:      eventing.PublisherName,
-					Namespace: "test-namespace",
+					Namespace: eventingNS,
 					Labels: map[string]string{
 						label.KeyName: label.ValueEventingPublisherProxy,
 					},
@@ -694,19 +695,19 @@ func Test_GetSecretForPublisher(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			publisherSecret := secretFor(tc.messagingData, tc.namespaceData)
+	for _, testcase := range testCases {
+		t.Run(testcase.name, func(t *testing.T) {
+			publisherSecret := secretFor(testcase.messagingData, testcase.namespaceData)
 
-			gotPublisherSecret, err := getSecretForPublisher(publisherSecret)
-			if tc.expectedError != nil {
+			gotPublisherSecret, err := getSecretForPublisher(publisherSecret, eventingNS)
+			if testcase.expectedError != nil {
 				require.Error(t, err)
 				require.ErrorIs(t, err, ErrEventMeshSecretMalformatted)
-				require.ErrorContains(t, err, tc.expectedError.Error())
+				require.ErrorContains(t, err, testcase.expectedError.Error())
 				return
 			}
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedSecret, gotPublisherSecret, "invalid publisher secret")
+			require.Equal(t, testcase.expectedSecret, gotPublisherSecret, "invalid publisher secret")
 		})
 	}
 }
@@ -932,7 +933,7 @@ func Test_SyncPublisherProxySecret(t *testing.T) {
 			}
 
 			// when
-			_, err := r.SyncPublisherProxySecret(context.Background(), testcase.givenSecret)
+			_, err := r.SyncPublisherProxySecret(context.Background(), "eventingNS", testcase.givenSecret)
 
 			// then
 			if testcase.wantErr {

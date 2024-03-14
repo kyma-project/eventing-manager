@@ -66,7 +66,7 @@ func (r *Reconciler) reconcileEventMeshSubManager(ctx context.Context, eventing 
 	}
 
 	// CreateOrUpdate deployment for publisher proxy secret
-	secretForPublisher, err := r.SyncPublisherProxySecret(ctx, eventMeshSecret)
+	secretForPublisher, err := r.SyncPublisherProxySecret(ctx, eventing.Namespace, eventMeshSecret)
 	if err != nil {
 		return fmt.Errorf("failed to sync Publisher Proxy secret: %w", err)
 	}
@@ -199,8 +199,8 @@ func (r *Reconciler) stopEventMeshSubManager(runCleanup bool, log *zap.SugaredLo
 	return nil
 }
 
-func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, secret *kcorev1.Secret) (*kcorev1.Secret, error) {
-	desiredSecret, err := getSecretForPublisher(secret)
+func (r *Reconciler) SyncPublisherProxySecret(ctx context.Context, eventingNS string, secret *kcorev1.Secret) (*kcorev1.Secret, error) {
+	desiredSecret, err := getSecretForPublisher(secret, eventingNS)
 	if err != nil {
 		return nil, fmt.Errorf("invalid secret for Event Publisher: %w", err)
 	}
@@ -321,8 +321,8 @@ func newSecret(name, namespace string) *kcorev1.Secret {
 	}
 }
 
-func getSecretForPublisher(eventMeshSecret *kcorev1.Secret) (*kcorev1.Secret, error) {
-	secret := newSecret(eventing.PublisherName, eventMeshSecret.Namespace)
+func getSecretForPublisher(eventMeshSecret *kcorev1.Secret, ns string) (*kcorev1.Secret, error) {
+	secret := newSecret(eventing.PublisherName, ns)
 
 	secret.Labels = map[string]string{
 		label.KeyName: label.ValueEventingPublisherProxy,
