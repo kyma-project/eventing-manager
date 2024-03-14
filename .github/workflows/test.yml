@@ -13,6 +13,12 @@ on:
       - "docs/**"
       - "**.md"
       - "sec-scanners-config.yaml"
+      - CODEOWNERS
+      - LICENSE
+      - LICENSES
+      - OWNERS
+      - OWNERS_ALIASES
+      - PROJECT
   pull_request:
     branches:
       - main
@@ -21,7 +27,12 @@ on:
       - "docs/**"
       - "**.md"
       - "sec-scanners-config.yaml"
-
+      - CODEOWNERS
+      - LICENSE
+      - LICENSES
+      - OWNERS
+      - OWNERS_ALIASES
+      - PROJECT
 jobs:
   unit-test:
     uses: kyma-project/eventing-tools/.github/workflows/unit-test-reusable.yml@main

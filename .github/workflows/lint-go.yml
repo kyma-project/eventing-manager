@@ -6,9 +6,15 @@ on:
       - "main"
       - "release-*"
     paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'sec-scanners-config.yaml'
+      - "docs/**"
+      - "**.md"
+      - "sec-scanners-config.yaml"
+      - CODEOWNERS
+      - LICENSE
+      - LICENSES
+      - OWNERS
+      - OWNERS_ALIASES
+      - PROJECT
 
 permissions:
   contents: read
