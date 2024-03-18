@@ -721,6 +721,109 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 	}
 }
 
+func TestUpdateEventingCRFromEmptyToNonEmptyBackend(t *testing.T) {
+	tests := []struct {
+		name                    string
+		givenBackendTypeToUse   operatorv1alpha1.BackendType
+		wantMatchesBeforeUpdate gomegatypes.GomegaMatcher
+		wantMatchesAfterUpdate  gomegatypes.GomegaMatcher
+	}{
+		{
+			name:                  "update Eventing CR from empty backend to NATS",
+			givenBackendTypeToUse: operatorv1alpha1.NatsBackendType,
+			wantMatchesBeforeUpdate: gomega.And(
+				matchers.HaveBackendNotAvailableConditionWith(
+					operatorv1alpha1.ConditionBackendNotSpecifiedMessage,
+					operatorv1alpha1.ConditionReasonBackendNotSpecified,
+				),
+			),
+			wantMatchesAfterUpdate: gomega.And(
+				matchers.HaveFinalizer(),
+				matchers.HaveBackendAvailableConditionWith(
+					operatorv1alpha1.ConditionNATSAvailableMessage,
+					operatorv1alpha1.ConditionReasonNATSAvailable,
+				),
+			),
+		},
+		{
+			name:                  "update Eventing CR from empty backend to EventMesh",
+			givenBackendTypeToUse: operatorv1alpha1.EventMeshBackendType,
+			wantMatchesBeforeUpdate: gomega.And(
+				matchers.HaveBackendNotAvailableConditionWith(
+					operatorv1alpha1.ConditionBackendNotSpecifiedMessage,
+					operatorv1alpha1.ConditionReasonBackendNotSpecified,
+				),
+			),
+			wantMatchesAfterUpdate: gomega.And(
+				matchers.HaveFinalizer(),
+				matchers.HaveBackendAvailableConditionWith(
+					operatorv1alpha1.ConditionEventMeshConfigAvailableMessage,
+					operatorv1alpha1.ConditionReasonEventMeshConfigAvailable,
+				),
+			),
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			g := gomega.NewWithT(t)
+
+			/////
+			// Create the Eventing CR with an empty backend
+			/////
+
+			eventingCR := utils.NewEventingCR(utils.WithEmptyBackend())
+			namespace := eventingCR.Namespace
+			testEnvironment.EnsureNamespaceCreation(t, namespace)
+			testEnvironment.EnsureK8sResourceCreated(t, eventingCR)
+			defer func() {
+				testEnvironment.EnsureEventingResourceDeletion(t, eventingCR.Name, namespace)
+				testEnvironment.EnsureNamespaceDeleted(t, namespace)
+			}()
+
+			testEnvironment.GetEventingAssert(g, eventingCR).Should(test.wantMatchesBeforeUpdate)
+
+			/////
+			// Update the Eventing CR with a non-empty backend
+			/////
+
+			eventingCR, err := testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
+			g.Expect(err).ShouldNot(gomega.HaveOccurred())
+			eventingCR = eventingCR.DeepCopy()
+
+			switch test.givenBackendTypeToUse {
+			case operatorv1alpha1.NatsBackendType:
+				{
+					natsCR := natstestutils.NewNATSCR(
+						natstestutils.WithNATSCRNamespace(namespace),
+						natstestutils.WithNATSCRDefaults(),
+						natstestutils.WithNATSStateReady(),
+					)
+					testEnvironment.EnsureK8sResourceCreated(t, natsCR)
+					defer func() { testEnvironment.EnsureK8sResourceDeleted(t, natsCR) }()
+
+					g.Expect(utils.WithNATSBackend()(eventingCR)).ShouldNot(gomega.HaveOccurred())
+					testEnvironment.EnsureK8sResourceUpdated(t, eventingCR)
+				}
+			case operatorv1alpha1.EventMeshBackendType:
+				{
+					g.Expect(utils.WithEventingDomain(utils.Domain)(eventingCR)).ShouldNot(gomega.HaveOccurred())
+					g.Expect(utils.WithEventMeshBackend("test-eventmesh-secret")(eventingCR)).ShouldNot(gomega.HaveOccurred())
+
+					testEnvironment.EnsureEventMeshSecretCreated(t, eventingCR)
+					testEnvironment.EnsureOAuthSecretCreated(t, eventingCR)
+					testEnvironment.EnsureK8sResourceUpdated(t, eventingCR)
+				}
+			}
+
+			testEnvironment.GetEventingAssert(g, eventingCR).Should(test.wantMatchesAfterUpdate)
+		})
+	}
+}
+
 func Test_DeleteEventingCR(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
