@@ -80,7 +80,7 @@ spec:
                       natsStreamMaxSize: 700Mi
                       natsStreamReplicas: 3
                       natsStreamStorageType: File
-                    description: Config defines configuration for eventing backend.
+                    description: Config defines configuration for the Eventing backend.
                     properties:
                       domain:
                         description: |-
@@ -90,8 +90,8 @@ spec:
                         type: string
                       eventMeshSecret:
                         description: EventMeshSecret defines the namespaced name of
-                          K8s Secret containing EventMesh credentials. The format
-                          of name is "namespace/name".
+                          the Kubernetes Secret containing EventMesh credentials.
+                          The format of name is "namespace/name".
                         pattern: ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$
                         type: string
                       eventTypePrefix:
@@ -117,7 +117,7 @@ spec:
                       natsStreamReplicas:
                         default: 3
                         description: NATSStreamReplicas defines the number of replicas
-                          for stream.
+                          for the stream.
                         type: integer
                       natsStreamStorageType:
                         default: File
@@ -342,10 +342,11 @@ spec:
                 type: integer
               state:
                 description: |-
-                  Can have one of the following values: Ready, Error, Processing, Warning. Ready state is set
-                  when all the resources are deployed successfully and backend is connected.
-                  It gets Warning state in case backend is not specified, NATS module is not installed, or EventMesh secret is missing in the cluster.
-                  Error state is set when there is an error. Processing state is set if recources are being created or changed.
+                  It can have one of the following values: `Ready`, `Warning`, `Processing`, `Error`.
+                  It is set to `Ready` when all the resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.
+                  It is set to `Warning` if there is a user configuration issue. The following are examples of user configuration issues: there is no backend configured, there is no NATS module installed, there is no valid EventMesh secret configured.
+                  It is set to `Processing` if the resources managed by the Eventing manager are being created or updated.
+                  It is set to `Error` if an error occurred while reconciling the Eventing custom resource.
                 type: string
             required:
             - activeBackend
