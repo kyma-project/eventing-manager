@@ -109,9 +109,9 @@ type EventingStatus struct {
 	// Defines the overall state of the Eventing custom resource.<br/>
 	// - `Ready` when all the resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.<br/>
 	// - `Warning` if there is a user input misconfiguration. The following are examples of user input misconfigurations:<br/>
-	//   - There is no backend configured.<br/>
-	//   - The backend is configured to NATS but there is no NATS module installed.<br/>
-	//   - The backend is configured to EventMesh but there is no valid EventMesh secret configured.<br/>
+	// &nbsp;&nbsp;- There is no backend configured.<br/>
+	// &nbsp;&nbsp;- The backend is configured to NATS but there is no NATS module installed.<br/>
+	// &nbsp;&nbsp;- The backend is configured to EventMesh but there is no valid EventMesh secret configured.<br/>
 	// - `Processing` if the resources managed by the Eventing manager are being created or updated.<br/>
 	// - `Error` if an error occurred while reconciling the Eventing custom resource.
 	State            string              `json:"state"`
