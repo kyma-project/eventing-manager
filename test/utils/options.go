@@ -116,12 +116,18 @@ func WithEventingLogLevel(logLevel string) EventingOption {
 
 func WithEventMeshBackend(eventMeshSecretName string) EventingOption {
 	return func(e *v1alpha1.Eventing) error {
-		e.Spec.Backend = &v1alpha1.Backend{
-			Type: v1alpha1.EventMeshBackendType,
-			Config: v1alpha1.BackendConfig{
-				EventMeshSecret: e.Namespace + "/" + eventMeshSecretName,
-			},
+		if e.Spec.Backend == nil {
+			e.Spec.Backend = &v1alpha1.Backend{}
 		}
+		e.Spec.Backend.Type = v1alpha1.EventMeshBackendType
+		e.Spec.Backend.Config.EventMeshSecret = e.Namespace + "/" + eventMeshSecretName
+		return nil
+	}
+}
+
+func WithEmptyBackend() EventingOption {
+	return func(e *v1alpha1.Eventing) error {
+		e.Spec.Backend = &v1alpha1.Backend{}
 		return nil
 	}
 }

@@ -106,6 +106,15 @@ func HaveBackendNotAvailableConditionWith(message string, reason v1alpha1.Condit
 	})
 }
 
+func HaveBackendAvailableConditionWith(message string, reason v1alpha1.ConditionReason) gomegatypes.GomegaMatcher {
+	return HaveCondition(kmetav1.Condition{
+		Type:    string(v1alpha1.ConditionBackendAvailable),
+		Status:  kmetav1.ConditionTrue,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
 func HaveNATSNotAvailableConditionWith(message string) gomegatypes.GomegaMatcher {
 	return HaveCondition(kmetav1.Condition{
 		Type:    string(v1alpha1.ConditionBackendAvailable),

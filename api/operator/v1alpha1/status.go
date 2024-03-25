@@ -93,6 +93,12 @@ func (es *EventingStatus) SetNATSAvailableConditionToTrue() {
 	es.UpdateConditionBackendAvailable(kmetav1.ConditionTrue, ConditionReasonNATSAvailable, ConditionNATSAvailableMessage)
 }
 
+func (es *EventingStatus) SetEventMeshAvailableConditionToTrue() {
+	es.UpdateConditionBackendAvailable(
+		kmetav1.ConditionTrue, ConditionReasonEventMeshConfigAvailable, ConditionEventMeshConfigAvailableMessage,
+	)
+}
+
 func (es *EventingStatus) SetSubscriptionManagerReadyConditionToFalse(reason ConditionReason, message string) {
 	es.UpdateConditionSubscriptionManagerReady(kmetav1.ConditionFalse, reason,
 		message)
