@@ -106,11 +106,14 @@ type EventingStatus struct {
 	ActiveBackend     BackendType `json:"activeBackend"`
 	BackendConfigHash int64       `json:"specHash"`
 
-	// It can have one of the following values: `Ready`, `Warning`, `Processing`, `Error`.
-	// It is set to `Ready` when all the resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.
-	// It is set to `Warning` if there is a user configuration issue. The following are examples of user configuration issues: there is no backend configured, there is no NATS module installed, there is no valid EventMesh secret configured.
-	// It is set to `Processing` if the resources managed by the Eventing manager are being created or updated.
-	// It is set to `Error` if an error occurred while reconciling the Eventing custom resource.
+	// Defines the overall state of the Eventing custom resource.<br/>
+	// - `Ready` when all the resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.<br/>
+	// - `Warning` if there is a user input misconfiguration. The following are examples of user input misconfigurations:<br/>
+	//   - There is no backend configured.<br/>
+	//   - The backend is configured to NATS but there is no NATS module installed.<br/>
+	//   - The backend is configured to EventMesh but there is no valid EventMesh secret configured.<br/>
+	// - `Processing` if the resources managed by the Eventing manager are being created or updated.<br/>
+	// - `Error` if an error occurred while reconciling the Eventing custom resource.
 	State            string              `json:"state"`
 	PublisherService string              `json:"publisherService,omitempty"`
 	Conditions       []kmetav1.Condition `json:"conditions,omitempty"`
