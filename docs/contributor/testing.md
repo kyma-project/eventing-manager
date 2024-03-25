@@ -25,7 +25,7 @@ If changes to the source code were made, or if this is your first time to execut
 
    ```sh
    make test
-   ``` 
+   ```
 
 ### E2E Tests
 
@@ -49,8 +49,6 @@ Because E2E tests need a Kubernetes cluster to run on, they are separate from th
    ```
 
 The E2E test consists of four consecutive steps. If desired, you can run them individually. For more information, read the [E2E documentation](https://github.com/kyma-project/eventing-manager/blob/main/hack/e2e/README.md).
-
-
 
 ## CI/CD
 
