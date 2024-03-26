@@ -217,3 +217,108 @@ jobs:
           KUSTOMIZE_VERSION: "v4.5.6"
         run: |
           ./hack/ci/render_and_upload_manifests.sh
+
+  bump-sec-scanners-config-main:
+  name: Bump sec-scanners-config.yaml on main branch
+  needs: create-draft
+  runs-on: ubuntu-latest
+  env:
+    VERSION: ${{ needs.generate-version.outputs.VERSION }}
+
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: main
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: "stable"
+
+    - name: "Setup yq" # Required for rendering the files.
+      shell: bash
+      run: |
+        go install github.com/mikefarah/yq/v4@latest
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+    - name: Render sec-scanners-config.yaml
+      shell: bash
+      run: |
+        yq --version
+        ./hack/ci/render-sec-scanners-config.sh "${VERSION}"
+        FILE="sec-scanners-config.yaml"
+        echo "******* ${FILE} *******"
+        [ -f "${FILE}" ] && cat "${FILE}" || echo "${FILE} not found."
+
+    # Check if there are changes, so we can determine if all following steps can be skipped.
+    - name: Check for changes
+      shell: bash
+      run: |
+        if [ -z "$(git status --porcelain)" ]; then 
+          echo "No changes found. No need to create a PR" 
+        else 
+          echo "Changes found. Creating a PR and waiting for it to be merged."
+          echo "CREATE_PR=true" >> $GITHUB_ENV 
+        fi
+
+    - name: Set up git
+      if: ${{ env.CREATE_PR == 'true' }}
+      env:
+        GH_TOKEN: ${{ secrets.BOT_PAT }}
+        REPO: ${{ github.repository }}
+      shell: bash
+      run: |
+        # set git username 
+        ghusername=$(curl -s -H "Authorization: token ${GH_TOKEN}" https://api.github.com/user | jq '.login')
+        git config user.name "${ghusername}"
+        # set git mail address
+        ghemailaddress="${ghusername}@users.noreply.github.com"
+        git config user.email "${ghemailaddress}"
+        # set remote url
+        git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+
+    - name: Set all variables
+      if: ${{ env.CREATE_PR == 'true' }}
+      shell: bash
+      run: |
+        PR_DATE="$(date '+%Y-%m-%d-%H-%M-%S')"
+        echo "pr date: ${PR_DATE}"
+        echo "PR_DATE=${PR_DATE}" >> $GITHUB_ENV
+
+        BRANCH_NAME="sec-scanners-bump-main-${PR_DATE}"
+        echo "name of the new branch: ${BRANCH_NAME}"
+        echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+
+    - name: Create a pull request
+      if: ${{ env.CREATE_PR == 'true' }}
+      env:
+        REPO: ${{ github.repository }}
+        PR_DATE: ${{ env.PR_DATE }}
+        BRANCH_NAME: ${{ env.BRANCH_NAME }}
+        GH_TOKEN: ${{ secrets.BOT_PAT }}
+      shell: bash
+      run: |
+        # Create a new branch for our changes.
+        git checkout -b "${BRANCH_NAME}"
+
+        # Stage the changes to sec-scanner-config.yaml and create a commit.
+        git add sec-scanners-config.yaml
+        git commit -m "auto-bump sec-scanners-config: ${PR_DATE}"
+
+        # Push the changes to origin, as defined earlier.
+        git push origin "$BRANCH_NAME"
+
+        # Create a PR.
+        BODY="This is an auto-generated PR to bump the sec-scanners-config.yml on ${REPO}."
+        PR_URL=$(gh pr create --base "main" --head "${BRANCH_NAME}" --title "chore: bump sec-scanners-config on main" --body "${BODY}")
+        echo "PR_URL=${PR_URL}" >> $GITHUB_ENV
+
+    - name: USER INTERACTION REQUIRED
+      if: ${{ env.CREATE_PR == 'true' }}
+      shell: bash
+      env:
+        PR_URL: ${{ env.PR_URL }}
+        GH_TOKEN: ${{ secrets.BOT_PAT }}
+      run: |
+        echo "please review:  ${PR_URL}"
+        ./hack/ci/await-pr-merge.sh        
