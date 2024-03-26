@@ -10,7 +10,7 @@ set -o pipefail # prevents errors in a pipeline from being masked
 # PR_URL - Number of the PR with the changes to be merged
 
 # wait until the PR is merged.
-while ; do
+while true ; do
   pr_state=$(gh pr view ${PR_URL} --json state --jq '.state')
   if [ "$pr_state" == "CLOSED" ]; then
     echo "ERROR! PR has been closed!"
