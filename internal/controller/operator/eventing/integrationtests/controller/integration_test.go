@@ -1116,8 +1116,8 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
 			// Given:
 			// We need to mock the deployment readiness check.
 			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
@@ -1149,7 +1149,7 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 					Name:      name,
 					Namespace: namespace,
 				},
-				Data: tc.givenData,
+				Data: testcase.givenData,
 				Type: "Opaque",
 			}
 			// Finally, we can create the EventMesh Secret on the cluster.
@@ -1162,7 +1162,7 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 			// Then:
 			// Check if the EventingCR status has the expected status, caused by the EventMesh Secret.
 			g := gomega.NewWithT(t)
-			testEnvironment.GetEventingAssert(g, givenEventingCR).Should(tc.wantMatcher)
+			testEnvironment.GetEventingAssert(g, givenEventingCR).Should(testcase.wantMatcher)
 		})
 	}
 }
