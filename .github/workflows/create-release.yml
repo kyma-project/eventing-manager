@@ -316,6 +316,7 @@ jobs:
     - name: USER INTERACTION REQUIRED
       if: ${{ env.CREATE_PR == 'true' }}
       shell: bash
+      timeout-minutes: 60
       env:
         PR_URL: ${{ env.PR_URL }}
         GH_TOKEN: ${{ secrets.BOT_PAT }}
