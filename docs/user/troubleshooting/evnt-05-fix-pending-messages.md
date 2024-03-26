@@ -1,5 +1,5 @@
 
-# Published events are pending in the stream
+# Published Events are Pending in the Stream
 
 ## Symptom
 
@@ -19,7 +19,7 @@ To fix the "broken" consumers with pending messages, trigger a leader reelection
 
 You need the latest version of NATS CLI installed on your machine.
 
-### Consumer leader reelection
+### Consumer Leader Reelection
 
 First, find out which consumer(s) have pending messages. You can find the broken consumer with the NATS CLI command.
 
@@ -48,7 +48,7 @@ First, find out which consumer(s) have pending messages. You can find the broken
    In this example, the consumer `ebcabfe5c902612f0ba3ebde7653f30b` has 25 pending messages and has the leader.
    The other one has no pending message and is successfully processing events.
 
-#### Trigger the consumer leader reelection
+#### Trigger the Consumer Leader Reelection
 
 Knowing the name of the broken consumer and its leader, you can trigger the reelection:
 
@@ -74,7 +74,7 @@ Knowing the name of the broken consumer and its leader, you can trigger the reel
 
 3. Check the consumer and confirm that the pending messages started to be dispatched.
 
-### Stream leader reelection
+### Stream Leader Reelection
 
 Sometimes triggering the leader reelection on the broken consumers doesn't work. In that case, you must restart the NATS Pods to trigger leader reelection on the stream level.
 

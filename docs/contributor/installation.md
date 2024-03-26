@@ -81,12 +81,12 @@ This step depends on your desired backend: NATS or EventMesh.
       ```
 
       - `spec.backend.type`: set to `EventMesh`
-      - `spec.backend.config.eventMeshSecret`: set it to the `<namespace>/<name>` where you applied the secret
+      - `spec.backend.config.eventMeshSecret`: set it to the `<namespace>/<name>` where you applied the Secret
       - `spec.backend.config.eventTypePrefix`: change to your desired value or leave as is
       - `spec.backend.config.domain`: set to the cluster public domain
 
       If the Kyma Kubernetes cluster is managed by Gardener, Eventing Manager reads the cluster public domain automatically from the ConfigMap `kube-system/shoot-info`.
-      Otherwise, you need to additionally set `spec.backend.config.domain` in the configuration. 
+      Otherwise, you need to additionally set `spec.backend.config.domain` in the configuration.
 
       ```sh
       spec:
