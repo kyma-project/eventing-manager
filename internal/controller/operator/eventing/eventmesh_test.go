@@ -537,7 +537,7 @@ func Test_stopEventMeshSubManager(t *testing.T) {
 // TestGetSecretForPublisher verifies the successful and failing retrieval
 // of secrets.
 func Test_GetSecretForPublisher(t *testing.T) {
-	eventingNS := "eventingNS"
+	eventingNS := "eventingns"
 	secretFor := func(message, namespace []byte) *kcorev1.Secret {
 		secret := &kcorev1.Secret{
 			ObjectMeta: kmetav1.ObjectMeta{
@@ -933,7 +933,7 @@ func Test_SyncPublisherProxySecret(t *testing.T) {
 			}
 
 			// when
-			_, err := r.SyncPublisherProxySecret(context.Background(), "eventingNS", testcase.givenSecret)
+			_, err := r.SyncPublisherProxySecret(context.Background(), "eventingns", testcase.givenSecret)
 
 			// then
 			if testcase.wantErr {
