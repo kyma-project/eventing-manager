@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -108,4 +109,53 @@ func Test_getSupportedConditionsTypes(t *testing.T) {
 	}
 	got := getSupportedConditionsTypes()
 	require.Equal(t, want, got)
+}
+
+func TestHasEmptyBackend(t *testing.T) {
+	tests := []struct {
+		name                string
+		givenEventingSpec   EventingSpec
+		wantHasEmptyBackend bool
+	}{
+		{
+			name: "with nil backend",
+			givenEventingSpec: EventingSpec{
+				Backend: nil,
+			},
+			wantHasEmptyBackend: true,
+		},
+		{
+			name: "with empty backend type",
+			givenEventingSpec: EventingSpec{
+				Backend: &Backend{
+					Type: "",
+				},
+			},
+			wantHasEmptyBackend: true,
+		},
+		{
+			name: "with non-empty backend type all whitespaces",
+			givenEventingSpec: EventingSpec{
+				Backend: &Backend{
+					Type: "   ",
+				},
+			},
+			wantHasEmptyBackend: true,
+		},
+		{
+			name: "with non-empty backend type",
+			givenEventingSpec: EventingSpec{
+				Backend: &Backend{
+					Type: "any",
+				},
+			},
+			wantHasEmptyBackend: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.givenEventingSpec.HasEmptyBackend()
+			assert.Equal(t, tt.wantHasEmptyBackend, got)
+		})
+	}
 }

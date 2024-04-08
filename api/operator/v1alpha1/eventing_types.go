@@ -18,6 +18,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"strings"
+
 	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,12 +41,10 @@ const (
 	ConditionSubscriptionManagerReady ConditionType = "SubscriptionManagerReady"
 	ConditionDeleted                  ConditionType = "Deleted"
 
-	// common reasons.
 	ConditionReasonProcessing ConditionReason = "Processing"
 	ConditionReasonDeleted    ConditionReason = "Deleted"
 	ConditionReasonStopped    ConditionReason = "Stopped"
 
-	// publisher proxy reasons.
 	ConditionReasonDeployed                   ConditionReason = "Deployed"
 	ConditionReasonDeployedFailed             ConditionReason = "DeployFailed"
 	ConditionReasonDeploymentStatusSyncFailed ConditionReason = "DeploymentStatusSyncFailed"
@@ -55,8 +55,8 @@ const (
 	ConditionReasonWebhookFailed              ConditionReason = "WebhookFailed"
 	ConditionReasonWebhookReady               ConditionReason = "Ready"
 	ConditionReasonDeletionError              ConditionReason = "DeletionError"
+	ConditionReasonEventMeshConfigAvailable   ConditionReason = "EventMeshConfigAvailable"
 
-	// message for conditions.
 	ConditionPublisherProxyReadyMessage        = "Publisher proxy is deployed"
 	ConditionPublisherProxyDeletedMessage      = "Publisher proxy is deleted"
 	ConditionNATSAvailableMessage              = "NATS is available"
@@ -65,8 +65,8 @@ const (
 	ConditionSubscriptionManagerReadyMessage   = "Subscription manager is ready"
 	ConditionSubscriptionManagerStoppedMessage = "Subscription manager is stopped"
 	ConditionBackendNotSpecifiedMessage        = "Backend config is not provided. Please specify a backend."
+	ConditionEventMeshConfigAvailableMessage   = "EventMesh config is available"
 
-	// subscription manager reasons.
 	ConditionReasonEventMeshSubManagerReady      ConditionReason = "EventMeshSubscriptionManagerReady"
 	ConditionReasonEventMeshSubManagerFailed     ConditionReason = "EventMeshSubscriptionManagerFailed"
 	ConditionReasonEventMeshSubManagerStopFailed ConditionReason = "EventMeshSubscriptionManagerStopFailed"
@@ -242,4 +242,8 @@ func (e *Eventing) IsPreviousBackendEmpty() bool {
 
 func (e *Eventing) IsSpecBackendTypeChanged() bool {
 	return e.Status.ActiveBackend != e.Spec.Backend.Type
+}
+
+func (es EventingSpec) HasEmptyBackend() bool {
+	return es.Backend == nil || len(strings.TrimSpace(string(es.Backend.Type))) == 0
 }

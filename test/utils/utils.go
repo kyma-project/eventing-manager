@@ -109,9 +109,17 @@ func NewAPIRuleCRD() *kapiextensionsv1.CustomResourceDefinition {
 	return result
 }
 
+func GetRandomName() string {
+	return fmt.Sprintf(NameFormat, GetRandString(randomNameLen))
+}
+
+func GetRandomNamespaceName() string {
+	return fmt.Sprintf(NamespaceFormat, GetRandString(randomNameLen))
+}
+
 func NewEventingCR(opts ...EventingOption) *v1alpha1.Eventing {
-	name := fmt.Sprintf(NameFormat, GetRandString(randomNameLen))
-	namespace := fmt.Sprintf(NamespaceFormat, GetRandString(randomNameLen))
+	name := GetRandomName()
+	namespace := GetRandomNamespaceName()
 
 	eventing := &v1alpha1.Eventing{
 		TypeMeta: kmetav1.TypeMeta{

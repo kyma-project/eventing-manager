@@ -116,7 +116,7 @@ Note that the returned event type `["order.paymentsuccess.v1"]` does not contain
 
 ## Trigger the Workload With an Event
 
-You created the `lastorder` Function, and subscribed to the `order.payment*success.v1` events by creating a Subscription CR. 
+You created the `lastorder` Function, and subscribed to the `order.payment*success.v1` events by creating a Subscription CR.
 Next, you see that you can still publish events with the original Event name (i.e. `order.payment*success.v1`) even though it contains the prohibited character, and it triggers the Function.
 
 1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
@@ -192,7 +192,7 @@ Note that the `Event Type` of the received event is not the same as defined in t
 
 ## Conclusion
 
-You see that Kyma Eventing modifies the event names to filter out prohibited characters to conform to Cloud Event specifications. 
+You see that Kyma Eventing modifies the event names to filter out prohibited characters to conform to Cloud Event specifications.
 
 > [!WARNING]
 > This cleanup modification is abstract; you can still publish and subscribe to the original Event names. However, in some cases, it can lead to a naming collision as explained in [Event names](../evnt-event-names.md).

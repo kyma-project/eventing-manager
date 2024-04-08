@@ -464,8 +464,10 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 
 	// set state processing if not set yet
 	r.InitStateProcessing(eventing)
-	if eventing.Spec.Backend == nil {
-		return kctrl.Result{Requeue: true}, r.syncStatusForEmptyBackend(ctx,
+
+	// Handle empty backend.
+	if eventing.Spec.HasEmptyBackend() {
+		return kctrl.Result{Requeue: false}, r.syncStatusForEmptyBackend(ctx,
 			operatorv1alpha1.ConditionBackendNotSpecifiedMessage,
 			eventing, log)
 	}
@@ -677,6 +679,9 @@ func (r *Reconciler) reconcileEventMeshBackend(ctx context.Context, eventing *op
 		}
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)
 	}
+
+	// Set the Eventing CR status accordingly.
+	eventing.Status.SetEventMeshAvailableConditionToTrue()
 	eventing.Status.SetSubscriptionManagerReadyConditionToTrue()
 
 	deployment, err := r.handlePublisherProxy(ctx, eventing, eventing.Spec.Backend.Type)

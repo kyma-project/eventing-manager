@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -284,4 +285,169 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 			require.Equal(t, ttc.wantStatus, ttc.givenStatus)
 		})
 	}
+}
+
+func TestSetEventMeshAvailableConditionToTrue(t *testing.T) {
+	var (
+		anyCondition0 = kmetav1.Condition{
+			Type:    "any-type-0",
+			Status:  kmetav1.ConditionStatus("any-status-0"),
+			Reason:  "any-reason-0",
+			Message: "any-message-0",
+		}
+
+		anyCondition1 = kmetav1.Condition{
+			Type:    "any-type-1",
+			Status:  kmetav1.ConditionStatus("any-status-1"),
+			Reason:  "any-reason-1",
+			Message: "any-message-1",
+		}
+
+		anyCondition2 = kmetav1.Condition{
+			Type:    "any-type-2",
+			Status:  kmetav1.ConditionStatus("any-status-2"),
+			Reason:  "any-reason-2",
+			Message: "any-message-2",
+		}
+
+		backendAvailableConditionFalse = kmetav1.Condition{
+			Type:    string(ConditionBackendAvailable),
+			Status:  kmetav1.ConditionFalse,
+			Reason:  string(ConditionReasonBackendNotSpecified),
+			Message: ConditionBackendNotSpecifiedMessage,
+		}
+
+		backendAvailableConditionTrue = kmetav1.Condition{
+			Type:    string(ConditionBackendAvailable),
+			Status:  kmetav1.ConditionTrue,
+			Reason:  string(ConditionReasonEventMeshConfigAvailable),
+			Message: ConditionEventMeshConfigAvailableMessage,
+		}
+	)
+
+	tests := []struct {
+		name                string
+		givenEventingStatus EventingStatus
+		wantEventingStatus  EventingStatus
+	}{
+		// add new condition
+		{
+			name: "should add a new condition in case of nil conditions",
+			givenEventingStatus: EventingStatus{
+				Conditions: nil,
+			},
+			wantEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{
+					backendAvailableConditionTrue,
+				},
+			},
+		},
+		{
+			name: "should add a new condition in case of empty conditions",
+			givenEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{},
+			},
+			wantEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{
+					backendAvailableConditionTrue,
+				},
+			},
+		},
+		{
+			name: "should add a new condition and preserve existing ones",
+			givenEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{
+					anyCondition0,
+					anyCondition1,
+					anyCondition2,
+				},
+			},
+			wantEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{
+					anyCondition0,
+					anyCondition1,
+					anyCondition2,
+					backendAvailableConditionTrue,
+				},
+			},
+		},
+		// update existing condition
+		{
+			name: "should update existing condition",
+			givenEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{
+					backendAvailableConditionFalse,
+				},
+			},
+			wantEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{
+					backendAvailableConditionTrue,
+				},
+			},
+		},
+		{
+			name: "should update condition and preserve existing ones",
+			givenEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{
+					anyCondition0,
+					anyCondition1,
+					backendAvailableConditionTrue,
+					anyCondition2,
+				},
+			},
+			wantEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{
+					anyCondition0,
+					anyCondition1,
+					backendAvailableConditionTrue,
+					anyCondition2,
+				},
+			},
+		},
+		{
+			name: "should update condition from false to true and preserve existing ones",
+			givenEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{
+					anyCondition0,
+					backendAvailableConditionFalse,
+					anyCondition1,
+					anyCondition2,
+				},
+			},
+			wantEventingStatus: EventingStatus{
+				Conditions: []kmetav1.Condition{
+					anyCondition0,
+					backendAvailableConditionTrue,
+					anyCondition1,
+					anyCondition2,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.givenEventingStatus.SetEventMeshAvailableConditionToTrue()
+			assertConditionsEqual(t, tt.wantEventingStatus.Conditions, tt.givenEventingStatus.Conditions)
+		})
+	}
+}
+
+// assertConditionsEqual ensures conditions are equal.
+// Note: This function takes into consideration the order of conditions while doing the equality check.
+func assertConditionsEqual(t *testing.T, expected, actual []kmetav1.Condition) {
+	t.Helper()
+
+	assert.Equal(t, len(expected), len(actual))
+	for i := 0; i < len(expected); i++ {
+		assertConditionEqual(t, expected[i], actual[i])
+	}
+}
+
+func assertConditionEqual(t *testing.T, expected, actual kmetav1.Condition) {
+	t.Helper()
+
+	assert.Equal(t, expected.Type, actual.Type)
+	assert.Equal(t, expected.Status, actual.Status)
+	assert.Equal(t, expected.Reason, actual.Reason)
+	assert.Equal(t, expected.Message, actual.Message)
 }
