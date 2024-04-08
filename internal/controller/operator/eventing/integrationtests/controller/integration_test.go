@@ -722,6 +722,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 }
 
 func TestUpdateEventingCRFromEmptyToNonEmptyBackend(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name                    string
 		givenBackendTypeToUse   operatorv1alpha1.BackendType
@@ -771,9 +772,9 @@ func TestUpdateEventingCRFromEmptyToNonEmptyBackend(t *testing.T) {
 			t.Parallel()
 			g := gomega.NewWithT(t)
 
-			/////
+			// ///
 			// Create the Eventing CR with an empty backend
-			/////
+			// ///
 
 			eventingCR := utils.NewEventingCR(utils.WithEmptyBackend())
 			namespace := eventingCR.Namespace
@@ -786,9 +787,9 @@ func TestUpdateEventingCRFromEmptyToNonEmptyBackend(t *testing.T) {
 
 			testEnvironment.GetEventingAssert(g, eventingCR).Should(test.wantMatchesBeforeUpdate)
 
-			/////
+			// ///
 			// Update the Eventing CR with a non-empty backend
-			/////
+			// ///
 
 			eventingCR, err := testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
 			g.Expect(err).ShouldNot(gomega.HaveOccurred())
