@@ -722,6 +722,7 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 }
 
 func TestUpdateEventingCRFromEmptyToNonEmptyBackend(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name                    string
 		givenBackendTypeToUse   operatorv1alpha1.BackendType
@@ -771,9 +772,7 @@ func TestUpdateEventingCRFromEmptyToNonEmptyBackend(t *testing.T) {
 			t.Parallel()
 			g := gomega.NewWithT(t)
 
-			/////
 			// Create the Eventing CR with an empty backend
-			/////
 
 			eventingCR := utils.NewEventingCR(utils.WithEmptyBackend())
 			namespace := eventingCR.Namespace
@@ -786,9 +785,7 @@ func TestUpdateEventingCRFromEmptyToNonEmptyBackend(t *testing.T) {
 
 			testEnvironment.GetEventingAssert(g, eventingCR).Should(test.wantMatchesBeforeUpdate)
 
-			/////
 			// Update the Eventing CR with a non-empty backend
-			/////
 
 			eventingCR, err := testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
 			g.Expect(err).ShouldNot(gomega.HaveOccurred())
@@ -1116,8 +1113,8 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
 			// Given:
 			// We need to mock the deployment readiness check.
 			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool {
@@ -1149,7 +1146,7 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 					Name:      name,
 					Namespace: namespace,
 				},
-				Data: tc.givenData,
+				Data: testcase.givenData,
 				Type: "Opaque",
 			}
 			// Finally, we can create the EventMesh Secret on the cluster.
@@ -1162,7 +1159,7 @@ func Test_HandlingMalformedEventMeshSecret(t *testing.T) {
 			// Then:
 			// Check if the EventingCR status has the expected status, caused by the EventMesh Secret.
 			g := gomega.NewWithT(t)
-			testEnvironment.GetEventingAssert(g, givenEventingCR).Should(tc.wantMatcher)
+			testEnvironment.GetEventingAssert(g, givenEventingCR).Should(testcase.wantMatcher)
 		})
 	}
 }

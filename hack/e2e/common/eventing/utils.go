@@ -44,11 +44,12 @@ func ExtractLegacyTypeFromSubscriptionV1Alpha2Type(eventVersion, eventType strin
 	}
 
 	// Assumption: The event type consists of at least 3 parts separated by the "." character.
+	minimalNumberOfSegments := 3
 	parts := strings.Split(eventType, ".")
-	if len(parts) < 3 {
+	if len(parts) < minimalNumberOfSegments {
 		return ""
 	}
-	parts = parts[len(parts)-3 : len(parts)-1]
+	parts = parts[len(parts)-minimalNumberOfSegments : len(parts)-1]
 	return strings.Join(parts, ".")
 }
 

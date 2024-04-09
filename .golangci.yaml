@@ -210,6 +210,7 @@ linters-settings:
       - g # Ignore "g" as it is commonly used for gomega
       - a # Ignore as it is used in comparison functions
       - b # Ignore as it is used in comparison functions
+      - tc # Ignore as it is commonly used in table tests
     # Ignore "ok" variables that hold the bool return value of a type assertion. (defaults to false)
     ignore-type-assert-ok: true
     # Ignore "ok" variables that hold the bool return value of a map index. (defaults to false)
