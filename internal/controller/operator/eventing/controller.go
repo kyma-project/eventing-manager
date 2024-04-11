@@ -172,6 +172,8 @@ func NewReconciler(
 // +kubebuilder:rbac:groups="eventing.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
 // +kubebuilder:rbac:groups=eventing.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=security.istio.io,resources=peerauthentications,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=delete
+// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=delete
 // Generate required RBAC to emit kubernetes events in the controller.
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
@@ -471,13 +473,6 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 			operatorv1alpha1.ConditionBackendNotSpecifiedMessage,
 			eventing, log)
 	}
-
-	// sync webhooks CABundle.
-	if err := r.reconcileWebhooksWithCABundle(ctx); err != nil {
-		return kctrl.Result{}, r.syncStatusWithWebhookErr(ctx, eventing, err, log)
-	}
-	// set webhook condition to true.
-	eventing.Status.SetWebhookReadyConditionToTrue()
 
 	// handle backend switching.
 	if err := r.handleBackendSwitching(ctx, eventing, log); err != nil {

@@ -3,10 +3,8 @@ package testwebhookauth
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
-	"net"
 	"path/filepath"
 	"testing"
 	"time"
@@ -14,6 +12,20 @@ import (
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
 	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
+	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
+	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
+	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
+	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
+	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	"github.com/kyma-project/eventing-manager/pkg/env"
+	"github.com/kyma-project/eventing-manager/pkg/featureflags"
+	"github.com/kyma-project/eventing-manager/pkg/logger"
+	"github.com/kyma-project/eventing-manager/pkg/utils"
+	testutils "github.com/kyma-project/eventing-manager/test/utils"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
@@ -29,22 +41,6 @@ import (
 	kctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
-	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
-	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
-	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
-	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
-	"github.com/kyma-project/eventing-manager/pkg/env"
-	"github.com/kyma-project/eventing-manager/pkg/featureflags"
-	"github.com/kyma-project/eventing-manager/pkg/logger"
-	"github.com/kyma-project/eventing-manager/pkg/utils"
-	testutils "github.com/kyma-project/eventing-manager/test/utils"
-	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
 type eventMeshTestEnsemble struct {
@@ -116,7 +112,7 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 	// +kubebuilder:scaffold:scheme
 
 	// start eventMesh manager instance
-	k8sManager, webhookInstallOptions, err := setupManager(emTestEnsemble, cfg)
+	k8sManager, err := setupManager(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -161,41 +157,18 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 
 	emTestEnsemble.k8sClient = k8sManager.GetClient()
 
-	return emTestEnsemble, startAndWaitForWebhookServer(k8sManager, webhookInstallOptions)
+	return emTestEnsemble, err
 }
 
-func setupManager(ensemble *eventMeshTestEnsemble, cfg *rest.Config) (manager.Manager, *envtest.WebhookInstallOptions, error) {
+func setupManager(cfg *rest.Config) (manager.Manager, error) {
 	syncPeriod := syncPeriodSeconds * time.Second
-	webhookInstallOptions := &ensemble.testEnv.WebhookInstallOptions
 	k8sManager, err := kctrl.NewManager(cfg, kctrl.Options{
 		Scheme:                 scheme.Scheme,
 		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
 		Metrics:                server.Options{BindAddress: "0"}, // disable
 		HealthProbeBindAddress: "0",                              // disable
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Host:    webhookInstallOptions.LocalServingHost,
-			Port:    webhookInstallOptions.LocalServingPort,
-			CertDir: webhookInstallOptions.LocalServingCertDir,
-		}),
 	})
-	return k8sManager, webhookInstallOptions, err
-}
-
-func startAndWaitForWebhookServer(manager manager.Manager, installOpts *envtest.WebhookInstallOptions) error {
-	if err := (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(manager); err != nil {
-		return err
-	}
-	dialer := &net.Dialer{Timeout: time.Second}
-	addrPort := fmt.Sprintf("%s:%d", installOpts.LocalServingHost, installOpts.LocalServingPort)
-	// wait for the webhook server to get ready
-	err := retry.Do(func() error {
-		conn, connErr := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
-		if connErr != nil {
-			return connErr
-		}
-		return conn.Close()
-	}, retry.Attempts(maxReconnects))
-	return err
+	return k8sManager, err
 }
 
 func startTestEnv(ensemble *eventMeshTestEnsemble) (*rest.Config, error) {
@@ -206,9 +179,6 @@ func startTestEnv(ensemble *eventMeshTestEnsemble) (*rest.Config, error) {
 		},
 		AttachControlPlaneOutput: attachControlPlaneOutput,
 		UseExistingCluster:       utils.BoolPtr(useExistingCluster),
-		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("../../../../../../", "config", "webhook")},
-		},
 	}
 
 	var cfg *rest.Config

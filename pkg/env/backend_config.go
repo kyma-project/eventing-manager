@@ -16,11 +16,6 @@ type BackendConfig struct {
 	EventingCRName      string `default:"eventing"    envconfig:"EVENTING_CR_NAME"`
 	EventingCRNamespace string `default:"kyma-system" envconfig:"EVENTING_CR_NAMESPACE"`
 
-	WebhookSecretName   string `default:"eventing-manager-webhook-server-cert"        envconfig:"WEBHOOK_SECRET_NAME"`
-	MutatingWebhookName string `default:"subscription-mutating-webhook-configuration" envconfig:"MUTATING_WEBHOOK_NAME"`
-	//nolint:lll
-	ValidatingWebhookName string `default:"subscription-validating-webhook-configuration" envconfig:"VALIDATING_WEBHOOK_NAME"`
-
 	DefaultSubscriptionConfig DefaultSubscriptionConfig
 
 	//nolint:lll

@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/pkg/errors"
@@ -29,6 +27,8 @@ import (
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
 )
 
 const (
@@ -214,8 +214,6 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			if testcase.wantEnsureK8sObjects && testcase.givenEventing.Spec.Backend != nil {
 				// check if EPP resources exists.
 				ensureK8sResources(t, testcase.givenEventing, testEnvironment)
-				// check if webhook configurations are updated with correct CABundle.
-				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
 
 			// check the publisher service in the Eventing CR status
@@ -711,8 +709,6 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			if testcase.wantEnsureK8sObjects {
 				// check if other EPP resources exists and values are reflected.
 				ensureK8sResources(t, testcase.givenEventing, testEnvironment)
-				// check if webhook configurations are updated with correct CABundle.
-				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
 
 			// check the publisher service in the Eventing CR status

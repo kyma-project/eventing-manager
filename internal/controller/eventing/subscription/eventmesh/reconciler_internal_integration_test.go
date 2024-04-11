@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -21,7 +19,9 @@ import (
 	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
@@ -36,6 +36,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/object"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 )
 
 // TestReconciler_Reconcile tests the return values of the Reconcile() method of the reconciler.
@@ -54,6 +55,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventType),
 		eventingtesting.WithValidSink("test", "test-svc"),
 		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
+		eventingtesting.WithMaxInFlight(10),
 	)
 	// A subscription marked for deletion.
 	testSubUnderDeletion := eventingtesting.NewSubscription("sub2", "test",
@@ -71,6 +73,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventType),
 		eventingtesting.WithValidSink("test", "test-svc"),
 		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusPaused)),
+		eventingtesting.WithMaxInFlight(10),
 	)
 
 	backendSyncErr := errors.New("backend sync error")
@@ -197,7 +200,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					utils.Domain)
 			},
 			wantReconcileResult: kctrl.Result{},
-			wantReconcileError:  validatorErr,
+			wantReconcileError:  reconcile.TerminalError(validatorErr),
 		},
 		{
 			name:              "Return nil and RequeueAfter when the EventMesh subscription is Paused",
@@ -256,6 +259,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventType),
 		eventingtesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
 		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
+		eventingtesting.WithMaxInFlight(10),
 	)
 
 	validator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
@@ -386,6 +390,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventType),
 		eventingtesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
 		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
+		eventingtesting.WithMaxInFlight(10),
 	)
 
 	validator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
@@ -605,6 +610,9 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 						WebhookAuthHash:    webhookAuthHash,
 						EventMeshLocalHash: eventMeshLocalHash,
 					}),
+					eventingtesting.WithMaxInFlight(10),
+					eventingtesting.WithSource(eventingtesting.EventSourceClean),
+					eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
 				)
 			}(),
 			givenReconcilerSetup: func(s *eventingv1alpha2.Subscription) (*Reconciler, client.Client) {
@@ -632,6 +640,9 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 						WebhookAuthHash:    webhookAuthHash,
 						EventMeshLocalHash: eventMeshLocalHash,
 					}),
+					eventingtesting.WithMaxInFlight(10),
+					eventingtesting.WithSource(eventingtesting.EventSourceClean),
+					eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
 				)
 			}(),
 			givenReconcilerSetup: func(s *eventingv1alpha2.Subscription) (*Reconciler, client.Client) {
@@ -772,12 +783,14 @@ func Test_getRequiredConditions(t *testing.T) {
 				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
 				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionUnknown},
 				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscriptionSpecValid, Status: kcorev1.ConditionFalse},
 			},
 			wantConditions: []eventingv1alpha2.Condition{
 				{Type: eventingv1alpha2.ConditionSubscribed, Status: kcorev1.ConditionTrue},
 				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
 				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionUnknown},
 				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionFalse},
+				{Type: eventingv1alpha2.ConditionSubscriptionSpecValid, Status: kcorev1.ConditionFalse},
 			},
 		},
 		{
@@ -791,6 +804,7 @@ func Test_getRequiredConditions(t *testing.T) {
 				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
 				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionUnknown},
 				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionSubscriptionSpecValid, Status: kcorev1.ConditionUnknown},
 			},
 		},
 		{
@@ -804,6 +818,7 @@ func Test_getRequiredConditions(t *testing.T) {
 				{Type: eventingv1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionFalse},
 				{Type: eventingv1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionUnknown},
 				{Type: eventingv1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionUnknown},
+				{Type: eventingv1alpha2.ConditionSubscriptionSpecValid, Status: kcorev1.ConditionUnknown},
 			},
 		},
 	}

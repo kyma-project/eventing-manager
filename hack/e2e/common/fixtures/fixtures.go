@@ -19,17 +19,15 @@ import (
 )
 
 const (
-	FieldManager                = "eventing-tests"
-	NamespaceName               = "kyma-system"
-	ManagerDeploymentName       = "eventing-manager"
-	CRName                      = "eventing"
-	ManagerContainerName        = "manager"
-	PublisherContainerName      = "eventing-publisher-proxy"
-	WebhookServerCertSecretName = "eventing-manager-webhook-server-cert"
-	WebhookServerCertJobName    = "eventing-manager-cert-handler"
-	EventMeshSecretNamespace    = "kyma-system"
-	EventMeshSecretName         = "eventing-backend"
-	EventOriginalTypeHeader     = "originaltype"
+	FieldManager             = "eventing-tests"
+	NamespaceName            = "kyma-system"
+	ManagerDeploymentName    = "eventing-manager"
+	CRName                   = "eventing"
+	ManagerContainerName     = "manager"
+	PublisherContainerName   = "eventing-publisher-proxy"
+	EventMeshSecretNamespace = "kyma-system"
+	EventMeshSecretName      = "eventing-backend"
+	EventOriginalTypeHeader  = "originaltype"
 )
 
 type SubscriptionCRVersion string

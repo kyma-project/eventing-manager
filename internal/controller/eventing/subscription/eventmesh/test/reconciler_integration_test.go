@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +16,7 @@ import (
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/object"
@@ -25,8 +25,6 @@ import (
 )
 
 const (
-	invalidSinkErrMsg = "failed to validate subscription sink URL. " +
-		"It is not a valid cluster local svc: Service \"invalid\" not found"
 	testName = "test"
 )
 
@@ -51,87 +49,6 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func Test_ValidationWebhook(t *testing.T) {
-	t.Parallel()
-	testCases := []struct {
-		name                  string
-		givenSubscriptionFunc func(namespace string) *eventingv1alpha2.Subscription
-		wantError             error
-	}{
-		{
-			name: "should fail to create subscription with invalid event source",
-			givenSubscriptionFunc: func(namespace string) *eventingv1alpha2.Subscription {
-				return eventingtesting.NewSubscription(testName, namespace,
-					eventingtesting.WithStandardTypeMatching(),
-					eventingtesting.WithSource(""),
-					eventingtesting.WithOrderCreatedV1Event(),
-					eventingtesting.WithValidSink(namespace, "svc"),
-				)
-			},
-			wantError: GenerateInvalidSubscriptionError(testName,
-				eventingv1alpha2.EmptyErrDetail, eventingv1alpha2.SourcePath),
-		},
-		{
-			name: "should fail to create subscription with invalid event types",
-			givenSubscriptionFunc: func(namespace string) *eventingv1alpha2.Subscription {
-				return eventingtesting.NewSubscription(testName, namespace,
-					eventingtesting.WithStandardTypeMatching(),
-					eventingtesting.WithSource("source"),
-					eventingtesting.WithTypes([]string{}),
-					eventingtesting.WithValidSink(namespace, "svc"),
-				)
-			},
-			wantError: GenerateInvalidSubscriptionError(testName,
-				eventingv1alpha2.EmptyErrDetail, eventingv1alpha2.TypesPath),
-		},
-		{
-			name: "should fail to create subscription with invalid sink",
-			givenSubscriptionFunc: func(namespace string) *eventingv1alpha2.Subscription {
-				return eventingtesting.NewSubscription(testName, namespace,
-					eventingtesting.WithStandardTypeMatching(),
-					eventingtesting.WithSource("source"),
-					eventingtesting.WithOrderCreatedV1Event(),
-					eventingtesting.WithSink("https://svc2.test.local"),
-				)
-			},
-			wantError: GenerateInvalidSubscriptionError(testName,
-				eventingv1alpha2.SuffixMissingErrDetail, eventingv1alpha2.SinkPath),
-		},
-		{
-			name: "should fail to create subscription with invalid protocol settings",
-			givenSubscriptionFunc: func(namespace string) *eventingv1alpha2.Subscription {
-				return eventingtesting.NewSubscription(testName, namespace,
-					eventingtesting.WithStandardTypeMatching(),
-					eventingtesting.WithSource("source"),
-					eventingtesting.WithOrderCreatedV1Event(),
-					eventingtesting.WithInvalidWebhookAuthGrantType(),
-					eventingtesting.WithValidSink(namespace, "svc"),
-				)
-			},
-			wantError: GenerateInvalidSubscriptionError(testName,
-				eventingv1alpha2.InvalidGrantTypeErrDetail, eventingv1alpha2.ConfigPath),
-		},
-	}
-
-	for _, tc := range testCases {
-		testcase := tc
-		t.Run(testcase.name, func(t *testing.T) {
-			t.Parallel()
-			ctx := context.Background()
-
-			// create unique namespace for this test run
-			testNamespace := getTestNamespace()
-			ensureNamespaceCreated(ctx, t, testNamespace)
-
-			// update namespace information in given test assets
-			givenSubscription := testcase.givenSubscriptionFunc(testNamespace)
-
-			// attempt to create subscription
-			ensureK8sResourceNotCreated(ctx, t, givenSubscription, testcase.wantError)
-		})
-	}
-}
-
 func Test_CreateSubscription(t *testing.T) {
 	testCases := []struct {
 		name                     string
@@ -154,14 +71,15 @@ func Test_CreateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, "invalid")),
+					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: gomega.And(
 				eventingtesting.HaveSubscriptionNotReady(),
 				eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
-					eventingv1alpha2.ConditionAPIRuleStatus,
-					eventingv1alpha2.ConditionReasonAPIRuleStatusNotReady,
-					kcorev1.ConditionFalse, invalidSinkErrMsg)),
+					eventingv1alpha2.ConditionSubscriptionSpecValid,
+					eventingv1alpha2.ConditionReasonSubscriptionSpecHasValidationErrors,
+					kcorev1.ConditionFalse, "Sink validation failed: Service \"invalid\" not found")),
 			),
 		},
 		{
@@ -175,6 +93,7 @@ func Test_CreateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: gomega.And(
@@ -275,6 +194,7 @@ func Test_CreateSubscription(t *testing.T) {
 					eventingtesting.WithNotCleanType(),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: gomega.And(
@@ -377,6 +297,7 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: gomega.And(
@@ -397,6 +318,7 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantUpdateSubscriptionMatchers: gomega.And(
@@ -423,6 +345,7 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: gomega.And(
@@ -446,6 +369,7 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantUpdateSubscriptionMatchers: gomega.And(
@@ -472,6 +396,7 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: gomega.And(
@@ -494,6 +419,7 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantUpdateSubscriptionMatchers: gomega.And(
@@ -615,15 +541,16 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 			eventingtesting.WithWebhookAuthForEventMesh(),
 			// The following sink is invalid because it has an invalid svc name
 			eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, "invalid")),
+			eventingtesting.WithMaxInFlight(10),
 		)
 	}
 
 	wantSubscriptionWithoutSinkMatchers := gomega.And(
 		eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
-			eventingv1alpha2.ConditionAPIRuleStatus,
-			eventingv1alpha2.ConditionReasonAPIRuleStatusNotReady,
+			eventingv1alpha2.ConditionSubscriptionSpecValid,
+			eventingv1alpha2.ConditionReasonSubscriptionSpecHasValidationErrors,
 			kcorev1.ConditionFalse,
-			invalidSinkErrMsg,
+			"Sink validation failed: Service \"invalid\" not found",
 		)),
 	)
 
@@ -633,6 +560,7 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 			eventingtesting.WithOrderCreatedV1Event(),
 			eventingtesting.WithWebhookAuthForEventMesh(),
 			eventingtesting.WithSink(fmt.Sprintf(sinkFormat, name, namespace, path)),
+			eventingtesting.WithMaxInFlight(10),
 		)
 	}
 
@@ -814,7 +742,7 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 
 	// phase 1: Create the first Subscription with ready APIRule and ready status.
 	// create a subscriber service
-	sub1Name := fmt.Sprintf("test-sink-%s", testNamespace)
+	sub1Name := fmt.Sprintf("test-sink-%s-1", testNamespace)
 	subscriberSvc1 := eventingtesting.NewSubscriberSvc(sub1Name, testNamespace)
 	ensureK8sResourceCreated(ctx, t, subscriberSvc1)
 	// create subscription
@@ -822,12 +750,16 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 		eventingtesting.WithDefaultSource(),
 		eventingtesting.WithOrderCreatedV1Event(),
 		eventingtesting.WithSinkURL(eventingtesting.ValidSinkURLWithPath(testNamespace, sub1Name, "path1")),
+		eventingtesting.WithMaxInFlight(10),
 	)
 	ensureK8sResourceCreated(ctx, t, givenSubscription1)
 	createdSubscription1 := givenSubscription1.DeepCopy()
 
 	// wait until the APIRule is assigned to the created subscription
-	getSubscriptionAssert(ctx, g, createdSubscription1).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
+	getSubscriptionAssert(ctx, g, createdSubscription1).Should(gomega.And(
+		eventingtesting.HaveNoneEmptyAPIRuleName(),
+		eventingtesting.HaveSubscriptionActiveCondition(),
+	))
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
@@ -852,13 +784,19 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 		eventingtesting.WithDefaultSource(),
 		eventingtesting.WithOrderCreatedV1Event(),
 		eventingtesting.WithSinkURL(eventingtesting.ValidSinkURLWithPath(testNamespace, sub2Name, "path2")),
+		eventingtesting.WithMaxInFlight(10),
 	)
 	ensureK8sResourceCreated(ctx, t, givenSubscription2)
 	createdSubscription2 := givenSubscription2.DeepCopy()
 
 	// wait until the APIRule is assigned to the created subscription
-	getSubscriptionAssert(ctx, g, createdSubscription2).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
-	getSubscriptionAssert(ctx, g, createdSubscription2).ShouldNot(eventingtesting.HaveAPIRuleName(apiRule1.Name))
+	getSubscriptionAssert(ctx, g, createdSubscription2).Should(gomega.And(
+		eventingtesting.HaveNoneEmptyAPIRuleName(),
+		eventingtesting.HaveSubscriptionActiveCondition(),
+	))
+	getSubscriptionAssert(ctx, g, createdSubscription2).ShouldNot(
+		eventingtesting.HaveAPIRuleName(apiRule1.Name),
+	)
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
@@ -883,6 +821,7 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 	getSubscriptionAssert(ctx, g, updatedSubscription2).Should(gomega.And(
 		eventingtesting.HaveSubscriptionReady(),
 		eventingtesting.HaveAPIRuleName(apiRule1.Name),
+		eventingtesting.HaveSubscriptionActiveCondition(),
 	))
 
 	// check if the EventMesh Subscription has the correct webhook URL

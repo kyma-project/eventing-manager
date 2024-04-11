@@ -37,7 +37,6 @@ const (
 
 	ConditionBackendAvailable         ConditionType = "BackendAvailable"
 	ConditionPublisherProxyReady      ConditionType = "PublisherProxyReady"
-	ConditionWebhookReady             ConditionType = "WebhookReady"
 	ConditionSubscriptionManagerReady ConditionType = "SubscriptionManagerReady"
 	ConditionDeleted                  ConditionType = "Deleted"
 
@@ -52,15 +51,12 @@ const (
 	ConditionReasonNATSNotAvailable           ConditionReason = "NATSUnavailable"
 	ConditionReasonBackendNotSpecified        ConditionReason = "BackendNotSpecified"
 	ConditionReasonForbidden                  ConditionReason = "Forbidden"
-	ConditionReasonWebhookFailed              ConditionReason = "WebhookFailed"
-	ConditionReasonWebhookReady               ConditionReason = "Ready"
 	ConditionReasonDeletionError              ConditionReason = "DeletionError"
 	ConditionReasonEventMeshConfigAvailable   ConditionReason = "EventMeshConfigAvailable"
 
 	ConditionPublisherProxyReadyMessage        = "Publisher proxy is deployed"
 	ConditionPublisherProxyDeletedMessage      = "Publisher proxy is deleted"
 	ConditionNATSAvailableMessage              = "NATS is available"
-	ConditionWebhookReadyMessage               = "Webhook is available"
 	ConditionPublisherProxyProcessingMessage   = "Eventing publisher proxy deployment is in progress"
 	ConditionSubscriptionManagerReadyMessage   = "Subscription manager is ready"
 	ConditionSubscriptionManagerStoppedMessage = "Subscription manager is stopped"
@@ -77,7 +73,6 @@ func getSupportedConditionsTypes() map[ConditionType]interface{} {
 	return map[ConditionType]interface{}{
 		ConditionBackendAvailable:         nil,
 		ConditionPublisherProxyReady:      nil,
-		ConditionWebhookReady:             nil,
 		ConditionSubscriptionManagerReady: nil,
 		ConditionDeleted:                  nil,
 	}

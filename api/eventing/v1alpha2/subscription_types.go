@@ -30,6 +30,8 @@ type SubscriptionSpec struct {
 	// Defines how types should be handled.<br />
 	// - `standard`: backend-specific logic will be applied to the configured source and types.<br />
 	// - `exact`: no further processing will be applied to the configured source and types.
+	// +kubebuilder:default:="standard"
+	// +kubebuilder:validation:XValidation:rule="self=='standard' || self=='exact'", message="typeMatching can only be set to standard or exact"
 	TypeMatching TypeMatching `json:"typeMatching,omitempty"`
 
 	// Defines the origin of the event.
@@ -40,6 +42,7 @@ type SubscriptionSpec struct {
 
 	// Map of configuration options that will be applied on the backend.
 	// +optional
+	// +kubebuilder:default={"maxInFlightMessages":"10"}
 	Config map[string]string `json:"config,omitempty"`
 }
 
@@ -114,6 +117,21 @@ func (s *Subscription) GetUniqueTypes() []string {
 	return result
 }
 
+// GetDuplicateTypes returns the duplicate types from subscription spec.
+func (s *Subscription) GetDuplicateTypes() []string {
+	if len(s.Spec.Types) == 0 {
+		return s.Spec.Types
+	}
+	types := make(map[string]int, len(s.Spec.Types))
+	duplicates := make([]string, 0, len(s.Spec.Types))
+	for _, t := range s.Spec.Types {
+		if types[t]++; types[t] == 2 {
+			duplicates = append(duplicates, t)
+		}
+	}
+	return duplicates
+}
+
 func (s *Subscription) DuplicateWithStatusDefaults() *Subscription {
 	desiredSub := s.DeepCopy()
 	desiredSub.Status = SubscriptionStatus{}
@@ -140,6 +158,3 @@ type SubscriptionList struct {
 func init() { //nolint:gochecknoinits
 	SchemeBuilder.Register(&Subscription{}, &SubscriptionList{})
 }
-
-// Hub marks this type as a conversion hub.
-func (*Subscription) Hub() {}

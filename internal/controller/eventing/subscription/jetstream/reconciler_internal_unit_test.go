@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -17,6 +16,7 @@ import (
 	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
@@ -27,6 +27,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 )
 
 const (
@@ -48,6 +49,8 @@ func Test_Reconcile(t *testing.T) {
 		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
 		eventingtesting.WithSource(eventingtesting.EventSourceClean),
 		eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
+		eventingtesting.WithMaxInFlight(10),
+		eventingtesting.WithSink("http://test.test.svc.cluster.local"),
 	)
 	// A subscription marked for deletion.
 	testSubUnderDeletion := eventingtesting.NewSubscription("sub2", namespaceName,
@@ -214,7 +217,7 @@ func Test_Reconcile(t *testing.T) {
 					testenv.Backend
 			},
 			wantReconcileResult: kctrl.Result{},
-			wantReconcileError:  validatorErr,
+			wantReconcileError:  reconcile.TerminalError(validatorErr),
 		},
 	}
 
@@ -234,7 +237,9 @@ func Test_Reconcile(t *testing.T) {
 			// then
 			req.Equal(testcase.wantReconcileResult, res)
 			req.ErrorIs(err, testcase.wantReconcileError)
-			mockedBackend.AssertExpectations(t)
+			if testcase.wantReconcileError == nil {
+				mockedBackend.AssertExpectations(t)
+			}
 		})
 	}
 }

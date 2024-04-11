@@ -37,20 +37,6 @@ func (es *EventingStatus) UpdateConditionPublisherProxyReady(status kmetav1.Cond
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
-func (es *EventingStatus) UpdateConditionWebhookReady(status kmetav1.ConditionStatus, reason ConditionReason,
-	message string,
-) {
-	condition := kmetav1.Condition{
-		Type:               string(ConditionWebhookReady),
-		Status:             status,
-		LastTransitionTime: kmetav1.Now(),
-		Reason:             string(reason),
-		Message:            message,
-	}
-	// meta.SetStatusCondition will update LastTransitionTime only when `Status` is changed.
-	meta.SetStatusCondition(&es.Conditions, condition)
-}
-
 func (es *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1.ConditionStatus, reason ConditionReason,
 	message string,
 ) {
@@ -117,10 +103,6 @@ func (es *EventingStatus) SetPublisherProxyConditionToFalse(reason ConditionReas
 func (es *EventingStatus) SetPublisherProxyReadyToTrue() {
 	es.State = StateReady
 	es.UpdateConditionPublisherProxyReady(kmetav1.ConditionTrue, ConditionReasonDeployed, ConditionPublisherProxyReadyMessage)
-}
-
-func (es *EventingStatus) SetWebhookReadyConditionToTrue() {
-	es.UpdateConditionWebhookReady(kmetav1.ConditionTrue, ConditionReasonWebhookReady, ConditionWebhookReadyMessage)
 }
 
 func (es *EventingStatus) SetStateProcessing() {

@@ -18,13 +18,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log"
 	"os"
 	"time"
 
 	"github.com/go-logr/zapr"
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	natsio "github.com/nats-io/nats.go"
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kapixclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -37,14 +37,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
 	natsconnection "github.com/kyma-project/eventing-manager/internal/connection/nats"
 	controllercache "github.com/kyma-project/eventing-manager/internal/controller/cache"
 	controllerclient "github.com/kyma-project/eventing-manager/internal/controller/client"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
+	"github.com/kyma-project/eventing-manager/internal/webhook"
 	"github.com/kyma-project/eventing-manager/options"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -69,7 +70,6 @@ func registerSchemas(scheme *runtime.Scheme) {
 
 const (
 	defaultMetricsPort = 9443
-	webhookServerPort  = 9443
 )
 
 func syncLogger(logger *logger.Logger) {
@@ -113,7 +113,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		HealthProbeBindAddress: opts.ProbeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       leaderElectionID,
-		WebhookServer:          webhook.NewServer(webhook.Options{Port: webhookServerPort}),
 		Cache:                  cache.Options{SyncPeriod: &opts.ReconcilePeriod},
 		Metrics:                server.Options{BindAddress: opts.MetricsAddr},
 		NewCache:               controllercache.New,
@@ -200,13 +199,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 	//+kubebuilder:scaffold:builder
 
-	// Setup webhooks.
-	if err = (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create webhook")
-		syncLogger(ctrLogger)
-		os.Exit(1)
-	}
-
 	// sync PeerAuthentications
 	err = peerauthentication.SyncPeerAuthentications(ctx, kubeClient, ctrLogger.WithContext().Named("main"))
 	if err != nil {
@@ -222,6 +214,12 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
+		syncLogger(ctrLogger)
+		os.Exit(1)
+	}
+
+	if errs := webhook.CleanupResources(ctx, k8sClient); len(errs) > 0 {
+		setupLog.Error(errors.Join(errs...), "unable to cleanup kubernetes webhook resources")
 		syncLogger(ctrLogger)
 		os.Exit(1)
 	}

@@ -48,6 +48,7 @@ func Test_InitializeSubscriptionConditions(t *testing.T) {
 				v1alpha2.ConditionSubscriptionActive,
 				v1alpha2.ConditionAPIRuleStatus,
 				v1alpha2.ConditionWebhookCallStatus,
+				v1alpha2.ConditionSubscriptionSpecValid,
 			}
 
 			// when
@@ -130,6 +131,7 @@ func Test_IsReady(t *testing.T) {
 				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscriptionSpecValid, Status: kcorev1.ConditionTrue},
 			},
 			wantReadyStatus: true,
 		},
@@ -208,6 +210,7 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscriptionSpecValid, Status: kcorev1.ConditionTrue},
 			},
 			wantStatus: false,
 		},
@@ -230,6 +233,7 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscriptionSpecValid, Status: kcorev1.ConditionTrue},
 			},
 			wantStatus: true,
 		},
@@ -540,12 +544,12 @@ func Test_SetConditionSubscriptionActive(t *testing.T) {
 			sub.Status.Conditions = testcase.givenConditions
 
 			// when
-			conditions := v1alpha2.GetSubscriptionActiveCondition(sub, testcase.givenError)
+			v1alpha2.SetSubscriptionActiveCondition(&sub.Status, testcase.givenError)
 
 			// then
-			require.True(t, v1alpha2.ConditionsEquals(conditions, testcase.wantConditions))
+			require.True(t, v1alpha2.ConditionsEquals(sub.Status.Conditions, testcase.wantConditions))
 			if testcase.wantLastTransitionTime != nil {
-				require.Equal(t, *testcase.wantLastTransitionTime, conditions[0].LastTransitionTime)
+				require.Equal(t, *testcase.wantLastTransitionTime, sub.Status.Conditions[0].LastTransitionTime)
 			}
 		})
 	}

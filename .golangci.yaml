@@ -74,6 +74,8 @@ linters-settings:
         alias: kappsv1
       - pkg: k8s.io/api/rbac/v1
         alias: krbacv1
+      - pkg: k8s.io/api/batch/v1
+        alias: kbatchv1
       - pkg: k8s.io/apimachinery/pkg/runtime/schema
         alias: kschema
       - pkg: k8s.io/apimachinery/pkg/labels

@@ -2,10 +2,10 @@ package sink
 
 import (
 	"context"
+	"fmt"
 
 	"golang.org/x/xerrors"
 	kcorev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,6 +14,8 @@ import (
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 )
+
+var ErrSinkValidationFailed = xerrors.New("Sink validation failed")
 
 type Validator interface {
 	Validate(ctx context.Context, subscription *v1alpha2.Subscription) error
@@ -39,22 +41,20 @@ func NewValidator(client client.Client, recorder record.EventRecorder) Validator
 }
 
 func (s defaultSinkValidator) Validate(ctx context.Context, subscription *v1alpha2.Subscription) error {
-	_, subDomains, err := utils.GetSinkData(subscription.Spec.Sink)
-	if err != nil {
+	var (
+		svcNs, svcName string
+	)
+
+	if _, subDomains, err := utils.GetSinkData(subscription.Spec.Sink); err != nil {
 		return err
+	} else {
+		svcNs = subDomains[1]
+		svcName = subDomains[0]
 	}
-	svcNs := subDomains[1]
-	svcName := subDomains[0]
 
-	// Validate svc is a cluster-local one
 	if _, err := GetClusterLocalService(ctx, s.client, svcNs, svcName); err != nil {
-		if kerrors.IsNotFound(err) {
-			events.Warn(s.recorder, subscription, events.ReasonValidationFailed, "Sink does not correspond to a valid cluster local svc")
-			return xerrors.Errorf("failed to validate subscription sink URL. It is not a valid cluster local svc: %v", err)
-		}
-
-		events.Warn(s.recorder, subscription, events.ReasonValidationFailed, "Fetch cluster-local svc failed namespace %s name %s", svcNs, svcName)
-		return xerrors.Errorf("failed to fetch cluster-local svc for namespace '%s' and name '%s': %v", svcNs, svcName, err)
+		events.Warn(s.recorder, subscription, events.ReasonValidationFailed, "Sink does not correspond to a valid cluster local svc")
+		return fmt.Errorf("%w: %w", ErrSinkValidationFailed, err)
 	}
 
 	return nil
