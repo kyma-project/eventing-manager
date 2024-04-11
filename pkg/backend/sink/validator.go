@@ -41,9 +41,7 @@ func NewValidator(client client.Client, recorder record.EventRecorder) Validator
 }
 
 func (s defaultSinkValidator) Validate(ctx context.Context, subscription *v1alpha2.Subscription) error {
-	var (
-		svcNs, svcName string
-	)
+	var svcNs, svcName string
 
 	if _, subDomains, err := utils.GetSinkData(subscription.Spec.Sink); err != nil {
 		return err

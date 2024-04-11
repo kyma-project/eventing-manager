@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kcorev1 "k8s.io/api/core/v1"
@@ -20,7 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 )
 
 func NatsGVK() schema.GroupVersionResource {

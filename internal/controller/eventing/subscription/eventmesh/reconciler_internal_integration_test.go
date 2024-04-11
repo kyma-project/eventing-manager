@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -21,7 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
@@ -36,7 +37,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/object"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 )
 
 // TestReconciler_Reconcile tests the return values of the Reconcile() method of the reconciler.

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/pkg/errors"
@@ -27,8 +29,6 @@ import (
 	"github.com/kyma-project/eventing-manager/test/matchers"
 	"github.com/kyma-project/eventing-manager/test/utils"
 	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	natstestutils "github.com/kyma-project/nats-manager/testutils"
 )
 
 const (

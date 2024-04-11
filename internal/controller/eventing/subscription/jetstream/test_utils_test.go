@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v3"
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	natsioserver "github.com/nats-io/nats-server/v2/server"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
@@ -36,7 +37,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 )
 
 const (

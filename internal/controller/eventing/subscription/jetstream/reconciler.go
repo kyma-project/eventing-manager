@@ -131,33 +131,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	}
 
 	// Validate subscription.
-	if validationErr := r.validate(ctx, desiredSubscription); validationErr != nil {
+	if validationErr := r.handleSubscriptionValidation(ctx, desiredSubscription); validationErr != nil {
 		if errors.Is(validationErr, sink.ErrSinkValidationFailed) {
 			if deleteErr := r.Backend.DeleteSubscriptionsOnly(desiredSubscription); deleteErr != nil {
-				r.namedLogger().Errorw(
-					"Failed to delete JetStream subscriptions",
-					"namespace", desiredSubscription.Namespace,
-					"name", desiredSubscription.Name,
-					"error", deleteErr,
-				)
+				log.Errorw("Failed to delete JetStream subscriptions", "error", deleteErr)
 				return kctrl.Result{}, deleteErr
 			}
 		}
-
-		// Update subscription status accordingly.
-		desiredSubscription.Status.SetNotReady()
-		desiredSubscription.Status.ClearTypes()
-		desiredSubscription.Status.ClearBackend()
-		desiredSubscription.Status.ClearConditions()
-		desiredSubscription.Status.SetSubscriptionSpecValidCondition(validationErr)
 		if updateErr := r.updateSubscriptionStatus(ctx, desiredSubscription, log); updateErr != nil {
 			return kctrl.Result{}, errors.Join(validationErr, updateErr)
 		}
-
-		return kctrl.Result{}, reconcile.TerminalError(validationErr)
-	} else {
-		var noError error = nil
-		desiredSubscription.Status.SetSubscriptionSpecValidCondition(noError)
+		return kctrl.Result{}, validationErr
 	}
 
 	// update the cleanEventTypes and config values in the subscription status, if changed
@@ -187,7 +171,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	return kctrl.Result{}, r.syncSubscriptionStatus(ctx, desiredSubscription, nil, log)
 }
 
-func (r *Reconciler) validate(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
+func (r *Reconciler) handleSubscriptionValidation(ctx context.Context, desiredSubscription *eventingv1alpha2.Subscription) error {
+	if validationErr := r.validateSubscriptionSpec(ctx, desiredSubscription); validationErr != nil {
+		desiredSubscription.Status.SetNotReady()
+		desiredSubscription.Status.ClearTypes()
+		desiredSubscription.Status.ClearBackend()
+		desiredSubscription.Status.ClearConditions()
+		desiredSubscription.Status.SetSubscriptionSpecValidCondition(validationErr)
+		return reconcile.TerminalError(validationErr)
+	}
+
+	var noError error = nil
+	desiredSubscription.Status.SetSubscriptionSpecValidCondition(noError)
+	return noError
+}
+
+func (r *Reconciler) validateSubscriptionSpec(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
 	if errList := subscription.ValidateSpec(); len(errList) > 0 {
 		return errors.Join(errList.ToAggregate())
 	}

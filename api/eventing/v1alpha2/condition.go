@@ -322,13 +322,13 @@ func makeSubscriptionSpecValidCondition(err error) Condition {
 func (s *SubscriptionStatus) setCondition(condition Condition) {
 	isFound, isSet := false, false
 	conditions := make([]Condition, 0, len(s.Conditions))
-	for _, c := range s.Conditions {
-		if c.Type != condition.Type {
-			conditions = append(conditions, c)
+	for _, cond := range s.Conditions {
+		if cond.Type != condition.Type {
+			conditions = append(conditions, cond)
 			continue
 		}
 		isFound = true
-		if !ConditionEquals(c, condition) {
+		if !ConditionEquals(cond, condition) {
 			isSet = true
 			conditions = append(conditions, condition)
 		}

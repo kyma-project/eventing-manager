@@ -1,4 +1,3 @@
-//nolint:gosec //this is just a test, and security issues found here will not result in code used in a prod environment
 package test
 
 import (
@@ -13,6 +12,8 @@ import (
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
@@ -45,7 +45,6 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/utils"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 )
 
 type eventMeshTestEnsemble struct {
@@ -285,11 +284,6 @@ func fixtureNamespace(name string) *kcorev1.Namespace {
 func ensureK8sResourceCreated(ctx context.Context, t *testing.T, obj client.Object) {
 	t.Helper()
 	require.NoError(t, emTestEnsemble.k8sClient.Create(ctx, obj))
-}
-
-func ensureK8sResourceNotCreated(ctx context.Context, t *testing.T, obj client.Object, err error) {
-	t.Helper()
-	require.Equal(t, emTestEnsemble.k8sClient.Create(ctx, obj), err)
 }
 
 func ensureK8sResourceDeleted(ctx context.Context, t *testing.T, obj client.Object) {

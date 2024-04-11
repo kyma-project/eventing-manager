@@ -12,6 +12,8 @@ import (
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
+	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
+	natstestutils "github.com/kyma-project/nats-manager/testutils"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -49,8 +51,6 @@ import (
 	submgrmocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/mocks"
 	"github.com/kyma-project/eventing-manager/test"
 	testutils "github.com/kyma-project/eventing-manager/test/utils"
-	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
-	natstestutils "github.com/kyma-project/nats-manager/testutils"
 )
 
 const (

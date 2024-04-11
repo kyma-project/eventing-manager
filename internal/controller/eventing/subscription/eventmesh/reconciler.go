@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"time"
 
+	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	pkgerrors "github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
@@ -25,7 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	controllererrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
@@ -144,21 +144,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	}
 
 	// Validate subscription.
-	if validationErr := r.validate(ctx, sub); validationErr != nil {
-		// Update subscription status accordingly.
-		sub.Status.SetNotReady()
-		sub.Status.ClearTypes()
-		sub.Status.ClearBackend()
-		sub.Status.ClearConditions()
-		sub.Status.SetSubscriptionSpecValidCondition(validationErr)
+	if validationErr := r.handleSubscriptionValidation(ctx, sub); validationErr != nil {
 		if updateErr := r.updateStatus(ctx, currentSubscription, sub, log); updateErr != nil {
 			return kctrl.Result{}, errors.Join(validationErr, updateErr)
 		}
-
 		return kctrl.Result{}, reconcile.TerminalError(validationErr)
-	} else {
-		var noError error = nil
-		sub.Status.SetSubscriptionSpecValidCondition(noError)
 	}
 
 	// sync APIRule for the desired subscription
@@ -194,7 +184,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	return result, nil
 }
 
-func (r *Reconciler) validate(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
+func (r *Reconciler) handleSubscriptionValidation(ctx context.Context, desiredSubscription *eventingv1alpha2.Subscription) error {
+	if validationErr := r.validateSubscriptionSpec(ctx, desiredSubscription); validationErr != nil {
+		desiredSubscription.Status.SetNotReady()
+		desiredSubscription.Status.ClearTypes()
+		desiredSubscription.Status.ClearBackend()
+		desiredSubscription.Status.ClearConditions()
+		desiredSubscription.Status.SetSubscriptionSpecValidCondition(validationErr)
+		return reconcile.TerminalError(validationErr)
+	}
+
+	var noError error = nil
+	desiredSubscription.Status.SetSubscriptionSpecValidCondition(noError)
+	return noError
+}
+
+func (r *Reconciler) validateSubscriptionSpec(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
 	if errList := subscription.ValidateSpec(); len(errList) > 0 {
 		return errors.Join(errList.ToAggregate())
 	}
