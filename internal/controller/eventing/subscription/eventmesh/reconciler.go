@@ -185,18 +185,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 }
 
 func (r *Reconciler) handleSubscriptionValidation(ctx context.Context, desiredSubscription *eventingv1alpha2.Subscription) error {
-	if validationErr := r.validateSubscriptionSpec(ctx, desiredSubscription); validationErr != nil {
+	var err error
+	if err = r.validateSubscriptionSpec(ctx, desiredSubscription); err != nil {
 		desiredSubscription.Status.SetNotReady()
 		desiredSubscription.Status.ClearTypes()
 		desiredSubscription.Status.ClearBackend()
 		desiredSubscription.Status.ClearConditions()
-		desiredSubscription.Status.SetSubscriptionSpecValidCondition(validationErr)
-		return reconcile.TerminalError(validationErr)
 	}
-
-	var noError error = nil
-	desiredSubscription.Status.SetSubscriptionSpecValidCondition(noError)
-	return noError
+	desiredSubscription.Status.SetSubscriptionSpecValidCondition(err)
+	return err
 }
 
 func (r *Reconciler) validateSubscriptionSpec(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
