@@ -21,6 +21,7 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	backendjetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
@@ -720,6 +721,46 @@ func Test_updateSubscription(t *testing.T) {
 			require.NoError(t, reconciler.Client.Delete(ctx, sub))
 		})
 	}
+}
+
+func Test_validateSubscription(t *testing.T) {
+	// given
+	subscription := eventingtesting.NewSubscription("test-subscription", namespaceName,
+		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
+		eventingtesting.WithSource(eventingtesting.EventSourceClean),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
+		eventingtesting.WithMaxInFlight(10),
+		eventingtesting.WithSink("http://test.test.svc.cluster.local"),
+	)
+
+	testEnv := setupTestEnvironment(t, subscription)
+	testEnv.Backend.On("SyncSubscription", mock.Anything).Return(nil)
+	testEnv.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return([]string{eventingtesting.JetStreamSubject})
+	testEnv.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
+
+	// Set up the SubscriptionValidator mock.
+	validatorMock := &mocks.SubscriptionValidator{}
+	validatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil)
+
+	reconciler := NewReconciler(
+		testEnv.Client,
+		testEnv.Backend,
+		testEnv.Logger,
+		testEnv.Recorder,
+		testEnv.Cleaner,
+		validatorMock,
+		metrics.NewCollector(),
+	)
+
+	// when
+	request := kctrl.Request{NamespacedName: types.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Name}}
+	res, err := reconciler.Reconcile(context.Background(), request)
+
+	// then
+	require.Equal(t, kctrl.Result{}, res)
+	require.ErrorIs(t, err, nil)
+	validatorMock.AssertExpectations(t)
+	testEnv.Backend.AssertExpectations(t)
 }
 
 // helper functions and structs

@@ -11,6 +11,7 @@ import (
 
 var ErrSubscriptionValidationFailed = pkgerrors.New("Subscription validation failed")
 
+//go:generate go run github.com/vektra/mockery/v2 --name=SubscriptionValidator --outpkg=mocks
 type SubscriptionValidator interface {
 	Validate(ctx context.Context, subscription eventingv1alpha2.Subscription) error
 }
