@@ -27,7 +27,7 @@ func NewSubscriptionValidator(sinkValidator SinkValidator) SubscriptionValidator
 }
 
 func (sv *subscriptionValidator) Validate(ctx context.Context, subscription eventingv1alpha2.Subscription) error {
-	if errs := subscription.ValidateSpec(); len(errs) > 0 {
+	if errs := validateSpec(subscription); len(errs) > 0 {
 		return fmt.Errorf("%w: %w", ErrSubscriptionValidationFailed, errs.ToAggregate())
 	}
 	if err := sv.sinkValidator.Validate(ctx, subscription.Spec.Sink); err != nil {
