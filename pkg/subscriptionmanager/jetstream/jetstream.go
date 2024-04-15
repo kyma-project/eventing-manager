@@ -18,10 +18,10 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendjetstream "github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
@@ -91,6 +91,10 @@ func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionCo
 	client := sm.mgr.GetClient()
 	recorder := sm.mgr.GetEventRecorderFor("eventing-controller-jetstream")
 
+	// Init the Subscription validator.
+	sinkValidator := validator.NewSinkValidator(client)
+	subscriptionValidator := validator.NewSubscriptionValidator(sinkValidator)
+
 	// Initialize v1alpha2 event type cleaner
 	jsCleaner := cleaner.NewJetStreamCleaner(sm.logger)
 	jetStreamHandler := backendjetstream.NewJetStream(sm.envCfg,
@@ -101,7 +105,7 @@ func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionCo
 		sm.logger,
 		recorder,
 		jsCleaner,
-		sink.NewValidator(client, recorder),
+		subscriptionValidator,
 		sm.metricsCollector,
 	)
 	sm.backendv2 = jetStreamReconciler.Backend

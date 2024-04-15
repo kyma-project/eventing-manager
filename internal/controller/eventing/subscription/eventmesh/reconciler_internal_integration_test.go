@@ -24,11 +24,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -79,8 +79,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	backendSyncErr := errors.New("backend sync error")
 	backendDeleteErr := errors.New("backend delete error")
 	validatorErr := errors.New("invalid sink")
-	happyValidator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
-	unhappyValidator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return validatorErr })
+	happyValidator := validator.SubscriptionValidatorFunc(func(_ context.Context, _ eventingv1alpha2.Subscription) error { return nil })
+	unhappyValidator := validator.SubscriptionValidatorFunc(func(_ context.Context, _ eventingv1alpha2.Subscription) error { return validatorErr })
 
 	testCases := []struct {
 		name                 string
@@ -262,7 +262,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 		eventingtesting.WithMaxInFlight(10),
 	)
 
-	validator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
+	subscriptionValidator := validator.SubscriptionValidatorFunc(func(_ context.Context, _ eventingv1alpha2.Subscription) error { return nil })
 
 	col := metrics.NewCollector()
 
@@ -292,7 +292,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 						testenv.backend,
 						testenv.credentials,
 						testenv.mapper,
-						validator,
+						subscriptionValidator,
 						col,
 						utils.Domain),
 					testenv.fakeClient
@@ -322,7 +322,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 						testenv.backend,
 						testenv.credentials,
 						testenv.mapper,
-						validator,
+						subscriptionValidator,
 						col,
 						utils.Domain),
 					testenv.fakeClient
@@ -393,7 +393,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 		eventingtesting.WithMaxInFlight(10),
 	)
 
-	validator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
+	subscriptionValidator := validator.SubscriptionValidatorFunc(func(_ context.Context, _ eventingv1alpha2.Subscription) error { return nil })
 	col := metrics.NewCollector()
 
 	testCases := []struct {
@@ -423,7 +423,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 						testenv.backend,
 						testenv.credentials,
 						testenv.mapper,
-						validator,
+						subscriptionValidator,
 						col,
 						utils.Domain),
 					testenv.fakeClient
@@ -459,7 +459,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 						testenv.backend,
 						testenv.credentials,
 						testenv.mapper,
-						validator,
+						subscriptionValidator,
 						col,
 						utils.Domain),
 					testenv.fakeClient
@@ -579,7 +579,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 func TestReconciler_PreserveBackendHashes(t *testing.T) {
 	ctx := context.Background()
 	collector := metrics.NewCollector()
-	validator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
+	subscriptionValidator := validator.SubscriptionValidatorFunc(func(_ context.Context, _ eventingv1alpha2.Subscription) error { return nil })
 
 	const (
 		ev2hash            = int64(118518533334734)
@@ -620,7 +620,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
-					te.backend, te.credentials, te.mapper, validator, collector, utils.Domain), te.fakeClient
+					te.backend, te.credentials, te.mapper, subscriptionValidator, collector, utils.Domain), te.fakeClient
 			},
 			wantEv2Hash:            ev2hash,
 			wantEventMeshHash:      eventMeshHash,
@@ -650,7 +650,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				te.backend.On("Initialize", mock.Anything).Return(nil)
 				te.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 				return NewReconciler(te.fakeClient, te.logger, te.recorder, te.cfg, te.cleaner,
-					te.backend, te.credentials, te.mapper, validator, collector, utils.Domain), te.fakeClient
+					te.backend, te.credentials, te.mapper, subscriptionValidator, collector, utils.Domain), te.fakeClient
 			},
 			wantEv2Hash:            ev2hash,
 			wantEventMeshHash:      eventMeshHash,

@@ -29,11 +29,11 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	backendcleaner "github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -172,13 +172,17 @@ func startReconciler() error {
 	k8sClient := k8sManager.GetClient()
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller-jetstream")
 
+	// Init the Subscription validator.
+	sinkValidator := validator.NewSinkValidator(k8sClient)
+	subscriptionValidator := validator.NewSubscriptionValidator(sinkValidator)
+
 	jsTestEnsemble.Reconciler = subscriptioncontrollerjetstream.NewReconciler(
 		k8sClient,
 		jetStreamHandler,
 		defaultLogger,
 		recorder,
 		cleaner,
-		sink.NewValidator(k8sClient, recorder),
+		subscriptionValidator,
 		metricsCollector,
 	)
 

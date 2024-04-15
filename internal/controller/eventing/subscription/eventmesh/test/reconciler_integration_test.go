@@ -53,7 +53,7 @@ func Test_CreateSubscription(t *testing.T) {
 	testCases := []struct {
 		name                     string
 		givenSubscriptionFunc    func(namespace string) *eventingv1alpha2.Subscription
-		wantSubscriptionMatchers gomegatypes.GomegaMatcher
+		wantSubscriptionMatchers func(namespace string) gomegatypes.GomegaMatcher
 		wantEventMeshSubMatchers gomegatypes.GomegaMatcher
 		wantEventMeshSubCheck    bool
 		wantAPIRuleCheck         bool
@@ -74,13 +74,15 @@ func Test_CreateSubscription(t *testing.T) {
 					eventingtesting.WithMaxInFlight(10),
 				)
 			},
-			wantSubscriptionMatchers: gomega.And(
-				eventingtesting.HaveSubscriptionNotReady(),
-				eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
-					eventingv1alpha2.ConditionSubscriptionSpecValid,
-					eventingv1alpha2.ConditionReasonSubscriptionSpecHasValidationErrors,
-					kcorev1.ConditionFalse, "Sink validation failed: Service \"invalid\" not found")),
-			),
+			wantSubscriptionMatchers: func(namespace string) gomegatypes.GomegaMatcher {
+				return gomega.And(
+					eventingtesting.HaveSubscriptionNotReady(),
+					eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
+						eventingv1alpha2.ConditionSubscriptionSpecValid,
+						eventingv1alpha2.ConditionReasonSubscriptionSpecHasValidationErrors,
+						kcorev1.ConditionFalse, fmt.Sprintf("Subscription validation failed: Sink validation failed: service invalid.%s not found in the cluster", namespace))),
+				)
+			},
 		},
 		{
 			name: "should succeed to create subscription if types are non-empty",
@@ -96,19 +98,21 @@ func Test_CreateSubscription(t *testing.T) {
 					eventingtesting.WithMaxInFlight(10),
 				)
 			},
-			wantSubscriptionMatchers: gomega.And(
-				eventingtesting.HaveSubscriptionFinalizer(eventingv1alpha2.Finalizer),
-				eventingtesting.HaveSubscriptionActiveCondition(),
-				eventingtesting.HaveCleanEventTypes([]eventingv1alpha2.EventType{
-					{
-						OriginalType: fmt.Sprintf("%s0", eventingtesting.OrderCreatedV1EventNotClean),
-						CleanType:    fmt.Sprintf("%s0", eventingtesting.OrderCreatedV1Event),
-					}, {
-						OriginalType: fmt.Sprintf("%s1", eventingtesting.OrderCreatedV1EventNotClean),
-						CleanType:    fmt.Sprintf("%s1", eventingtesting.OrderCreatedV1Event),
-					},
-				}),
-			),
+			wantSubscriptionMatchers: func(namespace string) gomegatypes.GomegaMatcher {
+				return gomega.And(
+					eventingtesting.HaveSubscriptionFinalizer(eventingv1alpha2.Finalizer),
+					eventingtesting.HaveSubscriptionActiveCondition(),
+					eventingtesting.HaveCleanEventTypes([]eventingv1alpha2.EventType{
+						{
+							OriginalType: fmt.Sprintf("%s0", eventingtesting.OrderCreatedV1EventNotClean),
+							CleanType:    fmt.Sprintf("%s0", eventingtesting.OrderCreatedV1Event),
+						}, {
+							OriginalType: fmt.Sprintf("%s1", eventingtesting.OrderCreatedV1EventNotClean),
+							CleanType:    fmt.Sprintf("%s1", eventingtesting.OrderCreatedV1Event),
+						},
+					}),
+				)
+			},
 			wantEventMeshSubMatchers: gomega.And(
 				eventmeshsubmatchers.HaveEvents(emstypes.Events{
 					{
@@ -135,9 +139,11 @@ func Test_CreateSubscription(t *testing.T) {
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
 				)
 			},
-			wantSubscriptionMatchers: gomega.And(
-				eventingtesting.HaveSubscriptionActiveCondition(),
-			),
+			wantSubscriptionMatchers: func(namespace string) gomegatypes.GomegaMatcher {
+				return gomega.And(
+					eventingtesting.HaveSubscriptionActiveCondition(),
+				)
+			},
 			wantEventMeshSubMatchers: gomega.And(
 				// should have default values for protocol and webhook auth
 				eventmeshsubmatchers.HaveContentMode(emTestEnsemble.envConfig.ContentMode),
@@ -163,16 +169,18 @@ func Test_CreateSubscription(t *testing.T) {
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
 				)
 			},
-			wantSubscriptionMatchers: gomega.And(
-				eventingtesting.HaveSubscriptionFinalizer(eventingv1alpha2.Finalizer),
-				eventingtesting.HaveSubscriptionActiveCondition(),
-				eventingtesting.HaveCleanEventTypes([]eventingv1alpha2.EventType{
-					{
-						OriginalType: eventingtesting.EventMeshExactType,
-						CleanType:    eventingtesting.EventMeshExactType,
-					},
-				}),
-			),
+			wantSubscriptionMatchers: func(namespace string) gomegatypes.GomegaMatcher {
+				return gomega.And(
+					eventingtesting.HaveSubscriptionFinalizer(eventingv1alpha2.Finalizer),
+					eventingtesting.HaveSubscriptionActiveCondition(),
+					eventingtesting.HaveCleanEventTypes([]eventingv1alpha2.EventType{
+						{
+							OriginalType: eventingtesting.EventMeshExactType,
+							CleanType:    eventingtesting.EventMeshExactType,
+						},
+					}),
+				)
+			},
 			wantEventMeshSubMatchers: gomega.And(
 				eventmeshsubmatchers.HaveEvents(emstypes.Events{
 					{
@@ -197,16 +205,18 @@ func Test_CreateSubscription(t *testing.T) {
 					eventingtesting.WithMaxInFlight(10),
 				)
 			},
-			wantSubscriptionMatchers: gomega.And(
-				eventingtesting.HaveSubscriptionFinalizer(eventingv1alpha2.Finalizer),
-				eventingtesting.HaveSubscriptionActiveCondition(),
-				eventingtesting.HaveCleanEventTypes([]eventingv1alpha2.EventType{
-					{
-						OriginalType: eventingtesting.OrderCreatedV1EventNotClean,
-						CleanType:    eventingtesting.OrderCreatedV1Event,
-					},
-				}),
-			),
+			wantSubscriptionMatchers: func(namespace string) gomegatypes.GomegaMatcher {
+				return gomega.And(
+					eventingtesting.HaveSubscriptionFinalizer(eventingv1alpha2.Finalizer),
+					eventingtesting.HaveSubscriptionActiveCondition(),
+					eventingtesting.HaveCleanEventTypes([]eventingv1alpha2.EventType{
+						{
+							OriginalType: eventingtesting.OrderCreatedV1EventNotClean,
+							CleanType:    eventingtesting.OrderCreatedV1Event,
+						},
+					}),
+				)
+			},
 			wantEventMeshSubMatchers: gomega.And(
 				eventmeshsubmatchers.HaveEvents(emstypes.Events{
 					{
@@ -242,7 +252,7 @@ func Test_CreateSubscription(t *testing.T) {
 			ensureK8sResourceCreated(ctx, t, givenSubscription)
 
 			// check if the subscription is as required
-			getSubscriptionAssert(ctx, g, givenSubscription).Should(testcase.wantSubscriptionMatchers)
+			getSubscriptionAssert(ctx, g, givenSubscription).Should(testcase.wantSubscriptionMatchers(testNamespace))
 
 			if testcase.wantAPIRuleCheck {
 				// check if an APIRule was created for the subscription
@@ -545,14 +555,16 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 		)
 	}
 
-	wantSubscriptionWithoutSinkMatchers := gomega.And(
-		eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
-			eventingv1alpha2.ConditionSubscriptionSpecValid,
-			eventingv1alpha2.ConditionReasonSubscriptionSpecHasValidationErrors,
-			kcorev1.ConditionFalse,
-			"Sink validation failed: Service \"invalid\" not found",
-		)),
-	)
+	wantSubscriptionWithoutSinkMatchers := func(namespace string) gomegatypes.GomegaMatcher {
+		return gomega.And(
+			eventingtesting.HaveCondition(eventingv1alpha2.MakeCondition(
+				eventingv1alpha2.ConditionSubscriptionSpecValid,
+				eventingv1alpha2.ConditionReasonSubscriptionSpecHasValidationErrors,
+				kcorev1.ConditionFalse,
+				fmt.Sprintf("Subscription validation failed: Sink validation failed: service invalid.%s not found in the cluster", namespace),
+			)),
+		)
+	}
 
 	givenUpdateSubscriptionWithSinkFunc := func(namespace, name, sinkFormat, path string) *eventingv1alpha2.Subscription {
 		return eventingtesting.NewSubscription(name, namespace,
@@ -611,7 +623,7 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 			ensureK8sResourceCreated(ctx, t, givenSubscription)
 			createdSubscription := givenSubscription.DeepCopy()
 			// check if the created subscription is correct
-			getSubscriptionAssert(ctx, g, createdSubscription).Should(wantSubscriptionWithoutSinkMatchers)
+			getSubscriptionAssert(ctx, g, createdSubscription).Should(wantSubscriptionWithoutSinkMatchers(testNamespace))
 
 			// update subscription with valid sink
 			givenUpdateSubscription.ResourceVersion = createdSubscription.ResourceVersion

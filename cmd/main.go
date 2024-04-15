@@ -219,7 +219,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 
 	if errs := webhook.CleanupResources(ctx, k8sClient); len(errs) > 0 {
-		setupLog.Error(errors.Join(errs...), "unable to cleanup kubernetes webhook resources")
+		setupLog.Error(errors.Join(errs...), "failed to cleanup kubernetes webhook resources")
 		syncLogger(ctrLogger)
 		os.Exit(1)
 	}

@@ -30,10 +30,10 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -124,10 +124,14 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 
 	// setup eventMesh reconciler
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller")
-	sinkValidator := sink.NewValidator(k8sManager.GetClient(), recorder)
 	emTestEnsemble.envConfig = getEnvConfig(emTestEnsemble)
 	eventMeshBackend = backendeventmesh.NewEventMesh(credentials, emTestEnsemble.nameMapper, defaultLogger)
 	col := metrics.NewCollector()
+
+	// Init the Subscription validator.
+	sinkValidator := validator.NewSinkValidator(k8sManager.GetClient())
+	subscriptionValidator := validator.NewSubscriptionValidator(sinkValidator)
+
 	testReconciler = subscriptioncontrollereventmesh.NewReconciler(
 		k8sManager.GetClient(),
 		defaultLogger,
@@ -137,7 +141,7 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 		eventMeshBackend,
 		credentials,
 		emTestEnsemble.nameMapper,
-		sinkValidator,
+		subscriptionValidator,
 		col,
 		testutils.Domain,
 	)

@@ -20,11 +20,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	emerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
@@ -40,28 +40,28 @@ const (
 
 type Reconciler struct {
 	client.Client
-	Backend             jetstream.Backend
-	recorder            record.EventRecorder
-	logger              *logger.Logger
-	cleaner             cleaner.Cleaner
-	sinkValidator       sink.Validator
-	customEventsChannel chan event.GenericEvent
-	collector           *metrics.Collector
+	Backend               jetstream.Backend
+	recorder              record.EventRecorder
+	logger                *logger.Logger
+	cleaner               cleaner.Cleaner
+	subscriptionValidator validator.SubscriptionValidator
+	customEventsChannel   chan event.GenericEvent
+	collector             *metrics.Collector
 }
 
 func NewReconciler(client client.Client, jsBackend jetstream.Backend,
 	logger *logger.Logger, recorder record.EventRecorder, cleaner cleaner.Cleaner,
-	defaultSinkValidator sink.Validator, collector *metrics.Collector,
+	subscriptionValidator validator.SubscriptionValidator, collector *metrics.Collector,
 ) *Reconciler {
 	reconciler := &Reconciler{
-		Client:              client,
-		Backend:             jsBackend,
-		recorder:            recorder,
-		logger:              logger,
-		cleaner:             cleaner,
-		sinkValidator:       defaultSinkValidator,
-		customEventsChannel: make(chan event.GenericEvent),
-		collector:           collector,
+		Client:                client,
+		Backend:               jsBackend,
+		recorder:              recorder,
+		logger:                logger,
+		cleaner:               cleaner,
+		subscriptionValidator: subscriptionValidator,
+		customEventsChannel:   make(chan event.GenericEvent),
+		collector:             collector,
 	}
 	return reconciler
 }
@@ -131,8 +131,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	}
 
 	// Validate subscription.
-	if validationErr := r.handleSubscriptionValidation(ctx, desiredSubscription); validationErr != nil {
-		if errors.Is(validationErr, sink.ErrSinkValidationFailed) {
+	if validationErr := r.validateSubscription(ctx, desiredSubscription); validationErr != nil {
+		if errors.Is(validationErr, validator.ErrSinkValidationFailed) {
 			if deleteErr := r.Backend.DeleteSubscriptionsOnly(desiredSubscription); deleteErr != nil {
 				log.Errorw("Failed to delete JetStream subscriptions", "error", deleteErr)
 				return kctrl.Result{}, deleteErr
@@ -171,23 +171,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	return kctrl.Result{}, r.syncSubscriptionStatus(ctx, desiredSubscription, nil, log)
 }
 
-func (r *Reconciler) handleSubscriptionValidation(ctx context.Context, desiredSubscription *eventingv1alpha2.Subscription) error {
+func (r *Reconciler) validateSubscription(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
 	var err error
-	if err = r.validateSubscriptionSpec(ctx, desiredSubscription); err != nil {
-		desiredSubscription.Status.SetNotReady()
-		desiredSubscription.Status.ClearTypes()
-		desiredSubscription.Status.ClearBackend()
-		desiredSubscription.Status.ClearConditions()
+	if err = r.subscriptionValidator.Validate(ctx, *subscription); err != nil {
+		subscription.Status.SetNotReady()
+		subscription.Status.ClearTypes()
+		subscription.Status.ClearBackend()
+		subscription.Status.ClearConditions()
 	}
-	desiredSubscription.Status.SetSubscriptionSpecValidCondition(err)
+	subscription.Status.SetSubscriptionSpecValidCondition(err)
 	return err
-}
-
-func (r *Reconciler) validateSubscriptionSpec(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
-	if errList := subscription.ValidateSpec(); len(errList) > 0 {
-		return errors.Join(errList.ToAggregate())
-	}
-	return r.sinkValidator.Validate(ctx, subscription)
 }
 
 func (r *Reconciler) updateSubscriptionMetrics(current, desired *eventingv1alpha2.Subscription) {

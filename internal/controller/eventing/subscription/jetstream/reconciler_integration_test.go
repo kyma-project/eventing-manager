@@ -11,7 +11,6 @@ import (
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	kcorev1 "k8s.io/api/core/v1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -187,11 +186,8 @@ func Test_CreateSubscription(t *testing.T) {
 				K8sSubscription: []gomegatypes.GomegaMatcher{
 					eventingtesting.HaveCondition(
 						ConditionInvalidSink(
-							"Sink validation failed: Service \"testapp\" not found",
+							"Subscription validation failed: Sink validation failed: service testapp.test not found in the cluster",
 						)),
-				},
-				K8sEvents: []kcorev1.Event{
-					EventInvalidSink("Sink does not correspond to a valid cluster local svc"),
 				},
 			},
 		},

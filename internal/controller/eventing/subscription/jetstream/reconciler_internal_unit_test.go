@@ -20,11 +20,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	backendjetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -64,8 +64,8 @@ func Test_Reconcile(t *testing.T) {
 	missingSubSyncErr := jetstream.ErrMissingSubscription
 	backendDeleteErr := errors.New("backend delete error")
 	validatorErr := errors.New("invalid sink")
-	happyValidator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
-	unhappyValidator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return validatorErr })
+	happyValidator := validator.SubscriptionValidatorFunc(func(_ context.Context, _ eventingv1alpha2.Subscription) error { return nil })
+	unhappyValidator := validator.SubscriptionValidatorFunc(func(_ context.Context, _ eventingv1alpha2.Subscription) error { return validatorErr })
 	collector := metrics.NewCollector()
 
 	testCases := []struct {
@@ -746,16 +746,19 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *TestEnvironment 
 		t.Fatalf("initialize logger failed: %v", err)
 	}
 	jsCleaner := cleaner.NewJetStreamCleaner(defaultLogger)
-	defaultSinkValidator := sink.NewValidator(fakeClient, recorder)
+
+	// Init the Subscription validator.
+	sinkValidator := validator.NewSinkValidator(fakeClient)
+	subscriptionValidator := validator.NewSubscriptionValidator(sinkValidator)
 
 	reconciler := Reconciler{
-		Backend:       mockedBackend,
-		Client:        fakeClient,
-		logger:        defaultLogger,
-		recorder:      recorder,
-		sinkValidator: defaultSinkValidator,
-		cleaner:       jsCleaner,
-		collector:     metrics.NewCollector(),
+		Backend:               mockedBackend,
+		Client:                fakeClient,
+		logger:                defaultLogger,
+		recorder:              recorder,
+		subscriptionValidator: subscriptionValidator,
+		cleaner:               jsCleaner,
+		collector:             metrics.NewCollector(),
 	}
 
 	return &TestEnvironment{

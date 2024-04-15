@@ -28,11 +28,11 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	controllererrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/constants"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
@@ -55,7 +55,7 @@ type Reconciler struct {
 	oauth2credentials *eventmesh.OAuth2ClientCredentials
 	// nameMapper is used to map the Kyma subscription name to a subscription name on EventMesh.
 	nameMapper                     backendutils.NameMapper
-	sinkValidator                  sink.Validator
+	subscriptionValidator          validator.SubscriptionValidator
 	collector                      *metrics.Collector
 	syncConditionWebhookCallStatus syncConditionWebhookCallStatusFunc
 }
@@ -73,8 +73,8 @@ const (
 
 func NewReconciler(client client.Client, logger *logger.Logger, recorder record.EventRecorder,
 	cfg env.Config, cleaner cleaner.Cleaner, eventMeshBackend eventmesh.Backend,
-	credential *eventmesh.OAuth2ClientCredentials, mapper backendutils.NameMapper, validator sink.Validator,
-	collector *metrics.Collector, domain string,
+	credential *eventmesh.OAuth2ClientCredentials, mapper backendutils.NameMapper,
+	subscriptionValidator validator.SubscriptionValidator, collector *metrics.Collector, domain string,
 ) *Reconciler {
 	if err := eventMeshBackend.Initialize(cfg); err != nil {
 		logger.WithContext().Errorw("Failed to start reconciler", "name",
@@ -90,7 +90,7 @@ func NewReconciler(client client.Client, logger *logger.Logger, recorder record.
 		cleaner:                        cleaner,
 		oauth2credentials:              credential,
 		nameMapper:                     mapper,
-		sinkValidator:                  validator,
+		subscriptionValidator:          subscriptionValidator,
 		collector:                      collector,
 		syncConditionWebhookCallStatus: syncConditionWebhookCallStatus,
 	}
@@ -144,7 +144,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	}
 
 	// Validate subscription.
-	if validationErr := r.handleSubscriptionValidation(ctx, sub); validationErr != nil {
+	if validationErr := r.validateSubscription(ctx, sub); validationErr != nil {
 		if updateErr := r.updateStatus(ctx, currentSubscription, sub, log); updateErr != nil {
 			return kctrl.Result{}, errors.Join(validationErr, updateErr)
 		}
@@ -184,23 +184,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	return result, nil
 }
 
-func (r *Reconciler) handleSubscriptionValidation(ctx context.Context, desiredSubscription *eventingv1alpha2.Subscription) error {
+func (r *Reconciler) validateSubscription(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
 	var err error
-	if err = r.validateSubscriptionSpec(ctx, desiredSubscription); err != nil {
-		desiredSubscription.Status.SetNotReady()
-		desiredSubscription.Status.ClearTypes()
-		desiredSubscription.Status.ClearBackend()
-		desiredSubscription.Status.ClearConditions()
+	if err = r.subscriptionValidator.Validate(ctx, *subscription); err != nil {
+		subscription.Status.SetNotReady()
+		subscription.Status.ClearTypes()
+		subscription.Status.ClearBackend()
+		subscription.Status.ClearConditions()
 	}
-	desiredSubscription.Status.SetSubscriptionSpecValidCondition(err)
+	subscription.Status.SetSubscriptionSpecValidCondition(err)
 	return err
-}
-
-func (r *Reconciler) validateSubscriptionSpec(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
-	if errList := subscription.ValidateSpec(); len(errList) > 0 {
-		return errors.Join(errList.ToAggregate())
-	}
-	return r.sinkValidator.Validate(ctx, subscription)
 }
 
 // updateSubscription updates the subscription changes to k8s.

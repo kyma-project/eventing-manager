@@ -20,56 +20,92 @@ func CleanupResources(ctx context.Context, client kctrlclient.Client) []error {
 		mutatingWebhookConfiguration   = "subscription-mutating-webhook-configuration"
 		validatingWebhookConfiguration = "subscription-validating-webhook-configuration"
 	)
-	return []error{
-		deleteService(ctx, client, namespace, service),
-		deleteCronJob(ctx, client, namespace, cronjob),
-		deleteJob(ctx, client, namespace, job),
-		deleteMutatingWebhookConfiguration(ctx, client, namespace, mutatingWebhookConfiguration),
-		deleteValidatingWebhookConfiguration(ctx, client, namespace, validatingWebhookConfiguration),
-	}
+	var errList = make([]error, 0, 5)
+	appendIfError(errList, deleteService(ctx, client, namespace, service))
+	appendIfError(errList, deleteCronJob(ctx, client, namespace, cronjob))
+	appendIfError(errList, deleteJob(ctx, client, namespace, job))
+	appendIfError(errList, deleteMutatingWebhookConfiguration(ctx, client, namespace, mutatingWebhookConfiguration))
+	appendIfError(errList, deleteValidatingWebhookConfiguration(ctx, client, namespace, validatingWebhookConfiguration))
+	return errList
 }
 
 func deleteService(ctx context.Context, client kctrlclient.Client, namespace, name string) error {
-	return client.Delete(ctx, &kcorev1.Service{
-		ObjectMeta: kmetav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      name,
-		},
-	})
+	return kctrlclient.IgnoreNotFound(
+		client.Delete(
+			ctx,
+			&kcorev1.Service{
+				ObjectMeta: kmetav1.ObjectMeta{
+					Namespace: namespace,
+					Name:      name,
+				},
+			},
+			kctrlclient.PropagationPolicy(kmetav1.DeletePropagationBackground),
+		),
+	)
 }
 
 func deleteCronJob(ctx context.Context, client kctrlclient.Client, namespace, name string) error {
-	return client.Delete(ctx, &kbatchv1.CronJob{
-		ObjectMeta: kmetav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-	})
+	return kctrlclient.IgnoreNotFound(
+		client.Delete(
+			ctx,
+			&kbatchv1.CronJob{
+				ObjectMeta: kmetav1.ObjectMeta{
+					Name:      name,
+					Namespace: namespace,
+				},
+			},
+			kctrlclient.PropagationPolicy(kmetav1.DeletePropagationBackground),
+		),
+	)
 }
 
 func deleteJob(ctx context.Context, client kctrlclient.Client, namespace, name string) error {
-	return client.Delete(ctx, &kbatchv1.Job{
-		ObjectMeta: kmetav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-	})
+	return kctrlclient.IgnoreNotFound(
+		client.Delete(
+			ctx,
+			&kbatchv1.Job{
+				ObjectMeta: kmetav1.ObjectMeta{
+					Name:      name,
+					Namespace: namespace,
+				},
+			},
+			kctrlclient.PropagationPolicy(kmetav1.DeletePropagationBackground),
+		),
+	)
 }
 
 func deleteMutatingWebhookConfiguration(ctx context.Context, client kctrlclient.Client, namespace, name string) error {
-	return client.Delete(ctx, &kadmissionregistrationv1.MutatingWebhookConfiguration{
-		ObjectMeta: kmetav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-	})
+	return kctrlclient.IgnoreNotFound(
+		client.Delete(
+			ctx,
+			&kadmissionregistrationv1.MutatingWebhookConfiguration{
+				ObjectMeta: kmetav1.ObjectMeta{
+					Name:      name,
+					Namespace: namespace,
+				},
+			},
+			kctrlclient.PropagationPolicy(kmetav1.DeletePropagationBackground),
+		),
+	)
 }
 
 func deleteValidatingWebhookConfiguration(ctx context.Context, client kctrlclient.Client, namespace, name string) error {
-	return client.Delete(ctx, &kadmissionregistrationv1.ValidatingWebhookConfiguration{
-		ObjectMeta: kmetav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-	})
+	return kctrlclient.IgnoreNotFound(
+		client.Delete(
+			ctx,
+			&kadmissionregistrationv1.ValidatingWebhookConfiguration{
+				ObjectMeta: kmetav1.ObjectMeta{
+					Name:      name,
+					Namespace: namespace,
+				},
+			},
+			kctrlclient.PropagationPolicy(kmetav1.DeletePropagationBackground),
+		),
+	)
+}
+
+func appendIfError(errList []error, err error) {
+	if err != nil {
+		errList = append(errList, err)
+	}
 }
