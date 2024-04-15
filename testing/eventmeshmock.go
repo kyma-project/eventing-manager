@@ -208,7 +208,7 @@ func (m *EventMeshMock) handleMessaging() func(w http.ResponseWriter, r *http.Re
 
 			// extract get request key from /messaging/events/subscriptions/%s/state
 			key := strings.TrimSuffix(r.URL.Path, "/state")
-			for i := 0; i < 3; i++ {
+			for i := range 3 {
 				err := m.UpdateStateResponse(w, key, state)
 				if err == nil {
 					break

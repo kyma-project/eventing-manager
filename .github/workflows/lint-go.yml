@@ -29,15 +29,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22 # This can be a specific version. E.g. 1.19 or 1.21.x
-
-      - name: Checkout code
-        uses: actions/checkout@v4
+          go-version-file: go.mod
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v4.0.0
         with:
-          version: v1.55
+          version: v1.57

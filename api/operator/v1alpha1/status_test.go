@@ -438,7 +438,7 @@ func assertConditionsEqual(t *testing.T, expected, actual []kmetav1.Condition) {
 	t.Helper()
 
 	assert.Equal(t, len(expected), len(actual))
-	for i := 0; i < len(expected); i++ {
+	for i := range len(expected) {
 		assertConditionEqual(t, expected[i], actual[i])
 	}
 }

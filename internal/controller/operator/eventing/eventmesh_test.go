@@ -309,7 +309,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 			// then
 			if testcase.wantError != nil {
 				require.Error(t, err)
-				require.ErrorAs(t, err, &testcase.wantError)
+				require.ErrorAs(t, err, &testcase.wantError) //nolint:testifylint // testifylint is disabled as it would not work without a pointer here
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, testEnv.Reconciler.eventMeshSubManager)

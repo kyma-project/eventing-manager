@@ -12,7 +12,7 @@ func IsSkippable(err error) bool {
 	if err == nil {
 		return true
 	}
-	_, ok := err.(skippable) //nolint:errorlint // here we do not want to check the chain
+	_, ok := err.(skippable)
 	return ok
 }
 

@@ -60,7 +60,6 @@ func (w *ResourceWatcher) Start() {
 		UpdateFunc: w.updateFunc,
 		DeleteFunc: w.deleteFunc,
 	})
-
 	if err != nil {
 		runtime.HandleError(err)
 	}

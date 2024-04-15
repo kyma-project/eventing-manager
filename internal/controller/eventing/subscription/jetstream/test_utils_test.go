@@ -415,7 +415,6 @@ func StartTestEnv(ens *Ensemble) error {
 			}
 		}),
 	)
-
 	if err != nil {
 		return err
 	}

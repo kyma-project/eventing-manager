@@ -64,7 +64,7 @@ func TestUnitValidate_For_Errors(t *testing.T) {
 
 func fixtureStreamNameTooLong() string {
 	b := strings.Builder{}
-	for i := 0; i < (jsMaxStreamNameLength + 1); i++ {
+	for range jsMaxStreamNameLength + 1 {
 		b.WriteString("a")
 	}
 	streamName := b.String()
