@@ -44,7 +44,7 @@ func (c *EventMeshCleaner) getMergedSegments(eventType string) string {
 	if totalSegments > maxEventMeshSegmentsLimit {
 		combinedSegment := ""
 		// combine the first n-2 segments without dots "."
-		for i := 0; i < totalSegments-2; i++ {
+		for i := range totalSegments - 2 {
 			combinedSegment += segments[i]
 		}
 		// append the last  two segment with preceding dots "."

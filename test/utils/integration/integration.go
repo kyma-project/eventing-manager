@@ -373,7 +373,7 @@ func (env TestEnvironment) TearDown() error {
 	// retry to stop the api-server
 	sleepTime := 1 * time.Second
 	const retries = 20
-	for i := 0; i < retries; i++ {
+	for range retries {
 		if err = env.EnvTestInstance.Stop(); err == nil {
 			break
 		}

@@ -580,7 +580,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 
 			// then
 			require.Equal(t, testcase.expectedError, err)
-			require.Equal(t, testcase.expectedConfig, testcase.expectedConfig)
+			require.Equal(t, testcase.expectedConfig, natsConfig)
 		})
 	}
 }

@@ -26,6 +26,8 @@ linters:
     - testpackage
     - wrapcheck
     - paralleltest
+    - copyloopvar
+    - perfsprint
 
 linters-settings:
   stylecheck:
