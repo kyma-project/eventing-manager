@@ -19,6 +19,7 @@ func (es *EventingStatus) UpdateConditionBackendAvailable(status kmetav1.Conditi
 		Reason:             string(reason),
 		Message:            message,
 	}
+	// meta.SetStatusCondition will update LastTransitionTime only when `Status` is changed.
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
@@ -32,6 +33,7 @@ func (es *EventingStatus) UpdateConditionPublisherProxyReady(status kmetav1.Cond
 		Reason:             string(reason),
 		Message:            message,
 	}
+	// LastTransitionTime will only be updated when `Status` is changed.
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
@@ -45,6 +47,7 @@ func (es *EventingStatus) UpdateConditionWebhookReady(status kmetav1.ConditionSt
 		Reason:             string(reason),
 		Message:            message,
 	}
+	// meta.SetStatusCondition will update LastTransitionTime only when `Status` is changed.
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
@@ -58,6 +61,7 @@ func (es *EventingStatus) UpdateConditionSubscriptionManagerReady(status kmetav1
 		Reason:             string(reason),
 		Message:            message,
 	}
+	// meta.SetStatusCondition will update LastTransitionTime only when `Status` is changed.
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
@@ -71,6 +75,7 @@ func (es *EventingStatus) UpdateConditionDeletion(status kmetav1.ConditionStatus
 		Reason:             string(reason),
 		Message:            message,
 	}
+	// meta.SetStatusCondition will update LastTransitionTime only when `Status` is changed.
 	meta.SetStatusCondition(&es.Conditions, condition)
 }
 
