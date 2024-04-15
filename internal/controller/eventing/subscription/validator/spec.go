@@ -43,7 +43,7 @@ func validateSource(subscription eventingv1alpha2.Subscription) *field.Error {
 		return makeInvalidFieldError(sourcePath, subscription.Spec.Source, emptyErrDetail)
 	}
 	// Check only if the source is valid for the cloud event, with a valid event type.
-	if IsInvalidCE(subscription.Spec.Source, "") {
+	if isInvalidCE(subscription.Spec.Source, "") {
 		return makeInvalidFieldError(sourcePath, subscription.Spec.Source, invalidURIErrDetail)
 	}
 	return nil
@@ -68,7 +68,7 @@ func validateTypes(subscription eventingv1alpha2.Subscription) *field.Error {
 		}
 		// Check only is the event type is valid for the cloud event, with a valid source.
 		const validSource = "source"
-		if IsInvalidCE(validSource, eventType) {
+		if isInvalidCE(validSource, eventType) {
 			return makeInvalidFieldError(typesPath, eventType, invalidURIErrDetail)
 		}
 	}
@@ -137,7 +137,7 @@ func isNotInt(value string) bool {
 	return false
 }
 
-func IsInvalidCE(source, eventType string) bool {
+func isInvalidCE(source, eventType string) bool {
 	if source == "" {
 		return false
 	}

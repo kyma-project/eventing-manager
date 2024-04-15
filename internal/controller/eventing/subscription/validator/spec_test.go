@@ -10,7 +10,7 @@ import (
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
-func Test_validateSubscription(t *testing.T) {
+func Test_validateSpec(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -330,7 +330,7 @@ func Test_validateSubscription(t *testing.T) {
 	}
 }
 
-func Test_IsInvalidCESource(t *testing.T) {
+func Test_isInvalidCE(t *testing.T) {
 	t.Parallel()
 	type TestCase struct {
 		name          string
@@ -370,7 +370,7 @@ func Test_IsInvalidCESource(t *testing.T) {
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			gotIsInvalid := IsInvalidCE(tc.givenSource, tc.givenType)
+			gotIsInvalid := isInvalidCE(tc.givenSource, tc.givenType)
 			require.Equal(t, tc.wantIsInvalid, gotIsInvalid)
 		})
 	}
