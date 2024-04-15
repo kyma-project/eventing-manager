@@ -20,12 +20,13 @@ func CleanupResources(ctx context.Context, client kctrlclient.Client) []error {
 		mutatingWebhookConfiguration   = "subscription-mutating-webhook-configuration"
 		validatingWebhookConfiguration = "subscription-validating-webhook-configuration"
 	)
-	var errList = make([]error, 0, 5)
-	appendIfError(errList, deleteService(ctx, client, namespace, service))
-	appendIfError(errList, deleteCronJob(ctx, client, namespace, cronjob))
-	appendIfError(errList, deleteJob(ctx, client, namespace, job))
-	appendIfError(errList, deleteMutatingWebhookConfiguration(ctx, client, namespace, mutatingWebhookConfiguration))
-	appendIfError(errList, deleteValidatingWebhookConfiguration(ctx, client, namespace, validatingWebhookConfiguration))
+	const capacity = 5
+	errList := make([]error, 0, capacity)
+	errList = appendIfError(errList, deleteService(ctx, client, namespace, service))
+	errList = appendIfError(errList, deleteCronJob(ctx, client, namespace, cronjob))
+	errList = appendIfError(errList, deleteJob(ctx, client, namespace, job))
+	errList = appendIfError(errList, deleteMutatingWebhookConfiguration(ctx, client, namespace, mutatingWebhookConfiguration))
+	errList = appendIfError(errList, deleteValidatingWebhookConfiguration(ctx, client, namespace, validatingWebhookConfiguration))
 	return errList
 }
 
@@ -104,8 +105,9 @@ func deleteValidatingWebhookConfiguration(ctx context.Context, client kctrlclien
 	)
 }
 
-func appendIfError(errList []error, err error) {
+func appendIfError(errList []error, err error) []error {
 	if err != nil {
-		errList = append(errList, err)
+		return append(errList, err)
 	}
+	return errList
 }

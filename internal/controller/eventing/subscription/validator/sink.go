@@ -35,7 +35,8 @@ func (sv sinkValidator) Validate(ctx context.Context, sink string) error {
 		return fmt.Errorf("%w: %w", ErrSinkValidationFailed, err)
 	}
 
-	if len(subDomains) < 2 {
+	const minSubDomains = 2
+	if len(subDomains) < minSubDomains {
 		return fmt.Errorf("%w: sink format should contain the service name.namespace", ErrSinkValidationFailed)
 	}
 

@@ -84,7 +84,6 @@ func setupSuite() error {
 	emTestEnsemble = &eventMeshTestEnsemble{}
 
 	// define logger
-	var err error
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	if err != nil {
 		return err
@@ -127,8 +126,7 @@ func setupSuite() error {
 	eventMesh, credentials := setupEventMesh(defaultLogger)
 
 	// Init the Subscription validator.
-	sinkValidator := validator.NewSinkValidator(k8sManager.GetClient())
-	subscriptionValidator := validator.NewSubscriptionValidator(sinkValidator)
+	subscriptionValidator := validator.NewSubscriptionValidator(validator.NewSinkValidator(k8sManager.GetClient()))
 
 	col := metrics.NewCollector()
 	testReconciler := subscriptioncontrollereventmesh.NewReconciler(
