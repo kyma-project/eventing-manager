@@ -758,7 +758,7 @@ func Test_validateSubscription(t *testing.T) {
 
 	// then
 	require.Equal(t, kctrl.Result{}, res)
-	require.ErrorIs(t, err, nil)
+	require.NoError(t, err)
 	validatorMock.AssertExpectations(t)
 	testEnv.Backend.AssertExpectations(t)
 }

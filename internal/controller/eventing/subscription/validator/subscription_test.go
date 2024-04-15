@@ -69,14 +69,14 @@ func TestValidate(t *testing.T) {
 			wantErr:            ErrSinkValidationFailed,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			validator := &subscriptionValidator{sinkValidator: tt.givenSinkValidator}
-			gotErr := validator.Validate(ctx, *tt.givenSubscription)
-			if tt.wantErr == nil {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			validator := &subscriptionValidator{sinkValidator: test.givenSinkValidator}
+			gotErr := validator.Validate(ctx, *test.givenSubscription)
+			if test.wantErr == nil {
 				require.NoError(t, gotErr)
 			} else {
-				require.ErrorAs(t, gotErr, &tt.wantErr)
+				require.ErrorIs(t, gotErr, test.wantErr)
 			}
 		})
 	}
