@@ -251,6 +251,110 @@ func Test_CreateSubscription(t *testing.T) {
 	}
 }
 
+func Test_defaulting(t *testing.T) {
+	t.Parallel()
+
+	const (
+		maxInFlightMessages        = 3
+		defaultMaxInFlightMessages = 10
+	)
+
+	testCases := []struct {
+		name                  string
+		givenSubscriptionOpts []eventingtesting.SubscriptionOpt
+		want                  Want
+	}{
+		// TypeMatching
+		{
+			name: "should default the TypeMatching to standard if it is not configured",
+			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
+				eventingtesting.WithMaxInFlight(defaultMaxInFlightMessages),
+				eventingtesting.WithFinalizers([]string{}),
+			},
+			want: Want{
+				K8sSubscription: []gomegatypes.GomegaMatcher{
+					eventingtesting.HaveTypeMatching(eventingv1alpha2.TypeMatchingStandard),
+				},
+			},
+		},
+		{
+			name: "should not change the TypeMatching from exact if it is configured",
+			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithTypeMatchingExact(),
+				eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
+				eventingtesting.WithMaxInFlight(defaultMaxInFlightMessages),
+				eventingtesting.WithFinalizers([]string{}),
+			},
+			want: Want{
+				K8sSubscription: []gomegatypes.GomegaMatcher{
+					eventingtesting.HaveTypeMatching(eventingv1alpha2.TypeMatchingExact),
+				},
+			},
+		},
+		{
+			name: "should not change the TypeMatching from standard if it is configured",
+			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithTypeMatchingStandard(),
+				eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
+				eventingtesting.WithMaxInFlight(defaultMaxInFlightMessages),
+				eventingtesting.WithFinalizers([]string{}),
+			},
+			want: Want{
+				K8sSubscription: []gomegatypes.GomegaMatcher{
+					eventingtesting.HaveTypeMatching(eventingv1alpha2.TypeMatchingStandard),
+				},
+			},
+		},
+		// MaxInFlightMessages
+		{
+			name: "should default the MaxInFlightMessages if it is not configured",
+			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithTypeMatchingStandard(),
+				eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
+				eventingtesting.WithFinalizers([]string{}),
+			},
+			want: Want{
+				K8sSubscription: []gomegatypes.GomegaMatcher{
+					eventingtesting.HaveMaxInFlight(defaultMaxInFlightMessages),
+				},
+			},
+		},
+		{
+			name: "should not change the MaxInFlightMessages if it is configured",
+			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithTypeMatchingStandard(),
+				eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
+				eventingtesting.WithMaxInFlight(maxInFlightMessages),
+				eventingtesting.WithFinalizers([]string{}),
+			},
+			want: Want{
+				K8sSubscription: []gomegatypes.GomegaMatcher{
+					eventingtesting.HaveMaxInFlight(maxInFlightMessages),
+				},
+			},
+		},
+	}
+
+	for _, testcase := range testCases {
+		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
+			g := gomega.NewGomegaWithT(t)
+
+			// when
+			subscription := CreateSubscription(t, jsTestEnsemble.Ensemble, testcase.givenSubscriptionOpts...)
+
+			// then
+			CheckSubscriptionOnK8s(g, jsTestEnsemble.Ensemble, subscription, testcase.want.K8sSubscription...)
+		})
+	}
+}
+
 // Test_ChangeSubscription tests if existing subscriptions are reconciled properly after getting changed.
 func Test_ChangeSubscription(t *testing.T) {
 	t.Parallel()

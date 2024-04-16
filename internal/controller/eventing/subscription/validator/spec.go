@@ -87,7 +87,7 @@ func validateTypes(types []string, typeMatching eventingv1alpha2.TypeMatching) *
 
 func validateConfig(config map[string]string) field.ErrorList {
 	var allErrs field.ErrorList
-	if isNotInt(config[eventingv1alpha2.MaxInFlightMessages]) {
+	if ifKeyExistsInConfig(config, eventingv1alpha2.MaxInFlightMessages) && isNotInt(config[eventingv1alpha2.MaxInFlightMessages]) {
 		allErrs = append(allErrs, makeInvalidFieldError(configPath, config[eventingv1alpha2.MaxInFlightMessages], stringIntErrDetail))
 	}
 	if ifKeyExistsInConfig(config, eventingv1alpha2.ProtocolSettingsQos) && types.IsInvalidQoS(config[eventingv1alpha2.ProtocolSettingsQos]) {

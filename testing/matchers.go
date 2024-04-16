@@ -191,6 +191,12 @@ func HaveMaxInFlight(maxInFlight int) gomegatypes.GomegaMatcher {
 	}, BeTrue())
 }
 
+func HaveTypeMatching(typeMatching eventingv1alpha2.TypeMatching) gomegatypes.GomegaMatcher {
+	return WithTransform(func(s *eventingv1alpha2.Subscription) bool {
+		return s.Spec.TypeMatching == typeMatching
+	}, BeTrue())
+}
+
 func HaveSubscriptionNotReady() gomegatypes.GomegaMatcher {
 	return WithTransform(func(s *eventingv1alpha2.Subscription) bool {
 		return s.Status.Ready

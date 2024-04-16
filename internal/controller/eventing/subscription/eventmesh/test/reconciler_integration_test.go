@@ -288,6 +288,84 @@ func Test_CreateSubscription(t *testing.T) {
 	}
 }
 
+func Test_defaulting(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name                     string
+		givenSubscriptionFunc    func(namespace string) *eventingv1alpha2.Subscription
+		wantSubscriptionMatchers gomegatypes.GomegaMatcher
+	}{
+		// TypeMatching
+		{
+			name: "should default the TypeMatching to standard if it is not configured",
+			givenSubscriptionFunc: func(namespace string) *eventingv1alpha2.Subscription {
+				return eventingtesting.NewSubscription(testName, namespace,
+					eventingtesting.WithDefaultSource(),
+					eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
+					eventingtesting.WithWebhookAuthForEventMesh(),
+					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+				)
+			},
+			wantSubscriptionMatchers: gomega.And(
+				eventingtesting.HaveTypeMatching(eventingv1alpha2.TypeMatchingStandard),
+			),
+		},
+		{
+			name: "should not change the TypeMatching from exact if it is configured",
+			givenSubscriptionFunc: func(namespace string) *eventingv1alpha2.Subscription {
+				return eventingtesting.NewSubscription(testName, namespace,
+					eventingtesting.WithTypeMatchingExact(),
+					eventingtesting.WithDefaultSource(),
+					eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
+					eventingtesting.WithWebhookAuthForEventMesh(),
+					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+				)
+			},
+			wantSubscriptionMatchers: gomega.And(
+				eventingtesting.HaveTypeMatching(eventingv1alpha2.TypeMatchingExact),
+			),
+		},
+		{
+			name: "should not change the TypeMatching from standard if it is configured",
+			givenSubscriptionFunc: func(namespace string) *eventingv1alpha2.Subscription {
+				return eventingtesting.NewSubscription(testName, namespace,
+					eventingtesting.WithTypeMatchingStandard(),
+					eventingtesting.WithDefaultSource(),
+					eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
+					eventingtesting.WithWebhookAuthForEventMesh(),
+					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
+				)
+			},
+			wantSubscriptionMatchers: gomega.And(
+				eventingtesting.HaveTypeMatching(eventingv1alpha2.TypeMatchingStandard),
+			),
+		},
+	}
+
+	for _, testcase := range testCases {
+		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
+
+			g := gomega.NewGomegaWithT(t)
+			ctx := context.Background()
+
+			// given
+			testNamespace := getTestNamespace()
+			givenSubscription := testcase.givenSubscriptionFunc(testNamespace)
+			subscriberSvc := eventingtesting.NewSubscriberSvc(givenSubscription.Name, testNamespace)
+
+			// when
+			ensureNamespaceCreated(ctx, t, testNamespace)
+			ensureK8sResourceCreated(ctx, t, subscriberSvc)
+			ensureK8sResourceCreated(ctx, t, givenSubscription)
+
+			// then
+			getSubscriptionAssert(ctx, g, givenSubscription).Should(testcase.wantSubscriptionMatchers)
+		})
+	}
+}
+
 func Test_UpdateSubscription(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
