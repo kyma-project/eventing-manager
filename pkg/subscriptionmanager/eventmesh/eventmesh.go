@@ -117,8 +117,7 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subm
 	recorder := c.mgr.GetEventRecorderFor("eventing-controller-beb")
 
 	// Init the Subscription validator.
-	sinkValidator := validator.NewSinkValidator(client)
-	subscriptionValidator := validator.NewSubscriptionValidator(sinkValidator)
+	subscriptionValidator := validator.NewSubscriptionValidator(client)
 
 	// Initialize v1alpha2 handler for EventMesh
 	eventMeshHandler := backendeventmesh.NewEventMesh(oauth2credential, nameMapper, c.logger)

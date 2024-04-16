@@ -21,7 +21,7 @@ func TestSinkValidator(t *testing.T) {
 
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
-	validator := NewSinkValidator(fakeClient)
+	validator := newSinkValidator(fakeClient)
 
 	tests := []struct {
 		name         string
@@ -70,7 +70,7 @@ func TestSinkValidator(t *testing.T) {
 			}
 
 			// when
-			gotErr := validator.Validate(ctx, test.givenSink)
+			gotErr := validator.validate(ctx, test.givenSink)
 
 			// then
 			if test.wantErr == nil {

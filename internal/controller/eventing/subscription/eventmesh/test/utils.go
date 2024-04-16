@@ -126,7 +126,7 @@ func setupSuite() error {
 	eventMesh, credentials := setupEventMesh(defaultLogger)
 
 	// Init the Subscription validator.
-	subscriptionValidator := validator.NewSubscriptionValidator(validator.NewSinkValidator(k8sManager.GetClient()))
+	subscriptionValidator := validator.NewSubscriptionValidator(k8sManager.GetClient())
 
 	col := metrics.NewCollector()
 	testReconciler := subscriptioncontrollereventmesh.NewReconciler(

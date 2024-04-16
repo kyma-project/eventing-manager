@@ -128,7 +128,7 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 	col := metrics.NewCollector()
 
 	// Init the Subscription validator.
-	subscriptionValidator := validator.NewSubscriptionValidator(validator.NewSinkValidator(k8sManager.GetClient()))
+	subscriptionValidator := validator.NewSubscriptionValidator(k8sManager.GetClient())
 
 	testReconciler = subscriptioncontrollereventmesh.NewReconciler(
 		k8sManager.GetClient(),

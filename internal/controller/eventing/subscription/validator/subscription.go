@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	pkgerrors "github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 )
@@ -17,21 +18,21 @@ type SubscriptionValidator interface {
 }
 
 type subscriptionValidator struct {
-	sinkValidator SinkValidator
+	sinkValidator sinkValidator
 }
 
 // Perform a compile-time check.
 var _ SubscriptionValidator = &subscriptionValidator{}
 
-func NewSubscriptionValidator(sinkValidator SinkValidator) SubscriptionValidator {
-	return &subscriptionValidator{sinkValidator: sinkValidator}
+func NewSubscriptionValidator(client client.Client) SubscriptionValidator {
+	return &subscriptionValidator{sinkValidator: newSinkValidator(client)}
 }
 
 func (sv *subscriptionValidator) Validate(ctx context.Context, subscription eventingv1alpha2.Subscription) error {
 	if errs := validateSpec(subscription); len(errs) > 0 {
 		return fmt.Errorf("%w: %w", ErrSubscriptionValidationFailed, errs.ToAggregate())
 	}
-	if err := sv.sinkValidator.Validate(ctx, subscription.Spec.Sink); err != nil {
+	if err := sv.sinkValidator.validate(ctx, subscription.Spec.Sink); err != nil {
 		return fmt.Errorf("%w: %w", ErrSubscriptionValidationFailed, err)
 	}
 	return nil

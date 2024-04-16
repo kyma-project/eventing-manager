@@ -173,8 +173,7 @@ func startReconciler() error {
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller-jetstream")
 
 	// Init the Subscription validator.
-	sinkValidator := validator.NewSinkValidator(k8sClient)
-	subscriptionValidator := validator.NewSubscriptionValidator(sinkValidator)
+	subscriptionValidator := validator.NewSubscriptionValidator(k8sClient)
 
 	jsTestEnsemble.Reconciler = subscriptioncontrollerjetstream.NewReconciler(
 		k8sClient,

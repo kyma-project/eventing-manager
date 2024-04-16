@@ -789,8 +789,7 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *TestEnvironment 
 	jsCleaner := cleaner.NewJetStreamCleaner(defaultLogger)
 
 	// Init the Subscription validator.
-	sinkValidator := validator.NewSinkValidator(fakeClient)
-	subscriptionValidator := validator.NewSubscriptionValidator(sinkValidator)
+	subscriptionValidator := validator.NewSubscriptionValidator(fakeClient)
 
 	reconciler := Reconciler{
 		Backend:               mockedBackend,

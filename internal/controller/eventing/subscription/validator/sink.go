@@ -14,22 +14,22 @@ import (
 
 var ErrSinkValidationFailed = pkgerrors.New("Sink validation failed")
 
-type SinkValidator interface {
-	Validate(ctx context.Context, sink string) error
+type sinkValidator interface {
+	validate(ctx context.Context, sink string) error
 }
 
-type sinkValidator struct {
+type sinkServiceValidator struct {
 	client client.Client
 }
 
 // Perform a compile-time check.
-var _ SinkValidator = &sinkValidator{}
+var _ sinkValidator = &sinkServiceValidator{}
 
-func NewSinkValidator(client client.Client) SinkValidator {
-	return &sinkValidator{client: client}
+func newSinkValidator(client client.Client) sinkValidator {
+	return &sinkServiceValidator{client: client}
 }
 
-func (sv sinkValidator) Validate(ctx context.Context, sink string) error {
+func (sv sinkServiceValidator) validate(ctx context.Context, sink string) error {
 	_, subDomains, err := utils.GetSinkData(sink)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrSinkValidationFailed, err)
@@ -48,16 +48,16 @@ func (sv sinkValidator) Validate(ctx context.Context, sink string) error {
 	return nil
 }
 
-func (sv sinkValidator) serviceExists(ctx context.Context, namespace, name string) bool {
+func (sv sinkServiceValidator) serviceExists(ctx context.Context, namespace, name string) bool {
 	return sv.client.Get(ctx, ktypes.NamespacedName{Namespace: namespace, Name: name}, &kcorev1.Service{}) == nil
 }
 
-// SinkValidatorFunc implements the SinkValidator interface.
-type SinkValidatorFunc func(ctx context.Context, sink string) error
+// sinkValidatorFunc implements the sinkValidator interface.
+type sinkValidatorFunc func(ctx context.Context, sink string) error
 
 // Perform a compile-time check.
-var _ SinkValidator = SinkValidatorFunc(func(_ context.Context, _ string) error { return nil })
+var _ sinkValidator = sinkValidatorFunc(func(_ context.Context, _ string) error { return nil })
 
-func (svf SinkValidatorFunc) Validate(ctx context.Context, sink string) error {
+func (svf sinkValidatorFunc) validate(ctx context.Context, sink string) error {
 	return svf(ctx, sink)
 }

@@ -20,13 +20,13 @@ func TestValidate(t *testing.T) {
 		sink                = "https://eventing-nats.test.svc.cluster.local:8080"
 	)
 
-	happySinkValidator := SinkValidatorFunc(func(ctx context.Context, sinkURI string) error { return nil })
-	unhappySinkValidator := SinkValidatorFunc(func(ctx context.Context, sinkURI string) error { return ErrSinkValidationFailed })
+	happySinkValidator := sinkValidatorFunc(func(ctx context.Context, sinkURI string) error { return nil })
+	unhappySinkValidator := sinkValidatorFunc(func(ctx context.Context, sinkURI string) error { return ErrSinkValidationFailed })
 
 	tests := []struct {
 		name               string
 		givenSubscription  *eventingv1alpha2.Subscription
-		givenSinkValidator SinkValidator
+		givenSinkValidator sinkValidator
 		wantErr            error
 	}{
 		{

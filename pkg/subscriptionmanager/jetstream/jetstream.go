@@ -92,8 +92,7 @@ func (sm *SubscriptionManager) Start(defaultSubsConfig env.DefaultSubscriptionCo
 	recorder := sm.mgr.GetEventRecorderFor("eventing-controller-jetstream")
 
 	// Init the Subscription validator.
-	sinkValidator := validator.NewSinkValidator(client)
-	subscriptionValidator := validator.NewSubscriptionValidator(sinkValidator)
+	subscriptionValidator := validator.NewSubscriptionValidator(client)
 
 	// Initialize v1alpha2 event type cleaner
 	jsCleaner := cleaner.NewJetStreamCleaner(sm.logger)
