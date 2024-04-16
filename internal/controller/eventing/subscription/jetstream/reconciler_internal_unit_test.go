@@ -21,7 +21,7 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
-	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator/mocks"
+	subscriptionvalidatormocks "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	backendjetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
@@ -740,7 +740,7 @@ func Test_validateSubscription(t *testing.T) {
 	testEnv.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
 
 	// Set up the SubscriptionValidator mock.
-	validatorMock := &mocks.SubscriptionValidator{}
+	validatorMock := &subscriptionvalidatormocks.SubscriptionValidator{}
 	validatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil)
 
 	reconciler := NewReconciler(

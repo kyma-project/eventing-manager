@@ -196,6 +196,8 @@ linters-settings:
         alias: pkgerrors
       - pkg: github.com/kyma-project/eventing-manager/testing/eventmeshsub
         alias: eventmeshsubmatchers
+      - pkg: github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator/mocks
+        alias: subscriptionvalidatormocks
 
   ireturn:
     allow:

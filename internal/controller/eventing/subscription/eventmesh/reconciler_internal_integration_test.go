@@ -25,7 +25,7 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
-	validatormocks "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator/mocks"
+	subscriptionvalidatormocks "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh/mocks"
@@ -1395,7 +1395,7 @@ func Test_validateSubscription(t *testing.T) {
 	testEnv.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 
 	// Set up the SubscriptionValidator mock.
-	validatorMock := &validatormocks.SubscriptionValidator{}
+	validatorMock := &subscriptionvalidatormocks.SubscriptionValidator{}
 	validatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil)
 
 	reconciler := NewReconciler(
