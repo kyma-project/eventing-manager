@@ -25,6 +25,7 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
+	validatormocks "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh/mocks"
@@ -1374,6 +1375,52 @@ func Test_checkLastFailedDelivery(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_validateSubscription(t *testing.T) {
+	// given
+	subscription := eventingtesting.NewSubscription("test-subscription", "test",
+		eventingtesting.WithConditions(eventingv1alpha2.MakeSubscriptionConditions()),
+		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
+		eventingtesting.WithDefaultSource(),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedEventType),
+		eventingtesting.WithValidSink("test", "test-svc"),
+		eventingtesting.WithEmsSubscriptionStatus(string(types.SubscriptionStatusActive)),
+		eventingtesting.WithMaxInFlight(10),
+	)
+
+	// Set up the test environment.
+	testEnv := setupTestEnvironment(t, subscription)
+	testEnv.backend.On("Initialize", mock.Anything).Return(nil)
+	testEnv.backend.On("SyncSubscription", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+
+	// Set up the SubscriptionValidator mock.
+	validatorMock := &validatormocks.SubscriptionValidator{}
+	validatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil)
+
+	reconciler := NewReconciler(
+		testEnv.fakeClient,
+		testEnv.logger,
+		testEnv.recorder,
+		testEnv.cfg,
+		testEnv.cleaner,
+		testEnv.backend,
+		testEnv.credentials,
+		testEnv.mapper,
+		validatorMock,
+		metrics.NewCollector(),
+		utils.Domain,
+	)
+
+	// when
+	request := kctrl.Request{NamespacedName: ktypes.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Name}}
+	res, err := reconciler.Reconcile(context.Background(), request)
+
+	// then
+	require.Equal(t, kctrl.Result{}, res)
+	require.NoError(t, err)
+	validatorMock.AssertExpectations(t)
+	testEnv.backend.AssertExpectations(t)
 }
 
 // helper functions and structs

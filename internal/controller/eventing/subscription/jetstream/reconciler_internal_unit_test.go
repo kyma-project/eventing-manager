@@ -733,6 +733,7 @@ func Test_validateSubscription(t *testing.T) {
 		eventingtesting.WithSink("http://test.test.svc.cluster.local"),
 	)
 
+	// Set up the test environment.
 	testEnv := setupTestEnvironment(t, subscription)
 	testEnv.Backend.On("SyncSubscription", mock.Anything).Return(nil)
 	testEnv.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return([]string{eventingtesting.JetStreamSubject})
