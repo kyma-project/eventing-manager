@@ -71,7 +71,6 @@ func Test_CreateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, "invalid")),
-					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: func(namespace string) gomegatypes.GomegaMatcher {
@@ -95,7 +94,6 @@ func Test_CreateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
-					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: func(namespace string) gomegatypes.GomegaMatcher {
@@ -202,7 +200,6 @@ func Test_CreateSubscription(t *testing.T) {
 					eventingtesting.WithNotCleanType(),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
-					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: func(namespace string) gomegatypes.GomegaMatcher {
@@ -385,7 +382,6 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
-					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: gomega.And(
@@ -406,7 +402,6 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
-					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantUpdateSubscriptionMatchers: gomega.And(
@@ -433,7 +428,6 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
-					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: gomega.And(
@@ -457,7 +451,6 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
-					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantUpdateSubscriptionMatchers: gomega.And(
@@ -484,7 +477,6 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
-					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantSubscriptionMatchers: gomega.And(
@@ -507,7 +499,6 @@ func Test_UpdateSubscription(t *testing.T) {
 					}),
 					eventingtesting.WithWebhookAuthForEventMesh(),
 					eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, testName)),
-					eventingtesting.WithMaxInFlight(10),
 				)
 			},
 			wantUpdateSubscriptionMatchers: gomega.And(
@@ -629,7 +620,6 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 			eventingtesting.WithWebhookAuthForEventMesh(),
 			// The following sink is invalid because it has an invalid svc name
 			eventingtesting.WithSinkURL(eventingtesting.ValidSinkURL(namespace, "invalid")),
-			eventingtesting.WithMaxInFlight(10),
 		)
 	}
 
@@ -650,7 +640,6 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 			eventingtesting.WithOrderCreatedV1Event(),
 			eventingtesting.WithWebhookAuthForEventMesh(),
 			eventingtesting.WithSink(fmt.Sprintf(sinkFormat, name, namespace, path)),
-			eventingtesting.WithMaxInFlight(10),
 		)
 	}
 
@@ -840,7 +829,6 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 		eventingtesting.WithDefaultSource(),
 		eventingtesting.WithOrderCreatedV1Event(),
 		eventingtesting.WithSinkURL(eventingtesting.ValidSinkURLWithPath(testNamespace, sub1Name, "path1")),
-		eventingtesting.WithMaxInFlight(10),
 	)
 	ensureK8sResourceCreated(ctx, t, givenSubscription1)
 	createdSubscription1 := givenSubscription1.DeepCopy()
@@ -874,7 +862,6 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 		eventingtesting.WithDefaultSource(),
 		eventingtesting.WithOrderCreatedV1Event(),
 		eventingtesting.WithSinkURL(eventingtesting.ValidSinkURLWithPath(testNamespace, sub2Name, "path2")),
-		eventingtesting.WithMaxInFlight(10),
 	)
 	ensureK8sResourceCreated(ctx, t, givenSubscription2)
 	createdSubscription2 := givenSubscription2.DeepCopy()
