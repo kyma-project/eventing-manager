@@ -23,16 +23,16 @@ func validateSpec(subscription eventingv1alpha2.Subscription) field.ErrorList {
 	if err := validateTypeMatching(subscription.Spec.TypeMatching); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := validateSource(subscription); err != nil {
+	if err := validateSource(subscription.Spec.Source, subscription.Spec.TypeMatching); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := validateTypes(subscription); err != nil {
+	if err := validateTypes(subscription.Spec.Types, subscription.Spec.TypeMatching); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := validateConfig(subscription); err != nil {
+	if err := validateConfig(subscription.Spec.Config); err != nil {
 		allErrs = append(allErrs, err...)
 	}
-	if err := validateSink(subscription); err != nil {
+	if err := validateSink(subscription.Spec.Sink, subscription.Namespace); err != nil {
 		allErrs = append(allErrs, err)
 	}
 	if len(allErrs) == 0 {
@@ -48,32 +48,32 @@ func validateTypeMatching(typeMatching eventingv1alpha2.TypeMatching) *field.Err
 	return nil
 }
 
-func validateSource(subscription eventingv1alpha2.Subscription) *field.Error {
-	if subscription.Spec.Source == "" && subscription.Spec.TypeMatching != eventingv1alpha2.TypeMatchingExact {
-		return makeInvalidFieldError(sourcePath, subscription.Spec.Source, emptyErrDetail)
+func validateSource(source string, typeMatching eventingv1alpha2.TypeMatching) *field.Error {
+	if source == "" && typeMatching != eventingv1alpha2.TypeMatchingExact {
+		return makeInvalidFieldError(sourcePath, source, emptyErrDetail)
 	}
 	// Check only if the source is valid for the cloud event, with a valid event type.
-	if isInvalidCE(subscription.Spec.Source, "") {
-		return makeInvalidFieldError(sourcePath, subscription.Spec.Source, invalidURIErrDetail)
+	if isInvalidCE(source, "") {
+		return makeInvalidFieldError(sourcePath, source, invalidURIErrDetail)
 	}
 	return nil
 }
 
-func validateTypes(subscription eventingv1alpha2.Subscription) *field.Error {
-	if subscription.Spec.Types == nil || len(subscription.Spec.Types) == 0 {
+func validateTypes(types []string, typeMatching eventingv1alpha2.TypeMatching) *field.Error {
+	if len(types) == 0 {
 		return makeInvalidFieldError(typesPath, "", emptyErrDetail)
 	}
-	if duplicates := subscription.GetDuplicateTypes(); len(duplicates) > 0 {
+	if duplicates := getDuplicates(types); len(duplicates) > 0 {
 		return makeInvalidFieldError(typesPath, strings.Join(duplicates, ","), duplicateTypesErrDetail)
 	}
-	for _, eventType := range subscription.Spec.Types {
+	for _, eventType := range types {
 		if len(eventType) == 0 {
 			return makeInvalidFieldError(typesPath, eventType, lengthErrDetail)
 		}
 		if segments := strings.Split(eventType, "."); len(segments) < minEventTypeSegments {
 			return makeInvalidFieldError(typesPath, eventType, minSegmentErrDetail)
 		}
-		if subscription.Spec.TypeMatching != eventingv1alpha2.TypeMatchingExact && strings.HasPrefix(eventType, validPrefix) {
+		if typeMatching != eventingv1alpha2.TypeMatchingExact && strings.HasPrefix(eventType, validPrefix) {
 			return makeInvalidFieldError(typesPath, eventType, invalidPrefixErrDetail)
 		}
 		// Check only is the event type is valid for the cloud event, with a valid source.
@@ -85,58 +85,58 @@ func validateTypes(subscription eventingv1alpha2.Subscription) *field.Error {
 	return nil
 }
 
-func validateConfig(subscription eventingv1alpha2.Subscription) field.ErrorList {
+func validateConfig(config map[string]string) field.ErrorList {
 	var allErrs field.ErrorList
-	if isNotInt(subscription.Spec.Config[eventingv1alpha2.MaxInFlightMessages]) {
-		allErrs = append(allErrs, makeInvalidFieldError(configPath, subscription.Spec.Config[eventingv1alpha2.MaxInFlightMessages], stringIntErrDetail))
+	if isNotInt(config[eventingv1alpha2.MaxInFlightMessages]) {
+		allErrs = append(allErrs, makeInvalidFieldError(configPath, config[eventingv1alpha2.MaxInFlightMessages], stringIntErrDetail))
 	}
-	if ifKeyExistsInConfig(subscription, eventingv1alpha2.ProtocolSettingsQos) && types.IsInvalidQoS(subscription.Spec.Config[eventingv1alpha2.ProtocolSettingsQos]) {
-		allErrs = append(allErrs, makeInvalidFieldError(configPath, subscription.Spec.Config[eventingv1alpha2.ProtocolSettingsQos], invalidQosErrDetail))
+	if ifKeyExistsInConfig(config, eventingv1alpha2.ProtocolSettingsQos) && types.IsInvalidQoS(config[eventingv1alpha2.ProtocolSettingsQos]) {
+		allErrs = append(allErrs, makeInvalidFieldError(configPath, config[eventingv1alpha2.ProtocolSettingsQos], invalidQosErrDetail))
 	}
-	if ifKeyExistsInConfig(subscription, eventingv1alpha2.WebhookAuthType) && types.IsInvalidAuthType(subscription.Spec.Config[eventingv1alpha2.WebhookAuthType]) {
-		allErrs = append(allErrs, makeInvalidFieldError(configPath, subscription.Spec.Config[eventingv1alpha2.WebhookAuthType], invalidAuthTypeErrDetail))
+	if ifKeyExistsInConfig(config, eventingv1alpha2.WebhookAuthType) && types.IsInvalidAuthType(config[eventingv1alpha2.WebhookAuthType]) {
+		allErrs = append(allErrs, makeInvalidFieldError(configPath, config[eventingv1alpha2.WebhookAuthType], invalidAuthTypeErrDetail))
 	}
-	if ifKeyExistsInConfig(subscription, eventingv1alpha2.WebhookAuthGrantType) && types.IsInvalidGrantType(subscription.Spec.Config[eventingv1alpha2.WebhookAuthGrantType]) {
-		allErrs = append(allErrs, makeInvalidFieldError(configPath, subscription.Spec.Config[eventingv1alpha2.WebhookAuthGrantType], invalidGrantTypeErrDetail))
+	if ifKeyExistsInConfig(config, eventingv1alpha2.WebhookAuthGrantType) && types.IsInvalidGrantType(config[eventingv1alpha2.WebhookAuthGrantType]) {
+		allErrs = append(allErrs, makeInvalidFieldError(configPath, config[eventingv1alpha2.WebhookAuthGrantType], invalidGrantTypeErrDetail))
 	}
 	return allErrs
 }
 
-func validateSink(subscription eventingv1alpha2.Subscription) *field.Error {
-	if subscription.Spec.Sink == "" {
-		return makeInvalidFieldError(sinkPath, subscription.Spec.Sink, emptyErrDetail)
+func validateSink(sink, namespace string) *field.Error {
+	if sink == "" {
+		return makeInvalidFieldError(sinkPath, sink, emptyErrDetail)
 	}
 
-	if !utils.IsValidScheme(subscription.Spec.Sink) {
-		return makeInvalidFieldError(sinkPath, subscription.Spec.Sink, missingSchemeErrDetail)
+	if !utils.IsValidScheme(sink) {
+		return makeInvalidFieldError(sinkPath, sink, missingSchemeErrDetail)
 	}
 
-	trimmedHost, subDomains, err := utils.GetSinkData(subscription.Spec.Sink)
+	trimmedHost, subDomains, err := utils.GetSinkData(sink)
 	if err != nil {
-		return makeInvalidFieldError(sinkPath, subscription.Spec.Sink, err.Error())
+		return makeInvalidFieldError(sinkPath, sink, err.Error())
 	}
 
 	// Validate sink URL is a cluster local URL.
 	if !strings.HasSuffix(trimmedHost, clusterLocalURLSuffix) {
-		return makeInvalidFieldError(sinkPath, subscription.Spec.Sink, suffixMissingErrDetail)
+		return makeInvalidFieldError(sinkPath, sink, suffixMissingErrDetail)
 	}
 
 	// We expected a sink in the format "service.namespace.svc.cluster.local".
 	if len(subDomains) != subdomainSegments {
-		return makeInvalidFieldError(sinkPath, subscription.Spec.Sink, subDomainsErrDetail+trimmedHost)
+		return makeInvalidFieldError(sinkPath, sink, subDomainsErrDetail+trimmedHost)
 	}
 
 	// Assumption: Subscription CR and Subscriber should be deployed in the same namespace.
 	svcNs := subDomains[1]
-	if subscription.Namespace != svcNs {
-		return makeInvalidFieldError(namespacePath, subscription.Spec.Sink, namespaceMismatchErrDetail+svcNs)
+	if namespace != svcNs {
+		return makeInvalidFieldError(namespacePath, sink, namespaceMismatchErrDetail+svcNs)
 	}
 
 	return nil
 }
 
-func ifKeyExistsInConfig(subscription eventingv1alpha2.Subscription, key string) bool {
-	_, ok := subscription.Spec.Config[key]
+func ifKeyExistsInConfig(config map[string]string, key string) bool {
+	_, ok := config[key]
 	return ok
 }
 
@@ -155,4 +155,20 @@ func isInvalidCE(source, eventType string) bool {
 	newEvent.SetSource(source)
 	err := newEvent.Validate()
 	return err != nil
+}
+
+// getDuplicates returns the duplicate items from the given list.
+func getDuplicates(items []string) []string {
+	if len(items) == 0 {
+		return items
+	}
+	const duplicatesCount = 2
+	itemsMap := make(map[string]int, len(items))
+	duplicates := make([]string, 0, len(items))
+	for _, t := range items {
+		if itemsMap[t]++; itemsMap[t] == duplicatesCount {
+			duplicates = append(duplicates, t)
+		}
+	}
+	return duplicates
 }

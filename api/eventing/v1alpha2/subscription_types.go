@@ -116,22 +116,6 @@ func (s *Subscription) GetUniqueTypes() []string {
 	return result
 }
 
-// GetDuplicateTypes returns the duplicate types from the Subscription spec.
-func (s *Subscription) GetDuplicateTypes() []string {
-	if len(s.Spec.Types) == 0 {
-		return s.Spec.Types
-	}
-	const duplicatesCount = 2
-	types := make(map[string]int, len(s.Spec.Types))
-	duplicates := make([]string, 0, len(s.Spec.Types))
-	for _, t := range s.Spec.Types {
-		if types[t]++; types[t] == duplicatesCount {
-			duplicates = append(duplicates, t)
-		}
-	}
-	return duplicates
-}
-
 func (s *Subscription) DuplicateWithStatusDefaults() *Subscription {
 	desiredSub := s.DeepCopy()
 	desiredSub.Status = SubscriptionStatus{}

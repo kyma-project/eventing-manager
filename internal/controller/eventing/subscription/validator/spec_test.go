@@ -3,6 +3,7 @@ package validator
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -401,6 +402,84 @@ func Test_isInvalidCE(t *testing.T) {
 			t.Parallel()
 			gotIsInvalid := isInvalidCE(tc.givenSource, tc.givenType)
 			require.Equal(t, tc.wantIsInvalid, gotIsInvalid)
+		})
+	}
+}
+
+func Test_getDuplicates(t *testing.T) {
+	tests := []struct {
+		name               string
+		givenTypes         []string
+		wantDuplicateTypes []string
+	}{
+		{
+			name:               "with nil types",
+			givenTypes:         nil,
+			wantDuplicateTypes: nil,
+		},
+		{
+			name:               "with empty types",
+			givenTypes:         []string{},
+			wantDuplicateTypes: []string{},
+		},
+		{
+			name: "with one type",
+			givenTypes: []string{
+				"type0",
+			},
+			wantDuplicateTypes: []string{},
+		},
+		{
+			name: "with multiple types and no duplicates",
+			givenTypes: []string{
+				"type0",
+				"type1",
+				"type2",
+			},
+			wantDuplicateTypes: []string{},
+		},
+		{
+			name: "with one type which is a duplicate",
+			givenTypes: []string{
+				"type0", "type0",
+			},
+			wantDuplicateTypes: []string{
+				"type0",
+			},
+		},
+		{
+			name: "with multiple types and consequent duplicates",
+			givenTypes: []string{
+				"type0",
+				"type1", "type1", "type1", // duplicates
+				"type2", "type2", // duplicates
+				"type3",
+				"type4", "type4", "type4", "type4", // duplicates
+				"type5",
+			},
+			wantDuplicateTypes: []string{
+				"type1", "type2", "type4",
+			},
+		},
+		{
+			name: "with multiple types and non-consequent duplicates",
+			givenTypes: []string{
+				"type5", "type0", "type1", "type2",
+				"type1", // duplicate
+				"type3", "type4",
+				"type5", // duplicate
+				"type6",
+				"type4", "type2", // duplicates
+			},
+			wantDuplicateTypes: []string{
+				"type1", "type5", "type4", "type2",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotDuplicateTypes := getDuplicates(tt.givenTypes)
+			assert.Equal(t, tt.wantDuplicateTypes, gotDuplicateTypes)
 		})
 	}
 }
