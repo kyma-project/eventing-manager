@@ -12,11 +12,12 @@ import (
 
 //nolint:gochecknoglobals // these are required for testing
 var (
-	sourcePath    = field.NewPath("spec").Child("source")
-	typesPath     = field.NewPath("spec").Child("types")
-	configPath    = field.NewPath("spec").Child("config")
-	sinkPath      = field.NewPath("spec").Child("sink")
-	namespacePath = field.NewPath("metadata").Child("namespace")
+	sourcePath       = field.NewPath("spec").Child("source")
+	typesPath        = field.NewPath("spec").Child("types")
+	configPath       = field.NewPath("spec").Child("config")
+	sinkPath         = field.NewPath("spec").Child("sink")
+	typeMatchingPath = field.NewPath("spec").Child("typeMatching")
+	namespacePath    = field.NewPath("metadata").Child("namespace")
 
 	emptyErrDetail          = "must not be empty"
 	invalidURIErrDetail     = "must be valid as per RFC 3986"
@@ -26,9 +27,10 @@ var (
 	invalidPrefixErrDetail  = fmt.Sprintf("must not have %s as type prefix", validPrefix)
 	stringIntErrDetail      = fmt.Sprintf("%s must be a stringified int value", eventingv1alpha2.MaxInFlightMessages)
 
-	invalidQosErrDetail       = fmt.Sprintf("must be a valid QoS value %s or %s", types.QosAtLeastOnce, types.QosAtMostOnce)
-	invalidAuthTypeErrDetail  = fmt.Sprintf("must be a valid Auth Type value %s", types.AuthTypeClientCredentials)
-	invalidGrantTypeErrDetail = fmt.Sprintf("must be a valid Grant Type value %s", types.GrantTypeClientCredentials)
+	invalidQosErrDetail          = fmt.Sprintf("must be a valid QoS value %s or %s", types.QosAtLeastOnce, types.QosAtMostOnce)
+	invalidAuthTypeErrDetail     = fmt.Sprintf("must be a valid Auth Type value %s", types.AuthTypeClientCredentials)
+	invalidGrantTypeErrDetail    = fmt.Sprintf("must be a valid Grant Type value %s", types.GrantTypeClientCredentials)
+	invalidTypeMatchingErrDetail = fmt.Sprintf("must be a valid TypeMatching value %s or %s", eventingv1alpha2.TypeMatchingExact, eventingv1alpha2.TypeMatchingStandard)
 
 	missingSchemeErrDetail     = "must have URL scheme 'http' or 'https'"
 	suffixMissingErrDetail     = fmt.Sprintf("must have valid sink URL suffix %s", clusterLocalURLSuffix)

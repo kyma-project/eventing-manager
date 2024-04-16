@@ -20,6 +20,9 @@ const (
 
 func validateSpec(subscription eventingv1alpha2.Subscription) field.ErrorList {
 	var allErrs field.ErrorList
+	if err := validateTypeMatching(subscription.Spec.TypeMatching); err != nil {
+		allErrs = append(allErrs, err)
+	}
 	if err := validateSource(subscription); err != nil {
 		allErrs = append(allErrs, err)
 	}
@@ -36,6 +39,13 @@ func validateSpec(subscription eventingv1alpha2.Subscription) field.ErrorList {
 		return nil
 	}
 	return allErrs
+}
+
+func validateTypeMatching(typeMatching eventingv1alpha2.TypeMatching) *field.Error {
+	if typeMatching != eventingv1alpha2.TypeMatchingExact && typeMatching != eventingv1alpha2.TypeMatchingStandard {
+		return makeInvalidFieldError(typeMatchingPath, string(typeMatching), invalidTypeMatchingErrDetail)
+	}
+	return nil
 }
 
 func validateSource(subscription eventingv1alpha2.Subscription) *field.Error {

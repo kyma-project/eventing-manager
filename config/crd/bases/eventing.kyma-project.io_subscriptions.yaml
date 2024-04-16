@@ -72,9 +72,6 @@ spec:
                   - `standard`: backend-specific logic will be applied to the configured source and types.<br />
                   - `exact`: no further processing will be applied to the configured source and types.
                 type: string
-                x-kubernetes-validations:
-                - message: typeMatching can only be set to standard or exact
-                  rule: self=='standard' || self=='exact'
               types:
                 description: List of event types that will be used for subscribing
                   on the backend.

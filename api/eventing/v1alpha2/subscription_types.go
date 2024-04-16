@@ -31,7 +31,6 @@ type SubscriptionSpec struct {
 	// - `standard`: backend-specific logic will be applied to the configured source and types.<br />
 	// - `exact`: no further processing will be applied to the configured source and types.
 	// +kubebuilder:default:="standard"
-	// +kubebuilder:validation:XValidation:rule="self=='standard' || self=='exact'", message="typeMatching can only be set to standard or exact"
 	TypeMatching TypeMatching `json:"typeMatching,omitempty"`
 
 	// Defines the origin of the event.
