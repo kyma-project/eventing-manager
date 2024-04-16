@@ -41,7 +41,7 @@ type SubscriptionSpec struct {
 
 	// Map of configuration options that will be applied on the backend.
 	// +optional
-	// +kubebuilder:default={"maxInFlightMessages":"10"}
+	// +kubebuilder:default:={"maxInFlightMessages":"10"}
 	Config map[string]string `json:"config,omitempty"`
 }
 
