@@ -129,12 +129,16 @@ rules:
   - watch
 - apiGroups:
   - batch
+  resourceNames:
+  - '["eventing-manager-cert-handler"]'
   resources:
   - cronjobs
   verbs:
   - delete
 - apiGroups:
   - batch
+  resourceNames:
+  - '["eventing-manager-cert-handler"]'
   resources:
   - jobs
   verbs:

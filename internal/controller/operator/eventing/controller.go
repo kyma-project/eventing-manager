@@ -172,8 +172,8 @@ func NewReconciler(
 // +kubebuilder:rbac:groups="eventing.kyma-project.io",resources=subscriptions,verbs=get;list;watch;update;patch;create;delete
 // +kubebuilder:rbac:groups=eventing.kyma-project.io,resources=subscriptions/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=security.istio.io,resources=peerauthentications,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=delete
-// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=delete
+// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=delete,resourceNames=["eventing-manager-cert-handler"]
+// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=delete,resourceNames=["eventing-manager-cert-handler"]
 // Generate required RBAC to emit kubernetes events in the controller.
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
