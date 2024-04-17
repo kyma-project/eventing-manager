@@ -1,10 +1,11 @@
 package eventing
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	kappsv1 "k8s.io/api/apps/v1"
 	"k8s.io/utils/ptr"
-	"testing"
 )
 
 func Test_IsDeploymentReady(t *testing.T) {
