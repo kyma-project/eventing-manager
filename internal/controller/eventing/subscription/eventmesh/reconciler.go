@@ -188,9 +188,6 @@ func (r *Reconciler) validateSubscription(ctx context.Context, subscription *eve
 	var err error
 	if err = r.subscriptionValidator.Validate(ctx, *subscription); err != nil {
 		subscription.Status.SetNotReady()
-		subscription.Status.ClearTypes()
-		subscription.Status.ClearBackend()
-		subscription.Status.ClearConditions()
 	}
 	subscription.Status.SetSubscriptionSpecValidCondition(err)
 	return err
