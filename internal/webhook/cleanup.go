@@ -10,16 +10,17 @@ import (
 	kctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	namespace                      = "kyma-system"
+	service                        = "eventing-manager-webhook-service"
+	cronjob                        = "eventing-manager-cert-handler"
+	job                            = "eventing-manager-cert-handler"
+	mutatingWebhookConfiguration   = "subscription-mutating-webhook-configuration"
+	validatingWebhookConfiguration = "subscription-validating-webhook-configuration"
+)
+
 // CleanupResources removes the mutating and validating webhook resources.
 func CleanupResources(ctx context.Context, client kctrlclient.Client) []error {
-	const (
-		namespace                      = "kyma-system"
-		service                        = "eventing-manager-webhook-service"
-		cronjob                        = "eventing-manager-cert-handler"
-		job                            = "eventing-manager-cert-handler"
-		mutatingWebhookConfiguration   = "subscription-mutating-webhook-configuration"
-		validatingWebhookConfiguration = "subscription-validating-webhook-configuration"
-	)
 	const capacity = 5
 	errList := make([]error, 0, capacity)
 	errList = appendIfError(errList, deleteService(ctx, client, namespace, service))
