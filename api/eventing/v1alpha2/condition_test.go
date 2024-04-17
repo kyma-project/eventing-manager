@@ -44,12 +44,14 @@ func Test_makeSubscriptionSpecValidCondition(t *testing.T) {
 		},
 		{
 			name:                               "error",
-			givenError:                         errors.New("some error"),
+			givenError:                         errors.New("some error"), //nolint: goerr113 // used for testing only
 			wantSubscriptionSpecValidCondition: subscriptionSpecValidFalseCondition,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			// when
 			gotCondition := makeSubscriptionSpecValidCondition(test.givenError)
 
