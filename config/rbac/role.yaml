@@ -130,7 +130,7 @@ rules:
 - apiGroups:
   - batch
   resourceNames:
-  - '["eventing-manager-cert-handler"]'
+  - eventing-manager-cert-handler
   resources:
   - cronjobs
   verbs:
@@ -138,7 +138,7 @@ rules:
 - apiGroups:
   - batch
   resourceNames:
-  - '["eventing-manager-cert-handler"]'
+  - eventing-manager-cert-handler
   resources:
   - jobs
   verbs:
