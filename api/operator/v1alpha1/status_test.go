@@ -124,14 +124,6 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 			Reason:             "PublisherProxyReadyReason",
 			Message:            "PublisherProxyReadyMessage",
 		}
-		webhookReadyCondition = kmetav1.Condition{
-			Type:               "WebhookReady",
-			Status:             kmetav1.ConditionStatus("WebhookReadyStatus"),
-			ObservedGeneration: int64(3),
-			LastTransitionTime: kmetav1.Time{Time: time.Date(2003, 0o3, 0o3, 0o3, 0o3, 0o3, 0o00000003, time.UTC)},
-			Reason:             "WebhookReadyReason",
-			Message:            "WebhookReadyMessage",
-		}
 		subscriptionManagerReadyCondition = kmetav1.Condition{
 			Type:               "SubscriptionManagerReady",
 			Status:             kmetav1.ConditionStatus("SubscriptionManagerReadyStatus"),
@@ -220,7 +212,6 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 				Conditions: []kmetav1.Condition{
 					backendAvailableCondition,
 					publisherProxyReadyCondition,
-					webhookReadyCondition,
 					subscriptionManagerReadyCondition,
 					deletedCondition,
 				},
@@ -229,7 +220,6 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 				Conditions: []kmetav1.Condition{
 					backendAvailableCondition,
 					publisherProxyReadyCondition,
-					webhookReadyCondition,
 					subscriptionManagerReadyCondition,
 					deletedCondition,
 				},
@@ -257,7 +247,6 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 					unsupportedTypeCondition3,
 					backendAvailableCondition,
 					publisherProxyReadyCondition,
-					webhookReadyCondition,
 					subscriptionManagerReadyCondition,
 					deletedCondition,
 				},
@@ -266,7 +255,6 @@ func TestRemoveUnsupportedConditions(t *testing.T) {
 				Conditions: []kmetav1.Condition{
 					backendAvailableCondition,
 					publisherProxyReadyCondition,
-					webhookReadyCondition,
 					subscriptionManagerReadyCondition,
 					deletedCondition,
 				},

@@ -3,12 +3,10 @@
 package mocks
 
 import (
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	appsv1 "k8s.io/api/apps/v1"
-
-	client "sigs.k8s.io/controller-runtime/pkg/client"
-
 	context "context"
+
+	appsv1 "k8s.io/api/apps/v1"
+	client "sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -578,65 +576,6 @@ func (_c *Client_GetDeploymentDynamic_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
-// GetMutatingWebHookConfiguration provides a mock function with given fields: ctx, name
-func (_m *Client) GetMutatingWebHookConfiguration(ctx context.Context, name string) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
-	ret := _m.Called(ctx, name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetMutatingWebHookConfiguration")
-	}
-
-	var r0 *admissionregistrationv1.MutatingWebhookConfiguration
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*admissionregistrationv1.MutatingWebhookConfiguration, error)); ok {
-		return rf(ctx, name)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *admissionregistrationv1.MutatingWebhookConfiguration); ok {
-		r0 = rf(ctx, name)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*admissionregistrationv1.MutatingWebhookConfiguration)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Client_GetMutatingWebHookConfiguration_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetMutatingWebHookConfiguration'
-type Client_GetMutatingWebHookConfiguration_Call struct {
-	*mock.Call
-}
-
-// GetMutatingWebHookConfiguration is a helper method to define mock.On call
-//   - ctx context.Context
-//   - name string
-func (_e *Client_Expecter) GetMutatingWebHookConfiguration(ctx interface{}, name interface{}) *Client_GetMutatingWebHookConfiguration_Call {
-	return &Client_GetMutatingWebHookConfiguration_Call{Call: _e.mock.On("GetMutatingWebHookConfiguration", ctx, name)}
-}
-
-func (_c *Client_GetMutatingWebHookConfiguration_Call) Run(run func(ctx context.Context, name string)) *Client_GetMutatingWebHookConfiguration_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *Client_GetMutatingWebHookConfiguration_Call) Return(_a0 *admissionregistrationv1.MutatingWebhookConfiguration, _a1 error) *Client_GetMutatingWebHookConfiguration_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Client_GetMutatingWebHookConfiguration_Call) RunAndReturn(run func(context.Context, string) (*admissionregistrationv1.MutatingWebhookConfiguration, error)) *Client_GetMutatingWebHookConfiguration_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetNATSResources provides a mock function with given fields: ctx, namespace
 func (_m *Client) GetNATSResources(ctx context.Context, namespace string) (*v1alpha1.NATSList, error) {
 	ret := _m.Called(ctx, namespace)
@@ -809,65 +748,6 @@ func (_c *Client_GetSubscriptions_Call) Return(_a0 *v1alpha2.SubscriptionList, _
 }
 
 func (_c *Client_GetSubscriptions_Call) RunAndReturn(run func(context.Context) (*v1alpha2.SubscriptionList, error)) *Client_GetSubscriptions_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetValidatingWebHookConfiguration provides a mock function with given fields: ctx, name
-func (_m *Client) GetValidatingWebHookConfiguration(ctx context.Context, name string) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
-	ret := _m.Called(ctx, name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetValidatingWebHookConfiguration")
-	}
-
-	var r0 *admissionregistrationv1.ValidatingWebhookConfiguration
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*admissionregistrationv1.ValidatingWebhookConfiguration, error)); ok {
-		return rf(ctx, name)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *admissionregistrationv1.ValidatingWebhookConfiguration); ok {
-		r0 = rf(ctx, name)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*admissionregistrationv1.ValidatingWebhookConfiguration)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Client_GetValidatingWebHookConfiguration_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetValidatingWebHookConfiguration'
-type Client_GetValidatingWebHookConfiguration_Call struct {
-	*mock.Call
-}
-
-// GetValidatingWebHookConfiguration is a helper method to define mock.On call
-//   - ctx context.Context
-//   - name string
-func (_e *Client_Expecter) GetValidatingWebHookConfiguration(ctx interface{}, name interface{}) *Client_GetValidatingWebHookConfiguration_Call {
-	return &Client_GetValidatingWebHookConfiguration_Call{Call: _e.mock.On("GetValidatingWebHookConfiguration", ctx, name)}
-}
-
-func (_c *Client_GetValidatingWebHookConfiguration_Call) Run(run func(ctx context.Context, name string)) *Client_GetValidatingWebHookConfiguration_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *Client_GetValidatingWebHookConfiguration_Call) Return(_a0 *admissionregistrationv1.ValidatingWebhookConfiguration, _a1 error) *Client_GetValidatingWebHookConfiguration_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Client_GetValidatingWebHookConfiguration_Call) RunAndReturn(run func(context.Context, string) (*admissionregistrationv1.ValidatingWebhookConfiguration, error)) *Client_GetValidatingWebHookConfiguration_Call {
 	_c.Call.Return(run)
 	return _c
 }

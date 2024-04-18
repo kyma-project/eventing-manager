@@ -48,6 +48,7 @@ func Test_InitializeSubscriptionConditions(t *testing.T) {
 				v1alpha2.ConditionSubscriptionActive,
 				v1alpha2.ConditionAPIRuleStatus,
 				v1alpha2.ConditionWebhookCallStatus,
+				v1alpha2.ConditionSubscriptionSpecValid,
 			}
 
 			// when
@@ -130,6 +131,7 @@ func Test_IsReady(t *testing.T) {
 				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscriptionSpecValid, Status: kcorev1.ConditionTrue},
 			},
 			wantReadyStatus: true,
 		},
@@ -208,6 +210,7 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscriptionSpecValid, Status: kcorev1.ConditionTrue},
 			},
 			wantStatus: false,
 		},
@@ -230,6 +233,7 @@ func Test_ShouldUpdateReadyStatus(t *testing.T) {
 				{Type: v1alpha2.ConditionSubscriptionActive, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionAPIRuleStatus, Status: kcorev1.ConditionTrue},
 				{Type: v1alpha2.ConditionWebhookCallStatus, Status: kcorev1.ConditionTrue},
+				{Type: v1alpha2.ConditionSubscriptionSpecValid, Status: kcorev1.ConditionTrue},
 			},
 			wantStatus: true,
 		},
@@ -540,13 +544,149 @@ func Test_SetConditionSubscriptionActive(t *testing.T) {
 			sub.Status.Conditions = testcase.givenConditions
 
 			// when
-			conditions := v1alpha2.GetSubscriptionActiveCondition(sub, testcase.givenError)
+			v1alpha2.SetSubscriptionActiveCondition(&sub.Status, testcase.givenError)
 
 			// then
-			require.True(t, v1alpha2.ConditionsEquals(conditions, testcase.wantConditions))
+			require.True(t, v1alpha2.ConditionsEquals(sub.Status.Conditions, testcase.wantConditions))
 			if testcase.wantLastTransitionTime != nil {
-				require.Equal(t, *testcase.wantLastTransitionTime, conditions[0].LastTransitionTime)
+				require.Equal(t, *testcase.wantLastTransitionTime, sub.Status.Conditions[0].LastTransitionTime)
 			}
+		})
+	}
+}
+
+func TestSetSubscriptionSpecValidCondition(t *testing.T) {
+	t.Parallel()
+
+	var (
+		// subscription spec valid conditions
+		subscriptionSpecValidTrueCondition = v1alpha2.Condition{
+			Type:               v1alpha2.ConditionSubscriptionSpecValid,
+			Status:             kcorev1.ConditionTrue,
+			LastTransitionTime: kmetav1.Now(),
+			Reason:             v1alpha2.ConditionReasonSubscriptionSpecHasNoValidationErrors,
+			Message:            "",
+		}
+		subscriptionSpecValidFalseCondition = v1alpha2.Condition{
+			Type:               v1alpha2.ConditionSubscriptionSpecValid,
+			Status:             kcorev1.ConditionFalse,
+			LastTransitionTime: kmetav1.Now(),
+			Reason:             v1alpha2.ConditionReasonSubscriptionSpecHasValidationErrors,
+			Message:            "some error",
+		}
+
+		// test conditions
+		testCondition0 = v1alpha2.Condition{
+			Type:               v1alpha2.ConditionType("test-0"),
+			Status:             kcorev1.ConditionTrue,
+			LastTransitionTime: kmetav1.Now(),
+			Reason:             "test-0",
+			Message:            "test-0",
+		}
+		testCondition1 = v1alpha2.Condition{
+			Type:               v1alpha2.ConditionType("test-1"),
+			Status:             kcorev1.ConditionTrue,
+			LastTransitionTime: kmetav1.Now(),
+			Reason:             "test-1",
+			Message:            "test-1",
+		}
+	)
+
+	tests := []struct {
+		name                    string
+		givenSubscriptionStatus v1alpha2.SubscriptionStatus
+		givenError              error
+		wantSubscriptionStatus  v1alpha2.SubscriptionStatus
+	}{
+		{
+			name: "add SubscriptionSpecValid condition to nil conditions",
+			givenSubscriptionStatus: v1alpha2.SubscriptionStatus{
+				Conditions: nil,
+			},
+			givenError: nil,
+			wantSubscriptionStatus: v1alpha2.SubscriptionStatus{
+				Conditions: []v1alpha2.Condition{
+					subscriptionSpecValidTrueCondition,
+				},
+			},
+		},
+		{
+			name: "add SubscriptionSpecValid condition to empty conditions",
+			givenSubscriptionStatus: v1alpha2.SubscriptionStatus{
+				Conditions: []v1alpha2.Condition{},
+			},
+			givenError: nil,
+			wantSubscriptionStatus: v1alpha2.SubscriptionStatus{
+				Conditions: []v1alpha2.Condition{
+					subscriptionSpecValidTrueCondition,
+				},
+			},
+		},
+		{
+			name: "add SubscriptionSpecValid condition and preserve other conditions",
+			givenSubscriptionStatus: v1alpha2.SubscriptionStatus{
+				Conditions: []v1alpha2.Condition{
+					testCondition0,
+					testCondition1,
+				},
+			},
+			givenError: nil,
+			wantSubscriptionStatus: v1alpha2.SubscriptionStatus{
+				Conditions: []v1alpha2.Condition{
+					testCondition0,
+					testCondition1,
+					subscriptionSpecValidTrueCondition,
+				},
+			},
+		},
+		{
+			name: "update existing SubscriptionSpecValid condition to true and preserve other conditions",
+			givenSubscriptionStatus: v1alpha2.SubscriptionStatus{
+				Conditions: []v1alpha2.Condition{
+					testCondition0,
+					testCondition1,
+					subscriptionSpecValidFalseCondition,
+				},
+			},
+			givenError: nil,
+			wantSubscriptionStatus: v1alpha2.SubscriptionStatus{
+				Conditions: []v1alpha2.Condition{
+					testCondition0,
+					testCondition1,
+					subscriptionSpecValidTrueCondition,
+				},
+			},
+		},
+		{
+			name: "update existing SubscriptionSpecValid condition to false and preserve other conditions",
+			givenSubscriptionStatus: v1alpha2.SubscriptionStatus{
+				Conditions: []v1alpha2.Condition{
+					testCondition0,
+					testCondition1,
+					subscriptionSpecValidTrueCondition,
+				},
+			},
+			givenError: errors.New("some error"),
+			wantSubscriptionStatus: v1alpha2.SubscriptionStatus{
+				Conditions: []v1alpha2.Condition{
+					testCondition0,
+					testCondition1,
+					subscriptionSpecValidFalseCondition,
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			// when
+			test.givenSubscriptionStatus.SetSubscriptionSpecValidCondition(test.givenError)
+			gotConditions := test.givenSubscriptionStatus.Conditions
+			wantConditions := test.wantSubscriptionStatus.Conditions
+
+			// then
+			require.True(t, v1alpha2.ConditionsEquals(gotConditions, wantConditions))
 		})
 	}
 }

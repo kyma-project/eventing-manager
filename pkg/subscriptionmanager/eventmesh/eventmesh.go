@@ -20,10 +20,10 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
@@ -116,6 +116,9 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subm
 	client := c.mgr.GetClient()
 	recorder := c.mgr.GetEventRecorderFor("eventing-controller-beb")
 
+	// Init the Subscription validator.
+	subscriptionValidator := validator.NewSubscriptionValidator(client)
+
 	// Initialize v1alpha2 handler for EventMesh
 	eventMeshHandler := backendeventmesh.NewEventMesh(oauth2credential, nameMapper, c.logger)
 	eventMeshcleaner := cleaner.NewEventMeshCleaner(c.logger)
@@ -128,7 +131,7 @@ func (c *SubscriptionManager) Start(_ env.DefaultSubscriptionConfig, params subm
 		eventMeshHandler,
 		oauth2credential,
 		nameMapper,
-		sink.NewValidator(client, recorder),
+		subscriptionValidator,
 		c.collector,
 		c.domain,
 	)

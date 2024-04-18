@@ -2,10 +2,8 @@ package jetstream_test
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
-	"net"
 	"path/filepath"
 	"testing"
 	"time"
@@ -21,24 +19,21 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	subscriptioncontrollerjetstream "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/jetstream"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	backendcleaner "github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -111,11 +106,6 @@ func setupSuite() error {
 			},
 			AttachControlPlaneOutput: attachControlPlaneOutput,
 			UseExistingCluster:       &useExistingCluster,
-			WebhookInstallOptions: envtest.WebhookInstallOptions{
-				Paths: []string{
-					filepath.Join("../../../../../", "config", "webhook", "webhook_configs.yaml"),
-				},
-			},
 		},
 	}
 
@@ -143,17 +133,11 @@ func startReconciler() error {
 	}
 
 	syncPeriod := syncPeriod
-	webhookInstallOptions := &jsTestEnsemble.TestEnv.WebhookInstallOptions
 	k8sManager, err := kctrl.NewManager(jsTestEnsemble.Cfg, kctrl.Options{
 		Scheme:                 scheme.Scheme,
 		HealthProbeBindAddress: "0", // disable
 		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
 		Metrics:                server.Options{BindAddress: "0"}, // disable
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Host:    webhookInstallOptions.LocalServingHost,
-			Port:    webhookInstallOptions.LocalServingPort,
-			CertDir: webhookInstallOptions.LocalServingCertDir,
-		}),
 	})
 	if err != nil {
 		return err
@@ -188,13 +172,16 @@ func startReconciler() error {
 	k8sClient := k8sManager.GetClient()
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller-jetstream")
 
+	// Init the Subscription validator.
+	subscriptionValidator := validator.NewSubscriptionValidator(k8sClient)
+
 	jsTestEnsemble.Reconciler = subscriptioncontrollerjetstream.NewReconciler(
 		k8sClient,
 		jetStreamHandler,
 		defaultLogger,
 		recorder,
 		cleaner,
-		sink.NewValidator(k8sClient, recorder),
+		subscriptionValidator,
 		metricsCollector,
 	)
 
@@ -217,10 +204,6 @@ func startReconciler() error {
 	jsTestEnsemble.K8sClient = k8sManager.GetClient()
 	if jsTestEnsemble.K8sClient == nil {
 		return errors.New("K8sClient cannot be nil")
-	}
-
-	if err := StartAndWaitForWebhookServer(k8sManager, webhookInstallOptions); err != nil {
-		return err
 	}
 
 	return nil
@@ -378,8 +361,8 @@ func IsSubscriptionDeletedOnK8s(g *gomega.WithT, ens *Ensemble,
 
 func ConditionInvalidSink(msg string) eventingv1alpha2.Condition {
 	return eventingv1alpha2.MakeCondition(
-		eventingv1alpha2.ConditionSubscriptionActive,
-		eventingv1alpha2.ConditionReasonNATSSubscriptionNotActive,
+		eventingv1alpha2.ConditionSubscriptionSpecValid,
+		eventingv1alpha2.ConditionReasonSubscriptionSpecHasValidationErrors,
 		kcorev1.ConditionFalse, msg)
 }
 
@@ -543,35 +526,6 @@ func NewUncleanEventType(ending string) string {
 
 func NewCleanEventType(ending string) string {
 	return fmt.Sprintf("%s%s", eventingtesting.OrderCreatedEventType, ending)
-}
-
-func GenerateInvalidSubscriptionError(subName, errType string, path *field.Path) error {
-	webhookErr := "admission webhook \"vsubscription.kb.io\" denied the request: "
-	givenError := kerrors.NewInvalid(
-		eventingv1alpha2.GroupKind, subName,
-		field.ErrorList{eventingv1alpha2.MakeInvalidFieldError(path, subName, errType)})
-	givenError.ErrStatus.Message = webhookErr + givenError.ErrStatus.Message
-	return givenError
-}
-
-func StartAndWaitForWebhookServer(k8sManager manager.Manager, webhookInstallOpts *envtest.WebhookInstallOptions) error {
-	if err := (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(k8sManager); err != nil {
-		return err
-	}
-	// wait for the webhook server to get ready
-	dialer := &net.Dialer{Timeout: time.Second}
-	addrPort := fmt.Sprintf("%s:%d", webhookInstallOpts.LocalServingHost, webhookInstallOpts.LocalServingPort)
-	err := retry.Do(func() error {
-		conn, connErr := tls.DialWithDialer(dialer, "tcp", addrPort,
-			&tls.Config{
-				InsecureSkipVerify: true, //nolint:gosec // TLS check can be skipped for this integration test suit
-			})
-		if connErr != nil {
-			return connErr
-		}
-		return conn.Close()
-	}, retry.Attempts(MaxReconnects))
-	return err
 }
 
 func doRetry(function func() error, errString string) error {

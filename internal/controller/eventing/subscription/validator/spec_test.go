@@ -1,90 +1,30 @@
-package v1alpha2_test
+package validator
 
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
 )
 
-const (
-	subName      = "sub"
-	subNamespace = "test"
-	sink         = "https://eventing-nats.test.svc.cluster.local:8080"
-)
-
-func Test_Default(t *testing.T) {
+func Test_validateSpec(t *testing.T) {
 	t.Parallel()
+
+	const (
+		subName             = "sub"
+		subNamespace        = "test"
+		maxInFlightMessages = "10"
+		sink                = "https://eventing-nats.test.svc.cluster.local:8080"
+	)
+
 	type TestCase struct {
 		name     string
-		givenSub *v1alpha2.Subscription
-		wantSub  *v1alpha2.Subscription
-	}
-
-	testCases := []TestCase{
-		{
-			name: "Add TypeMatching Standard and default MaxInFlightMessages value",
-			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
-				eventingtesting.WithSource(eventingtesting.EventSourceClean),
-				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-			),
-			wantSub: eventingtesting.NewSubscription(subName, subNamespace,
-				eventingtesting.WithSource(eventingtesting.EventSourceClean),
-				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithTypeMatchingStandard(),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
-			),
-		},
-		{
-			name: "Add TypeMatching Standard only",
-			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
-				eventingtesting.WithSource(eventingtesting.EventSourceClean),
-				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages("20"),
-			),
-			wantSub: eventingtesting.NewSubscription(subName, subNamespace,
-				eventingtesting.WithSource(eventingtesting.EventSourceClean),
-				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages("20"),
-				eventingtesting.WithTypeMatchingStandard(),
-			),
-		},
-		{
-			name: "Add default MaxInFlightMessages value only",
-			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
-				eventingtesting.WithSource(eventingtesting.EventSourceClean),
-				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithTypeMatchingExact(),
-			),
-			wantSub: eventingtesting.NewSubscription(subName, subNamespace,
-				eventingtesting.WithSource(eventingtesting.EventSourceClean),
-				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithTypeMatchingExact(),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
-			),
-		},
-	}
-
-	for _, tc := range testCases {
-		testcase := tc
-		t.Run(testcase.name, func(t *testing.T) {
-			t.Parallel()
-			testcase.givenSub.Default()
-			require.Equal(t, testcase.wantSub, testcase.givenSub)
-		})
-	}
-}
-
-func Test_validateSubscription(t *testing.T) {
-	t.Parallel()
-	type TestCase struct {
-		name     string
-		givenSub *v1alpha2.Subscription
-		wantErr  error
+		givenSub *eventingv1alpha2.Subscription
+		wantErr  field.ErrorList
 	}
 
 	testCases := []TestCase{
@@ -94,23 +34,50 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
 				eventingtesting.WithWebhookAuthForEventMesh(),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
+				eventingtesting.WithTypeMatching(eventingv1alpha2.TypeMatchingStandard),
 			),
 			wantErr: nil,
+		},
+		{
+			name: "empty TypeMatching should return error",
+			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
+				eventingtesting.WithSource(eventingtesting.EventSourceClean),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
+				eventingtesting.WithWebhookAuthForEventMesh(),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
+				eventingtesting.WithSink(sink),
+				eventingtesting.WithTypeMatching(""),
+			),
+			wantErr: field.ErrorList{
+				makeInvalidFieldError(typeMatchingPath, "", invalidTypeMatchingErrDetail),
+			},
+		},
+		{
+			name: "unsupported TypeMatching should return error",
+			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
+				eventingtesting.WithSource(eventingtesting.EventSourceClean),
+				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
+				eventingtesting.WithWebhookAuthForEventMesh(),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
+				eventingtesting.WithSink(sink),
+				eventingtesting.WithTypeMatching("unsupported"),
+			),
+			wantErr: field.ErrorList{
+				makeInvalidFieldError(typeMatchingPath, "unsupported", invalidTypeMatchingErrDetail),
+			},
 		},
 		{
 			name: "empty source and TypeMatching Standard should return error",
 			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SourcePath,
-					subName, v1alpha2.EmptyErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(sourcePath,
+				"", emptyErrDetail)},
 		},
 		{
 			name: "valid source and TypeMatching Standard should not return error",
@@ -118,7 +85,7 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
 			wantErr: nil,
@@ -128,7 +95,7 @@ func Test_validateSubscription(t *testing.T) {
 			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
 				eventingtesting.WithTypeMatchingExact(),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
 			wantErr: nil,
@@ -139,26 +106,22 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource("s%ourc%e"),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SourcePath,
-					subName, v1alpha2.InvalidURIErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(sourcePath,
+				"s%ourc%e", invalidURIErrDetail)},
 		},
 		{
 			name: "nil types field should return error",
 			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
-					subName, v1alpha2.EmptyErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(typesPath,
+				"", emptyErrDetail)},
 		},
 		{
 			name: "empty types field should return error",
@@ -166,13 +129,11 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithTypes([]string{}),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
-					subName, v1alpha2.EmptyErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(typesPath,
+				"", emptyErrDetail)},
 		},
 		{
 			name: "duplicate types should return error",
@@ -183,13 +144,11 @@ func Test_validateSubscription(t *testing.T) {
 					eventingtesting.OrderCreatedV1Event,
 					eventingtesting.OrderCreatedV1Event,
 				}),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
-					subName, v1alpha2.DuplicateTypesErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(typesPath,
+				"order.created.v1", duplicateTypesErrDetail)},
 		},
 		{
 			name: "empty event type should return error",
@@ -197,13 +156,11 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithTypes([]string{eventingtesting.OrderCreatedV1Event, ""}),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
-					subName, v1alpha2.LengthErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(typesPath,
+				"", lengthErrDetail)},
 		},
 		{
 			name: "lower than min segments should return error",
@@ -211,35 +168,32 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithTypes([]string{"order"}),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
-					subName, v1alpha2.MinSegmentErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(typesPath,
+				"order", minSegmentErrDetail)},
 		},
 		{
 			name: "invalid prefix should return error",
 			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
-				eventingtesting.WithTypes([]string{v1alpha2.InvalidPrefix}),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithTypes([]string{validPrefix}),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.TypesPath,
-					subName, v1alpha2.InvalidPrefixErrDetail)}),
+			wantErr: field.ErrorList{
+				makeInvalidFieldError(typesPath, "sap.kyma.custom", invalidPrefixErrDetail),
+			},
 		},
 		{
 			name: "invalid prefix with exact should not return error",
 			givenSub: eventingtesting.NewSubscription(subName, subNamespace,
 				eventingtesting.WithTypeMatchingExact(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
-				eventingtesting.WithTypes([]string{v1alpha2.InvalidPrefix}),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithTypes([]string{validPrefix}),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(sink),
 			),
 			wantErr: nil,
@@ -253,10 +207,8 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages("invalid"),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.ConfigPath,
-					subName, v1alpha2.StringIntErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(configPath,
+				"invalid", stringIntErrDetail)},
 		},
 		{
 			name: "invalid QoS value should return error",
@@ -264,14 +216,12 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithInvalidProtocolSettingsQos(),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.ConfigPath,
-					subName, v1alpha2.InvalidQosErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(configPath,
+				"AT_INVALID_ONCE", invalidQosErrDetail)},
 		},
 		{
 			name: "invalid webhook auth type value should return error",
@@ -279,14 +229,12 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithInvalidWebhookAuthType(),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.ConfigPath,
-					subName, v1alpha2.InvalidAuthTypeErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(configPath,
+				"abcd", invalidAuthTypeErrDetail)},
 		},
 		{
 			name: "invalid webhook grant type value should return error",
@@ -294,14 +242,12 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithInvalidWebhookAuthGrantType(),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.ConfigPath,
-					subName, v1alpha2.InvalidGrantTypeErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(configPath,
+				"invalid", invalidGrantTypeErrDetail)},
 		},
 		{
 			name: "missing sink should return error",
@@ -309,12 +255,10 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
-					subName, v1alpha2.EmptyErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(sinkPath,
+				"", emptyErrDetail)},
 		},
 		{
 			name: "sink with invalid scheme should return error",
@@ -322,13 +266,11 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink(subNamespace),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
-					subName, v1alpha2.MissingSchemeErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(sinkPath,
+				"test", missingSchemeErrDetail)},
 		},
 		{
 			name: "sink with invalid URL should return error",
@@ -336,14 +278,12 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink("http://invalid Sink"),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
-					subName, "failed to parse subscription sink URL: "+
-						"parse \"http://invalid Sink\": invalid character \" \" in host name")}),
+			wantErr: field.ErrorList{makeInvalidFieldError(sinkPath,
+				"http://invalid Sink", "failed to parse subscription sink URL: "+
+					"parse \"http://invalid Sink\": invalid character \" \" in host name")},
 		},
 		{
 			name: "sink with invalid suffix should return error",
@@ -351,13 +291,11 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink("https://svc2.test.local"),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
-					subName, v1alpha2.SuffixMissingErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(sinkPath,
+				"https://svc2.test.local", suffixMissingErrDetail)},
 		},
 		{
 			name: "sink with invalid suffix and port should return error",
@@ -365,13 +303,11 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink("https://svc2.test.local:8080"),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
-					subName, v1alpha2.SuffixMissingErrDetail)}),
+			wantErr: field.ErrorList{makeInvalidFieldError(sinkPath,
+				"https://svc2.test.local:8080", suffixMissingErrDetail)},
 		},
 		{
 			name: "sink with invalid number of subdomains should return error",
@@ -379,13 +315,11 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink("https://svc.cluster.local:8080"),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.SinkPath,
-					subName, v1alpha2.SubDomainsErrDetail+"svc.cluster.local")}),
+			wantErr: field.ErrorList{makeInvalidFieldError(sinkPath,
+				"https://svc.cluster.local:8080", subDomainsErrDetail+"svc.cluster.local")},
 		},
 		{
 			name: "sink with different namespace should return error",
@@ -393,13 +327,11 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithTypeMatchingStandard(),
 				eventingtesting.WithSource(eventingtesting.EventSourceClean),
 				eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
-				eventingtesting.WithMaxInFlightMessages(v1alpha2.DefaultMaxInFlightMessages),
+				eventingtesting.WithMaxInFlightMessages(maxInFlightMessages),
 				eventingtesting.WithSink("https://eventing-nats.kyma-system.svc.cluster.local"),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{v1alpha2.MakeInvalidFieldError(v1alpha2.NSPath,
-					subName, v1alpha2.NSMismatchErrDetail+"kyma-system")}),
+			wantErr: field.ErrorList{makeInvalidFieldError(namespacePath,
+				"https://eventing-nats.kyma-system.svc.cluster.local", namespaceMismatchErrDetail+"kyma-system")},
 		},
 		{
 			name: "multiple errors should be reported if exists",
@@ -409,14 +341,12 @@ func Test_validateSubscription(t *testing.T) {
 				eventingtesting.WithMaxInFlightMessages("invalid"),
 				eventingtesting.WithSink(sink),
 			),
-			wantErr: kerrors.NewInvalid(
-				v1alpha2.GroupKind, subName,
-				field.ErrorList{
-					v1alpha2.MakeInvalidFieldError(v1alpha2.SourcePath,
-						subName, v1alpha2.EmptyErrDetail),
-					v1alpha2.MakeInvalidFieldError(v1alpha2.ConfigPath,
-						subName, v1alpha2.StringIntErrDetail),
-				}),
+			wantErr: field.ErrorList{
+				makeInvalidFieldError(sourcePath,
+					"", emptyErrDetail),
+				makeInvalidFieldError(configPath,
+					"invalid", stringIntErrDetail),
+			},
 		},
 	}
 
@@ -424,13 +354,13 @@ func Test_validateSubscription(t *testing.T) {
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := tc.givenSub.ValidateSubscription()
+			err := validateSpec(*tc.givenSub)
 			require.Equal(t, tc.wantErr, err)
 		})
 	}
 }
 
-func Test_IsInvalidCESource(t *testing.T) {
+func Test_isInvalidCE(t *testing.T) {
 	t.Parallel()
 	type TestCase struct {
 		name          string
@@ -470,8 +400,86 @@ func Test_IsInvalidCESource(t *testing.T) {
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			gotIsInvalid := v1alpha2.IsInvalidCE(tc.givenSource, tc.givenType)
+			gotIsInvalid := isInvalidCE(tc.givenSource, tc.givenType)
 			require.Equal(t, tc.wantIsInvalid, gotIsInvalid)
+		})
+	}
+}
+
+func Test_getDuplicates(t *testing.T) {
+	tests := []struct {
+		name               string
+		givenTypes         []string
+		wantDuplicateTypes []string
+	}{
+		{
+			name:               "with nil types",
+			givenTypes:         nil,
+			wantDuplicateTypes: nil,
+		},
+		{
+			name:               "with empty types",
+			givenTypes:         []string{},
+			wantDuplicateTypes: []string{},
+		},
+		{
+			name: "with one type",
+			givenTypes: []string{
+				"type0",
+			},
+			wantDuplicateTypes: []string{},
+		},
+		{
+			name: "with multiple types and no duplicates",
+			givenTypes: []string{
+				"type0",
+				"type1",
+				"type2",
+			},
+			wantDuplicateTypes: []string{},
+		},
+		{
+			name: "with one type which is a duplicate",
+			givenTypes: []string{
+				"type0", "type0",
+			},
+			wantDuplicateTypes: []string{
+				"type0",
+			},
+		},
+		{
+			name: "with multiple types and consequent duplicates",
+			givenTypes: []string{
+				"type0",
+				"type1", "type1", "type1", // duplicates
+				"type2", "type2", // duplicates
+				"type3",
+				"type4", "type4", "type4", "type4", // duplicates
+				"type5",
+			},
+			wantDuplicateTypes: []string{
+				"type1", "type2", "type4",
+			},
+		},
+		{
+			name: "with multiple types and non-consequent duplicates",
+			givenTypes: []string{
+				"type5", "type0", "type1", "type2",
+				"type1", // duplicate
+				"type3", "type4",
+				"type5", // duplicate
+				"type6",
+				"type4", "type2", // duplicates
+			},
+			wantDuplicateTypes: []string{
+				"type1", "type5", "type4", "type2",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotDuplicateTypes := getDuplicates(tt.givenTypes)
+			assert.Equal(t, tt.wantDuplicateTypes, gotDuplicateTypes)
 		})
 	}
 }

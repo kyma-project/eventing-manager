@@ -30,6 +30,7 @@ type SubscriptionSpec struct {
 	// Defines how types should be handled.<br />
 	// - `standard`: backend-specific logic will be applied to the configured source and types.<br />
 	// - `exact`: no further processing will be applied to the configured source and types.
+	// +kubebuilder:default:="standard"
 	TypeMatching TypeMatching `json:"typeMatching,omitempty"`
 
 	// Defines the origin of the event.
@@ -40,6 +41,7 @@ type SubscriptionSpec struct {
 
 	// Map of configuration options that will be applied on the backend.
 	// +optional
+	// +kubebuilder:default:={"maxInFlightMessages":"10"}
 	Config map[string]string `json:"config,omitempty"`
 }
 
@@ -140,6 +142,3 @@ type SubscriptionList struct {
 func init() { //nolint:gochecknoinits
 	SchemeBuilder.Register(&Subscription{}, &SubscriptionList{})
 }
-
-// Hub marks this type as a conversion hub.
-func (*Subscription) Hub() {}

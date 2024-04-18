@@ -214,8 +214,6 @@ func Test_CreateEventingCR_NATS(t *testing.T) {
 			if testcase.wantEnsureK8sObjects && testcase.givenEventing.Spec.Backend != nil {
 				// check if EPP resources exists.
 				ensureK8sResources(t, testcase.givenEventing, testEnvironment)
-				// check if webhook configurations are updated with correct CABundle.
-				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
 
 			// check the publisher service in the Eventing CR status
@@ -711,8 +709,6 @@ func Test_CreateEventingCR_EventMesh(t *testing.T) {
 			if testcase.wantEnsureK8sObjects {
 				// check if other EPP resources exists and values are reflected.
 				ensureK8sResources(t, testcase.givenEventing, testEnvironment)
-				// check if webhook configurations are updated with correct CABundle.
-				testEnvironment.EnsureCABundleInjectedIntoWebhooks(t)
 			}
 
 			// check the publisher service in the Eventing CR status

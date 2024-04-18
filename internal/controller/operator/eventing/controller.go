@@ -472,13 +472,6 @@ func (r *Reconciler) handleEventingReconcile(ctx context.Context,
 			eventing, log)
 	}
 
-	// sync webhooks CABundle.
-	if err := r.reconcileWebhooksWithCABundle(ctx); err != nil {
-		return kctrl.Result{}, r.syncStatusWithWebhookErr(ctx, eventing, err, log)
-	}
-	// set webhook condition to true.
-	eventing.Status.SetWebhookReadyConditionToTrue()
-
 	// handle backend switching.
 	if err := r.handleBackendSwitching(ctx, eventing, log); err != nil {
 		return kctrl.Result{}, r.syncStatusWithSubscriptionManagerErr(ctx, eventing, err, log)

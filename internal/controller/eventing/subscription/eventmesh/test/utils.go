@@ -1,12 +1,9 @@
-//nolint:gosec //this is just a test, and security issues found here will not result in code used in a prod environment
 package test
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -23,7 +20,6 @@ import (
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	klabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	kctrl "sigs.k8s.io/controller-runtime"
@@ -33,14 +29,13 @@ import (
 	kctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/constants"
 	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
@@ -89,7 +84,6 @@ func setupSuite() error {
 	emTestEnsemble = &eventMeshTestEnsemble{}
 
 	// define logger
-	var err error
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	if err != nil {
 		return err
@@ -116,7 +110,7 @@ func setupSuite() error {
 	// +kubebuilder:scaffold:scheme
 
 	// setup eventMesh manager instance
-	k8sManager, webhookInstallOptions, err := setupManager(cfg)
+	k8sManager, err := setupManager(cfg)
 	if err != nil {
 		return err
 	}
@@ -127,10 +121,12 @@ func setupSuite() error {
 
 	// setup eventMesh reconciler
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller")
-	sinkValidator := sink.NewValidator(k8sManager.GetClient(), recorder)
 	emTestEnsemble.envConfig = getEnvConfig()
 
 	eventMesh, credentials := setupEventMesh(defaultLogger)
+
+	// Init the Subscription validator.
+	subscriptionValidator := validator.NewSubscriptionValidator(k8sManager.GetClient())
 
 	col := metrics.NewCollector()
 	testReconciler := subscriptioncontrollereventmesh.NewReconciler(
@@ -142,7 +138,7 @@ func setupSuite() error {
 		eventMesh,
 		credentials,
 		emTestEnsemble.nameMapper,
-		sinkValidator,
+		subscriptionValidator,
 		col,
 		testutils.Domain,
 	)
@@ -163,28 +159,22 @@ func setupSuite() error {
 
 	emTestEnsemble.k8sClient = k8sManager.GetClient()
 
-	return startAndWaitForWebhookServer(k8sManager, webhookInstallOptions)
+	return nil
 }
 
-func setupManager(cfg *rest.Config) (manager.Manager, *envtest.WebhookInstallOptions, error) {
+func setupManager(cfg *rest.Config) (manager.Manager, error) {
 	syncPeriod := syncPeriodSeconds * time.Second
-	webhookInstallOptions := &emTestEnsemble.testEnv.WebhookInstallOptions
 	opts := kctrl.Options{
 		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
 		HealthProbeBindAddress: "0", // disable
 		Scheme:                 scheme.Scheme,
 		Metrics:                server.Options{BindAddress: "0"}, // disable
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Port:    webhookInstallOptions.LocalServingPort,
-			Host:    webhookInstallOptions.LocalServingHost,
-			CertDir: webhookInstallOptions.LocalServingCertDir,
-		}),
 	}
 	k8sManager, err := kctrl.NewManager(cfg, opts)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return k8sManager, webhookInstallOptions, nil
+	return k8sManager, nil
 }
 
 func setupEventMesh(defaultLogger *logger.Logger) (*backendeventmesh.EventMesh, *backendeventmesh.OAuth2ClientCredentials) {
@@ -198,23 +188,6 @@ func setupEventMesh(defaultLogger *logger.Logger) (*backendeventmesh.EventMesh, 
 	return eventMesh, credentials
 }
 
-func startAndWaitForWebhookServer(k8sManager manager.Manager, webhookInstallOpts *envtest.WebhookInstallOptions) error {
-	if err := (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(k8sManager); err != nil {
-		return err
-	}
-	dialer := &net.Dialer{Timeout: time.Second}
-	addrPort := fmt.Sprintf("%s:%d", webhookInstallOpts.LocalServingHost, webhookInstallOpts.LocalServingPort)
-	// wait for the webhook server to get ready
-	err := retry.Do(func() error {
-		conn, connErr := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
-		if connErr != nil {
-			return connErr
-		}
-		return conn.Close()
-	}, retry.Attempts(maxReconnects))
-	return err
-}
-
 func startTestEnv() (*rest.Config, error) {
 	useExistingCluster := useExistingCluster
 	emTestEnsemble.testEnv = &envtest.Environment{
@@ -224,9 +197,6 @@ func startTestEnv() (*rest.Config, error) {
 		},
 		AttachControlPlaneOutput: attachControlPlaneOutput,
 		UseExistingCluster:       &useExistingCluster,
-		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("../../../../../../", "config", "webhook")},
-		},
 	}
 
 	var cfg *rest.Config
@@ -282,15 +252,6 @@ func startNewEventMeshMock() *eventingtesting.EventMeshMock {
 	return emMock
 }
 
-func GenerateInvalidSubscriptionError(subName, errType string, path *field.Path) error {
-	webhookErr := "admission webhook \"vsubscription.kb.io\" denied the request: "
-	givenError := kerrors.NewInvalid(
-		eventingv1alpha2.GroupKind, subName,
-		field.ErrorList{eventingv1alpha2.MakeInvalidFieldError(path, subName, errType)})
-	givenError.ErrStatus.Message = webhookErr + givenError.ErrStatus.Message
-	return givenError
-}
-
 func getTestNamespace() string {
 	return fmt.Sprintf("ns-%s", utils.GetRandString(namespacePrefixLength))
 }
@@ -324,11 +285,6 @@ func fixtureNamespace(name string) *kcorev1.Namespace {
 func ensureK8sResourceCreated(ctx context.Context, t *testing.T, obj client.Object) {
 	t.Helper()
 	require.NoError(t, emTestEnsemble.k8sClient.Create(ctx, obj))
-}
-
-func ensureK8sResourceNotCreated(ctx context.Context, t *testing.T, obj client.Object, err error) {
-	t.Helper()
-	require.Equal(t, emTestEnsemble.k8sClient.Create(ctx, obj), err)
 }
 
 func ensureK8sResourceDeleted(ctx context.Context, t *testing.T, obj client.Object) {

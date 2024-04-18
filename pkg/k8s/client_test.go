@@ -2,11 +2,9 @@ package k8s
 
 import (
 	"context"
-	"crypto/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
@@ -374,148 +372,6 @@ func Test_GetSecret(t *testing.T) {
 				require.ErrorIs(t, err, testcase.wantError)
 			}
 			require.Equal(t, testcase.wantSecret, secret)
-		})
-	}
-}
-
-//nolint:dupl // not the same as validating webhook
-func Test_GetMutatingWebHookConfiguration(t *testing.T) {
-	t.Parallel()
-
-	// given
-	newCABundle := make([]byte, 20)
-	_, readErr := rand.Read(newCABundle)
-	require.NoError(t, readErr)
-
-	// Define test cases as a table.
-	testCases := []struct {
-		name                string
-		givenName           string
-		wantMutatingWebhook *kadmissionregistrationv1.MutatingWebhookConfiguration
-		wantNotFoundError   bool
-	}{
-		{
-			name:      "success",
-			givenName: "test-wh",
-			wantMutatingWebhook: &kadmissionregistrationv1.MutatingWebhookConfiguration{
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name: "test-wh",
-				},
-				Webhooks: []kadmissionregistrationv1.MutatingWebhook{
-					{
-						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
-							CABundle: newCABundle,
-						},
-					},
-				},
-			},
-		},
-		{
-			name:                "not found",
-			givenName:           "test-wh",
-			wantMutatingWebhook: nil,
-			wantNotFoundError:   true,
-		},
-	}
-
-	for _, tc := range testCases {
-		testcase := tc
-		t.Run(testcase.name, func(t *testing.T) {
-			t.Parallel()
-			// given
-			ctx := context.Background()
-			fakeClient := fake.NewClientBuilder().Build()
-			kubeClient := &KubeClient{
-				client: fakeClient,
-			}
-
-			// Create the MutatingWebHookConfiguration if it should exist
-			if testcase.wantMutatingWebhook != nil {
-				require.NoError(t, fakeClient.Create(ctx, testcase.wantMutatingWebhook))
-			}
-
-			// when
-			gotWebhook, err := kubeClient.GetMutatingWebHookConfiguration(context.Background(), testcase.givenName)
-
-			// then
-			if !testcase.wantNotFoundError {
-				require.NoError(t, err)
-				require.Equal(t, testcase.wantMutatingWebhook.Webhooks, gotWebhook.Webhooks)
-			} else {
-				require.Error(t, err)
-				require.True(t, kerrors.IsNotFound(err))
-			}
-		})
-	}
-}
-
-//nolint:dupl // not the same as mutating webhook
-func Test_GetValidatingWebHookConfiguration(t *testing.T) {
-	t.Parallel()
-
-	// given
-	newCABundle := make([]byte, 20)
-	_, readErr := rand.Read(newCABundle)
-	require.NoError(t, readErr)
-
-	// Define test cases as a table.
-	testCases := []struct {
-		name                  string
-		givenName             string
-		wantValidatingWebhook *kadmissionregistrationv1.ValidatingWebhookConfiguration
-		wantNotFoundError     bool
-	}{
-		{
-			name:      "success",
-			givenName: "test-wh",
-			wantValidatingWebhook: &kadmissionregistrationv1.ValidatingWebhookConfiguration{
-				ObjectMeta: kmetav1.ObjectMeta{
-					Name: "test-wh",
-				},
-				Webhooks: []kadmissionregistrationv1.ValidatingWebhook{
-					{
-						ClientConfig: kadmissionregistrationv1.WebhookClientConfig{
-							CABundle: newCABundle,
-						},
-					},
-				},
-			},
-		},
-		{
-			name:                  "not found",
-			givenName:             "test-wh",
-			wantValidatingWebhook: nil,
-			wantNotFoundError:     true,
-		},
-	}
-
-	for _, tc := range testCases {
-		testcase := tc
-		t.Run(testcase.name, func(t *testing.T) {
-			t.Parallel()
-			// given
-			ctx := context.Background()
-			fakeClient := fake.NewClientBuilder().Build()
-			kubeClient := &KubeClient{
-				client: fakeClient,
-			}
-
-			// Create the ValidatingWebhookConfiguration if it should exist
-			if testcase.wantValidatingWebhook != nil {
-				require.NoError(t, fakeClient.Create(ctx, testcase.wantValidatingWebhook))
-			}
-
-			// when
-			gotWebhook, err := kubeClient.GetValidatingWebHookConfiguration(context.Background(), testcase.givenName)
-
-			// then
-			if !testcase.wantNotFoundError {
-				require.NoError(t, err)
-				require.Equal(t, testcase.wantValidatingWebhook.Webhooks, gotWebhook.Webhooks)
-			} else {
-				require.Error(t, err)
-				require.True(t, kerrors.IsNotFound(err))
-			}
 		})
 	}
 }

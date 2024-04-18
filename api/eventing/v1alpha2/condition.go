@@ -10,10 +10,11 @@ import (
 type ConditionType string
 
 const (
-	ConditionSubscribed         ConditionType = "Subscribed"
-	ConditionSubscriptionActive ConditionType = "Subscription active"
-	ConditionAPIRuleStatus      ConditionType = "APIRule status"
-	ConditionWebhookCallStatus  ConditionType = "Webhook call status"
+	ConditionSubscribed            ConditionType = "Subscribed"
+	ConditionSubscriptionActive    ConditionType = "Subscription active"
+	ConditionSubscriptionSpecValid ConditionType = "Subscription spec valid"
+	ConditionAPIRuleStatus         ConditionType = "APIRule status"
+	ConditionWebhookCallStatus     ConditionType = "Webhook call status"
 
 	ConditionPublisherProxyReady ConditionType = "Publisher Proxy Ready"
 	ConditionControllerReady     ConditionType = "Subscription Controller Ready"
@@ -37,6 +38,9 @@ type Condition struct {
 type ConditionReason string
 
 const (
+	ConditionReasonSubscriptionSpecHasValidationErrors   ConditionReason = "Subscription spec has validation errors"
+	ConditionReasonSubscriptionSpecHasNoValidationErrors ConditionReason = "Subscription spec has no validation errors"
+
 	// JetStream Conditions.
 	ConditionReasonNATSSubscriptionActive    ConditionReason = "NATS Subscription active"
 	ConditionReasonNATSSubscriptionNotActive ConditionReason = "NATS Subscription not active"
@@ -130,6 +134,11 @@ func MakeSubscriptionConditions() []Condition {
 		},
 		{
 			Type:               ConditionWebhookCallStatus,
+			LastTransitionTime: kmetav1.Now(),
+			Status:             kcorev1.ConditionUnknown,
+		},
+		{
+			Type:               ConditionSubscriptionSpecValid,
 			LastTransitionTime: kmetav1.Now(),
 			Status:             kcorev1.ConditionUnknown,
 		},
@@ -241,7 +250,7 @@ func ConditionsEquals(existing, expected []Condition) bool {
 	return true
 }
 
-// ConditionsEquals checks if two conditions are equal.
+// ConditionEquals checks if two conditions are equal.
 func ConditionEquals(existing, expected Condition) bool {
 	isTypeEqual := existing.Type == expected.Type
 	isStatusEqual := existing.Status == expected.Status
@@ -259,29 +268,112 @@ func CreateMessageForConditionReasonSubscriptionCreated(eventMeshName string) st
 	return fmt.Sprintf("EventMesh subscription name is: %s", eventMeshName)
 }
 
-// GetSubscriptionActiveCondition updates the ConditionSubscriptionActive condition based on the given error value.
-func GetSubscriptionActiveCondition(sub *Subscription, err error) []Condition {
-	subscriptionActiveCondition := Condition{
-		Type:               ConditionSubscriptionActive,
-		LastTransitionTime: kmetav1.Now(),
-	}
-	if err == nil {
-		subscriptionActiveCondition.Status = kcorev1.ConditionTrue
-		subscriptionActiveCondition.Reason = ConditionReasonNATSSubscriptionActive
+// makeSubscriptionActiveCondition returns a new active condition based on the given error.
+func makeSubscriptionActiveCondition(err error) Condition {
+	var (
+		status  kcorev1.ConditionStatus
+		reason  ConditionReason
+		message string
+	)
+	if err != nil {
+		status = kcorev1.ConditionFalse
+		reason = ConditionReasonNATSSubscriptionNotActive
+		message = err.Error()
 	} else {
-		subscriptionActiveCondition.Message = err.Error()
-		subscriptionActiveCondition.Reason = ConditionReasonNATSSubscriptionNotActive
-		subscriptionActiveCondition.Status = kcorev1.ConditionFalse
+		status = kcorev1.ConditionTrue
+		reason = ConditionReasonNATSSubscriptionActive
 	}
-	for _, activeCond := range sub.Status.Conditions {
-		if activeCond.Type == ConditionSubscriptionActive {
-			if subscriptionActiveCondition.Status == activeCond.Status &&
-				subscriptionActiveCondition.Reason == activeCond.Reason &&
-				subscriptionActiveCondition.Message == activeCond.Message {
-				return []Condition{activeCond}
-			}
+	return Condition{
+		Type:               ConditionSubscriptionActive,
+		Status:             status,
+		LastTransitionTime: kmetav1.Now(),
+		Reason:             reason,
+		Message:            message,
+	}
+}
+
+// makeSubscriptionSpecValidCondition returns a new validation condition based on the given error.
+func makeSubscriptionSpecValidCondition(err error) Condition {
+	var (
+		status  kcorev1.ConditionStatus
+		reason  ConditionReason
+		message string
+	)
+	if err != nil {
+		status = kcorev1.ConditionFalse
+		reason = ConditionReasonSubscriptionSpecHasValidationErrors
+		message = err.Error()
+	} else {
+		status = kcorev1.ConditionTrue
+		reason = ConditionReasonSubscriptionSpecHasNoValidationErrors
+	}
+	return Condition{
+		Type:               ConditionSubscriptionSpecValid,
+		Status:             status,
+		LastTransitionTime: kmetav1.Now(),
+		Reason:             reason,
+		Message:            message,
+	}
+}
+
+// setCondition sets the given condition in the Subscription status.
+// If the condition is already present, it will be updated.
+// If the condition is not present, it will be added.
+func (s *SubscriptionStatus) setCondition(condition Condition) {
+	isFound, isSet := false, false
+	conditions := make([]Condition, 0, len(s.Conditions))
+	for _, cond := range s.Conditions {
+		if cond.Type != condition.Type {
+			conditions = append(conditions, cond)
+			continue
+		}
+		isFound = true
+		if !ConditionEquals(cond, condition) {
+			isSet = true
+			conditions = append(conditions, condition)
 		}
 	}
+	if !isFound {
+		isSet = true
+		conditions = append(conditions, condition)
+	}
+	if isSet {
+		s.Conditions = conditions
+	}
+}
 
-	return []Condition{subscriptionActiveCondition}
+// SetSubscriptionActiveCondition sets a subscription active condition based on the given error.
+// If the given error is nil, the status will have the Subscription active condition set to true,
+// otherwise it will have the Subscription active condition set to false and the error as the message.
+func SetSubscriptionActiveCondition(status *SubscriptionStatus, err error) {
+	condition := makeSubscriptionActiveCondition(err)
+	status.setCondition(condition)
+}
+
+// SetSubscriptionSpecValidCondition sets a subscription spec valid condition based on the given error.
+// If the given error is nil, the status will have the Subscription spec valid condition set to true,
+// otherwise it will have the Subscription spec valid condition set to false and the error as the message.
+func (s *SubscriptionStatus) SetSubscriptionSpecValidCondition(err error) {
+	condition := makeSubscriptionSpecValidCondition(err)
+	s.setCondition(condition)
+}
+
+// SetNotReady sets the Subscription status to not ready.
+func (s *SubscriptionStatus) SetNotReady() {
+	s.Ready = false
+}
+
+// ClearConditions sets the Subscription conditions to an empty list.
+func (s *SubscriptionStatus) ClearConditions() {
+	s.Conditions = []Condition{}
+}
+
+// ClearBackend sets the Subscription Backend to an empty struct.
+func (s *SubscriptionStatus) ClearBackend() {
+	s.Backend = Backend{}
+}
+
+// ClearTypes sets the Subscription Types to an empty list.
+func (s *SubscriptionStatus) ClearTypes() {
+	s.Types = []EventType{}
 }

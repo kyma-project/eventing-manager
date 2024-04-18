@@ -116,7 +116,8 @@ func (p *Publisher) SendLegacyEvent(source, eventType, payload string) error {
 func (p *Publisher) SendCloudEvent(event *cloudevents.Event, encoding binding.Encoding) error {
 	newCtx := context.Background()
 	ctx := cloudevents.ContextWithTarget(newCtx, p.PublishEndpoint())
-	//nolint:exhaustive // we only support the two checked encodings. Every other encoding will result in an error.
+
+	//nolint:exhaustive // we only support binary and structured encoding.
 	switch encoding {
 	case binding.EncodingBinary:
 		{

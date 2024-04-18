@@ -3,10 +3,8 @@ package testwebhookauth
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
-	"net"
 	"path/filepath"
 	"testing"
 	"time"
@@ -29,14 +27,13 @@ import (
 	kctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	subscriptioncontrollereventmesh "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/eventmesh"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	backendeventmesh "github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -89,7 +86,6 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 	emTestEnsemble := &eventMeshTestEnsemble{}
 
 	// define logger
-	var err error
 	defaultLogger, err := logger.New(string(kymalogger.JSON), string(kymalogger.INFO))
 	if err != nil {
 		return nil, err
@@ -116,7 +112,7 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 	// +kubebuilder:scaffold:scheme
 
 	// start eventMesh manager instance
-	k8sManager, webhookInstallOptions, err := setupManager(emTestEnsemble, cfg)
+	k8sManager, err := setupManager(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -127,10 +123,13 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 
 	// setup eventMesh reconciler
 	recorder := k8sManager.GetEventRecorderFor("eventing-controller")
-	sinkValidator := sink.NewValidator(k8sManager.GetClient(), recorder)
 	emTestEnsemble.envConfig = getEnvConfig(emTestEnsemble)
 	eventMeshBackend = backendeventmesh.NewEventMesh(credentials, emTestEnsemble.nameMapper, defaultLogger)
 	col := metrics.NewCollector()
+
+	// Init the Subscription validator.
+	subscriptionValidator := validator.NewSubscriptionValidator(k8sManager.GetClient())
+
 	testReconciler = subscriptioncontrollereventmesh.NewReconciler(
 		k8sManager.GetClient(),
 		defaultLogger,
@@ -140,7 +139,7 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 		eventMeshBackend,
 		credentials,
 		emTestEnsemble.nameMapper,
-		sinkValidator,
+		subscriptionValidator,
 		col,
 		testutils.Domain,
 	)
@@ -161,41 +160,18 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 
 	emTestEnsemble.k8sClient = k8sManager.GetClient()
 
-	return emTestEnsemble, startAndWaitForWebhookServer(k8sManager, webhookInstallOptions)
+	return emTestEnsemble, err
 }
 
-func setupManager(ensemble *eventMeshTestEnsemble, cfg *rest.Config) (manager.Manager, *envtest.WebhookInstallOptions, error) {
+func setupManager(cfg *rest.Config) (manager.Manager, error) {
 	syncPeriod := syncPeriodSeconds * time.Second
-	webhookInstallOptions := &ensemble.testEnv.WebhookInstallOptions
 	k8sManager, err := kctrl.NewManager(cfg, kctrl.Options{
 		Scheme:                 scheme.Scheme,
 		Cache:                  cache.Options{SyncPeriod: &syncPeriod},
 		Metrics:                server.Options{BindAddress: "0"}, // disable
 		HealthProbeBindAddress: "0",                              // disable
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Host:    webhookInstallOptions.LocalServingHost,
-			Port:    webhookInstallOptions.LocalServingPort,
-			CertDir: webhookInstallOptions.LocalServingCertDir,
-		}),
 	})
-	return k8sManager, webhookInstallOptions, err
-}
-
-func startAndWaitForWebhookServer(manager manager.Manager, installOpts *envtest.WebhookInstallOptions) error {
-	if err := (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(manager); err != nil {
-		return err
-	}
-	dialer := &net.Dialer{Timeout: time.Second}
-	addrPort := fmt.Sprintf("%s:%d", installOpts.LocalServingHost, installOpts.LocalServingPort)
-	// wait for the webhook server to get ready
-	err := retry.Do(func() error {
-		conn, connErr := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
-		if connErr != nil {
-			return connErr
-		}
-		return conn.Close()
-	}, retry.Attempts(maxReconnects))
-	return err
+	return k8sManager, err
 }
 
 func startTestEnv(ensemble *eventMeshTestEnsemble) (*rest.Config, error) {
@@ -206,9 +182,6 @@ func startTestEnv(ensemble *eventMeshTestEnsemble) (*rest.Config, error) {
 		},
 		AttachControlPlaneOutput: attachControlPlaneOutput,
 		UseExistingCluster:       utils.BoolPtr(useExistingCluster),
-		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("../../../../../../", "config", "webhook")},
-		},
 	}
 
 	var cfg *rest.Config

@@ -122,12 +122,6 @@ spec:
             value: "-1"
           - name: JS_STREAM_MAX_BYTES
             value: "700Mi"
-          - name: WEBHOOK_SECRET_NAME
-            value: "eventing-manager-webhook-server-cert"
-          - name: MUTATING_WEBHOOK_NAME
-            value: "subscription-mutating-webhook-configuration"
-          - name: VALIDATING_WEBHOOK_NAME
-            value: "subscription-validating-webhook-configuration"
           - name: EVENTING_WEBHOOK_AUTH_SECRET_NAME
             value: "eventing-webhook-auth"
           - name: EVENTING_WEBHOOK_AUTH_SECRET_NAMESPACE
@@ -161,14 +155,5 @@ spec:
           requests:
             cpu: 10m
             memory: 128Mi
-        volumeMounts:
-          - mountPath: /tmp/k8s-webhook-server/serving-certs
-            name: cert
-            readOnly: true
       serviceAccountName: eventing-manager
       terminationGracePeriodSeconds: 10
-      volumes:
-        - name: cert
-          secret:
-            defaultMode: 420
-            secretName: "eventing-manager-webhook-server-cert"

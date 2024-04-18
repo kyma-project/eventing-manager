@@ -122,17 +122,6 @@ func (r *Reconciler) syncStatusWithSubscriptionManagerFailedCondition(ctx contex
 	return r.syncEventingStatus(ctx, eventing, log)
 }
 
-func (r *Reconciler) syncStatusWithWebhookErr(ctx context.Context,
-	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
-) error {
-	// Set error state in status
-	eventing.Status.SetStateError()
-	eventing.Status.UpdateConditionWebhookReady(kmetav1.ConditionFalse, operatorv1alpha1.ConditionReasonWebhookFailed,
-		err.Error())
-
-	return errors.Join(err, r.syncEventingStatus(ctx, eventing, log))
-}
-
 func (r *Reconciler) syncStatusWithDeletionErr(ctx context.Context,
 	eventing *operatorv1alpha1.Eventing, err error, log *zap.SugaredLogger,
 ) error {

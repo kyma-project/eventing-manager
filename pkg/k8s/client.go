@@ -7,7 +7,6 @@ import (
 
 	natsv1alpha1 "github.com/kyma-project/nats-manager/api/v1alpha1"
 	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
-	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kcorev1 "k8s.io/api/core/v1"
 	krbacv1 "k8s.io/api/rbac/v1"
@@ -47,9 +46,6 @@ type Client interface {
 	GetNATSResources(ctx context.Context, namespace string) (*natsv1alpha1.NATSList, error)
 	PatchApply(ctx context.Context, object client.Object) error
 	GetSecret(ctx context.Context, namespacedName string) (*kcorev1.Secret, error)
-	GetMutatingWebHookConfiguration(ctx context.Context, name string) (*kadmissionregistrationv1.MutatingWebhookConfiguration, error)
-	GetValidatingWebHookConfiguration(ctx context.Context,
-		name string) (*kadmissionregistrationv1.ValidatingWebhookConfiguration, error)
 	GetCRD(ctx context.Context, name string) (*kapiextensionsv1.CustomResourceDefinition, error)
 	ApplicationCRDExists(ctx context.Context) (bool, error)
 	PeerAuthenticationCRDExists(ctx context.Context) (bool, error)
@@ -238,35 +234,6 @@ func (c *KubeClient) APIRuleCRDExists(ctx context.Context) (bool, error) {
 		return false, client.IgnoreNotFound(err)
 	}
 	return true, nil
-}
-
-// GetMutatingWebHookConfiguration returns the MutatingWebhookConfiguration k8s resource.
-func (c *KubeClient) GetMutatingWebHookConfiguration(ctx context.Context,
-	name string,
-) (*kadmissionregistrationv1.MutatingWebhookConfiguration, error) {
-	var mutatingWH kadmissionregistrationv1.MutatingWebhookConfiguration
-	mutatingWHKey := client.ObjectKey{
-		Name: name,
-	}
-	if err := c.client.Get(ctx, mutatingWHKey, &mutatingWH); err != nil {
-		return nil, err
-	}
-
-	return &mutatingWH, nil
-}
-
-// GetValidatingWebHookConfiguration returns the ValidatingWebhookConfiguration k8s resource.
-func (c *KubeClient) GetValidatingWebHookConfiguration(ctx context.Context,
-	name string,
-) (*kadmissionregistrationv1.ValidatingWebhookConfiguration, error) {
-	var validatingWH kadmissionregistrationv1.ValidatingWebhookConfiguration
-	validatingWHKey := client.ObjectKey{
-		Name: name,
-	}
-	if err := c.client.Get(ctx, validatingWHKey, &validatingWH); err != nil {
-		return nil, err
-	}
-	return &validatingWH, nil
 }
 
 func (c *KubeClient) GetSubscriptions(ctx context.Context) (*eventingv1alpha2.SubscriptionList, error) {

@@ -1,9 +1,7 @@
 package integration
 
 import (
-	"bytes"
 	"context"
-	"crypto/rand"
 	"fmt"
 	"log"
 	"path/filepath"
@@ -19,7 +17,6 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	kadmissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kappsv1 "k8s.io/api/apps/v1"
 	kautoscalingv1 "k8s.io/api/autoscaling/v1"
 	kcorev1 "k8s.io/api/core/v1"
@@ -38,7 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -147,16 +143,10 @@ func NewTestEnvironment(config TestEnvironmentConfig, connMock *natsconnectionmo
 	}
 
 	// setup ctrl manager
-	metricsPort, err := natstestutils.GetFreePort()
-	if err != nil {
-		return nil, err
-	}
-
 	ctrlMgr, err := kctrl.NewManager(envTestKubeCfg, kctrl.Options{
 		Scheme:                 scheme.Scheme,
 		HealthProbeBindAddress: "0",                              // disable
 		Metrics:                server.Options{BindAddress: "0"}, // disable
-		WebhookServer:          webhook.NewServer(webhook.Options{Port: metricsPort}),
 	})
 	if err != nil {
 		return nil, err
@@ -238,17 +228,6 @@ func NewTestEnvironment(config TestEnvironmentConfig, connMock *natsconnectionmo
 		return nil, err
 	}
 
-	// create webhook cert secret.
-	const caBundleSize = 40
-	newCABundle := make([]byte, caBundleSize)
-	if _, err := rand.Read(newCABundle); err != nil {
-		return nil, err
-	}
-	err = k8sClient.Create(ctx, newSecretWithTLSSecret(newCABundle))
-	if err != nil {
-		return nil, err
-	}
-
 	return &TestEnvironment{
 		k8sClient:           k8sClient,
 		KubeClient:          kubeClient,
@@ -264,39 +243,6 @@ func NewTestEnvironment(config TestEnvironmentConfig, connMock *natsconnectionmo
 }
 
 func SetupAndStartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *rest.Config, error) {
-	const caBundleSize = 20
-	dummyCABundle := make([]byte, caBundleSize)
-	if _, err := rand.Read(dummyCABundle); err != nil {
-		return nil, nil, err
-	}
-
-	url := "https://eventing-controller.kyma-system.svc.cluster.local"
-	sideEffectClassNone := kadmissionregistrationv1.SideEffectClassNone
-	webhookClientConfig := kadmissionregistrationv1.WebhookClientConfig{
-		URL:      &url,
-		CABundle: dummyCABundle,
-	}
-	mwh := getMutatingWebhookConfig([]kadmissionregistrationv1.MutatingWebhook{
-		{
-			Name:                    "reconciler.eventing.test",
-			ClientConfig:            webhookClientConfig,
-			SideEffects:             &sideEffectClassNone,
-			AdmissionReviewVersions: []string{"v1beta1"},
-		},
-	})
-	mwh.Name = getTestBackendConfig().MutatingWebhookName
-
-	// setup dummy validating webhook
-	vwh := getValidatingWebhookConfig([]kadmissionregistrationv1.ValidatingWebhook{
-		{
-			Name:                    "reconciler.eventing.test",
-			ClientConfig:            webhookClientConfig,
-			SideEffects:             &sideEffectClassNone,
-			AdmissionReviewVersions: []string{"v1beta1"},
-		},
-	})
-	vwh.Name = getTestBackendConfig().ValidatingWebhookName
-
 	// define CRDs to include.
 	includedCRDs := []string{
 		filepath.Join(config.ProjectRootDir, "config", "crd", "bases"),
@@ -321,10 +267,6 @@ func SetupAndStartEnvTest(config TestEnvironmentConfig) (*envtest.Environment, *
 		ErrorIfCRDPathMissing:    true,
 		AttachControlPlaneOutput: attachControlPlaneOutput,
 		UseExistingCluster:       &uec,
-		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			MutatingWebhooks:   []*kadmissionregistrationv1.MutatingWebhookConfiguration{mwh},
-			ValidatingWebhooks: []*kadmissionregistrationv1.ValidatingWebhookConfiguration{vwh},
-		},
 	}
 
 	args := testEnv.ControlPlane.GetAPIServer().Configure()
@@ -364,13 +306,8 @@ func (env TestEnvironment) TearDown() error {
 		env.TestCancelFn()
 	}
 
-	// clean-up created resources
-	err := env.DeleteSecretFromK8s(getTestBackendConfig().WebhookSecretName, getTestBackendConfig().Namespace)
-	if err != nil {
-		log.Printf("couldn't clean the webhook secret: %s", err)
-	}
-
 	// retry to stop the api-server
+	var err error
 	sleepTime := 1 * time.Second
 	const retries = 20
 	for range retries {
@@ -871,50 +808,6 @@ func (env TestEnvironment) EnsureEPPClusterRoleBindingCorrect(t *testing.T, even
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure ClusterRoleBinding correctness")
 }
 
-func (env TestEnvironment) EnsureCABundleInjectedIntoWebhooks(t *testing.T) {
-	t.Helper()
-	require.Eventually(t, func() bool {
-		// get cert secret from k8s.
-		certSecret, err := env.GetSecretFromK8s(getTestBackendConfig().WebhookSecretName,
-			getTestBackendConfig().Namespace)
-		if err != nil {
-			env.Logger.WithContext().Error(err)
-			return false
-		}
-
-		// get Mutating and validating webhook configurations from k8s.
-		mwh, err := env.KubeClient.GetMutatingWebHookConfiguration(context.Background(),
-			getTestBackendConfig().MutatingWebhookName)
-		if err != nil {
-			env.Logger.WithContext().Error(err)
-			return false
-		}
-
-		vwh, err := env.KubeClient.GetValidatingWebHookConfiguration(context.Background(),
-			getTestBackendConfig().ValidatingWebhookName)
-		if err != nil {
-			env.Logger.WithContext().Error(err)
-			return false
-		}
-
-		if len(mwh.Webhooks) == 0 || len(vwh.Webhooks) == 0 {
-			env.Logger.WithContext().Error("Invalid mutating and validating webhook configurations")
-			return false
-		}
-
-		if !bytes.Equal(mwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventingcontroller.TLSCertField]) {
-			env.Logger.WithContext().Error("CABundle of mutating configuration is not correct")
-			return false
-		}
-
-		if !bytes.Equal(vwh.Webhooks[0].ClientConfig.CABundle, certSecret.Data[eventingcontroller.TLSCertField]) {
-			env.Logger.WithContext().Error("CABundle of validating configuration is not correct")
-			return false
-		}
-		return true
-	}, SmallTimeOut, SmallPollingInterval, "failed to ensure correctness of CABundle in Webhooks")
-}
-
 func (env TestEnvironment) EnsureEventMeshSecretCreated(t *testing.T, eventing *v1alpha1.Eventing) {
 	t.Helper()
 	subarr := strings.Split(eventing.Spec.Backend.Config.EventMeshSecret, "/")
@@ -1041,46 +934,9 @@ func (env TestEnvironment) GetNATSFromK8s(name, namespace string) (*natsv1alpha1
 	return nats, err
 }
 
-func newSecretWithTLSSecret(dummyCABundle []byte) *kcorev1.Secret {
-	return &kcorev1.Secret{
-		TypeMeta: kmetav1.TypeMeta{
-			Kind:       "Secret",
-			APIVersion: "v1",
-		},
-		ObjectMeta: kmetav1.ObjectMeta{
-			Name:      getTestBackendConfig().WebhookSecretName,
-			Namespace: getTestBackendConfig().Namespace,
-		},
-		Data: map[string][]byte{
-			eventingcontroller.TLSCertField: dummyCABundle,
-		},
-	}
-}
-
-func getMutatingWebhookConfig(webhook []kadmissionregistrationv1.MutatingWebhook) *kadmissionregistrationv1.MutatingWebhookConfiguration {
-	return &kadmissionregistrationv1.MutatingWebhookConfiguration{
-		ObjectMeta: kmetav1.ObjectMeta{
-			Name: getTestBackendConfig().MutatingWebhookName,
-		},
-		Webhooks: webhook,
-	}
-}
-
-func getValidatingWebhookConfig(webhook []kadmissionregistrationv1.ValidatingWebhook) *kadmissionregistrationv1.ValidatingWebhookConfiguration {
-	return &kadmissionregistrationv1.ValidatingWebhookConfiguration{
-		ObjectMeta: kmetav1.ObjectMeta{
-			Name: getTestBackendConfig().ValidatingWebhookName,
-		},
-		Webhooks: webhook,
-	}
-}
-
 func getTestBackendConfig() env.BackendConfig {
 	return env.BackendConfig{
-		WebhookSecretName:     "eventing-manager-webhook-server-cert",
-		MutatingWebhookName:   "subscription-mutating-webhook-configuration",
-		ValidatingWebhookName: "subscription-validating-webhook-configuration",
-		Namespace:             "kyma-system",
+		Namespace: "kyma-system",
 	}
 }
 

@@ -2,6 +2,7 @@ package eventmesh
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -9,7 +10,7 @@ import (
 	"time"
 
 	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
 	kcorev1 "k8s.io/api/core/v1"
@@ -22,15 +23,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	controllererrors "github.com/kyma-project/eventing-manager/internal/controller/errors"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/eventmesh"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
 	"github.com/kyma-project/eventing-manager/pkg/constants"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
@@ -53,7 +55,7 @@ type Reconciler struct {
 	oauth2credentials *eventmesh.OAuth2ClientCredentials
 	// nameMapper is used to map the Kyma subscription name to a subscription name on EventMesh.
 	nameMapper                     backendutils.NameMapper
-	sinkValidator                  sink.Validator
+	subscriptionValidator          validator.SubscriptionValidator
 	collector                      *metrics.Collector
 	syncConditionWebhookCallStatus syncConditionWebhookCallStatusFunc
 }
@@ -71,8 +73,8 @@ const (
 
 func NewReconciler(client client.Client, logger *logger.Logger, recorder record.EventRecorder,
 	cfg env.Config, cleaner cleaner.Cleaner, eventMeshBackend eventmesh.Backend,
-	credential *eventmesh.OAuth2ClientCredentials, mapper backendutils.NameMapper, validator sink.Validator,
-	collector *metrics.Collector, domain string,
+	credential *eventmesh.OAuth2ClientCredentials, mapper backendutils.NameMapper,
+	subscriptionValidator validator.SubscriptionValidator, collector *metrics.Collector, domain string,
 ) *Reconciler {
 	if err := eventMeshBackend.Initialize(cfg); err != nil {
 		logger.WithContext().Errorw("Failed to start reconciler", "name",
@@ -88,7 +90,7 @@ func NewReconciler(client client.Client, logger *logger.Logger, recorder record.
 		cleaner:                        cleaner,
 		oauth2credentials:              credential,
 		nameMapper:                     mapper,
-		sinkValidator:                  validator,
+		subscriptionValidator:          subscriptionValidator,
 		collector:                      collector,
 		syncConditionWebhookCallStatus: syncConditionWebhookCallStatus,
 	}
@@ -141,6 +143,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 		return kctrl.Result{}, xerrors.Errorf("failed to sync finalizer: %v", err)
 	}
 
+	// Validate subscription.
+	if validationErr := r.validateSubscription(ctx, sub); validationErr != nil {
+		if updateErr := r.updateStatus(ctx, currentSubscription, sub, log); updateErr != nil {
+			return kctrl.Result{}, errors.Join(validationErr, updateErr)
+		}
+		return kctrl.Result{}, reconcile.TerminalError(validationErr)
+	}
+
 	// sync APIRule for the desired subscription
 	apiRule, err := r.syncAPIRule(ctx, sub, log)
 	// sync the condition: ConditionAPIRuleStatus
@@ -172,6 +182,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	}
 
 	return result, nil
+}
+
+func (r *Reconciler) validateSubscription(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
+	var err error
+	if err = r.subscriptionValidator.Validate(ctx, *subscription); err != nil {
+		subscription.Status.SetNotReady()
+	}
+	subscription.Status.SetSubscriptionSpecValidCondition(err)
+	return err
 }
 
 // updateSubscription updates the subscription changes to k8s.
@@ -281,7 +300,7 @@ func (r *Reconciler) syncEventMeshSubscription(subscription *eventingv1alpha2.Su
 	logger.Debug("Syncing subscription with EventMesh")
 
 	if apiRule == nil {
-		return false, errors.Errorf("APIRule is required")
+		return false, pkgerrors.Errorf("APIRule is required")
 	}
 
 	if _, err := r.Backend.SyncSubscription(subscription, r.cleaner, apiRule); err != nil {
@@ -357,10 +376,6 @@ func syncConditionWebhookCallStatus(subscription *eventingv1alpha2.Subscription)
 func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
 	logger *zap.SugaredLogger,
 ) (*apigatewayv1beta1.APIRule, error) {
-	if err := r.sinkValidator.Validate(ctx, subscription); err != nil {
-		return nil, err
-	}
-
 	sURL, err := url.ParseRequestURI(subscription.Spec.Sink)
 	if err != nil {
 		events.Warn(r.recorder, subscription, events.ReasonValidationFailed,
@@ -389,7 +404,7 @@ func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1al
 		return apiRule, nil
 	}
 
-	return apiRule, controllererrors.NewSkippable(errors.Errorf("apiRule %s is not ready", apiRule.Name))
+	return apiRule, controllererrors.NewSkippable(pkgerrors.Errorf("apiRule %s is not ready", apiRule.Name))
 }
 
 // createOrUpdateAPIRule create new or update existing APIRule for the given subscription.
@@ -789,7 +804,7 @@ func (r *Reconciler) checkStatusActive(subscription *eventingv1alpha2.Subscripti
 	if activationTime, err := time.Parse(time.RFC3339, subscription.Status.Backend.FailedActivation); err != nil {
 		return false, err
 	} else if now.Sub(activationTime) > timeoutRetryActiveEmsStatus {
-		return false, errors.Errorf("timeout waiting for the subscription to be active: %s", subscription.Name)
+		return false, pkgerrors.Errorf("timeout waiting for the subscription to be active: %s", subscription.Name)
 	}
 
 	return false, nil
@@ -807,7 +822,7 @@ func checkLastFailedDelivery(subscription *eventingv1alpha2.Subscription) (bool,
 	var err error
 	var lastFailedDeliveryTime time.Time
 	if lastFailedDeliveryTime, err = time.Parse(time.RFC3339, lastFailed); err != nil {
-		return true, errors.Errorf("failed to parse LastFailedDelivery: %v", err)
+		return true, pkgerrors.Errorf("failed to parse LastFailedDelivery: %v", err)
 	}
 
 	// Check if LastSuccessfulDelivery exists. If not, LastFailedDelivery happened last.
@@ -819,7 +834,7 @@ func checkLastFailedDelivery(subscription *eventingv1alpha2.Subscription) (bool,
 	// Try to parse LastSuccessfulDelivery.
 	var lastSuccessfulDeliveryTime time.Time
 	if lastSuccessfulDeliveryTime, err = time.Parse(time.RFC3339, lastSuccessful); err != nil {
-		return true, errors.Errorf("failed to parse LastSuccessfulDelivery: %v", err)
+		return true, pkgerrors.Errorf("failed to parse LastSuccessfulDelivery: %v", err)
 	}
 
 	return lastFailedDeliveryTime.After(lastSuccessfulDeliveryTime), nil

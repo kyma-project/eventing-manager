@@ -11,7 +11,6 @@ import (
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	kcorev1 "k8s.io/api/core/v1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -36,83 +35,6 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(code)
-}
-
-func Test_ValidationWebhook(t *testing.T) {
-	t.Parallel()
-	testCases := []struct {
-		name                  string
-		givenSubscriptionOpts []eventingtesting.SubscriptionOpt
-		wantError             func(subName string) error
-	}{
-		{
-			name: "should fail to create subscription with invalid event source",
-			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
-				eventingtesting.WithStandardTypeMatching(),
-				eventingtesting.WithSource(""),
-				eventingtesting.WithOrderCreatedV1Event(),
-				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
-			},
-			wantError: func(subName string) error {
-				return GenerateInvalidSubscriptionError(subName,
-					eventingv1alpha2.EmptyErrDetail, eventingv1alpha2.SourcePath)
-			},
-		},
-		{
-			name: "should fail to create subscription with invalid event types",
-			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
-				eventingtesting.WithStandardTypeMatching(),
-				eventingtesting.WithSource("source"),
-				eventingtesting.WithTypes([]string{}),
-				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
-			},
-			wantError: func(subName string) error {
-				return GenerateInvalidSubscriptionError(subName,
-					eventingv1alpha2.EmptyErrDetail, eventingv1alpha2.TypesPath)
-			},
-		},
-		{
-			name: "should fail to create subscription with invalid config",
-			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
-				eventingtesting.WithStandardTypeMatching(),
-				eventingtesting.WithSource("source"),
-				eventingtesting.WithOrderCreatedV1Event(),
-				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
-				eventingtesting.WithMaxInFlightMessages("invalid"),
-			},
-			wantError: func(subName string) error {
-				return GenerateInvalidSubscriptionError(subName,
-					eventingv1alpha2.StringIntErrDetail, eventingv1alpha2.ConfigPath)
-			},
-		},
-		{
-			name: "should fail to create subscription with invalid sink",
-			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
-				eventingtesting.WithStandardTypeMatching(),
-				eventingtesting.WithSource("source"),
-				eventingtesting.WithOrderCreatedV1Event(),
-				eventingtesting.WithSink("https://svc2.test.local"),
-			},
-			wantError: func(subName string) error {
-				return GenerateInvalidSubscriptionError(subName,
-					eventingv1alpha2.SuffixMissingErrDetail, eventingv1alpha2.SinkPath)
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		testcase := tc
-		t.Run(testcase.name, func(t *testing.T) {
-			t.Parallel()
-			t.Log("creating the k8s subscription")
-			sub := NewSubscription(jsTestEnsemble.Ensemble, testcase.givenSubscriptionOpts...)
-
-			EnsureNamespaceCreatedForSub(t, jsTestEnsemble.Ensemble, sub)
-
-			// attempt to create subscription
-			EnsureK8sResourceNotCreated(t, jsTestEnsemble.Ensemble, sub, testcase.wantError(sub.Name))
-		})
-	}
 }
 
 // TestUnavailableNATSServer tests if a subscription is reconciled properly when the NATS backend is unavailable.
@@ -258,16 +180,14 @@ func Test_CreateSubscription(t *testing.T) {
 				eventingtesting.WithSinkURL(
 					eventingtesting.ValidSinkURL(jsTestEnsemble.SubscriberSvc.Namespace, "testapp"),
 				),
+				eventingtesting.WithMaxInFlight(10),
 			},
 			want: Want{
 				K8sSubscription: []gomegatypes.GomegaMatcher{
 					eventingtesting.HaveCondition(
 						ConditionInvalidSink(
-							"failed to validate subscription sink URL. It is not a valid cluster local svc: Service \"testapp\" not found",
+							"Subscription validation failed: Sink validation failed: service testapp.test not found in the cluster",
 						)),
-				},
-				K8sEvents: []kcorev1.Event{
-					EventInvalidSink("Sink does not correspond to a valid cluster local svc"),
 				},
 			},
 		},
@@ -327,6 +247,110 @@ func Test_CreateSubscription(t *testing.T) {
 			for _, eventType := range sub.Spec.Types {
 				ensureNATSSubscriptionIsDeleted(g, sub, eventType)
 			}
+		})
+	}
+}
+
+func Test_defaulting(t *testing.T) {
+	t.Parallel()
+
+	const (
+		maxInFlightMessages        = 3
+		defaultMaxInFlightMessages = 10
+	)
+
+	testCases := []struct {
+		name                  string
+		givenSubscriptionOpts []eventingtesting.SubscriptionOpt
+		want                  Want
+	}{
+		// TypeMatching
+		{
+			name: "should default the TypeMatching to standard if it is not configured",
+			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
+				eventingtesting.WithMaxInFlight(defaultMaxInFlightMessages),
+				eventingtesting.WithFinalizers([]string{}),
+			},
+			want: Want{
+				K8sSubscription: []gomegatypes.GomegaMatcher{
+					eventingtesting.HaveTypeMatching(eventingv1alpha2.TypeMatchingStandard),
+				},
+			},
+		},
+		{
+			name: "should not change the TypeMatching from exact if it is configured",
+			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithTypeMatchingExact(),
+				eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
+				eventingtesting.WithMaxInFlight(defaultMaxInFlightMessages),
+				eventingtesting.WithFinalizers([]string{}),
+			},
+			want: Want{
+				K8sSubscription: []gomegatypes.GomegaMatcher{
+					eventingtesting.HaveTypeMatching(eventingv1alpha2.TypeMatchingExact),
+				},
+			},
+		},
+		{
+			name: "should not change the TypeMatching from standard if it is configured",
+			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithTypeMatchingStandard(),
+				eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
+				eventingtesting.WithMaxInFlight(defaultMaxInFlightMessages),
+				eventingtesting.WithFinalizers([]string{}),
+			},
+			want: Want{
+				K8sSubscription: []gomegatypes.GomegaMatcher{
+					eventingtesting.HaveTypeMatching(eventingv1alpha2.TypeMatchingStandard),
+				},
+			},
+		},
+		// MaxInFlightMessages
+		{
+			name: "should default the MaxInFlightMessages if it is not configured",
+			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithTypeMatchingStandard(),
+				eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
+				eventingtesting.WithFinalizers([]string{}),
+			},
+			want: Want{
+				K8sSubscription: []gomegatypes.GomegaMatcher{
+					eventingtesting.HaveMaxInFlight(defaultMaxInFlightMessages),
+				},
+			},
+		},
+		{
+			name: "should not change the MaxInFlightMessages if it is configured",
+			givenSubscriptionOpts: []eventingtesting.SubscriptionOpt{
+				eventingtesting.WithTypeMatchingStandard(),
+				eventingtesting.WithSourceAndType(eventingtesting.EventSource, eventingtesting.OrderCreatedEventType),
+				eventingtesting.WithSinkURLFromSvc(jsTestEnsemble.SubscriberSvc),
+				eventingtesting.WithMaxInFlight(maxInFlightMessages),
+				eventingtesting.WithFinalizers([]string{}),
+			},
+			want: Want{
+				K8sSubscription: []gomegatypes.GomegaMatcher{
+					eventingtesting.HaveMaxInFlight(maxInFlightMessages),
+				},
+			},
+		},
+	}
+
+	for _, testcase := range testCases {
+		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
+			g := gomega.NewGomegaWithT(t)
+
+			// when
+			subscription := CreateSubscription(t, jsTestEnsemble.Ensemble, testcase.givenSubscriptionOpts...)
+
+			// then
+			CheckSubscriptionOnK8s(g, jsTestEnsemble.Ensemble, subscription, testcase.want.K8sSubscription...)
 		})
 	}
 }

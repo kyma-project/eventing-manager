@@ -49,6 +49,8 @@ spec:
               config:
                 additionalProperties:
                   type: string
+                default:
+                  maxInFlightMessages: "10"
                 description: Map of configuration options that will be applied on
                   the backend.
                 type: object
@@ -64,6 +66,7 @@ spec:
                 description: Defines the origin of the event.
                 type: string
               typeMatching:
+                default: standard
                 description: |-
                   Defines how types should be handled.<br />
                   - `standard`: backend-specific logic will be applied to the configured source and types.<br />

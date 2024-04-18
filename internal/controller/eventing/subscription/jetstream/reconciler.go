@@ -2,6 +2,7 @@ package jetstream
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"time"
 
@@ -15,16 +16,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
 	"github.com/kyma-project/eventing-manager/internal/controller/events"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	backendutils "github.com/kyma-project/eventing-manager/pkg/backend/utils"
-	"github.com/kyma-project/eventing-manager/pkg/errors"
+	emerrors "github.com/kyma-project/eventing-manager/pkg/errors"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	"github.com/kyma-project/eventing-manager/pkg/object"
 	"github.com/kyma-project/eventing-manager/pkg/utils"
@@ -38,28 +40,28 @@ const (
 
 type Reconciler struct {
 	client.Client
-	Backend             jetstream.Backend
-	recorder            record.EventRecorder
-	logger              *logger.Logger
-	cleaner             cleaner.Cleaner
-	sinkValidator       sink.Validator
-	customEventsChannel chan event.GenericEvent
-	collector           *metrics.Collector
+	Backend               jetstream.Backend
+	recorder              record.EventRecorder
+	logger                *logger.Logger
+	cleaner               cleaner.Cleaner
+	subscriptionValidator validator.SubscriptionValidator
+	customEventsChannel   chan event.GenericEvent
+	collector             *metrics.Collector
 }
 
 func NewReconciler(client client.Client, jsBackend jetstream.Backend,
 	logger *logger.Logger, recorder record.EventRecorder, cleaner cleaner.Cleaner,
-	defaultSinkValidator sink.Validator, collector *metrics.Collector,
+	subscriptionValidator validator.SubscriptionValidator, collector *metrics.Collector,
 ) *Reconciler {
 	reconciler := &Reconciler{
-		Client:              client,
-		Backend:             jsBackend,
-		recorder:            recorder,
-		logger:              logger,
-		cleaner:             cleaner,
-		sinkValidator:       defaultSinkValidator,
-		customEventsChannel: make(chan event.GenericEvent),
-		collector:           collector,
+		Client:                client,
+		Backend:               jsBackend,
+		recorder:              recorder,
+		logger:                logger,
+		cleaner:               cleaner,
+		subscriptionValidator: subscriptionValidator,
+		customEventsChannel:   make(chan event.GenericEvent),
+		collector:             collector,
 	}
 	return reconciler
 }
@@ -105,8 +107,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 
 	// fetch current subscription object and ensure the object was not deleted in the meantime
 	currentSubscription := &eventingv1alpha2.Subscription{}
-	err := r.Client.Get(ctx, req.NamespacedName, currentSubscription)
-	if err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, currentSubscription); err != nil {
 		return kctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -129,32 +130,25 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 		return r.addFinalizer(ctx, desiredSubscription)
 	}
 
-	// update the cleanEventTypes and config values in the subscription status, if changed
-	if err = r.syncEventTypes(desiredSubscription); err != nil {
-		if syncErr := r.syncSubscriptionStatus(ctx, desiredSubscription, err, log); syncErr != nil {
-			return kctrl.Result{}, err
+	// Validate subscription.
+	if validationErr := r.validateSubscription(ctx, desiredSubscription); validationErr != nil {
+		if errors.Is(validationErr, validator.ErrSinkValidationFailed) {
+			if deleteErr := r.Backend.DeleteSubscriptionsOnly(desiredSubscription); deleteErr != nil {
+				log.Errorw("Failed to delete JetStream subscriptions", "error", deleteErr)
+				return kctrl.Result{}, deleteErr
+			}
 		}
-		return kctrl.Result{}, err
+		if updateErr := r.updateSubscriptionStatus(ctx, desiredSubscription, log); updateErr != nil {
+			return kctrl.Result{}, errors.Join(validationErr, updateErr)
+		}
+		return kctrl.Result{}, reconcile.TerminalError(validationErr)
 	}
 
-	// Check for valid sink
-	if err := r.sinkValidator.Validate(ctx, desiredSubscription); err != nil {
-		if deleteErr := r.Backend.DeleteSubscriptionsOnly(desiredSubscription); deleteErr != nil {
-			r.namedLogger().Errorw(
-				"Failed to delete JetStream subscriptions",
-				"namespace", desiredSubscription.Namespace,
-				"name", desiredSubscription.Name,
-				"error", deleteErr,
-			)
-			return kctrl.Result{}, deleteErr
-		}
-
-		// No point in reconciling as the sink is invalid,
-		// return latest error to requeue the reconciliation request
+	// update the cleanEventTypes and config values in the subscription status, if changed
+	if err := r.syncEventTypes(desiredSubscription); err != nil {
 		if syncErr := r.syncSubscriptionStatus(ctx, desiredSubscription, err, log); syncErr != nil {
 			return kctrl.Result{}, err
 		}
-		// No point in reconciling as the sink is invalid, return latest error to requeue the reconciliation request
 		return kctrl.Result{}, err
 	}
 
@@ -175,6 +169,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 
 	// Update Subscription status
 	return kctrl.Result{}, r.syncSubscriptionStatus(ctx, desiredSubscription, nil, log)
+}
+
+func (r *Reconciler) validateSubscription(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
+	var err error
+	if err = r.subscriptionValidator.Validate(ctx, *subscription); err != nil {
+		subscription.Status.SetNotReady()
+		subscription.Status.ClearTypes()
+		subscription.Status.ClearBackend()
+		subscription.Status.ClearConditions()
+	}
+	subscription.Status.SetSubscriptionSpecValidCondition(err)
+	return err
 }
 
 func (r *Reconciler) updateSubscriptionMetrics(current, desired *eventingv1alpha2.Subscription) {
@@ -239,7 +245,7 @@ func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
 	}
 
 	if err := r.Backend.DeleteSubscription(subscription); err != nil {
-		deleteSubErr := errors.MakeError(errFailedToDeleteSub, err)
+		deleteSubErr := emerrors.MakeError(errFailedToDeleteSub, err)
 		// if failed to delete the external dependency here, return with error
 		// so that it can be retried
 		if syncErr := r.syncSubscriptionStatus(ctx, subscription, deleteSubErr, log); syncErr != nil {
@@ -255,7 +261,7 @@ func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
 
 	// update the subscription's finalizers in k8s
 	if err := r.Update(ctx, subscription); err != nil {
-		return kctrl.Result{}, errors.MakeError(errFailedToUpdateFinalizers, err)
+		return kctrl.Result{}, emerrors.MakeError(errFailedToUpdateFinalizers, err)
 	}
 
 	for _, t := range types {
@@ -278,8 +284,8 @@ func (r *Reconciler) syncSubscriptionStatus(ctx context.Context,
 	// set ready state
 	desiredSubscription.Status.Ready = err == nil
 
-	// compile the desired conditions
-	desiredSubscription.Status.Conditions = eventingv1alpha2.GetSubscriptionActiveCondition(desiredSubscription, err)
+	// set the desired conditions
+	eventingv1alpha2.SetSubscriptionActiveCondition(&desiredSubscription.Status, err)
 
 	// Update the subscription
 	return r.updateSubscriptionStatus(ctx, desiredSubscription, log)
@@ -306,7 +312,7 @@ func (r *Reconciler) updateSubscriptionStatus(ctx context.Context,
 
 	// sync subscription status with k8s
 	if err := r.updateStatus(ctx, actualSubscription, desiredSubscription, logger); err != nil {
-		return errors.MakeError(errFailedToUpdateStatus, err)
+		return emerrors.MakeError(errFailedToUpdateStatus, err)
 	}
 
 	return nil
@@ -325,7 +331,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, oldSubscription,
 	if err := r.Status().Update(ctx, newSubscription); err != nil {
 		events.Warn(r.recorder, newSubscription, events.ReasonUpdateFailed,
 			"Update Subscription status failed %s", newSubscription.Name)
-		return errors.MakeError(errFailedToUpdateStatus, err)
+		return emerrors.MakeError(errFailedToUpdateStatus, err)
 	}
 	events.Normal(r.recorder, newSubscription, events.ReasonUpdate,
 		"Update Subscription status succeeded %s", newSubscription.Name)
@@ -342,7 +348,7 @@ func (r *Reconciler) addFinalizer(ctx context.Context, sub *eventingv1alpha2.Sub
 
 	// update the subscription's finalizers in k8s
 	if err := r.Update(ctx, sub); err != nil {
-		return kctrl.Result{}, errors.MakeError(errFailedToUpdateFinalizers, err)
+		return kctrl.Result{}, emerrors.MakeError(errFailedToUpdateFinalizers, err)
 	}
 
 	return kctrl.Result{}, nil

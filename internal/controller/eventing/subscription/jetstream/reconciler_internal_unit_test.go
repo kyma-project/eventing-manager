@@ -17,13 +17,15 @@ import (
 	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	"github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator"
+	subscriptionvalidatormocks "github.com/kyma-project/eventing-manager/internal/controller/eventing/subscription/validator/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/backend/cleaner"
 	"github.com/kyma-project/eventing-manager/pkg/backend/jetstream"
 	backendjetstreammocks "github.com/kyma-project/eventing-manager/pkg/backend/jetstream/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/backend/metrics"
-	"github.com/kyma-project/eventing-manager/pkg/backend/sink"
 	"github.com/kyma-project/eventing-manager/pkg/env"
 	"github.com/kyma-project/eventing-manager/pkg/logger"
 	eventingtesting "github.com/kyma-project/eventing-manager/testing"
@@ -48,6 +50,8 @@ func Test_Reconcile(t *testing.T) {
 		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
 		eventingtesting.WithSource(eventingtesting.EventSourceClean),
 		eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
+		eventingtesting.WithMaxInFlight(10),
+		eventingtesting.WithSink("http://test.test.svc.cluster.local"),
 	)
 	// A subscription marked for deletion.
 	testSubUnderDeletion := eventingtesting.NewSubscription("sub2", namespaceName,
@@ -61,8 +65,8 @@ func Test_Reconcile(t *testing.T) {
 	missingSubSyncErr := jetstream.ErrMissingSubscription
 	backendDeleteErr := errors.New("backend delete error")
 	validatorErr := errors.New("invalid sink")
-	happyValidator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return nil })
-	unhappyValidator := sink.ValidatorFunc(func(_ context.Context, s *eventingv1alpha2.Subscription) error { return validatorErr })
+	happyValidator := validator.SubscriptionValidatorFunc(func(_ context.Context, _ eventingv1alpha2.Subscription) error { return nil })
+	unhappyValidator := validator.SubscriptionValidatorFunc(func(_ context.Context, _ eventingv1alpha2.Subscription) error { return validatorErr })
 	collector := metrics.NewCollector()
 
 	testCases := []struct {
@@ -214,7 +218,7 @@ func Test_Reconcile(t *testing.T) {
 					testenv.Backend
 			},
 			wantReconcileResult: kctrl.Result{},
-			wantReconcileError:  validatorErr,
+			wantReconcileError:  reconcile.TerminalError(validatorErr),
 		},
 	}
 
@@ -234,7 +238,9 @@ func Test_Reconcile(t *testing.T) {
 			// then
 			req.Equal(testcase.wantReconcileResult, res)
 			req.ErrorIs(err, testcase.wantReconcileError)
-			mockedBackend.AssertExpectations(t)
+			if testcase.wantReconcileError == nil {
+				mockedBackend.AssertExpectations(t)
+			}
 		})
 	}
 }
@@ -717,6 +723,47 @@ func Test_updateSubscription(t *testing.T) {
 	}
 }
 
+func Test_validateSubscription(t *testing.T) {
+	// given
+	subscription := eventingtesting.NewSubscription("test-subscription", namespaceName,
+		eventingtesting.WithFinalizers([]string{eventingv1alpha2.Finalizer}),
+		eventingtesting.WithSource(eventingtesting.EventSourceClean),
+		eventingtesting.WithEventType(eventingtesting.OrderCreatedV1Event),
+		eventingtesting.WithMaxInFlight(10),
+		eventingtesting.WithSink("http://test.test.svc.cluster.local"),
+	)
+
+	// Set up the test environment.
+	testEnv := setupTestEnvironment(t, subscription)
+	testEnv.Backend.On("SyncSubscription", mock.Anything).Return(nil)
+	testEnv.Backend.On("GetJetStreamSubjects", mock.Anything, mock.Anything, mock.Anything).Return([]string{eventingtesting.JetStreamSubject})
+	testEnv.Backend.On("GetConfig", mock.Anything).Return(env.NATSConfig{JSStreamName: "sap"})
+
+	// Set up the SubscriptionValidator mock.
+	validatorMock := &subscriptionvalidatormocks.SubscriptionValidator{}
+	validatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil)
+
+	reconciler := NewReconciler(
+		testEnv.Client,
+		testEnv.Backend,
+		testEnv.Logger,
+		testEnv.Recorder,
+		testEnv.Cleaner,
+		validatorMock,
+		metrics.NewCollector(),
+	)
+
+	// when
+	request := kctrl.Request{NamespacedName: types.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Name}}
+	res, err := reconciler.Reconcile(context.Background(), request)
+
+	// then
+	require.Equal(t, kctrl.Result{}, res)
+	require.NoError(t, err)
+	validatorMock.AssertExpectations(t)
+	testEnv.Backend.AssertExpectations(t)
+}
+
 // helper functions and structs
 
 // TestEnvironment provides mocked resources for tests.
@@ -741,16 +788,18 @@ func setupTestEnvironment(t *testing.T, objs ...client.Object) *TestEnvironment 
 		t.Fatalf("initialize logger failed: %v", err)
 	}
 	jsCleaner := cleaner.NewJetStreamCleaner(defaultLogger)
-	defaultSinkValidator := sink.NewValidator(fakeClient, recorder)
+
+	// Init the Subscription validator.
+	subscriptionValidator := validator.NewSubscriptionValidator(fakeClient)
 
 	reconciler := Reconciler{
-		Backend:       mockedBackend,
-		Client:        fakeClient,
-		logger:        defaultLogger,
-		recorder:      recorder,
-		sinkValidator: defaultSinkValidator,
-		cleaner:       jsCleaner,
-		collector:     metrics.NewCollector(),
+		Backend:               mockedBackend,
+		Client:                fakeClient,
+		logger:                defaultLogger,
+		recorder:              recorder,
+		subscriptionValidator: subscriptionValidator,
+		cleaner:               jsCleaner,
+		collector:             metrics.NewCollector(),
 	}
 
 	return &TestEnvironment{

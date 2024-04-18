@@ -37,7 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -69,7 +68,6 @@ func registerSchemas(scheme *runtime.Scheme) {
 
 const (
 	defaultMetricsPort = 9443
-	webhookServerPort  = 9443
 )
 
 func syncLogger(logger *logger.Logger) {
@@ -113,7 +111,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		HealthProbeBindAddress: opts.ProbeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       leaderElectionID,
-		WebhookServer:          webhook.NewServer(webhook.Options{Port: webhookServerPort}),
 		Cache:                  cache.Options{SyncPeriod: &opts.ReconcilePeriod},
 		Metrics:                server.Options{BindAddress: opts.MetricsAddr},
 		NewCache:               controllercache.New,
@@ -199,13 +196,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
-
-	// Setup webhooks.
-	if err = (&eventingv1alpha2.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "Failed to create webhook")
-		syncLogger(ctrLogger)
-		os.Exit(1)
-	}
 
 	// sync PeerAuthentications
 	err = peerauthentication.SyncPeerAuthentications(ctx, kubeClient, ctrLogger.WithContext().Named("main"))
