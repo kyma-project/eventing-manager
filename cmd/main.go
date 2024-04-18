@@ -18,7 +18,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"log"
 	"os"
@@ -45,7 +44,6 @@ import (
 	controllercache "github.com/kyma-project/eventing-manager/internal/controller/cache"
 	controllerclient "github.com/kyma-project/eventing-manager/internal/controller/client"
 	eventingcontroller "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing"
-	"github.com/kyma-project/eventing-manager/internal/webhook"
 	"github.com/kyma-project/eventing-manager/options"
 	backendmetrics "github.com/kyma-project/eventing-manager/pkg/backend/metrics"
 	"github.com/kyma-project/eventing-manager/pkg/env"
@@ -214,12 +212,6 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	}
 	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
-		syncLogger(ctrLogger)
-		os.Exit(1)
-	}
-
-	if errs := webhook.CleanupResources(ctx, k8sClient); len(errs) > 0 {
-		setupLog.Error(errors.Join(errs...), "failed to cleanup kubernetes webhook resources")
 		syncLogger(ctrLogger)
 		os.Exit(1)
 	}
