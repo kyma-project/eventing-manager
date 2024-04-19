@@ -100,10 +100,15 @@ type Eventing struct {
 type EventingStatus struct {
 	ActiveBackend     BackendType `json:"activeBackend"`
 	BackendConfigHash int64       `json:"specHash"`
-	// Can have one of the following values: Ready, Error, Processing, Warning. Ready state is set
-	// when all the resources are deployed successfully and backend is connected.
-	// It gets Warning state in case backend is not specified, NATS module is not installed, or EventMesh secret is missing in the cluster.
-	// Error state is set when there is an error. Processing state is set if recources are being created or changed.
+
+	// Defines the overall state of the Eventing custom resource.<br/>
+	// - `Ready` when all the resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.<br/>
+	// - `Warning` if there is a user input misconfiguration. The following are examples of user input misconfigurations:<br/>
+	// &nbsp;&nbsp;- There is no backend configured.<br/>
+	// &nbsp;&nbsp;- The backend is configured to NATS but there is no NATS module installed.<br/>
+	// &nbsp;&nbsp;- The backend is configured to EventMesh but there is no valid EventMesh Secret configured.<br/>
+	// - `Processing` if the resources managed by the Eventing manager are being created or updated.<br/>
+	// - `Error` if an error occurred while reconciling the Eventing custom resource.
 	State            string              `json:"state"`
 	PublisherService string              `json:"publisherService,omitempty"`
 	Conditions       []kmetav1.Condition `json:"conditions,omitempty"`
@@ -153,19 +158,19 @@ type Backend struct {
 	// +kubebuilder:validation:XValidation:rule="self=='NATS' || self=='EventMesh' || self==''", message="backend type can only be set to NATS or EventMesh"
 	Type BackendType `json:"type"`
 
-	// Config defines configuration for eventing backend.
+	// Config defines configuration for the Eventing backend.
 	// +kubebuilder:default:={natsStreamStorageType:"File", natsStreamReplicas:3, natsStreamMaxSize:"700Mi", natsMaxMsgsPerTopic:1000000}
 	Config BackendConfig `json:"config,omitempty"`
 }
 
-// BackendConfig defines configuration for eventing backend.
+// BackendConfig defines configuration for the Eventing backend.
 type BackendConfig struct {
 	// NATSStreamStorageType defines the storage type for stream data.
 	// +kubebuilder:default:="File"
 	// +kubebuilder:validation:XValidation:rule="self=='File' || self=='Memory'", message="storage type can only be set to File or Memory"
 	NATSStreamStorageType string `json:"natsStreamStorageType,omitempty"`
 
-	// NATSStreamReplicas defines the number of replicas for stream.
+	// NATSStreamReplicas defines the number of replicas for the stream.
 	// +kubebuilder:default:=3
 	NATSStreamReplicas int `json:"natsStreamReplicas,omitempty"`
 
@@ -177,7 +182,7 @@ type BackendConfig struct {
 	// +kubebuilder:default:=1000000
 	NATSMaxMsgsPerTopic int `json:"natsMaxMsgsPerTopic,omitempty"`
 
-	// EventMeshSecret defines the namespaced name of K8s Secret containing EventMesh credentials. The format of name is "namespace/name".
+	// EventMeshSecret defines the namespaced name of the Kubernetes Secret containing EventMesh credentials. The format of name is "namespace/name".
 	// +kubebuilder:validation:Pattern:="^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$"
 	EventMeshSecret string `json:"eventMeshSecret,omitempty"`
 
