@@ -24,7 +24,7 @@ require (
 	github.com/vektra/mockery/v2 v2.42.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/oauth2 v0.17.0
+	golang.org/x/oauth2 v0.20.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028
 	istio.io/api v1.20.2
 	istio.io/client-go v1.20.2
@@ -103,7 +103,6 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231002182017-d307bd883b97 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
