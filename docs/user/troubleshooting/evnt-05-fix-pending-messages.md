@@ -96,3 +96,11 @@ Sometimes triggering the leader reelection on the broken consumers doesn't work.
                 Replicas: 3
                  Storage: File
    ```
+
+
+4. If none of the above steps work perform restart of the nats pods.
+
+   ```bash
+   # assuming we have 3 NATS instances
+   $ kubectl delete pod -n kyma-system eventing-nats-0 eventing-nats-1 eventing-nats-2 --wait=false
+   ```
