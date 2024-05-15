@@ -98,7 +98,7 @@ Sometimes triggering the leader reelection on the broken consumers doesn't work.
    ```
 
 
-4. If none of the above steps work perform restart of the nats pods.
+4. If none of the previous steps work, perform a restart of the NATS Pods:
 
    ```bash
    # assuming we have 3 NATS instances
