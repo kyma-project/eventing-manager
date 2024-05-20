@@ -81,22 +81,68 @@ gardener::validate_and_default() {
 gardener::provision_cluster() {
     log::banner "Provision cluster: \"${CLUSTER_NAME}\""
 
-    # decreasing attempts to 2 because we will try to create new cluster from scratch on exit code other than 0
-    ${KYMA_CLI} provision gardener aws \
-      --secret "${GARDENER_PROVIDER_SECRET_NAME}" \
-      --name "${CLUSTER_NAME}" \
-      --project "${GARDENER_PROJECT_NAME}" \
-      --credentials "${GARDENER_KUBECONFIG}" \
-      --region "${GARDENER_REGION}" \
-      --zones "${GARDENER_ZONES}" \
-      --type "${MACHINE_TYPE}" \
-      --scaler-min ${SCALER_MIN} \
-      --scaler-max ${SCALER_MAX} \
-      --kube-version="${GARDENER_CLUSTER_VERSION}" \
-      --gardenlinux-version "${GARDEN_LINUX_VERSION}" \
-      --attempts ${RETRY_ATTEMPTS} \
-      --verbose \
-      --hibernation-start ""
+    cat << EOF | kubectl apply --kubeconfig="${GARDENER_KUBECONFIG}" -f -
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  secretBindingName: ${GARDENER_PROVIDER_SECRET_NAME}
+  cloudProfileName: aws
+  region: ${GARDENER_REGION}
+  purpose: evaluation
+  provider:
+    type: aws
+    infrastructureConfig:
+      apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
+      kind: InfrastructureConfig
+      networks:
+        vpc:
+          cidr: 10.250.0.0/16
+        zones:
+          - name: ${GARDENER_REGION}a
+            internal: 10.250.112.0/22
+            public: 10.250.96.0/22
+            workers: 10.250.0.0/19
+    workers:
+    - name: cpu-worker
+      minimum: ${SCALER_MIN}
+      maximum: ${SCALER_MAX}
+      machine:
+        type: ${MACHINE_TYPE}
+      volume:
+        type: gp2
+        size: 50Gi
+      zones:
+        - ${GARDENER_REGION}a
+  networking:
+    type: calico
+    pods: 100.96.0.0/11
+    nodes: 10.250.0.0/16
+    services: 100.64.0.0/13
+  kubernetes:
+    version: ${GARDENER_CLUSTER_VERSION}
+  hibernation:
+    enabled: false
+  addons:
+    nginxIngress:
+      enabled: false
+EOF
+
+    echo "waiting fo cluster to be ready..."
+    kubectl wait --kubeconfig="${GARDENER_KUBECONFIG}"--for=condition=EveryNodeReady shoot/${CLUSTER_NAME} --timeout=17m
+
+    # create kubeconfig request, that creates a Kubeconfig, which is valid for one day
+    kubectl create --kubeconfig="${GARDENER_KUBECONFIG}" \
+        -f <(printf '{"spec":{"expirationSeconds":86400}}') \
+        --raw /apis/core.gardener.cloud/v1beta1/namespaces/garden-${GARDENER_PROJECT_NAME}/shoots/${CLUSTER_NAME}/adminkubeconfig | \
+        jq -r ".status.kubeconfig" | \
+        base64 -d > ${CLUSTER_NAME}_kubeconfig.yaml
+
+    # merge with the existing kubeconfig settings
+    mkdir -p ~/.kube
+    KUBECONFIG="~/.kube/config:${CLUSTER_NAME}_kubeconfig.yaml" kubectl config view --merge > merged_kubeconfig.yaml
+    mv merged_kubeconfig.yaml ~/.kube/config
 }
 
 ## MAIN Logic
