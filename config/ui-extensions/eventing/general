@@ -11,5 +11,5 @@ features:
     disableCreate: false
     disableDelete: false
 description: >-
-  {{[Eventing CR](https://github.com/kyma-project/eventing-manager/blob/main/config/samples/default.yaml)}}
-  specifies eventing module.
+  {{[Eventing custom resource](https://kyma-project.io/#/eventing-manager/user/02-configuration)}}
+  configures the Eventing module.
