@@ -62,9 +62,6 @@ gardener::validate_and_default() {
         export GARDENER_CLUSTER_VERSION=$(kubectl --kubeconfig="${GARDENER_KUBECONFIG}" get cloudprofiles.core.gardener.cloud aws -o go-template='{{range .spec.kubernetes.versions}}{{if eq .classification "supported"}}{{.version}}{{break}}{{end}}{{end}}')
     fi
 
-    # Detect supported linux version.
-    GARDEN_LINUX_VERSION=$(kubectl --kubeconfig="${GARDENER_KUBECONFIG}" get cloudprofiles.core.gardener.cloud aws -o go-template='{{range .spec.machineImages}}{{if eq .name "gardenlinux"}}{{range .versions}}{{if eq .classification "supported"}}{{.version}}{{end}}{{end}}{{end}}{{end}}')
-
     # print configurations for debugging purposes:
     log::banner "Configurations:"
     echo "CLUSTER_NAME: ${CLUSTER_NAME}"
@@ -75,7 +72,6 @@ gardener::validate_and_default() {
     echo "SCALER_MAX: ${SCALER_MAX}"
     echo "GARDENER_CLUSTER_VERSION: ${GARDENER_CLUSTER_VERSION}"
     echo "RETRY_ATTEMPTS ${RETRY_ATTEMPTS}"
-    echo "GARDEN_LINUX_VERSION ${GARDEN_LINUX_VERSION}"
 }
 
 gardener::provision_cluster() {
