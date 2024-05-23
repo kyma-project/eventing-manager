@@ -137,7 +137,7 @@ EOF
 
     # merge with the existing kubeconfig settings
     mkdir -p ~/.kube
-    KUBECONFIG="~/.kube/config:${CLUSTER_NAME}_kubeconfig.yaml" kubectl config view --merge > merged_kubeconfig.yaml
+    KUBECONFIG="~/.kube/config:${CLUSTER_NAME}_kubeconfig.yaml" kubectl config view --flatten --merge > merged_kubeconfig.yaml
     mv merged_kubeconfig.yaml ~/.kube/config
 }
 
