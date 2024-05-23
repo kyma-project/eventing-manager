@@ -111,7 +111,7 @@ jobs:
         run: |
           make -C hack/ci/ wait-istio-cr-ready
           make -C hack/ci/ wait-api-gateway-cr-ready
-          make -C hack/ci/ wait-nats-cr-ready
+          make -C hack/ci/ wait-nats-cr-warning
           make -C hack/ci/ wait-eventing-cr-ready-with-backend ACTIVE_BACKEND=NATS
 
       - name: Setup eventing tests
