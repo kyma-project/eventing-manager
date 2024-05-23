@@ -126,7 +126,7 @@ spec:
 EOF
 
     echo "waiting fo cluster to be ready..."
-    kubectl wait --kubeconfig="${GARDENER_KUBECONFIG}"--for=condition=EveryNodeReady shoot/${CLUSTER_NAME} --timeout=17m
+    kubectl wait --kubeconfig="${GARDENER_KUBECONFIG}" --for=condition=EveryNodeReady shoot/${CLUSTER_NAME} --timeout=17m
 
     # create kubeconfig request, that creates a Kubeconfig, which is valid for one day
     kubectl create --kubeconfig="${GARDENER_KUBECONFIG}" \
