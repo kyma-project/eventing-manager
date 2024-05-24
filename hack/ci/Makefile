@@ -51,6 +51,10 @@ apply-peerauthentication-crd:
 wait-nats-cr-ready:
 	kubectl wait nats.operator.kyma-project.io -n kyma-system eventing-nats --timeout=300s --for=jsonpath='{.status.state}'=Ready
 
+.PHONY: wait-nats-cr-warning
+wait-nats-cr-warning:
+	kubectl wait nats.operator.kyma-project.io -n kyma-system eventing-nats --timeout=300s --for=jsonpath='{.status.state}'=Warning
+
 .PHONY: wait-eventing-cr-ready
 wait-eventing-cr-ready:
 	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=300s --for=jsonpath='{.status.state}'=Ready
