@@ -13,6 +13,13 @@ create-kyma-system-ns: ## Create kyma-system namespace.
 create-k3d: ## Create k3d with kyma CRDs.
 	"${KYMA_CLI}" provision k3d -p 8081:80@loadbalancer -p 8443:443@loadbalancer --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} -k ${K3D_VERSION} --ci
 
+.PHONY: install-eventing-module
+install-eventing-module:
+	$(eval LATEST_EVENTING_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/eventing-manager/releases/latest | jq -r '.tag_name'))
+	@echo "Deploying Eventing Manager: ${LATEST_EVENTING_VERSION}"
+	kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing-manager.yaml
+	kubectl apply -f https://github.com/kyma-project/eventing-manager/releases/latest/download/eventing-default-cr.yaml
+
 .PHONY: install-nats-module
 install-nats-module:
 	$(eval LATEST_NATS_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/nats-manager/releases/latest | jq -r '.tag_name'))
