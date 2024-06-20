@@ -1,0 +1,188 @@
+name: k8s-compatility-test
+
+on:
+    workflow_dispatch:
+      inputs:
+        k8s-version: # k8s version
+          description: 'Kubernetes version (i.e. x.y.z)'
+          required: true
+
+jobs:
+  k8s-compatility-test:
+    # Tests the compatibilty of Kubernetes version with Eventing and NATS modules.
+    # The steps of this jobs are:
+    # 1. Provision Gardener cluster with the given k8s version.
+    # 2. Install latest released versions of Istio, Api-gateway, NATS and Eventing modules.
+    # 3. Run eventing tests with NATS backend.
+    # 4. Run eventing tests with EventMesh backend.
+    runs-on: ubuntu-latest
+    env:
+      KYMA_STABILITY: "unstable"
+      KYMA: "./hack/kyma"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go via go.mod
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - run: go version
+
+      - name: Install Kyma CLI
+        run: |
+          make kyma
+
+      - name: Provision Gardener cluster
+        env:
+          GARDENER_CLUSTER_VERSION: ${{ inputs.kube-version }}
+          CLUSTER_PREFIX: "ghem-"
+          GARDENER_PROJECT_NAME: ${{ vars.GARDENER_PROJECT_NAME }}
+          GARDENER_PROVIDER_SECRET_NAME: ${{ vars.GARDENER_PROVIDER_SECRET_NAME_AWS }}
+          MACHINE_TYPE: "m5.xlarge"
+          SCALER_MIN: "1"
+          SCALER_MAX: "2"
+          RETRY_ATTEMPTS: "1"
+          GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
+        run: |
+          # setup Gardener kubeconfig.
+          mkdir -p "${HOME}/.gardener"
+          export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
+          echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_KUBECONFIG}
+          # generate cluster name and export it to Github env for cleanup step to access it.
+          export CLUSTER_NAME="${CLUSTER_PREFIX}$(openssl rand -hex 2)"
+          echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
+          # set random region for AWS.
+          export GARDENER_REGION=$(./scripts/gardener/aws/get_random_region.sh)
+          export GARDENER_ZONES="${GARDENER_REGION}a"
+          # provision gardener cluster.
+          make -C hack/ci/ provision-gardener-cluster
+          kubectl version
+          kubectl cluster-info
+          kubectl get nodes
+          kubectl get ns
+
+      - name: Create kyma-system namespace
+        run: |
+          kubectl create ns kyma-system || true
+
+      - name: Create EventMesh secret
+        env:
+          EVENTMESH_K8S_SECRET: ${{ secrets.EVENTMESH_K8S_SECRET }}
+        run: |
+          echo "${EVENTMESH_K8S_SECRET}" | base64 --decode > k8s-em.yaml
+          kubectl apply -n kyma-system -f k8s-em.yaml
+          rm k8s-em.yaml
+
+      - name: Create IAS application for EventMesh
+        env:
+          TEST_EVENTING_AUTH_IAS_URL: ${{ vars.EVENTING_AUTH_IAS_URL }}
+          TEST_EVENTING_AUTH_IAS_USER: ${{ vars.EVENTING_AUTH_IAS_USER }}
+          TEST_EVENTING_AUTH_IAS_PASSWORD: ${{ secrets.EVENTING_AUTH_IAS_PASSWORD }}
+        run: |
+          export DISPLAY_NAME=${CLUSTER_NAME}
+          make -C hack/ci/ create-ias-app
+
+      - name: Install latest released Istio Module
+        run: |
+          make -C hack/ci/ install-istio-module
+
+      - name: Install latest released API Gateway Manager
+        run: |
+          make -C hack/ci/ install-api-gateway-module
+
+      - name: Install latest released NATS Manager
+        run: |
+          make -C hack/ci/ install-nats-module
+
+      - name: Install latest released Eventing Manager
+        run: |
+          make -C hack/ci/ install-eventing-module
+          kubectl apply -f config/samples/default_nats.yaml
+
+      - name: Wait for Installed modules to be ready
+        run: |
+          make -C hack/ci/ wait-istio-cr-ready
+          make -C hack/ci/ wait-api-gateway-cr-ready
+          make -C hack/ci/ wait-nats-cr-warning
+          make -C hack/ci/ wait-eventing-cr-ready-with-backend ACTIVE_BACKEND=NATS
+
+      - name: Setup eventing tests
+        run: |
+          # create API Rules for EPP and Sink.
+          export DOMAIN_TO_EXPOSE_WORKLOADS="$(kubectl get cm -n kube-system shoot-info -o=jsonpath='{.data.domain}')"
+          ./hack/e2e/scripts/expose_epp_and_sink.sh
+          # define URLs.
+          export SINK_PORT_FORWARDED_URL=https://sink-e2e-tests.${DOMAIN_TO_EXPOSE_WORKLOADS}
+          export PUBLISHER_URL=https://epp-e2e-tests.${DOMAIN_TO_EXPOSE_WORKLOADS}
+          # export ENVs to Github for all next steps.
+          echo "SINK_PORT_FORWARDED_URL=${SINK_PORT_FORWARDED_URL}" >> $GITHUB_ENV
+          echo "PUBLISHER_URL=${PUBLISHER_URL}" >> $GITHUB_ENV
+          # setup e2e tests.
+          make e2e-eventing-setup
+
+      - name: Test eventing with NATS
+        run: |
+          make e2e-eventing
+
+      - name: Switch to EventMesh backend
+        run: |
+          kubectl apply -f config/samples/default_eventmesh.yaml
+          make -C hack/ci/ wait-eventing-cr-ready-with-backend ACTIVE_BACKEND=EventMesh
+
+      - name: Test eventing with EventMesh
+        env:
+          BACKEND_TYPE: "EventMesh"
+        run: |
+          # run tests.
+          make e2e-eventing
+
+      - name: Test eventing cleanup
+        run: |
+          make e2e-cleanup
+
+      - name: On error, fetch NATS CR
+        if: failure()
+        run: |
+          kubectl get nats.operator.kyma-project.io -n kyma-system -o yaml
+
+      - name: On error, fetch Eventing CRs
+        if: failure()
+        run: |
+          kubectl get eventing.operator.kyma-project.io -n kyma-system -o yaml
+
+      - name: On error, fetch Istio CR
+        if: failure()
+        run: |
+          kubectl get istios.operator.kyma-project.io -n kyma-system -o yaml
+
+      - name: On error, fetch API Gateway CR
+        if: failure()
+        run: |
+          kubectl get apigateways.operator.kyma-project.io -n kyma-system -o yaml
+
+      - name: Cleanup modules
+        if: ${{ always() }}
+        run: |
+          ./scripts/cleanup_modules.sh
+
+      - name: Delete IAS application
+        if: ${{ always() }}
+        env:
+          TEST_EVENTING_AUTH_IAS_URL: ${{ vars.EVENTING_AUTH_IAS_URL }}
+          TEST_EVENTING_AUTH_IAS_USER: ${{ vars.EVENTING_AUTH_IAS_USER }}
+          TEST_EVENTING_AUTH_IAS_PASSWORD: ${{ secrets.EVENTING_AUTH_IAS_PASSWORD }}
+        run: |
+          export IAS_APPLICATION_LOCATION=$(cat ~/.ias_location)
+          make -C hack/ci/ delete-ias-app
+
+      - name: Delete Gardener cluster
+        if: ${{ always() }}
+        env:
+          GARDENER_PROVIDER_SECRET_NAME: "tunas-aws"
+          GARDENER_PROJECT_NAME: "kymatunas"
+          WAIT_FOR_DELETE_COMPLETION: "false"
+        run: |
+          export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
+          make -C hack/ci/ deprovision-gardener-cluster
