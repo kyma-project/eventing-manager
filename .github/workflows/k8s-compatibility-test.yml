@@ -36,7 +36,7 @@ jobs:
 
       - name: Provision Gardener cluster
         env:
-          GARDENER_CLUSTER_VERSION: ${{ inputs.kube-version }}
+          GARDENER_CLUSTER_VERSION: ${{ inputs.k8s-version }}
           CLUSTER_PREFIX: "ghem-"
           GARDENER_PROJECT_NAME: ${{ vars.GARDENER_PROJECT_NAME }}
           GARDENER_PROVIDER_SECRET_NAME: ${{ vars.GARDENER_PROVIDER_SECRET_NAME_AWS }}
