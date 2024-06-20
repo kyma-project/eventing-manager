@@ -3,7 +3,7 @@ KYMA_CLI ?= "${PROJECT_ROOT}/${KYMA}"
 CLUSTER_NAME ?= kyma
 REGISTRY_PORT ?= 5001
 K3D_VERSION ?= 1.28.4
-GARDENER_KUBE_VERSION ?= 1.28.4
+GARDENER_CLUSTER_VERSION ?= 1.28.4
 
 .PHONY: create-kyma-system-ns
 create-kyma-system-ns: ## Create kyma-system namespace.
@@ -80,7 +80,7 @@ wait-api-gateway-cr-ready:
 
 .PHONY: provision-gardener-cluster
 provision-gardener-cluster:
-	GARDENER_CLUSTER_VERSION="${GARDENER_KUBE_VERSION}" PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/gardener/aws/provision.sh
+	GARDENER_CLUSTER_VERSION="${GARDENER_CLUSTER_VERSION}" PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT}/scripts/gardener/aws/provision.sh
 
 .PHONY: deprovision-gardener-cluster
 deprovision-gardener-cluster:
