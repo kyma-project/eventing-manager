@@ -35,7 +35,7 @@ gardener::validate_and_default() {
     utils::check_required_vars "${requiredVars[@]}"
 
     # validations
-    if [ "${#CLUSTER_NAME}" -gt 9 ]; then
+    if [ "${CLUSTER_NAME}" -gt 9 ]; then
         log::error "Provided cluster name is too long"
         return 1
     fi
