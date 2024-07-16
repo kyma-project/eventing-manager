@@ -74,14 +74,13 @@ func (r *Reconciler) SetupUnmanaged(ctx context.Context, mgr kctrl.Manager) erro
 		return err
 	}
 
-	if err := ctru.Watch(source.Kind(mgr.GetCache(), &eventingv1alpha2.Subscription{}),
-		&handler.EnqueueRequestForObject{}); err != nil {
+	if err := ctru.Watch(source.Kind(mgr.GetCache(), &eventingv1alpha2.Subscription{},
+		&handler.TypedEnqueueRequestForObject[*eventingv1alpha2.Subscription]{})); err != nil {
 		r.namedLogger().Errorw("Failed to setup watch for subscriptions", "error", err)
 		return err
 	}
 
-	if err := ctru.Watch(&source.Channel{Source: r.customEventsChannel},
-		&handler.EnqueueRequestForObject{}); err != nil {
+	if err := ctru.Watch(source.Channel(r.customEventsChannel, &handler.EnqueueRequestForObject{})); err != nil {
 		r.namedLogger().Errorw("Failed to setup watch for custom channel", "error", err)
 		return err
 	}

@@ -309,7 +309,7 @@ func (r *Reconciler) SetupWithManager(mgr kctrl.Manager) error {
 				},
 			),
 		).
-		WatchesRawSource(&source.Channel{Source: r.genericEvents}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(source.Channel(r.genericEvents, &handler.EnqueueRequestForObject{})).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 0,
 		}).
@@ -319,25 +319,32 @@ func (r *Reconciler) SetupWithManager(mgr kctrl.Manager) error {
 }
 
 func (r *Reconciler) watchResource(kind client.Object, eventing *operatorv1alpha1.Eventing) error {
-	err := r.controller.Watch(
-		source.Kind(r.ctrlManager.GetCache(), kind),
-		handler.EnqueueRequestsFromMapFunc(func(_ context.Context, obj client.Object) []reconcile.Request {
-			// Enqueue a reconcile request for the eventing resource
-			return []reconcile.Request{
-				{NamespacedName: types.NamespacedName{
-					Namespace: eventing.Namespace,
-					Name:      eventing.Name,
-				}},
-			}
-		}),
-		predicate.ResourceVersionChangedPredicate{},
-		predicate.Funcs{
-			// don't reconcile for create events
-			CreateFunc: r.SkipEnqueueOnCreate(),
-			UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("CR/CRB", "eventing"),
-		},
+	resourceHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, obj client.Object) []reconcile.Request {
+		// Enqueue a reconcile request for the eventing resource
+		return []reconcile.Request{
+			{NamespacedName: types.NamespacedName{
+				Namespace: eventing.Namespace,
+				Name:      eventing.Name,
+			}},
+		}
+	})
+
+	// define ignore creation predicate
+	ignoreCreationPredicate := predicate.TypedFuncs[client.Object]{
+		// don't reconcile for create events
+		CreateFunc: r.SkipEnqueueOnCreate(),
+		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("CR/CRB", "eventing"),
+	}
+
+	return r.controller.Watch(
+		source.Kind[client.Object](
+			r.ctrlManager.GetCache(),
+			kind,
+			resourceHandler,
+			predicate.ResourceVersionChangedPredicate{},
+			ignoreCreationPredicate,
+		),
 	)
-	return err
 }
 
 func (r *Reconciler) startNATSCRWatch(eventing *operatorv1alpha1.Eventing) error {
@@ -351,19 +358,40 @@ func (r *Reconciler) startNATSCRWatch(eventing *operatorv1alpha1.Eventing) error
 		r.natsWatchers[eventing.Namespace] = natsWatcher
 	}
 
-	if err := r.controller.Watch(&source.Channel{Source: natsWatcher.GetEventsChannel()},
-		handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
+	resourceHandler := handler.EnqueueRequestsFromMapFunc(
+		func(ctx context.Context, obj client.Object) []reconcile.Request {
 			return []reconcile.Request{
 				{NamespacedName: types.NamespacedName{
 					Namespace: eventing.Namespace,
 					Name:      eventing.Name,
 				}},
 			}
-		}),
-		predicate.ResourceVersionChangedPredicate{},
-	); err != nil {
+		},
+	)
+
+	typedResourceVersionChangedPredicate := predicate.TypedFuncs[client.Object]{
+		UpdateFunc: func(event event.TypedUpdateEvent[client.Object]) bool {
+			if event.ObjectOld == nil {
+				return false
+			}
+			if event.ObjectNew == nil {
+				return false
+			}
+
+			return event.ObjectNew.GetResourceVersion() != event.ObjectOld.GetResourceVersion()
+		},
+	}
+
+	src := source.Channel[client.Object](
+		natsWatcher.GetEventsChannel(),
+		resourceHandler,
+		source.WithPredicates[client.Object](typedResourceVersionChangedPredicate),
+	)
+
+	if err := r.controller.Watch(src); err != nil {
 		return err
 	}
+
 	natsWatcher.Start()
 
 	return nil
