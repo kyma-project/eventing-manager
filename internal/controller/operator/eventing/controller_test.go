@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	eventingcontrollermocks "github.com/kyma-project/eventing-manager/internal/controller/operator/eventing/mocks"
 	eventingmocks "github.com/kyma-project/eventing-manager/pkg/eventing/mocks"
 	submgrmanagermocks "github.com/kyma-project/eventing-manager/pkg/subscriptionmanager/manager/mocks"
 	"github.com/kyma-project/eventing-manager/pkg/watcher"
@@ -395,7 +396,7 @@ func Test_startNatsCRWatch(t *testing.T) {
 			// Create mock watcher and controller
 			natsWatcher := new(watchermocks.Watcher)
 			natsWatcher.On("IsStarted").Return(testcase.watchStarted)
-			mockController := new(watchermocks.Controller)
+			mockController := new(eventingcontrollermocks.Controller)
 			if !testcase.watchStarted {
 				natsWatcher.On("Start").Once()
 				natsWatcher.On("GetEventsChannel").Return(make(<-chan event.GenericEvent)).Once()
