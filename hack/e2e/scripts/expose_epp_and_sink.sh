@@ -24,13 +24,14 @@ validate_and_default() {
 
 create_api_rule_for_epp() {
   cat <<EOF | kubectl apply -f -
-apiVersion: gateway.kyma-project.io/v1beta1
+apiVersion: gateway.kyma-project.io/v2alpha1
 kind: APIRule
 metadata:
   name: epp-e2e-tests
   namespace: default
 spec:
-  host: epp-e2e-tests.$DOMAIN_TO_EXPOSE_WORKLOADS
+  hosts:
+    - epp-e2e-tests.$DOMAIN_TO_EXPOSE_WORKLOADS
   service:
     name: eventing-publisher-proxy
     namespace: kyma-system
@@ -38,22 +39,24 @@ spec:
   gateway: $API_RULE_GATEWAY
   rules:
     - path: /.*
-      methods: ["GET", "POST"]
-      accessStrategies:
-        - handler: allow
-          config: {}
+      methods: ["GET"]
+      noAuth: true
+    - path: /post
+      methods: ["POST"]
+      noAuth: true
 EOF
 }
 
 create_api_rule_for_sink() {
   cat <<EOF | kubectl apply -f -
-apiVersion: gateway.kyma-project.io/v1beta1
+apiVersion: gateway.kyma-project.io/v2alpha1
 kind: APIRule
 metadata:
   name: sink-e2e-tests
   namespace: default
 spec:
-  host: sink-e2e-tests.$DOMAIN_TO_EXPOSE_WORKLOADS
+  hosts:
+    - sink-e2e-tests.$DOMAIN_TO_EXPOSE_WORKLOADS
   service:
     name: test-sink
     namespace: eventing-tests
@@ -61,10 +64,11 @@ spec:
   gateway: $API_RULE_GATEWAY
   rules:
     - path: /.*
-      methods: ["GET", "POST"]
-      accessStrategies:
-        - handler: allow
-          config: {}
+      methods: ["GET"]
+      noAuth: true
+    - path: /post
+      methods: ["POST"]
+      noAuth: true
 EOF
 }
 
