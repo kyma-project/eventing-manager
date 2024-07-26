@@ -29,7 +29,7 @@ install-nats-module:
 
 .PHONY: install-istio-module
 install-istio-module:
-	$(eval LATEST_ISTIO_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/istio-manager/releases/latest | jq -r '.tag_name'))
+	$(eval LATEST_ISTIO_VERSION := $(shell curl -s https://api.github.com/repos/kyma-project/istio/releases/latest | jq -r '.tag_name'))
 	@echo "Deploying Istio Manager: ${LATEST_ISTIO_VERSION}"
 	kubectl label namespace kyma-system istio-injection=enabled --overwrite
 	kubectl apply -f https://github.com/kyma-project/istio/releases/latest/download/istio-manager.yaml

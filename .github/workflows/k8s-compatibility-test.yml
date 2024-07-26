@@ -1,4 +1,4 @@
-name: k8s-compatility-test
+name: k8s-compatibility-test
 
 on:
     workflow_dispatch:
@@ -8,9 +8,9 @@ on:
           required: true
 
 jobs:
-  k8s-compatility-test:
-    # Tests the compatibilty of Kubernetes version with Eventing and NATS modules.
-    # The steps of this jobs are:
+  k8s-compatibility-test:
+    # Tests the compatibility of Kubernetes version with Eventing and NATS modules.
+    # The steps of this job are:
     # 1. Provision Gardener cluster with the given k8s version.
     # 2. Install latest released versions of Istio, Api-gateway, NATS and Eventing modules.
     # 3. Run eventing tests with NATS backend.
@@ -142,6 +142,26 @@ jobs:
         run: |
           make e2e-cleanup
 
+      - name: On error, fetch APIRules
+        if: failure()
+        run: |
+          kubectl get apirules.gateway.kyma-project.io -A -oyaml || true
+
+      - name: On error, fetch AuthorizationPolicies
+        if: failure()
+        run: |
+          kubectl get authorizationpolicies.security.istio.io -A -oyaml || true
+
+      - name: On error, fetch RequestAuthentications
+        if: failure()
+        run: |
+          kubectl get requestauthentications.security.istio.io -A -oyaml || true
+
+      - name: On error, fetch Subscriptions
+        if: failure()
+        run: |
+          kubectl get subscriptions.eventing.kyma-project.io -A -oyaml || true
+
       - name: On error, fetch NATS CR
         if: failure()
         run: |
@@ -161,6 +181,11 @@ jobs:
         if: failure()
         run: |
           kubectl get apigateways.operator.kyma-project.io -n kyma-system -o yaml
+
+      - name: On error, sleep for 2 hours
+        if: failure()
+        run: |
+          sleep 7200
 
       - name: Cleanup modules
         if: ${{ always() }}
