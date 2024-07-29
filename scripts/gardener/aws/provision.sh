@@ -85,6 +85,10 @@ metadata:
 spec:
   secretBindingName: ${GARDENER_PROVIDER_SECRET_NAME}
   cloudProfileName: aws
+  dns:
+    providers:
+    - type: aws-route53
+      secretName: ${GARDENER_PROVIDER_SECRET_NAME}
   region: ${GARDENER_REGION}
   purpose: evaluation
   provider:
