@@ -88,7 +88,7 @@ spec:
   dns:
     providers:
     - type: aws-route53
-      secretName: ${GARDENER_PROVIDER_SECRET_NAME}
+      secretName: aws-route53-secret
   region: ${GARDENER_REGION}
   purpose: evaluation
   provider:
