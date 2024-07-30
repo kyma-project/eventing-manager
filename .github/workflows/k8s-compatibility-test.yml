@@ -1,4 +1,4 @@
-name: k8s-compatility-test
+name: k8s-compatibility-test
 
 on:
     workflow_dispatch:
@@ -8,9 +8,9 @@ on:
           required: true
 
 jobs:
-  k8s-compatility-test:
-    # Tests the compatibilty of Kubernetes version with Eventing and NATS modules.
-    # The steps of this jobs are:
+  k8s-compatibility-test:
+    # Tests the compatibility of Kubernetes version with Eventing and NATS modules.
+    # The steps of this job are:
     # 1. Provision Gardener cluster with the given k8s version.
     # 2. Install latest released versions of Istio, Api-gateway, NATS and Eventing modules.
     # 3. Run eventing tests with NATS backend.
