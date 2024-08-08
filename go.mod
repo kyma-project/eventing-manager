@@ -1,6 +1,6 @@
 module github.com/kyma-project/eventing-manager
 
-go 1.22.0
+go 1.22.5
 
 require (
 	github.com/avast/retry-go/v3 v3.1.1
@@ -10,21 +10,21 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/api-gateway v0.0.0-20240722132841-346312420d3a
-	github.com/kyma-project/kyma/common/logging v0.0.0-20240717062438-2cfbaa30ab57
+	github.com/kyma-project/api-gateway v0.0.0-20240806081604-e5dae804ed9c
+	github.com/kyma-project/kyma/common/logging v0.0.0-20240729075006-50d76505df8c
 	github.com/kyma-project/nats-manager v1.0.3-0.20231219150808-13159cfea47c
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/nats-io/nats-server/v2 v2.10.18
 	github.com/nats-io/nats.go v1.36.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.34.0
+	github.com/onsi/gomega v1.34.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/stretchr/testify v1.9.0
 	github.com/vektra/mockery/v2 v2.44.1
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.22.0
 	golang.org/x/xerrors v0.0.0-20240716161551-93cc26a95ae9
 	istio.io/api v1.22.3
 	istio.io/client-go v1.22.3
@@ -94,15 +94,15 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
-	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f // indirect
-	golang.org/x/mod v0.18.0 // indirect
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
+	golang.org/x/mod v0.19.0 // indirect
 	golang.org/x/net v0.27.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/term v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.22.0 // indirect
+	golang.org/x/tools v0.23.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
