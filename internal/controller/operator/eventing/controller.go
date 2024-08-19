@@ -83,7 +83,7 @@ var (
 
 // Reconciler reconciles an Eventing object
 //
-//go:generate go run github.com/vektra/mockery/v2 --name=Controller --dir=../../../../vendor/sigs.k8s.io/controller-runtime/pkg/controller --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=TypedController --dir=../../../../vendor/sigs.k8s.io/controller-runtime/pkg/controller --outpkg=mocks --case=underscore
 //go:generate go run github.com/vektra/mockery/v2 --name=Manager --dir=../../../../vendor/sigs.k8s.io/controller-runtime/pkg/manager --outpkg=mocks --case=underscore
 type Reconciler struct {
 	client.Client
@@ -369,23 +369,10 @@ func (r *Reconciler) startNATSCRWatch(eventing *operatorv1alpha1.Eventing) error
 		},
 	)
 
-	typedResourceVersionChangedPredicate := predicate.TypedFuncs[client.Object]{
-		UpdateFunc: func(event event.TypedUpdateEvent[client.Object]) bool {
-			if event.ObjectOld == nil {
-				return false
-			}
-			if event.ObjectNew == nil {
-				return false
-			}
-
-			return event.ObjectNew.GetResourceVersion() != event.ObjectOld.GetResourceVersion()
-		},
-	}
-
 	src := source.Channel[client.Object](
 		natsWatcher.GetEventsChannel(),
 		resourceHandler,
-		source.WithPredicates[client.Object](typedResourceVersionChangedPredicate),
+		source.WithPredicates[client.Object, kctrl.Request](predicate.ResourceVersionChangedPredicate{}),
 	)
 
 	if err := r.controller.Watch(src); err != nil {

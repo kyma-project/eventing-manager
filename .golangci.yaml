@@ -108,6 +108,8 @@ linters-settings:
         alias: eventingtesting
       - pkg: sigs.k8s.io/controller-runtime
         alias: kctrl
+      - pkg: sigs.k8s.io/controller-runtime/pkg/reconcile
+        alias: kctrlruntimereconcile
       - pkg: sigs.k8s.io/controller-runtime/pkg/log
         alias: kctrllog
       - pkg: sigs.k8s.io/controller-runtime/pkg/client
