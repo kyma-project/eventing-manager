@@ -21,6 +21,8 @@ import (
 )
 
 // Test_NATSConnection tests the Eventing CR status when connecting to NATS.
+//
+//nolint:tparallel // multiple controllers with same name cannot co-exist.
 func Test_NATSConnection(t *testing.T) {
 	t.Parallel()
 	// given
@@ -87,8 +89,6 @@ func Test_NATSConnection(t *testing.T) {
 		tcc := tc
 
 		t.Run(tcc.name, func(t *testing.T) {
-			t.Parallel()
-
 			// setup environment
 			testEnvironment, err := testutilsintegration.NewTestEnvironment(
 				testutilsintegration.TestEnvironmentConfig{
