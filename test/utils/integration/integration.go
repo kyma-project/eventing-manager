@@ -66,16 +66,17 @@ const (
 
 // TestEnvironment provides mocked resources for integration tests.
 type TestEnvironment struct {
-	EnvTestInstance     *envtest.Environment
-	k8sClient           client.Client
-	KubeClient          k8s.Client
-	K8sDynamicClient    *dynamic.DynamicClient
-	Reconciler          *eventingcontroller.Reconciler
-	Logger              *logger.Logger
-	Recorder            *record.EventRecorder
-	TestCancelFn        context.CancelFunc
-	SubManagerFactory   subscriptionmanager.ManagerFactory
-	JetStreamSubManager manager.Manager
+	EnvTestInstance       *envtest.Environment
+	k8sClient             client.Client
+	KubeClient            k8s.Client
+	K8sDynamicClient      *dynamic.DynamicClient
+	Reconciler            *eventingcontroller.Reconciler
+	Logger                *logger.Logger
+	Recorder              *record.EventRecorder
+	TestCancelFn          context.CancelFunc
+	SubManagerFactory     subscriptionmanager.ManagerFactory
+	JetStreamSubManager   manager.Manager
+	NATSConnectionBuilder *natsconnectionmocks.Builder
 }
 
 type TestEnvironmentConfig struct {
@@ -191,6 +192,7 @@ func NewTestEnvironment(config TestEnvironmentConfig, connMock *natsconnectionmo
 		connMock.On("Disconnect").Return()
 	}
 
+	natsConnectionBuilder := natsconnectionmocks.NewBuilder(connMock)
 	// create a new watcher
 	eventingReconciler := eventingcontroller.NewReconciler(
 		k8sClient,
@@ -204,7 +206,7 @@ func NewTestEnvironment(config TestEnvironmentConfig, connMock *natsconnectionmo
 		subManagerFactoryMock,
 		opts,
 		config.AllowedEventingCR,
-		natsconnectionmocks.NewBuilder(connMock),
+		natsConnectionBuilder,
 	)
 
 	if err = (eventingReconciler).SetupWithManager(ctrlMgr); err != nil {
@@ -229,16 +231,17 @@ func NewTestEnvironment(config TestEnvironmentConfig, connMock *natsconnectionmo
 	}
 
 	return &TestEnvironment{
-		k8sClient:           k8sClient,
-		KubeClient:          kubeClient,
-		K8sDynamicClient:    dynamicClient,
-		Reconciler:          eventingReconciler,
-		Logger:              ctrLogger,
-		Recorder:            &recorder,
-		EnvTestInstance:     testEnv,
-		TestCancelFn:        cancelCtx,
-		SubManagerFactory:   subManagerFactoryMock,
-		JetStreamSubManager: jetStreamSubManagerMock,
+		k8sClient:             k8sClient,
+		KubeClient:            kubeClient,
+		K8sDynamicClient:      dynamicClient,
+		Reconciler:            eventingReconciler,
+		Logger:                ctrLogger,
+		Recorder:              &recorder,
+		EnvTestInstance:       testEnv,
+		TestCancelFn:          cancelCtx,
+		SubManagerFactory:     subManagerFactoryMock,
+		JetStreamSubManager:   jetStreamSubManagerMock,
+		NATSConnectionBuilder: natsConnectionBuilder,
 	}, nil
 }
 

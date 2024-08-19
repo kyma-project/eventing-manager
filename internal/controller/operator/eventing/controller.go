@@ -711,6 +711,13 @@ func (r *Reconciler) SetKubeClient(kubeClient k8s.Client) {
 	r.kubeClient = kubeClient
 }
 
+func (r *Reconciler) ResetNATSConnection() {
+	if r.natsConnection != nil {
+		r.natsConnection.Disconnect()
+	}
+	r.natsConnection = nil
+}
+
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {
 	return r.logger.WithContext().Named(ControllerName)
 }
