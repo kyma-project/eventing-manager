@@ -26,8 +26,8 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.22.0
 	golang.org/x/xerrors v0.0.0-20240716161551-93cc26a95ae9
-	istio.io/api v1.22.3
-	istio.io/client-go v1.22.3
+	istio.io/api v1.23.0-rc.0.0.20240808171852-2bb3b8eba0c2
+	istio.io/client-go v1.23.0
 	k8s.io/api v0.30.3
 	k8s.io/apiextensions-apiserver v0.30.3
 	k8s.io/apimachinery v0.30.3
@@ -104,7 +104,7 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240513163218-0867130af1f8 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
