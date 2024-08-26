@@ -1,6 +1,6 @@
 module github.com/kyma-project/eventing-manager
 
-go 1.22.6
+go 1.23.0
 
 require (
 	github.com/avast/retry-go/v3 v3.1.1
@@ -28,10 +28,10 @@ require (
 	golang.org/x/xerrors v0.0.0-20240716161551-93cc26a95ae9
 	istio.io/api v1.22.3
 	istio.io/client-go v1.22.3
-	k8s.io/api v0.30.3
-	k8s.io/apiextensions-apiserver v0.30.3
-	k8s.io/apimachinery v0.30.3
-	k8s.io/client-go v0.30.3
+	k8s.io/api v0.30.4
+	k8s.io/apiextensions-apiserver v0.30.4
+	k8s.io/apimachinery v0.30.4
+	k8s.io/client-go v0.30.4
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/controller-runtime v0.18.4
 )
