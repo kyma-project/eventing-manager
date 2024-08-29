@@ -56,27 +56,27 @@ apply-peerauthentication-crd:
 
 .PHONY: wait-nats-cr-ready
 wait-nats-cr-ready:
-	kubectl wait nats.operator.kyma-project.io -n kyma-system eventing-nats --timeout=300s --for=jsonpath='{.status.state}'=Ready
+	kubectl wait nats.operator.kyma-project.io -n kyma-system eventing-nats --timeout=600s --for=jsonpath='{.status.state}'=Ready
 
 .PHONY: wait-nats-cr-warning
 wait-nats-cr-warning:
-	kubectl wait nats.operator.kyma-project.io -n kyma-system eventing-nats --timeout=300s --for=jsonpath='{.status.state}'=Warning
+	kubectl wait nats.operator.kyma-project.io -n kyma-system eventing-nats --timeout=600s --for=jsonpath='{.status.state}'=Warning
 
 .PHONY: wait-eventing-cr-ready
 wait-eventing-cr-ready:
-	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=300s --for=jsonpath='{.status.state}'=Ready
+	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=600s --for=jsonpath='{.status.state}'=Ready
 
 .PHONY: wait-eventing-cr-ready-with-backend
 wait-eventing-cr-ready-with-backend:
-	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=300s --for=jsonpath='{.status.state}'=Ready --for=jsonpath='{.status.activeBackend}'=${ACTIVE_BACKEND}
+	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=600s --for=jsonpath='{.status.state}'=Ready --for=jsonpath='{.status.activeBackend}'=${ACTIVE_BACKEND}
 
 .PHONY: wait-istio-cr-ready
 wait-istio-cr-ready:
-	kubectl wait istios.operator.kyma-project.io -n kyma-system default --timeout=300s --for=jsonpath='{.status.state}'=Ready
+	kubectl wait istios.operator.kyma-project.io -n kyma-system default --timeout=600s --for=jsonpath='{.status.state}'=Ready
 
 .PHONY: wait-api-gateway-cr-ready
 wait-api-gateway-cr-ready:
-	kubectl wait apigateways.operator.kyma-project.io -n kyma-system default --timeout=300s --for=jsonpath='{.status.state}'=Ready
+	kubectl wait apigateways.operator.kyma-project.io -n kyma-system default --timeout=600s --for=jsonpath='{.status.state}'=Ready
 
 .PHONY: provision-gardener-cluster
 provision-gardener-cluster:
