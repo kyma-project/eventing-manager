@@ -40,3 +40,4 @@ module-config.yaml
 
 **/.env
 **/.env.dev
+.env.aws

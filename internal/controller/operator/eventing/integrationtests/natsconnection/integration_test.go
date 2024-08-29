@@ -1,6 +1,7 @@
 package natsconnection
 
 import (
+	"os"
 	"testing"
 
 	natstestutils "github.com/kyma-project/nats-manager/testutils"
@@ -8,7 +9,6 @@ import (
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	kappsv1 "k8s.io/api/apps/v1"
 
 	operatorv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
@@ -20,7 +20,41 @@ import (
 	testutilsintegration "github.com/kyma-project/eventing-manager/test/utils/integration"
 )
 
+const (
+	projectRootDir = "../../../../../../"
+)
+
+var testEnvironment *testutilsintegration.TestEnvironment
+
+// TestMain pre-hook and post-hook to run before and after all tests.
+func TestMain(m *testing.M) {
+	// Note: The setup will provision a single K8s env and
+	// all the tests need to create and use a separate namespace
+
+	// setup env test
+	var err error
+	testEnvironment, err = testutilsintegration.NewTestEnvironment(testutilsintegration.TestEnvironmentConfig{
+		ProjectRootDir: projectRootDir,
+		NATSCRDEnabled: true,
+	}, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// run tests
+	code := m.Run()
+
+	// tear down test env
+	if err = testEnvironment.TearDown(); err != nil {
+		panic(err)
+	}
+
+	os.Exit(code)
+}
+
 // Test_NATSConnection tests the Eventing CR status when connecting to NATS.
+//
+//nolint:tparallel // test-cases uses a shared NATSConnectionBuilder and requires different mocks.
 func Test_NATSConnection(t *testing.T) {
 	t.Parallel()
 	// given
@@ -38,6 +72,7 @@ func Test_NATSConnection(t *testing.T) {
 				conn := &natsconnectionmocks.Connection{}
 				conn.On("Connect", mock.Anything, mock.Anything).Return(nil)
 				conn.On("IsConnected").Return(true)
+				conn.On("Disconnect").Return()
 				return conn
 			},
 			wantMatches: gomega.And(
@@ -53,6 +88,7 @@ func Test_NATSConnection(t *testing.T) {
 				conn := &natsconnectionmocks.Connection{}
 				conn.On("Connect", mock.Anything, mock.Anything).Return(natsconnectionerrors.ErrCannotConnect)
 				conn.On("IsConnected").Return(false)
+				conn.On("Disconnect").Return()
 				return conn
 			},
 			wantMatches: gomega.And(
@@ -70,6 +106,7 @@ func Test_NATSConnection(t *testing.T) {
 				conn := &natsconnectionmocks.Connection{}
 				conn.On("Connect", mock.Anything, mock.Anything).Return(ErrAny)
 				conn.On("IsConnected").Return(false)
+				conn.On("Disconnect").Return()
 				return conn
 			},
 			wantMatches: gomega.And(
@@ -84,21 +121,12 @@ func Test_NATSConnection(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tcc := tc
-
-		t.Run(tcc.name, func(t *testing.T) {
-			t.Parallel()
-
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
 			// setup environment
-			testEnvironment, err := testutilsintegration.NewTestEnvironment(
-				testutilsintegration.TestEnvironmentConfig{
-					NATSCRDEnabled: true,
-					ProjectRootDir: "../../../../../../",
-				},
-				tcc.givenNATSConnectionMock(),
-			)
-			require.NoError(t, err)
-			defer func() { require.NoError(t, testEnvironment.TearDown()) }() // always cleanup
+			testEnvironment.Reconciler.ResetNATSConnection()
+			testEnvironment.NATSConnectionBuilder.SetConnection(tc.givenNATSConnectionMock())
+
 			eventingcontroller.IsDeploymentReady = func(deployment *kappsv1.Deployment) bool { return true }
 
 			// prepare resources
@@ -112,7 +140,7 @@ func Test_NATSConnection(t *testing.T) {
 			testEnvironment.EnsureK8sResourceCreated(t, eventingCR)
 
 			// then
-			testEnvironment.GetEventingAssert(gomega.NewWithT(t), eventingCR).Should(tcc.wantMatches)
+			testEnvironment.GetEventingAssert(gomega.NewWithT(t), eventingCR).Should(tc.wantMatches)
 		})
 	}
 }

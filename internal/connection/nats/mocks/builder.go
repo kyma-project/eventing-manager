@@ -15,3 +15,7 @@ func NewBuilder(conn *Connection) *Builder {
 func (b *Builder) Build() natsconnection.Interface {
 	return b.conn
 }
+
+func (b *Builder) SetConnection(conn *Connection) {
+	b.conn = conn
+}
