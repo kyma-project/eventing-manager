@@ -1,29 +1,24 @@
-name: Backend-switching-tests-gardener (reusable)
+name: k8s-compatibility-test
 
 on:
-  workflow_call:
-    inputs:
-      eventing-manager-image:
-        description: Container image of eventing-manger which needs to be tested.
-        required: true
-        type: string
-      kube-version:
-        description: Kubernetes version for the Gardener cluster.
-        required: false
-        type: string
-      cluster-name-prefix:
-        description: Prefix to use as prefix for name of Gardener cluster.
-        required: false
-        type: string
-        default: "ghem-"
+    workflow_dispatch:
+      inputs:
+        k8s-version: # k8s version
+          description: 'Kubernetes version (i.e. x.y.z)'
+          required: true
 
 jobs:
-  backend-switching:
+  k8s-compatibility-test:
+    # Tests the compatibility of Kubernetes version with Eventing and NATS modules.
+    # The steps of this job are:
+    # 1. Provision Gardener cluster with the given k8s version.
+    # 2. Install latest released versions of Istio, Api-gateway, NATS and Eventing modules.
+    # 3. Run eventing tests with NATS backend.
+    # 4. Run eventing tests with EventMesh backend.
     runs-on: ubuntu-latest
     env:
       KYMA_STABILITY: "unstable"
       KYMA: "./hack/kyma"
-      MANAGER_IMAGE: ${{ inputs.eventing-manager-image }}
 
     steps:
       - uses: actions/checkout@v4
@@ -41,8 +36,8 @@ jobs:
 
       - name: Provision Gardener cluster
         env:
-          GARDENER_CLUSTER_VERSION: ${{ inputs.kube-version }}
-          CLUSTER_PREFIX: ${{ inputs.cluster-name-prefix }}
+          GARDENER_CLUSTER_VERSION: ${{ inputs.k8s-version }}
+          CLUSTER_PREFIX: "ghem-"
           GARDENER_PROJECT_NAME: ${{ vars.GARDENER_PROJECT_NAME }}
           GARDENER_PROVIDER_SECRET_NAME: ${{ vars.GARDENER_PROVIDER_SECRET_NAME_AWS }}
           MACHINE_TYPE: "m5.xlarge"
@@ -101,10 +96,9 @@ jobs:
         run: |
           make -C hack/ci/ install-nats-module
 
-      - name: Deploy eventing-manager
+      - name: Install latest released Eventing Manager
         run: |
-          make install
-          make deploy IMG=$MANAGER_IMAGE
+          make -C hack/ci/ install-eventing-module
           kubectl apply -f config/samples/default_nats.yaml
 
       - name: Wait for Installed modules to be ready
@@ -140,16 +134,6 @@ jobs:
       - name: Test eventing with EventMesh
         env:
           BACKEND_TYPE: "EventMesh"
-        run: |
-          # run tests.
-          make e2e-eventing
-
-      - name: Switch back to NATS backend
-        run: |
-          kubectl apply -f config/samples/default_nats.yaml
-          make -C hack/ci/ wait-eventing-cr-ready-with-backend ACTIVE_BACKEND=NATS
-
-      - name: Test eventing again with NATS
         run: |
           # run tests.
           make e2e-eventing

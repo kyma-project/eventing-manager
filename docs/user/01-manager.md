@@ -1,6 +1,6 @@
 # Eventing Manager
 
-This module ships Eventing Manager. Once this module is enabled, it provides the functionality to send and receive events.
+This module ships Eventing Manager. Once this module is added, it provides the functionality to send and receive events.
 
 ## Module Lifecycle
 

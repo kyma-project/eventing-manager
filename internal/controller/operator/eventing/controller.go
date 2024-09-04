@@ -83,7 +83,7 @@ var (
 
 // Reconciler reconciles an Eventing object
 //
-//go:generate go run github.com/vektra/mockery/v2 --name=Controller --dir=../../../../vendor/sigs.k8s.io/controller-runtime/pkg/controller --outpkg=mocks --case=underscore
+//go:generate go run github.com/vektra/mockery/v2 --name=TypedController --dir=../../../../vendor/sigs.k8s.io/controller-runtime/pkg/controller --outpkg=mocks --case=underscore
 //go:generate go run github.com/vektra/mockery/v2 --name=Manager --dir=../../../../vendor/sigs.k8s.io/controller-runtime/pkg/manager --outpkg=mocks --case=underscore
 type Reconciler struct {
 	client.Client
@@ -309,7 +309,7 @@ func (r *Reconciler) SetupWithManager(mgr kctrl.Manager) error {
 				},
 			),
 		).
-		WatchesRawSource(&source.Channel{Source: r.genericEvents}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(source.Channel(r.genericEvents, &handler.EnqueueRequestForObject{})).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: 0,
 		}).
@@ -319,25 +319,32 @@ func (r *Reconciler) SetupWithManager(mgr kctrl.Manager) error {
 }
 
 func (r *Reconciler) watchResource(kind client.Object, eventing *operatorv1alpha1.Eventing) error {
-	err := r.controller.Watch(
-		source.Kind(r.ctrlManager.GetCache(), kind),
-		handler.EnqueueRequestsFromMapFunc(func(_ context.Context, obj client.Object) []reconcile.Request {
-			// Enqueue a reconcile request for the eventing resource
-			return []reconcile.Request{
-				{NamespacedName: types.NamespacedName{
-					Namespace: eventing.Namespace,
-					Name:      eventing.Name,
-				}},
-			}
-		}),
-		predicate.ResourceVersionChangedPredicate{},
-		predicate.Funcs{
-			// don't reconcile for create events
-			CreateFunc: r.SkipEnqueueOnCreate(),
-			UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("CR/CRB", "eventing"),
-		},
+	resourceHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, obj client.Object) []reconcile.Request {
+		// Enqueue a reconcile request for the eventing resource
+		return []reconcile.Request{
+			{NamespacedName: types.NamespacedName{
+				Namespace: eventing.Namespace,
+				Name:      eventing.Name,
+			}},
+		}
+	})
+
+	// define ignore creation predicate
+	ignoreCreationPredicate := predicate.TypedFuncs[client.Object]{
+		// don't reconcile for create events
+		CreateFunc: r.SkipEnqueueOnCreate(),
+		UpdateFunc: r.SkipEnqueueOnUpdateAfterSemanticCompare("CR/CRB", "eventing"),
+	}
+
+	return r.controller.Watch(
+		source.Kind[client.Object](
+			r.ctrlManager.GetCache(),
+			kind,
+			resourceHandler,
+			predicate.ResourceVersionChangedPredicate{},
+			ignoreCreationPredicate,
+		),
 	)
-	return err
 }
 
 func (r *Reconciler) startNATSCRWatch(eventing *operatorv1alpha1.Eventing) error {
@@ -351,19 +358,27 @@ func (r *Reconciler) startNATSCRWatch(eventing *operatorv1alpha1.Eventing) error
 		r.natsWatchers[eventing.Namespace] = natsWatcher
 	}
 
-	if err := r.controller.Watch(&source.Channel{Source: natsWatcher.GetEventsChannel()},
-		handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
+	resourceHandler := handler.EnqueueRequestsFromMapFunc(
+		func(ctx context.Context, obj client.Object) []reconcile.Request {
 			return []reconcile.Request{
 				{NamespacedName: types.NamespacedName{
 					Namespace: eventing.Namespace,
 					Name:      eventing.Name,
 				}},
 			}
-		}),
-		predicate.ResourceVersionChangedPredicate{},
-	); err != nil {
+		},
+	)
+
+	src := source.Channel[client.Object](
+		natsWatcher.GetEventsChannel(),
+		resourceHandler,
+		source.WithPredicates[client.Object, kctrl.Request](predicate.ResourceVersionChangedPredicate{}),
+	)
+
+	if err := r.controller.Watch(src); err != nil {
 		return err
 	}
+
 	natsWatcher.Start()
 
 	return nil
@@ -694,6 +709,13 @@ func (r *Reconciler) SetEventMeshSubManager(eventMeshSubManager manager.Manager)
 
 func (r *Reconciler) SetKubeClient(kubeClient k8s.Client) {
 	r.kubeClient = kubeClient
+}
+
+func (r *Reconciler) ResetNATSConnection() {
+	if r.natsConnection != nil {
+		r.natsConnection.Disconnect()
+	}
+	r.natsConnection = nil
 }
 
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {

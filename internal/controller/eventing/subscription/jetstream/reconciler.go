@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -68,20 +69,20 @@ func NewReconciler(client client.Client, jsBackend jetstream.Backend,
 
 // SetupUnmanaged creates a controller under the client control.
 func (r *Reconciler) SetupUnmanaged(ctx context.Context, mgr kctrl.Manager) error {
-	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, controller.Options{Reconciler: r})
+	opts := controller.Options{Reconciler: r, SkipNameValidation: ptr.To(true)}
+	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, opts)
 	if err != nil {
 		r.namedLogger().Errorw("Failed to create unmanaged controller", "error", err)
 		return err
 	}
 
-	if err := ctru.Watch(source.Kind(mgr.GetCache(), &eventingv1alpha2.Subscription{}),
-		&handler.EnqueueRequestForObject{}); err != nil {
+	if err := ctru.Watch(source.Kind(mgr.GetCache(), &eventingv1alpha2.Subscription{},
+		&handler.TypedEnqueueRequestForObject[*eventingv1alpha2.Subscription]{})); err != nil {
 		r.namedLogger().Errorw("Failed to setup watch for subscriptions", "error", err)
 		return err
 	}
 
-	if err := ctru.Watch(&source.Channel{Source: r.customEventsChannel},
-		&handler.EnqueueRequestForObject{}); err != nil {
+	if err := ctru.Watch(source.Channel(r.customEventsChannel, &handler.EnqueueRequestForObject{})); err != nil {
 		r.namedLogger().Errorw("Failed to setup watch for custom channel", "error", err)
 		return err
 	}

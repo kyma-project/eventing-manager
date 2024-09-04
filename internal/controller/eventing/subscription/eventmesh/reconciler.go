@@ -19,6 +19,7 @@ import (
 	klabels "k8s.io/apimachinery/pkg/labels"
 	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	kctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -753,19 +754,23 @@ func (r *Reconciler) emitConditionEvent(subscription *eventingv1alpha2.Subscript
 
 // SetupUnmanaged creates a controller under the client control.
 func (r *Reconciler) SetupUnmanaged(ctx context.Context, mgr kctrl.Manager) error {
-	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, controller.Options{Reconciler: r})
+	opts := controller.Options{Reconciler: r, SkipNameValidation: ptr.To(true)}
+	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, opts)
 	if err != nil {
 		return fmt.Errorf("failed to create unmanaged controller: %w", err)
 	}
 
-	if err := ctru.Watch(source.Kind(mgr.GetCache(), &eventingv1alpha2.Subscription{}),
-		&handler.EnqueueRequestForObject{}); err != nil {
+	if err := ctru.Watch(source.Kind(mgr.GetCache(), &eventingv1alpha2.Subscription{},
+		&handler.TypedEnqueueRequestForObject[*eventingv1alpha2.Subscription]{})); err != nil {
 		return fmt.Errorf("failed to watch subscriptions: %w", err)
 	}
 
-	apiRuleEventHandler := handler.EnqueueRequestForOwner(r.Scheme(), mgr.GetRESTMapper(),
-		&eventingv1alpha2.Subscription{})
-	if err := ctru.Watch(source.Kind(mgr.GetCache(), &apigatewayv1beta1.APIRule{}), apiRuleEventHandler); err != nil {
+	apiRuleEventHandler := handler.TypedEnqueueRequestForOwner[*apigatewayv1beta1.APIRule](
+		r.Scheme(),
+		mgr.GetRESTMapper(),
+		&eventingv1alpha2.Subscription{},
+	)
+	if err := ctru.Watch(source.Kind(mgr.GetCache(), &apigatewayv1beta1.APIRule{}, apiRuleEventHandler)); err != nil {
 		return fmt.Errorf("failed to watch APIRule: %w", err)
 	}
 
