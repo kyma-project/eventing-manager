@@ -3,7 +3,7 @@ FROM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.23.0-alpi
 ARG TARGETOS
 ARG TARGETARCH
 
-WORKDIR /workspace
+WORKDIR /app
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
@@ -32,7 +32,7 @@ FROM gcr.io/distroless/static:nonroot
 LABEL source = git@github.com:kyma-project/eventing-manager.git
 
 WORKDIR /
-COPY --from=builder /workspace/manager .
+COPY --from=builder /app/manager .
 USER nonroot:nonroot
 
 ENTRYPOINT ["/manager"]
