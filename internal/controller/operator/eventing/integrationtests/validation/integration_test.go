@@ -54,8 +54,8 @@ const (
 	wrongSecret            = "gibberish"
 	publisher              = "publisher"
 	replicas               = "replicas"
-	max                    = "max"
-	min                    = "min"
+	max                    = "max" //nolint:predeclared // used in tests
+	min                    = "min" //nolint:predeclared // used in tests
 	resources              = "resources"
 	limits                 = "limits"
 	requests               = "requests"

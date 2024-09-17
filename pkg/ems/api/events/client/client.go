@@ -65,7 +65,7 @@ func (c Client) Publish(event cloudevents.Event, qos types.Qos) (*types.PublishR
 	}
 
 	// set required headers
-	req.Header.Set("qos", string(qos))
+	req.Header.Set("qos", string(qos)) //nolint:canonicalheader // used as required.
 
 	var response types.PublishResponse
 	status, responseBody, err := c.client.Do(req, &response)
