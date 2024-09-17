@@ -239,7 +239,7 @@ func (r *Reconciler) enqueueReconciliationForSubscriptions(subs []eventingv1alph
 // handleSubscriptionDeletion deletes the JetStream subscription and removes its finalizer if it is set.
 func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
 	subscription *eventingv1alpha2.Subscription, log *zap.SugaredLogger,
-) (kctrl.Result, error) {
+) (kctrl.Result, error) { //nolint:unparam // used as needed.
 	// delete the JetStream subscription/consumer
 	if !utils.ContainsString(subscription.ObjectMeta.Finalizers, eventingv1alpha2.Finalizer) {
 		return kctrl.Result{}, nil
@@ -344,7 +344,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, oldSubscription,
 }
 
 // addFinalizer appends the eventing finalizer to the subscription and updates it in k8s.
-func (r *Reconciler) addFinalizer(ctx context.Context, sub *eventingv1alpha2.Subscription) (kctrl.Result, error) {
+func (r *Reconciler) addFinalizer(ctx context.Context, sub *eventingv1alpha2.Subscription) (kctrl.Result, error) { //nolint:unparam // used as needed.
 	sub.ObjectMeta.Finalizers = append(sub.ObjectMeta.Finalizers, eventingv1alpha2.Finalizer)
 
 	// update the subscription's finalizers in k8s

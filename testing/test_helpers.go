@@ -155,10 +155,10 @@ func GetStructuredMessageHeaders() http.Header {
 
 func GetBinaryMessageHeaders() http.Header {
 	headers := make(http.Header)
-	headers.Add(CeIDHeader, EventID)
-	headers.Add(CeTypeHeader, CloudEventType)
-	headers.Add(CeSourceHeader, CloudEventSource)
-	headers.Add(CeSpecVersionHeader, CloudEventSpecVersion)
+	headers.Add(CeIDHeader, EventID)                        //nolint:canonicalheader // used in testing.
+	headers.Add(CeTypeHeader, CloudEventType)               //nolint:canonicalheader // used in testing.
+	headers.Add(CeSourceHeader, CloudEventSource)           //nolint:canonicalheader // used in testing.
+	headers.Add(CeSpecVersionHeader, CloudEventSpecVersion) //nolint:canonicalheader // used in testing.
 	return headers
 }
 
@@ -186,7 +186,7 @@ func NewAPIRule(subscription *eventingv1alpha2.Subscription, opts ...APIRuleOpti
 
 func WithService(name, host string) APIRuleOption {
 	return func(r *apigatewayv1beta1.APIRule) {
-		port := uint32(443) //nolint:gomnd // tests
+		port := uint32(443) //nolint:mnd // tests
 		isExternal := true
 		r.Spec.Host = &host
 		r.Spec.Service = &apigatewayv1beta1.Service{
@@ -531,9 +531,9 @@ func NewSubscriberSvc(name, namespace string) *kcorev1.Service {
 			Ports: []kcorev1.ServicePort{
 				{
 					Protocol: "TCP",
-					Port:     443, //nolint:gomnd // tests
+					Port:     443, //nolint:mnd // tests
 					TargetPort: intstr.IntOrString{
-						IntVal: 8080, //nolint:gomnd // tests
+						IntVal: 8080, //nolint:mnd // tests
 					},
 				},
 			},

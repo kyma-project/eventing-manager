@@ -28,6 +28,7 @@ linters:
     - paralleltest
     - copyloopvar
     - perfsprint
+    - gomnd
 
 linters-settings:
   stylecheck:
