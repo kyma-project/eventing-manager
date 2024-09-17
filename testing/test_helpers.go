@@ -1,4 +1,3 @@
-//nolint:canonicalheader // used in testing.
 package testing
 
 import (
