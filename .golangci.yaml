@@ -236,6 +236,9 @@ linters-settings:
       - js *JetStream
 issues:
   exclude-rules:
+    - path: "hack/e2e"
+      linters:
+        - mnd
     - path: "_test\\.go"
       linters:
         - wrapcheck
