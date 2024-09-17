@@ -42,7 +42,7 @@ func GetPublisherClusterRoleBindingName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
 }
 
-func newHorizontalPodAutoscaler(name, namespace string, min, max, cpuUtilization, memoryUtilization int32,
+func newHorizontalPodAutoscaler(name, namespace string, minReplicas, maxReplicas, cpuUtilization, memoryUtilization int32,
 	labels map[string]string,
 ) *kautoscalingv2.HorizontalPodAutoscaler {
 	return &kautoscalingv2.HorizontalPodAutoscaler{
@@ -61,8 +61,8 @@ func newHorizontalPodAutoscaler(name, namespace string, min, max, cpuUtilization
 				Name:       name,
 				APIVersion: "apps/v1",
 			},
-			MinReplicas: &min,
-			MaxReplicas: max,
+			MinReplicas: &minReplicas,
+			MaxReplicas: maxReplicas,
 			Metrics: []kautoscalingv2.MetricSpec{
 				{
 					Type: kautoscalingv2.ResourceMetricSourceType,

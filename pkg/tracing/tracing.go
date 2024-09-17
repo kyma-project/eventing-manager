@@ -1,3 +1,4 @@
+//nolint:canonicalheader // used as required in tracing.
 package tracing
 
 import (
