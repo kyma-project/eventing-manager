@@ -1,4 +1,4 @@
-//nolint:gomnd // magic numbers here are used only in context of the function
+//nolint:mnd // magic numbers here are used only in context of the function
 package utils
 
 import (
