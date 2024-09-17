@@ -344,7 +344,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, oldSubscription,
 }
 
 // addFinalizer appends the eventing finalizer to the subscription and updates it in k8s.
-func (r *Reconciler) addFinalizer(ctx context.Context, sub *eventingv1alpha2.Subscription) (kctrl.Result, error) {
+func (r *Reconciler) addFinalizer(ctx context.Context, sub *eventingv1alpha2.Subscription) (kctrl.Result, error) { //nolint: unparam
 	sub.ObjectMeta.Finalizers = append(sub.ObjectMeta.Finalizers, eventingv1alpha2.Finalizer)
 
 	// update the subscription's finalizers in k8s
