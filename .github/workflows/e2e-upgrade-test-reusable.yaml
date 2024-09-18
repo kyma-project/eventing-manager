@@ -18,9 +18,6 @@ on:
         required: true
         type: string
         description: "The image tag of the Eventing Manager after the upgrade"
-      build-job-name:
-        type: string
-        description: "The name of the build job to wait for"
       commit-sha:
         type: string
         description: "The commit sha of the new version"
@@ -87,20 +84,6 @@ jobs:
           export MANAGER_IMAGE=$DOCKER_IMAGE_REPO:${{ inputs.pre-upgrade-image-tag }}
           make e2e-setup
           make e2e-eventing-setup
-
-      - name: Wait for the ${{ inputs.build-job-name }} job to succeed
-        if: ${{ inputs.build-job-name != '' }}
-        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
-        with:
-          context: ${{ inputs.build-job-name }}
-          commit_ref: "${{ inputs.commit-sha }}"
-          timeout: 600000 # 10 minutes in milliseconds
-          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
-          check_interval: 60000 # 1 minute in milliseconds
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          GITHUB_OWNER: "${{ github.repository_owner }}"
-          GITHUB_REPO: "eventing-manager"
 
       - name: Upgrade Eventing manager
         id: upgrade-eventing-manager

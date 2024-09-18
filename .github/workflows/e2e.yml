@@ -35,60 +35,52 @@ on:
       - PROJECT
 
 jobs:
-  wait-until-build-succeeds:
+  export-info:
     runs-on: ubuntu-latest
     outputs:
       image-name: ${{ steps.extract-image.outputs.image_name }}
+      git-ref: ${{ steps.extract-image.outputs.git_ref }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Wait for the 'pull-eventing-manager-build' job to succeed
-        id: pull-wait-build
-        if: github.event_name == 'pull_request'
-        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
-        with:
-          context: "pull-eventing-manager-build"
-          commit_ref: "${{ github.event.pull_request.head.sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
-          timeout: 600000 # 10 minutes in milliseconds
-          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
-          check_interval: 60000 # 1 minute in milliseconds
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          GITHUB_OWNER: "${{ github.repository_owner }}"
-          GITHUB_REPO: "eventing-manager"
-
-      - name: Wait for the 'post-eventing-manager-build' job to succeed
-        id: push-wait-build
-        if: github.event_name == 'push'
-        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
-        with:
-          context: "post-eventing-manager-build"
-          commit_ref: "${{ github.sha }}"
-          timeout: 600000 # 10 minutes in milliseconds
-          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
-          check_interval: 60000 # 1 minute in milliseconds
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          GITHUB_OWNER: "${{ github.repository_owner }}"
-          GITHUB_REPO: "eventing-manager"
-
-      - name: Extract container image name from build logs (pull)
+      - name: export correct info based on event (PR or Push)
         id: extract-image
         env:
-          # Refernce: https://docs.github.com/en/actions/learn-github-actions/expressions#example
-          COMMIT_STATUS_JSON: "${{ github.event_name == 'push' && steps.push-wait-build.outputs.json || steps.pull-wait-build.outputs.json }}"
+          GIT_EVENT_NAME: "${{ github.event_name }}"
+          PR_NUMBER: "${{ github.event.number }}"
+          PR_HEAD_SHA: "${{ github.event.pull_request.head.sha }}"
+          HEAD_SHA: "${{ github.sha }}"
         run: |
-          ./scripts/extract_image_from_build_logs.sh
-          # export value to job output
-          export IMAGE_NAME="$(cat image.name)"
-          echo "IMAGE_NAME: ${IMAGE_NAME}"
-          echo "image_name=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          if [[ $GIT_EVENT_NAME == "pull_request" ]]
+          then
+            echo "exporting info for pull request..."
+            echo "image_name=europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "git_ref=${PR_HEAD_SHA}" >> "$GITHUB_OUTPUT"
+          else
+            echo "exporting info for push..."
+            echo "image_name=europe-docker.pkg.dev/kyma-project/prod/eventing-manager:${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+            echo "git_ref=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Print info
+        env:
+          IMAGE_NAME: ${{ steps.extract-image.outputs.image_name }}
+          GIT_REF: ${{ steps.extract-image.outputs.git_ref }}
+        run: |
+          echo "IMAGE: $IMAGE_NAME"
+          echo "Git ref: $GIT_REF"
+          
+
+  wait-until-build-succeeds:
+    needs: export-info
+    uses: "kyma-project/eventing-tools/.github/workflows/wait-build-reusable.yml@main"
+    with:
+      repository: ${{ github.repository_owner }}/eventing-manager
+      git_ref: ${{ needs.export-info.outputs.git-ref }}
+      git_check_run_name: "build / Build image"
 
   nats:
     runs-on: ubuntu-latest
-    needs: wait-until-build-succeeds
+    needs: [export-info, wait-until-build-succeeds]
     env:
-      MANAGER_IMAGE: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
+      MANAGER_IMAGE: ${{ needs.export-info.outputs.image-name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -152,9 +144,9 @@ jobs:
 
   PeerAuthentication:
     runs-on: ubuntu-latest
-    needs: wait-until-build-succeeds
+    needs: [export-info, wait-until-build-succeeds]
     env:
-      MANAGER_IMAGE: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
+      MANAGER_IMAGE: ${{ needs.export-info.outputs.image-name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -200,10 +192,10 @@ jobs:
           kubectl get peerauthentications.security.istio.io -A -o yaml
 
   backend-switching:
-    needs: wait-until-build-succeeds
+    needs: [export-info, wait-until-build-succeeds]
     if: github.event_name == 'push'
     uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
-      eventing-manager-image: ${{ needs.wait-until-build-succeeds.outputs.image-name }}
+      eventing-manager-image: ${{ needs.export-info.outputs.image-name }}
       cluster-name-prefix: "ghem-"
     secrets: inherit
