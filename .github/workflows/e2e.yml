@@ -75,7 +75,8 @@ jobs:
       repository: ${{ github.repository_owner }}/eventing-manager
       git_ref: ${{ needs.export-info.outputs.git-ref }}
       git_check_run_name: "build / Build image"
-    secrets: inherit
+    secrets:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
 
   nats:
     runs-on: ubuntu-latest

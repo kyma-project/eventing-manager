@@ -15,6 +15,19 @@ on:
         description: Name of the Git check to wait for.
         required: true
         type: string
+      interval:
+        description: Interval (seconds) for polling the status.
+        required: false
+        default: 60
+        type: number
+      timeout:
+        description: Timeout (seconds) to wait for in total.
+        required: false
+        default: 600
+        type: number
+    secrets:
+      github_token:
+        required: true
 
 jobs:
   wait-for-build-job:
@@ -42,12 +55,11 @@ jobs:
 
       - name: Wait for build job
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.github_token }}
           REPOSITORY_FULL_NAME: ${{ inputs.repository }}
           GIT_REF: "${{ inputs.git_ref }}"
-          # The re-usable image-builder workflow from neighbors appends the "Build image" suffix to the check run name.
           GIT_CHECK_RUN_NAME: "${{ inputs.git_check_run_name }}"
-          INTERVAL: 60
-          TIMEOUT: 900
+          INTERVAL: ${{ inputs.interval }}
+          TIMEOUT: ${{ inputs.timeout }}
         run: |
           python $GITHUB_WORKSPACE/kyma-project/eventing-tools/scripts/wait-for-commit-check/run.py
