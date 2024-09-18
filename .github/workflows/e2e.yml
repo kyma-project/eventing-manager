@@ -36,7 +36,7 @@ on:
 
 jobs:
   export-info:
-    runs-one: ubuntu-latest
+    runs-on: ubuntu-latest
     outputs:
       image-name: ${{ steps.extract-image.outputs.image_name }}
       git-ref: ${{ steps.extract-image.outputs.git_ref }}
