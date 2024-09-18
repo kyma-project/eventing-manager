@@ -41,7 +41,7 @@ jobs:
       image-name: ${{ steps.extract-image.outputs.image_name }}
       git-ref: ${{ steps.extract-image.outputs.git_ref }}
     steps:
-      - name: Extract container image name from build logs (pull)
+      - name: export correct info based on event (PR or Push)
         id: extract-image
         env:
           GIT_EVENT_NAME: "${{ github.event_name }}"
