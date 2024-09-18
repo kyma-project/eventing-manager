@@ -205,9 +205,6 @@ jobs:
           git tag $VERSION
           git push origin $VERSION
 
-      - name: Wait for job 'release-eventing-manager-build' to succeed
-        run: ./hack/ci/wait-for-release-build-job.sh ${{ github.ref_name }} 600 10 30 # Inputs: repo (format: "owner/repo"), timeout, interval and initial wait time.
-
       - name: Create and upload eventing-manager.yaml and eventing-default-cr.yaml
         env:
           PULL_BASE_REF: ${{ needs.generate-version.outputs.VERSION }}
@@ -218,11 +215,20 @@ jobs:
         run: |
           ./hack/ci/render_and_upload_manifests.sh
 
+  wait-until-build-succeeds:
+    needs: [generate-version, create-draft]
+    uses: "kyma-project/eventing-tools/.github/workflows/wait-build-reusable.yml@main"
+    with:
+      repository: ${{ github.repository_owner }}/eventing-manager
+      git_ref: ${{ needs.generate-version.outputs.VERSION }}
+      git_check_run_name: "build-${{ needs.generate-version.outputs.VERSION }} / Build image"
+
   bump-sec-scanners-config-main:
     name: Bump sec-scanners-config.yaml on main branch
     needs: 
       - create-draft
       - generate-version
+      - wait-until-build-succeeds
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.generate-version.outputs.VERSION }}

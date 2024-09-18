@@ -15,11 +15,19 @@ on:
       - PROJECT
 
 jobs:
+  wait-until-build-succeeds:
+    needs: is-pr-approved
+    uses: "kyma-project/eventing-tools/.github/workflows/wait-build-reusable.yml@main"
+    with:
+      repository: ${{ github.repository_owner }}/eventing-manager
+      git_ref: ${{ github.event.pull_request.head.sha }}
+      git_check_run_name: "build / Build image"
+
   upgrade-test:
+    needs: wait-until-build-succeeds
     uses: ./.github/workflows/e2e-upgrade-test-reusable.yaml
     with:
       pre-upgrade-image-tag: main
       post-upgrade-image-tag: PR-${{ github.event.number }}
-      build-job-name: pull-eventing-manager-build
       commit-sha: ${{ github.event.pull_request.head.sha }}
     secrets: inherit

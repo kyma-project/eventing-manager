@@ -28,12 +28,19 @@ jobs:
         run: |
           echo "latest_release_tag=$(curl -s https://api.github.com/repos/kyma-project/eventing-manager/releases/latest | jq -r '.tag_name')" >> "$GITHUB_OUTPUT"
 
+  wait-until-build-succeeds:
+    needs: export-info
+    uses: "kyma-project/eventing-tools/.github/workflows/wait-build-reusable.yml@main"
+    with:
+      repository: ${{ github.repository_owner }}/eventing-manager
+      git_ref: ${{ github.sha }}
+      git_check_run_name: "build / Build image"
+
   upgrade-test:
     uses: ./.github/workflows/e2e-upgrade-test-reusable.yaml
-    needs: get-latest-release
+    needs: [get-latest-release, wait-until-build-succeeds]
     with:
       pre-upgrade-image-tag: ${{ needs.get-latest-release.outputs.latest_release_tag }}
       post-upgrade-image-tag: main
-      build-job-name: post-eventing-manager-build
       commit-sha: ${{ github.sha }}
     secrets: inherit
