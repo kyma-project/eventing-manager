@@ -52,20 +52,11 @@ The E2E test consists of four consecutive steps. If desired, you can run them in
 
 ## CI/CD
 
-This project uses [Prow](https://docs.prow.k8s.io/docs/) and [GitHub Actions](https://docs.github.com/en/actions) as part of the development cycle.
+This project uses [GitHub Actions](https://docs.github.com/en/actions) as part of the development cycle.
 The aim is to verify the functional correctness of Eventing Manager.
-
-### Prow Jobs
-
-The Prow Jobs that cover the code of this repository reside in [their own repository](https://github.com/kyma-project/test-infra/tree/main/prow/jobs/kyma-project/eventing-manager).
-Presubmit Jobs run on pull requests (PRs) and are marked with the prefix `pull`. Postsubmit jobs run on branch `main` after a PR has been merged and carry the prefix `post`.
-
-For more information on execution details of each Job, refer to their `description` field and the `command` and `args` fields.
-Alternatively, you can access this information from your PR by inspecting the details to the job and viewing the Prow job `.yaml` file.
 
 ### GitHub Actions
 
 GitHub Actions reside [within this module repository](https://github.com/kyma-project/eventing-manager/tree/main/.github/workflows).
-Pre- and postsubmit actions follow the same naming conventions as Prow Jobs.
 
 The [Actions overview](https://github.com/kyma-project/eventing-manager/actions/) shows all the existing workflows and their execution details. Here, you can also trigger a re-run of an action.
