@@ -387,6 +387,38 @@ func (_c *JetStreamContext_ChanSubscribe_Call) RunAndReturn(run func(string, cha
 	return _c
 }
 
+// CleanupPublisher provides a mock function with given fields:
+func (_m *JetStreamContext) CleanupPublisher() {
+	_m.Called()
+}
+
+// JetStreamContext_CleanupPublisher_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CleanupPublisher'
+type JetStreamContext_CleanupPublisher_Call struct {
+	*mock.Call
+}
+
+// CleanupPublisher is a helper method to define mock.On call
+func (_e *JetStreamContext_Expecter) CleanupPublisher() *JetStreamContext_CleanupPublisher_Call {
+	return &JetStreamContext_CleanupPublisher_Call{Call: _e.mock.On("CleanupPublisher")}
+}
+
+func (_c *JetStreamContext_CleanupPublisher_Call) Run(run func()) *JetStreamContext_CleanupPublisher_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *JetStreamContext_CleanupPublisher_Call) Return() *JetStreamContext_CleanupPublisher_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *JetStreamContext_CleanupPublisher_Call) RunAndReturn(run func()) *JetStreamContext_CleanupPublisher_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ConsumerInfo provides a mock function with given fields: stream, name, opts
 func (_m *JetStreamContext) ConsumerInfo(stream string, name string, opts ...nats.JSOpt) (*nats.ConsumerInfo, error) {
 	_va := make([]interface{}, len(opts))
