@@ -23,7 +23,7 @@ type jetStreamContextStub struct {
 }
 
 func (j jetStreamContextStub) CleanupPublisher() {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 

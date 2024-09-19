@@ -13,7 +13,7 @@ type JetStreamContext struct {
 }
 
 func (_m *JetStreamContext) CleanupPublisher() {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
