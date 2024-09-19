@@ -12,6 +12,11 @@ type JetStreamContext struct {
 	mock.Mock
 }
 
+func (_m *JetStreamContext) CleanupPublisher() {
+	//TODO implement me
+	panic("implement me")
+}
+
 type JetStreamContext_Expecter struct {
 	mock *mock.Mock
 }
