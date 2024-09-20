@@ -155,10 +155,10 @@ func GetStructuredMessageHeaders() http.Header {
 
 func GetBinaryMessageHeaders() http.Header {
 	headers := make(http.Header)
-	headers.Add(CeIDHeader, EventID)                        //nolint:canonicalheader // used in testing.
-	headers.Add(CeTypeHeader, CloudEventType)               //nolint:canonicalheader // used in testing.
-	headers.Add(CeSourceHeader, CloudEventSource)           //nolint:canonicalheader // used in testing.
-	headers.Add(CeSpecVersionHeader, CloudEventSpecVersion) //nolint:canonicalheader // used in testing.
+	headers.Add(CeIDHeader, EventID)                        //nolint:canonicalheader,nolintlint // used in testing.
+	headers.Add(CeTypeHeader, CloudEventType)               //nolint:canonicalheader,nolintlint // used in testing.
+	headers.Add(CeSourceHeader, CloudEventSource)           //nolint:canonicalheader,nolintlint // used in testing.
+	headers.Add(CeSpecVersionHeader, CloudEventSpecVersion) //nolint:canonicalheader,nolintlint // used in testing.
 	return headers
 }
 

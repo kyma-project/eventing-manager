@@ -73,7 +73,7 @@ func (_c *TypedController_GetLogger_Call[request]) RunAndReturn(run func() logr.
 }
 
 // Reconcile provides a mock function with given fields: _a0, _a1
-func (_m *TypedController[request]) Reconcile(_a0 context.Context, _a1 reconcile.Request) (reconcile.Result, error) {
+func (_m *TypedController[request]) Reconcile(_a0 context.Context, _a1 request) (reconcile.Result, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
@@ -82,16 +82,16 @@ func (_m *TypedController[request]) Reconcile(_a0 context.Context, _a1 reconcile
 
 	var r0 reconcile.Result
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, reconcile.Request) (reconcile.Result, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, request) (reconcile.Result, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, reconcile.Request) reconcile.Result); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, request) reconcile.Result); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Get(0).(reconcile.Result)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, reconcile.Request) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, request) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
@@ -107,14 +107,14 @@ type TypedController_Reconcile_Call[request comparable] struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - _a0 context.Context
-//   - _a1 reconcile.Request
+//   - _a1 request
 func (_e *TypedController_Expecter[request]) Reconcile(_a0 interface{}, _a1 interface{}) *TypedController_Reconcile_Call[request] {
 	return &TypedController_Reconcile_Call[request]{Call: _e.mock.On("Reconcile", _a0, _a1)}
 }
 
-func (_c *TypedController_Reconcile_Call[request]) Run(run func(_a0 context.Context, _a1 reconcile.Request)) *TypedController_Reconcile_Call[request] {
+func (_c *TypedController_Reconcile_Call[request]) Run(run func(_a0 context.Context, _a1 request)) *TypedController_Reconcile_Call[request] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(reconcile.Request))
+		run(args[0].(context.Context), args[1].(request))
 	})
 	return _c
 }
@@ -124,7 +124,7 @@ func (_c *TypedController_Reconcile_Call[request]) Return(_a0 reconcile.Result, 
 	return _c
 }
 
-func (_c *TypedController_Reconcile_Call[request]) RunAndReturn(run func(context.Context, reconcile.Request) (reconcile.Result, error)) *TypedController_Reconcile_Call[request] {
+func (_c *TypedController_Reconcile_Call[request]) RunAndReturn(run func(context.Context, request) (reconcile.Result, error)) *TypedController_Reconcile_Call[request] {
 	_c.Call.Return(run)
 	return _c
 }
@@ -176,7 +176,7 @@ func (_c *TypedController_Start_Call[request]) RunAndReturn(run func(context.Con
 }
 
 // Watch provides a mock function with given fields: src
-func (_m *TypedController[request]) Watch(src source.TypedSource[reconcile.Request]) error {
+func (_m *TypedController[request]) Watch(src source.TypedSource[request]) error {
 	ret := _m.Called(src)
 
 	if len(ret) == 0 {
@@ -184,7 +184,7 @@ func (_m *TypedController[request]) Watch(src source.TypedSource[reconcile.Reque
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(source.TypedSource[reconcile.Request]) error); ok {
+	if rf, ok := ret.Get(0).(func(source.TypedSource[request]) error); ok {
 		r0 = rf(src)
 	} else {
 		r0 = ret.Error(0)
@@ -199,14 +199,14 @@ type TypedController_Watch_Call[request comparable] struct {
 }
 
 // Watch is a helper method to define mock.On call
-//   - src source.TypedSource[reconcile.Request]
+//   - src source.TypedSource[request]
 func (_e *TypedController_Expecter[request]) Watch(src interface{}) *TypedController_Watch_Call[request] {
 	return &TypedController_Watch_Call[request]{Call: _e.mock.On("Watch", src)}
 }
 
-func (_c *TypedController_Watch_Call[request]) Run(run func(src source.TypedSource[reconcile.Request])) *TypedController_Watch_Call[request] {
+func (_c *TypedController_Watch_Call[request]) Run(run func(src source.TypedSource[request])) *TypedController_Watch_Call[request] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(source.TypedSource[reconcile.Request]))
+		run(args[0].(source.TypedSource[request]))
 	})
 	return _c
 }
@@ -216,7 +216,7 @@ func (_c *TypedController_Watch_Call[request]) Return(_a0 error) *TypedControlle
 	return _c
 }
 
-func (_c *TypedController_Watch_Call[request]) RunAndReturn(run func(source.TypedSource[reconcile.Request]) error) *TypedController_Watch_Call[request] {
+func (_c *TypedController_Watch_Call[request]) RunAndReturn(run func(source.TypedSource[request]) error) *TypedController_Watch_Call[request] {
 	_c.Call.Return(run)
 	return _c
 }
