@@ -22,6 +22,11 @@ type jetStreamContextStub struct {
 	deleteConsumerErr error
 }
 
+func (j jetStreamContextStub) CleanupPublisher() {
+	// TODO implement me
+	panic("implement me")
+}
+
 func (j jetStreamContextStub) StreamNameBySubject(s string, opt ...nats.JSOpt) (string, error) {
 	// TODO implement me
 	panic("implement me")
