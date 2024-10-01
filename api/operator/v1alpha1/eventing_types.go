@@ -83,6 +83,7 @@ func getSupportedConditionsTypes() map[ConditionType]interface{} {
 // Eventing is the Schema for the eventing API.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:categories={kyma,kyma-modules,kyma-eventing}
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.state",description="State of Eventing"
 // +kubebuilder:printcolumn:name="Backend",type="string",JSONPath=".spec.backend.type",description="Type of Eventing backend, either NATS or EventMesh"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Age of the resource"
