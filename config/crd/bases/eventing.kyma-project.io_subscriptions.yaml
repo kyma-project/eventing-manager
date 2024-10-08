@@ -8,6 +8,8 @@ metadata:
 spec:
   group: eventing.kyma-project.io
   names:
+    categories:
+    - kyma-eventing
     kind: Subscription
     listKind: SubscriptionList
     plural: subscriptions
