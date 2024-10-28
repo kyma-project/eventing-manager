@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.23.1-alpine3.20 AS builder
+FROM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.23.2-alpine3.20 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
