@@ -14,7 +14,7 @@ If you cannot find your issue described here, take a look at the [Eventing Troub
 
 **Cause:** The namespace of the Deployment does not exist yet.
 
-**Remedy:** Create the namespace.
+**Solution:** Create the namespace.
 
    ```sh
    kubectl create ns kyma-system

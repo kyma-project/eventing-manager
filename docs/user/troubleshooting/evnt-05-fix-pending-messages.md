@@ -13,7 +13,7 @@ When the leader is elected, all the messages are replicated across the replicas.
 Sometimes replicas can go out of sync with the other replicas.
 As a result, messages on some consumers can stop being acknowledged and start piling up in the stream.
 
-## Remedy
+## Solution
 
 To fix the "broken" consumers with pending messages, trigger a leader reelection. You can do this either on the consumers that have pending messages, or if that fails, on the stream level.
 

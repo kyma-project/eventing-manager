@@ -12,7 +12,7 @@
 
 Trouble with Kyma Eventing may be caused by various issues, so this document guides you through the diagnostic steps to determine the specific root cause.
 
-## Remedy
+## Solution
 
 Follow these steps to detect the source of the problem:
 

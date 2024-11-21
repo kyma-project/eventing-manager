@@ -4,7 +4,7 @@
 
 Events were not received by the consumers.
 
-## Remedy
+## Solution
 
 1. Follow the diagnostic steps as mentioned in [Eventing Troubleshooting](evnt-01-eventing-troubleshooting.md).
 
