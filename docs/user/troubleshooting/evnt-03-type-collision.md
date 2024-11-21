@@ -9,7 +9,7 @@ Subscriber receives irrelevant events.
 To conform to Cloud Event specifications, Eventing modifies the event names to filter out prohibited characters. For details, see [Event name cleanup](../evnt-event-names.md#event-name-cleanup).
 In some cases, it can lead to a naming collision, which can cause subscribers to receive irrelevant events.
 
-## Remedy
+## Solution
 
 Follow these steps to detect if naming collision is the source of the problem:
 

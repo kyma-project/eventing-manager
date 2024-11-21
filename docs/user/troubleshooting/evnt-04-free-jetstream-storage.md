@@ -20,7 +20,7 @@ To prevent event loss, the backend stops receiving events, and no further events
 > [!NOTE]
 > If you delete a Subscriber (sink) while there is still a Kyma Subscription pointing to that sink, the events published to that Subscription pile up in the stream and possibly delay the event delivery to other Subscribers.
 
-## Remedy
+## Solution
 
 There are several ways to free the space on NATS JetStream backend:
 
