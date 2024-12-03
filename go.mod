@@ -20,7 +20,7 @@ require (
 	github.com/onsi/gomega v1.36.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/vektra/mockery/v2 v2.47.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
