@@ -50,7 +50,7 @@ func TestApplyExistingAPIRuleAttributes(t *testing.T) {
 	var (
 		host   = ptr.To("some.host")
 		status = apigatewayv1beta1.APIRuleStatus{
-			LastProcessedTime:    ptr.To(kmetav1.Time{}),
+			LastProcessedTime:    *ptr.To(kmetav1.Time{}),
 			ObservedGeneration:   512,
 			APIRuleStatus:        nil,
 			VirtualServiceStatus: nil,
