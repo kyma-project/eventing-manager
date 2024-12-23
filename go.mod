@@ -16,7 +16,7 @@ require (
 	github.com/kyma-project/kyma/common/logging v0.0.0-20241209103539-66fd0e4c646c
 	github.com/kyma-project/nats-manager v1.0.3-0.20231219150808-13159cfea47c
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/nats-io/nats-server/v2 v2.10.22
+	github.com/nats-io/nats-server/v2 v2.10.24
 	github.com/nats-io/nats.go v1.37.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.1
@@ -75,8 +75,8 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nats-io/jwt/v2 v2.5.8 // indirect
-	github.com/nats-io/nkeys v0.4.7 // indirect
+	github.com/nats-io/jwt/v2 v2.7.3 // indirect
+	github.com/nats-io/nkeys v0.4.9 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
@@ -95,7 +95,7 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.30.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.32.0 // indirect
