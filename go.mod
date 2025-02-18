@@ -15,7 +15,7 @@ require (
 	github.com/kyma-project/nats-manager v1.0.3-0.20231219150808-13159cfea47c
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/nats-io/nats-server/v2 v2.10.25
-	github.com/nats-io/nats.go v1.37.0
+	github.com/nats-io/nats.go v1.39.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.2
 	github.com/pkg/errors v0.9.1
@@ -26,8 +26,8 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.25.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
-	istio.io/api v1.24.2
-	istio.io/client-go v1.24.2
+	istio.io/api v1.24.3
+	istio.io/client-go v1.24.3
 	k8s.io/api v0.32.2
 	k8s.io/apiextensions-apiserver v0.32.2
 	k8s.io/apimachinery v0.32.2
