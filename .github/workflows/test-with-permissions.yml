@@ -35,6 +35,4 @@ on:
       - PROJECT
 jobs:
   unit-test:
-    permissions:
-      content: read
     uses: kyma-project/eventing-tools/.github/workflows/unit-test-reusable-with-permission.yml@main
