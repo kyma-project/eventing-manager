@@ -8,7 +8,6 @@ bdba:
   - europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.1.1
 mend:
   language: golang-mod
-  subprojects: false
   exclude:
     - "**/test/**"
     - "**/*_test.go"

@@ -30,7 +30,6 @@ bdba:
   - ${PUBLISHER_IMAGE}
 mend:
   language: golang-mod
-  subprojects: false
   exclude:
     - "**/test/**"
     - "**/*_test.go"
