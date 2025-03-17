@@ -1,7 +1,6 @@
 module github.com/kyma-project/eventing-manager
 
 go 1.24.0
-
 require (
 	github.com/avast/retry-go/v3 v3.1.1
 	github.com/cloudevents/sdk-go/protocol/nats/v2 v2.15.2
@@ -21,7 +20,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.10.0
-	github.com/vektra/mockery/v2 v2.52.2
+	github.com/vektra/mockery/v2 v2.53.2
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.26.0
