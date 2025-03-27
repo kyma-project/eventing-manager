@@ -212,7 +212,7 @@ linters-settings:
       - client.Object
       - (or|er)$
   wrapcheck:
-    ignorePackageGlobs:
+    ignorePackageGlobs: []
   varnamelen:
     ignore-names:
       - ok # Ignore "ok" variables as return values of functions
@@ -236,6 +236,8 @@ linters-settings:
       - js JetStream
       - js *JetStream
 issues:
+  exclude-files:
+    - zz_generated.deepcopy.go
   exclude-rules:
     - path: "_test\\.go"
       linters:
@@ -255,5 +257,3 @@ output:
   sort-results: true
 run:
   timeout: 15m
-  skip-files:
-    - zz_generated.deepcopy.go

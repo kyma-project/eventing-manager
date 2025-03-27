@@ -3,17 +3,10 @@ name: pull-e2e-upgrade-test
 on:
   pull_request:
     branches: [ "main" ]
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'sec-scanners-config.yaml'
-      - CODEOWNERS
-      - LICENSE
-      - LICENSES
-      - OWNERS
-      - OWNERS_ALIASES
-      - PROJECT
-
+    paths:
+      - "**.go"
+      - go.mod
+      - Dockerfile"
 jobs:
   wait-until-build-succeeds:
     uses: "kyma-project/eventing-tools/.github/workflows/wait-build-reusable.yml@main"
