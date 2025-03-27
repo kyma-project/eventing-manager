@@ -236,6 +236,8 @@ linters-settings:
       - js JetStream
       - js *JetStream
 issues:
+  exclude-files:
+    - zz_generated.deepcopy.go
   exclude-rules:
     - path: "_test\\.go"
       linters:
@@ -255,6 +257,3 @@ output:
   sort-results: true
 run:
   timeout: 15m
-issues:
-  exclude-files:
-    - zz_generated.deepcopy.go
