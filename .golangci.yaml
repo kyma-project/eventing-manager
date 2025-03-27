@@ -255,5 +255,6 @@ output:
   sort-results: true
 run:
   timeout: 15m
-  skip-files:
+issues:
+  exclude-files:
     - zz_generated.deepcopy.go
