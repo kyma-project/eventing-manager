@@ -212,7 +212,7 @@ linters-settings:
       - client.Object
       - (or|er)$
   wrapcheck:
-    ignorePackageGlobs:
+    ignorePackageGlobs: []
   varnamelen:
     ignore-names:
       - ok # Ignore "ok" variables as return values of functions
