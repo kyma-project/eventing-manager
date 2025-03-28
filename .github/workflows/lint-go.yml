@@ -41,6 +41,9 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Vendor Dependencies
+        run: go mod vendor
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6.5.0
         with:
