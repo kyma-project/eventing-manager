@@ -68,7 +68,8 @@ wait-eventing-cr-ready:
 
 .PHONY: wait-eventing-cr-ready-with-backend
 wait-eventing-cr-ready-with-backend:
-	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=600s --for=jsonpath='{.status.state}'=Ready --for=jsonpath='{.status.activeBackend}'=${ACTIVE_BACKEND}
+	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=600s --for=jsonpath='{.status.activeBackend}'=${ACTIVE_BACKEND}
+	kubectl wait eventing.operator.kyma-project.io -n kyma-system eventing --timeout=600s --for=jsonpath='{.status.state}'=Ready
 
 .PHONY: wait-istio-cr-ready
 wait-istio-cr-ready:
