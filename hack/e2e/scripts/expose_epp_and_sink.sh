@@ -14,7 +14,7 @@ set -o pipefail # prevents errors in a pipeline from being masked
 validate_and_default() {
   # set default values
   if [ -z "$API_RULE_GATEWAY" ]; then
-      export API_RULE_GATEWAY="kyma-gateway.kyma-system.svc.cluster.local"
+      export API_RULE_GATEWAY="kyma-system/kyma-gateway"
   fi
 
   if [ -z "$DOMAIN_TO_EXPOSE_WORKLOADS" ]; then
@@ -24,56 +24,54 @@ validate_and_default() {
 
 create_api_rule_for_epp() {
   cat <<EOF | kubectl apply -f -
-apiVersion: gateway.kyma-project.io/v1beta1
+apiVersion: gateway.kyma-project.io/v2
 kind: APIRule
 metadata:
   name: epp-e2e-tests
   namespace: default
 spec:
-  host: epp-e2e-tests.$DOMAIN_TO_EXPOSE_WORKLOADS
+  hosts:
+  - epp-e2e-tests.$DOMAIN_TO_EXPOSE_WORKLOADS
   service:
     name: eventing-publisher-proxy
     namespace: kyma-system
     port: 80
   gateway: $API_RULE_GATEWAY
   rules:
-    - path: /.*
+    - path: /*
       methods: ["GET", "POST"]
-      accessStrategies:
-        - handler: allow
-          config: {}
+      noAuth: true
 EOF
 }
 
 create_api_rule_for_sink() {
   cat <<EOF | kubectl apply -f -
-apiVersion: gateway.kyma-project.io/v1beta1
+apiVersion: gateway.kyma-project.io/v2
 kind: APIRule
 metadata:
   name: sink-e2e-tests
   namespace: default
 spec:
-  host: sink-e2e-tests.$DOMAIN_TO_EXPOSE_WORKLOADS
+  hosts:
+  - sink-e2e-tests.$DOMAIN_TO_EXPOSE_WORKLOADS
   service:
     name: test-sink
     namespace: eventing-tests
     port: 80
   gateway: $API_RULE_GATEWAY
   rules:
-    - path: /.*
+    - path: /*
       methods: ["GET", "POST"]
-      accessStrategies:
-        - handler: allow
-          config: {}
+      noAuth: true
 EOF
 }
 
 wait_for_api_rules_readiness() {
   echo "waiting for EPP APIRule to be ready..."
-  kubectl wait apirules.gateway.kyma-project.io -n default epp-e2e-tests --timeout=150s --for=jsonpath='{.status.APIRuleStatus.code}'=OK
+  kubectl wait apirules.gateway.kyma-project.io -n default epp-e2e-tests --timeout=150s --for=jsonpath='{.status.state}'=Ready
 
   echo "waiting for sink APIRule to be ready..."
-  kubectl wait apirules.gateway.kyma-project.io -n default sink-e2e-tests --timeout=150s --for=jsonpath='{.status.APIRuleStatus.code}'=OK
+  kubectl wait apirules.gateway.kyma-project.io -n default sink-e2e-tests --timeout=150s --for=jsonpath='{.status.state}'=Ready
 }
 
 ## Main logic
