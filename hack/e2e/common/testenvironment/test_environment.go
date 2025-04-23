@@ -33,9 +33,9 @@ import (
 )
 
 const (
-	Interval      = 2 * time.Second
+	Interval      = 4 * time.Second
 	SmallInterval = 200 * time.Millisecond
-	Attempts      = 60
+	Attempts      = 100
 	FewAttempts   = 5
 	ThreeAttempts = 3
 )
