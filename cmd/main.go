@@ -130,7 +130,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		panic(err.Error())
 	}
 
-	// init custom kube client wrapper
+	// Init custom kube client wrapper.
 	apiClientSet, err := kapixclientset.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		setupLog.Error(err, "failed to create new k8s clientset")
@@ -143,17 +143,17 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	recorder := mgr.GetEventRecorderFor("eventing-manager")
 	ctx := context.Background()
 
-	// get backend configs.
+	// Get backend configs.
 	backendConfig := env.GetBackendConfig()
 
-	// create eventing manager instance.
+	// Create eventing manager instance.
 	eventingManager := eventing.NewEventingManager(ctx, k8sClient, kubeClient, backendConfig, ctrLogger, recorder)
 
-	// init the metrics collector.
+	// Init the metrics collector.
 	metricsCollector := backendmetrics.NewCollector()
 	metricsCollector.RegisterMetrics()
 
-	// init subscription manager factory.
+	// Init subscription manager factory.
 	subManagerFactory := subscriptionmanager.NewFactory(
 		k8sRestCfg,
 		":8080",
@@ -162,7 +162,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		ctrLogger,
 	)
 
-	// init NATS connection builder
+	// Init NATS connection builder
 	natsConnectionBuilder, err := initNATSConnectionBuilder()
 	if err != nil {
 		setupLog.Error(err, "failed to get a NATS connection builder")
