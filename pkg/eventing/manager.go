@@ -118,10 +118,10 @@ func (em *EventingManager) applyPublisherProxyDeployment(
 
 	if currentPublisher != nil {
 		// preserve only allowed annotations
-		desiredPublisher.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
-		for k, v := range currentPublisher.Spec.Template.ObjectMeta.Annotations {
+		desiredPublisher.Spec.Template.Annotations = make(map[string]string)
+		for k, v := range currentPublisher.Spec.Template.Annotations {
 			if _, ok := allowedAnnotations()[k]; ok {
-				desiredPublisher.Spec.Template.ObjectMeta.Annotations[k] = v
+				desiredPublisher.Spec.Template.Annotations[k] = v
 			}
 		}
 
@@ -216,8 +216,8 @@ func (em EventingManager) DeployPublisherProxyResources(
 		newPublisherProxyHealthService(GetPublisherHealthServiceName(*eventing), eventing.Namespace, publisherDeployment.Labels,
 			publisherDeployment.Spec.Template.Labels),
 		// HPA to auto-scale publisher proxy.
-		newHorizontalPodAutoscaler(publisherDeployment.Name, publisherDeployment.Namespace, int32(eventing.Spec.Publisher.Min),
-			int32(eventing.Spec.Publisher.Max), cpuUtilization, memoryUtilization, publisherDeployment.Labels),
+		newHorizontalPodAutoscaler(publisherDeployment.Name, publisherDeployment.Namespace, int32(eventing.Spec.Min),
+			int32(eventing.Spec.Max), cpuUtilization, memoryUtilization, publisherDeployment.Labels),
 	}
 
 	// create the resources on k8s.

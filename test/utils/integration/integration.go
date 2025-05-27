@@ -343,7 +343,7 @@ func (env TestEnvironment) EnsureNamespaceCreation(t *testing.T, namespace strin
 	}
 	// create namespace
 	ns := natstestutils.NewNamespace(namespace)
-	require.NoError(t, client.IgnoreAlreadyExists(env.k8sClient.Create(context.Background(), ns)))
+	require.NoError(t, client.IgnoreAlreadyExists(env.k8sClient.Create(t.Context(), ns)))
 }
 
 func (env TestEnvironment) CreateK8sResource(obj client.Object) error {
@@ -352,7 +352,7 @@ func (env TestEnvironment) CreateK8sResource(obj client.Object) error {
 
 func (env TestEnvironment) EnsureK8sResourceCreated(t *testing.T, obj client.Object) {
 	t.Helper()
-	require.NoError(t, env.k8sClient.Create(context.Background(), obj))
+	require.NoError(t, env.k8sClient.Create(t.Context(), obj))
 }
 
 func (env TestEnvironment) EnsureEPPK8sResourcesExists(t *testing.T, eventingCR v1alpha1.Eventing) {
@@ -437,12 +437,12 @@ func (env TestEnvironment) EnsureSubscriptionExists(t *testing.T, name, namespac
 
 func (env TestEnvironment) EnsureK8sResourceUpdated(t *testing.T, obj client.Object) {
 	t.Helper()
-	require.NoError(t, env.k8sClient.Update(context.Background(), obj))
+	require.NoError(t, env.k8sClient.Update(t.Context(), obj))
 }
 
 func (env TestEnvironment) EnsureK8sResourceDeleted(t *testing.T, obj client.Object) {
 	t.Helper()
-	require.NoError(t, env.k8sClient.Delete(context.Background(), obj))
+	require.NoError(t, env.k8sClient.Delete(t.Context(), obj))
 }
 
 func (env TestEnvironment) EnsureNATSCRDDeleted(t *testing.T) {
@@ -456,10 +456,10 @@ func (env TestEnvironment) EnsureNATSCRDDeleted(t *testing.T) {
 			Name: k8s.NatsGVK().GroupResource().String(),
 		},
 	}
-	require.NoError(t, env.k8sClient.Delete(context.Background(), crdManifest))
+	require.NoError(t, env.k8sClient.Delete(t.Context(), crdManifest))
 
 	require.Eventually(t, func() bool {
-		_, err := env.KubeClient.GetCRD(context.Background(), crdManifest.Name)
+		_, err := env.KubeClient.GetCRD(t.Context(), crdManifest.Name)
 		return err != nil && errors.IsNotFound(err)
 	}, BigTimeOut, BigPollingInterval, "failed to ensure deletion of NATS CRD")
 }
@@ -467,12 +467,12 @@ func (env TestEnvironment) EnsureNATSCRDDeleted(t *testing.T) {
 func (env TestEnvironment) EnsureCRDCreated(t *testing.T, crd *kapiextensionsv1.CustomResourceDefinition) {
 	t.Helper()
 	crd.ResourceVersion = ""
-	require.NoError(t, env.k8sClient.Create(context.Background(), crd))
+	require.NoError(t, env.k8sClient.Create(t.Context(), crd))
 }
 
 func (env TestEnvironment) EnsureNamespaceDeleted(t *testing.T, namespace string) {
 	t.Helper()
-	require.NoError(t, env.k8sClient.Delete(context.Background(), &kcorev1.Namespace{
+	require.NoError(t, env.k8sClient.Delete(t.Context(), &kcorev1.Namespace{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name: namespace,
 		},
@@ -582,7 +582,7 @@ func (env TestEnvironment) EnsureEventingResourceDeletionStateError(t *testing.T
 	}
 	env.EnsureK8sResourceDeleted(t, eventing)
 	require.Eventually(t, func() bool {
-		err := env.k8sClient.Get(context.Background(), types.NamespacedName{Name: name, Namespace: namespace}, eventing)
+		err := env.k8sClient.Get(t.Context(), types.NamespacedName{Name: name, Namespace: namespace}, eventing)
 		return err == nil && eventing.Status.State == v1alpha1.StateError
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure deletion of Eventing")
 }
@@ -606,7 +606,7 @@ func (env TestEnvironment) EnsureNATSResourceState(t *testing.T, nats *natsv1alp
 	t.Helper()
 	env.setNATSCRStatus(t, nats, status)
 	require.Eventually(t, func() bool {
-		err := env.k8sClient.Get(context.Background(), types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
+		err := env.k8sClient.Get(t.Context(), types.NamespacedName{Name: nats.Name, Namespace: nats.Namespace}, nats)
 		return err == nil && nats.Status.State == status
 	}, BigTimeOut, BigPollingInterval, "failed to ensure NATS CR is stored")
 }
@@ -648,7 +648,7 @@ func (env TestEnvironment) EnsureEventingReplicasReflected(t *testing.T, eventin
 			env.Logger.WithContext().Errorw("failed to get Eventing resource", "error", err,
 				"name", eventingCR.Name, "namespace", eventingCR.Namespace)
 		}
-		return *hpa.Spec.MinReplicas == int32(eventingCR.Spec.Publisher.Replicas.Min) && hpa.Spec.MaxReplicas == int32(eventingCR.Spec.Publisher.Replicas.Max)
+		return *hpa.Spec.MinReplicas == int32(eventingCR.Spec.Min) && hpa.Spec.MaxReplicas == int32(eventingCR.Spec.Max)
 	}, SmallTimeOut, SmallPollingInterval, "failed to ensure Eventing spec replicas is reflected")
 }
 
@@ -1073,5 +1073,5 @@ func (env TestEnvironment) UpdateUnstructuredK8sResource(obj *unstructured.Unstr
 
 func (env TestEnvironment) EnsureK8sUnStructResourceCreated(t *testing.T, obj *unstructured.Unstructured) {
 	t.Helper()
-	require.NoError(t, env.k8sClient.Create(context.Background(), obj))
+	require.NoError(t, env.k8sClient.Create(t.Context(), obj))
 }

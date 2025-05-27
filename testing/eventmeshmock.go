@@ -22,8 +22,8 @@ import (
 	// gcp auth etc.
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	. "github.com/onsi/ginkgo" //nolint:stylecheck // using '.' import for convenience
-	. "github.com/onsi/gomega" //nolint:stylecheck // using '.' import for convenience
+	. "github.com/onsi/ginkgo" //nolint:staticcheck // using '.' import for convenience
+	. "github.com/onsi/gomega" //nolint:staticcheck // using '.' import for convenience
 )
 
 const (
@@ -380,7 +380,7 @@ func GetRestAPIObject(u *url.URL) string {
 // CountRequests counts the mock API requests using the given HTTP method and URI.
 func (m *EventMeshMock) CountRequests(method, uri string) int {
 	count := 0
-	m.Requests.ReadEach(func(request *http.Request, payload interface{}) {
+	m.Requests.ReadEach(func(request *http.Request, payload any) {
 		if request.Method != method {
 			return
 		}

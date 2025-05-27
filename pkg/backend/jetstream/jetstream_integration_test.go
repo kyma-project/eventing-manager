@@ -158,11 +158,11 @@ func TestMultipleJSSubscriptionsToSameEvent(t *testing.T) {
 			types.ContentModeBinary),
 	)
 	// Check for the 3 events that should be received by the subscriber
-	for range len(subs) {
+	for range subs {
 		require.NoError(t, subscriber.CheckEvent(eventingtesting.CloudEventData))
 	}
 	// Delete all 3 subscription
-	for i := range len(subs) {
+	for i := range subs {
 		require.NoError(t, jsBackend.DeleteSubscription(subs[i]))
 	}
 	// Check if all subscriptions are deleted in NATS

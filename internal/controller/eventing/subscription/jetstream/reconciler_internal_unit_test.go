@@ -233,7 +233,7 @@ func Test_Reconcile(t *testing.T) {
 			}}
 
 			// when
-			res, err := reconciler.Reconcile(context.Background(), request)
+			res, err := reconciler.Reconcile(t.Context(), request)
 
 			// then
 			req.Equal(testcase.wantReconcileResult, res)
@@ -293,7 +293,7 @@ func Test_handleSubscriptionDeletion(t *testing.T) {
 			)
 
 			testEnvironment := setupTestEnvironment(t, sub)
-			ctx, reconciler, mockedBackend := context.Background(), testEnvironment.Reconciler, testEnvironment.Backend
+			ctx, reconciler, mockedBackend := t.Context(), testEnvironment.Reconciler, testEnvironment.Backend
 
 			if testCase.wantDeleteCall {
 				if errors.Is(testCase.wantError, errFailedToDeleteSub) {
@@ -318,10 +318,10 @@ func Test_handleSubscriptionDeletion(t *testing.T) {
 			ensureFinalizerMatch(t, &fetchedSub, testCase.wantFinalizers)
 
 			// clean up finalizers first before deleting sub
-			fetchedSub.ObjectMeta.Finalizers = nil
-			err = reconciler.Client.Update(ctx, &fetchedSub)
+			fetchedSub.Finalizers = nil
+			err = reconciler.Update(ctx, &fetchedSub)
 			require.NoError(t, err)
-			err = reconciler.Client.Delete(ctx, &fetchedSub)
+			err = reconciler.Delete(ctx, &fetchedSub)
 			require.NoError(t, err)
 		})
 	}
@@ -329,7 +329,7 @@ func Test_handleSubscriptionDeletion(t *testing.T) {
 
 func Test_addFinalizer(t *testing.T) {
 	// given
-	ctx := context.Background()
+	ctx := t.Context()
 	eventingFinalizer := []string{eventingv1alpha2.Finalizer}
 	var emptyFinalizer []string
 	sub := eventingtesting.NewSubscription(subscriptionName, namespaceName)
@@ -371,7 +371,7 @@ func Test_addFinalizer(t *testing.T) {
 			_, err := reconciler.addFinalizer(ctx, sub)
 			require.NoError(t, err)
 
-			fetchedSub, err := fetchTestSubscription(context.Background(), reconciler)
+			fetchedSub, err := fetchTestSubscription(t.Context(), reconciler)
 			require.NoError(t, err)
 
 			if testcase.wantErrorMessage != "" {
@@ -457,7 +457,7 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 			sub := testCase.givenSub
 
 			testEnvironment := setupTestEnvironment(t, sub)
-			ctx, reconciler := context.Background(), testEnvironment.Reconciler
+			ctx, reconciler := t.Context(), testEnvironment.Reconciler
 
 			// when
 			err := reconciler.syncSubscriptionStatus(ctx, sub, testCase.givenError, reconciler.namedLogger())
@@ -472,7 +472,7 @@ func Test_syncSubscriptionStatus(t *testing.T) {
 			ensureSubscriptionMatchesConditionsAndStatus(t, fetchedSub, testCase.wantConditions, testCase.wantStatus)
 
 			// clean up
-			err = reconciler.Client.Delete(ctx, sub)
+			err = reconciler.Delete(ctx, sub)
 			require.NoError(t, err)
 		})
 	}
@@ -578,7 +578,7 @@ func Test_syncEventTypes(t *testing.T) {
 func Test_updateStatus(t *testing.T) {
 	sub := eventingtesting.NewSubscription(subscriptionName, namespaceName, eventingtesting.WithStatus(true))
 
-	ctx := context.Background()
+	ctx := t.Context()
 	testEnvironment := setupTestEnvironment(t, sub)
 	reconciler := testEnvironment.Reconciler
 
@@ -621,7 +621,7 @@ func Test_updateStatus(t *testing.T) {
 
 			// simulate the update error
 			if testcase.wantError != nil {
-				require.NoError(t, reconciler.Client.Delete(ctx, sub))
+				require.NoError(t, reconciler.Delete(ctx, sub))
 			}
 
 			// when
@@ -636,7 +636,7 @@ func Test_updateStatus(t *testing.T) {
 
 			// then
 			require.NoError(t, updateStatusErr)
-			fetchedSub, err := fetchTestSubscription(context.Background(), reconciler)
+			fetchedSub, err := fetchTestSubscription(t.Context(), reconciler)
 			require.NoError(t, err)
 
 			require.Equal(t, testcase.wantChange, fetchedSub.ResourceVersion != resourceVersionBefore)
@@ -655,7 +655,7 @@ func Test_updateSubscription(t *testing.T) {
 	subWithDifferentStatus := sub.DeepCopy()
 	subWithDifferentStatus.Status.Ready = !sub.Status.Ready
 
-	ctx := context.Background()
+	ctx := t.Context()
 	testCases := []struct {
 		name             string
 		actualSub        *eventingv1alpha2.Subscription
@@ -709,7 +709,7 @@ func Test_updateSubscription(t *testing.T) {
 			}
 
 			// then
-			fetchedSub, err := fetchTestSubscription(context.Background(), reconciler)
+			fetchedSub, err := fetchTestSubscription(t.Context(), reconciler)
 			require.NoError(t, err)
 
 			require.Equal(t, testcase.wantChange, fetchedSub.ResourceVersion != resourceVersionBefore)
@@ -718,7 +718,7 @@ func Test_updateSubscription(t *testing.T) {
 			require.Equal(t, testcase.desiredSub.Status.Conditions, fetchedSub.Status.Conditions)
 
 			// clean up
-			require.NoError(t, reconciler.Client.Delete(ctx, sub))
+			require.NoError(t, reconciler.Delete(ctx, sub))
 		})
 	}
 }
@@ -755,7 +755,7 @@ func Test_validateSubscription(t *testing.T) {
 
 	// when
 	request := kctrl.Request{NamespacedName: types.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Name}}
-	res, err := reconciler.Reconcile(context.Background(), request)
+	res, err := reconciler.Reconcile(t.Context(), request)
 
 	// then
 	require.Equal(t, kctrl.Result{}, res)
@@ -822,15 +822,15 @@ func createFakeClientBuilder(t *testing.T) *fake.ClientBuilder {
 func ensureFinalizerMatch(t *testing.T, subscription *eventingv1alpha2.Subscription, wantFinalizers []string) {
 	t.Helper()
 	if len(wantFinalizers) == 0 {
-		require.Empty(t, subscription.ObjectMeta.Finalizers)
+		require.Empty(t, subscription.Finalizers)
 	} else {
-		require.Equal(t, wantFinalizers, subscription.ObjectMeta.Finalizers)
+		require.Equal(t, wantFinalizers, subscription.Finalizers)
 	}
 }
 
 func fetchTestSubscription(ctx context.Context, r *Reconciler) (eventingv1alpha2.Subscription, error) {
 	var fetchedSub eventingv1alpha2.Subscription
-	err := r.Client.Get(ctx, types.NamespacedName{
+	err := r.Get(ctx, types.NamespacedName{
 		Name:      subscriptionName,
 		Namespace: namespaceName,
 	}, &fetchedSub)
@@ -839,7 +839,7 @@ func fetchTestSubscription(ctx context.Context, r *Reconciler) (eventingv1alpha2
 
 func ensureSubscriptionMatchesConditionsAndStatus(t *testing.T, subscription eventingv1alpha2.Subscription, wantConditions []eventingv1alpha2.Condition, wantStatus bool) {
 	t.Helper()
-	require.Equal(t, len(wantConditions), len(subscription.Status.Conditions))
+	require.Len(t, subscription.Status.Conditions, len(wantConditions))
 	comparisonResult := eventingv1alpha2.ConditionsEquals(wantConditions, subscription.Status.Conditions)
 	require.True(t, comparisonResult)
 	require.Equal(t, wantStatus, subscription.Status.Ready)

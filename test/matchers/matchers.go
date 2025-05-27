@@ -188,31 +188,31 @@ func HavePublisher(publisher v1alpha1.Publisher) gomegatypes.GomegaMatcher {
 	return gomega.And(
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
-				return e.Spec.Publisher.Replicas.Min
-			}, gomega.Equal(publisher.Replicas.Min)),
+				return e.Spec.Min
+			}, gomega.Equal(publisher.Min)),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) int {
-				return e.Spec.Publisher.Replicas.Max
-			}, gomega.Equal(publisher.Replicas.Max)))
+				return e.Spec.Max
+			}, gomega.Equal(publisher.Max)))
 }
 
 func HavePublisherResources(res kcorev1.ResourceRequirements) gomegatypes.GomegaMatcher {
 	return gomega.And(
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) *resource.Quantity {
-				return e.Spec.Publisher.Resources.Limits.Cpu()
+				return e.Spec.Resources.Limits.Cpu()
 			}, gomega.Equal(res.Limits.Cpu())),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) *resource.Quantity {
-				return e.Spec.Publisher.Resources.Limits.Memory()
+				return e.Spec.Resources.Limits.Memory()
 			}, gomega.Equal(res.Limits.Memory())),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) *resource.Quantity {
-				return e.Spec.Publisher.Resources.Requests.Cpu()
+				return e.Spec.Resources.Requests.Cpu()
 			}, gomega.Equal(res.Requests.Cpu())),
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) *resource.Quantity {
-				return e.Spec.Publisher.Resources.Requests.Memory()
+				return e.Spec.Resources.Requests.Memory()
 			}, gomega.Equal(res.Requests.Memory())),
 	)
 }
@@ -221,7 +221,7 @@ func HaveLogging(logging v1alpha1.Logging) gomegatypes.GomegaMatcher {
 	return gomega.And(
 		gomega.WithTransform(
 			func(e *v1alpha1.Eventing) string {
-				return e.Spec.Logging.LogLevel
+				return e.Spec.LogLevel
 			}, gomega.Equal(logging.LogLevel)),
 	)
 }

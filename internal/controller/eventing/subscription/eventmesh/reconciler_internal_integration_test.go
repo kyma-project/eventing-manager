@@ -237,7 +237,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testcase.givenSubscription.Namespace,
 				Name:      testcase.givenSubscription.Name,
 			}}
-			res, err := reconciler.Reconcile(context.Background(), r)
+			res, err := reconciler.Reconcile(t.Context(), r)
 			req.Equal(testcase.wantReconcileResult, res)
 			req.Equal(testcase.wantReconcileError, err)
 		})
@@ -247,7 +247,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 // TestReconciler_APIRuleConfig ensures that the created APIRule is configured correctly
 // whether the Eventing webhook auth is enabled or not.
 func TestReconciler_APIRuleConfig(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	credentials := &eventmesh.OAuth2ClientCredentials{
 		CertsURL: "https://domain.com/oauth2/certs",
@@ -334,7 +334,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			wantHandler: apigatewayv1beta1.Handler{
 				Name: object.OAuthHandlerNameJWT,
 				Config: &runtime.RawExtension{
-					Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, credentials.CertsURL)),
+					Raw: fmt.Appendf(nil, object.JWKSURLFormat, credentials.CertsURL),
 				},
 			},
 		},
@@ -351,7 +351,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			}
 
 			// when
-			res, err := reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
+			res, err := reconciler.Reconcile(t.Context(), kctrl.Request{NamespacedName: namespacedName})
 			require.Equal(t, testcase.wantReconcileResult, res)
 			require.Equal(t, testcase.wantReconcileError, err)
 
@@ -369,8 +369,8 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 			require.NoError(t, err)
 
 			// then
-			require.Equal(t, testcase.wantHandler.Name, apiRule.Spec.Rules[0].AccessStrategies[0].Handler.Name)
-			require.Equal(t, testcase.wantHandler.Config, apiRule.Spec.Rules[0].AccessStrategies[0].Handler.Config)
+			require.Equal(t, testcase.wantHandler.Name, apiRule.Spec.Rules[0].AccessStrategies[0].Name)
+			require.Equal(t, testcase.wantHandler.Config, apiRule.Spec.Rules[0].AccessStrategies[0].Config)
 		})
 	}
 }
@@ -378,7 +378,7 @@ func TestReconciler_APIRuleConfig(t *testing.T) {
 // TestReconciler_APIRuleConfig_Upgrade ensures that the created APIRule is configured correctly
 // before and after the upgrade from ory to Eventing webhook auth and vise versa.
 func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	credentials := &eventmesh.OAuth2ClientCredentials{
 		CertsURL: "https://domain.com/oauth2/certs",
@@ -439,7 +439,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			wantHandlerAfterUpgrade: apigatewayv1beta1.Handler{
 				Name: object.OAuthHandlerNameJWT,
 				Config: &runtime.RawExtension{
-					Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, credentials.CertsURL)),
+					Raw: fmt.Appendf(nil, object.JWKSURLFormat, credentials.CertsURL),
 				},
 			},
 		},
@@ -471,7 +471,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			wantHandlerBeforeUpgrade: apigatewayv1beta1.Handler{
 				Name: object.OAuthHandlerNameJWT,
 				Config: &runtime.RawExtension{
-					Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, credentials.CertsURL)),
+					Raw: fmt.Appendf(nil, object.JWKSURLFormat, credentials.CertsURL),
 				},
 			},
 			wantHandlerAfterUpgrade: apigatewayv1beta1.Handler{
@@ -496,7 +496,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			}
 
 			// when
-			res, err := reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
+			res, err := reconciler.Reconcile(t.Context(), kctrl.Request{NamespacedName: namespacedName})
 			require.Equal(t, testcase.wantReconcileResult, res)
 			require.Equal(t, testcase.wantReconcileError, err)
 
@@ -517,12 +517,12 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			require.Equal(
 				t,
 				testcase.wantHandlerBeforeUpgrade.Name,
-				apiRule0.Spec.Rules[0].AccessStrategies[0].Handler.Name,
+				apiRule0.Spec.Rules[0].AccessStrategies[0].Name,
 			)
 			require.Equal(
 				t,
 				testcase.wantHandlerBeforeUpgrade.Config,
-				apiRule0.Spec.Rules[0].AccessStrategies[0].Handler.Config,
+				apiRule0.Spec.Rules[0].AccessStrategies[0].Config,
 			)
 
 			////
@@ -541,7 +541,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			////
 
 			// when
-			res, err = reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
+			res, err = reconciler.Reconcile(t.Context(), kctrl.Request{NamespacedName: namespacedName})
 			require.Equal(t, testcase.wantReconcileResult, res)
 			require.Equal(t, testcase.wantReconcileError, err)
 
@@ -564,12 +564,12 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 			require.Equal(
 				t,
 				testcase.wantHandlerAfterUpgrade.Name,
-				apiRule1.Spec.Rules[0].AccessStrategies[0].Handler.Name,
+				apiRule1.Spec.Rules[0].AccessStrategies[0].Name,
 			)
 			require.Equal(
 				t,
 				testcase.wantHandlerAfterUpgrade.Config,
-				apiRule1.Spec.Rules[0].AccessStrategies[0].Handler.Config,
+				apiRule1.Spec.Rules[0].AccessStrategies[0].Config,
 			)
 		})
 	}
@@ -578,7 +578,7 @@ func TestReconciler_APIRuleConfig_Upgrade(t *testing.T) {
 // TestReconciler_PreserveBackendHashes ensures that the precomputed EventMesh hashes in the Kyma subscription
 // is preserved after reconciliation.
 func TestReconciler_PreserveBackendHashes(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	collector := metrics.NewCollector()
 	subscriptionValidator := validator.SubscriptionValidatorFunc(func(_ context.Context, _ eventingv1alpha2.Subscription) error { return nil })
 
@@ -676,7 +676,7 @@ func TestReconciler_PreserveBackendHashes(t *testing.T) {
 				}
 
 				// when
-				_, err := reconciler.Reconcile(context.Background(), kctrl.Request{NamespacedName: namespacedName})
+				_, err := reconciler.Reconcile(t.Context(), kctrl.Request{NamespacedName: namespacedName})
 				require.Equal(t, testcase.wantReconcileError, err)
 
 				// then
@@ -1414,7 +1414,7 @@ func Test_validateSubscription(t *testing.T) {
 
 	// when
 	request := kctrl.Request{NamespacedName: ktypes.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Name}}
-	res, err := reconciler.Reconcile(context.Background(), request)
+	res, err := reconciler.Reconcile(t.Context(), request)
 
 	// then
 	require.Equal(t, kctrl.Result{}, res)

@@ -7,10 +7,10 @@ import (
 
 // isInDeletion checks if the subscription needs to be deleted.
 func isInDeletion(subscription *eventingv1alpha2.Subscription) bool {
-	return !subscription.ObjectMeta.DeletionTimestamp.IsZero()
+	return !subscription.DeletionTimestamp.IsZero()
 }
 
 // containsFinalizer checks if the subscription contains our Finalizer.
 func containsFinalizer(sub *eventingv1alpha2.Subscription) bool {
-	return utils.ContainsString(sub.ObjectMeta.Finalizers, eventingv1alpha2.Finalizer)
+	return utils.ContainsString(sub.Finalizers, eventingv1alpha2.Finalizer)
 }

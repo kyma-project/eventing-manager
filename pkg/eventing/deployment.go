@@ -137,8 +137,8 @@ func getLabels(publisherName string, backendType v1alpha1.BackendType) map[strin
 func WithLabels(publisherName string, backendType v1alpha1.BackendType) DeployOpt {
 	return func(d *kappsv1.Deployment) {
 		labels := getLabels(publisherName, backendType)
-		d.ObjectMeta.Labels = labels
-		d.Spec.Template.ObjectMeta.Labels = labels
+		d.Labels = labels
+		d.Spec.Template.Labels = labels
 	}
 }
 

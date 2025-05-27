@@ -2,7 +2,6 @@
 package tracing
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -62,7 +61,7 @@ func TestAddTracingHeadersToContext(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
+			ctx := t.Context()
 			gotContext := AddTracingHeadersToContext(ctx, tc.event)
 			g.Expect(cehttp.HeaderFrom(gotContext)).To(Equal(tc.expectedHeaders))
 			g.Expect(getTracingExtensions(tc.event)).To(BeEmpty())

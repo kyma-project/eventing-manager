@@ -1,7 +1,6 @@
 package test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -232,7 +231,7 @@ func Test_CreateSubscription(t *testing.T) {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			g := gomega.NewGomegaWithT(t)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			// create unique namespace for this test run
 			testNamespace := getTestNamespace()
@@ -345,7 +344,7 @@ func Test_defaulting(t *testing.T) {
 			t.Parallel()
 
 			g := gomega.NewGomegaWithT(t)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			// given
 			testNamespace := getTestNamespace()
@@ -519,7 +518,7 @@ func Test_UpdateSubscription(t *testing.T) {
 			t.Parallel()
 
 			g := gomega.NewGomegaWithT(t)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			// create unique namespace for this test run
 			testNamespace := getTestNamespace()
@@ -554,7 +553,7 @@ func Test_DeleteSubscription(t *testing.T) {
 
 	// given
 	g := gomega.NewGomegaWithT(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// create unique namespace for this test run
 	testNamespace := getTestNamespace()
@@ -670,7 +669,7 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 			t.Parallel()
 
 			g := gomega.NewGomegaWithT(t)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			// create unique namespace for this test run
 			testNamespace := getTestNamespace()
@@ -742,7 +741,7 @@ func Test_SinkChangeAndAPIRule(t *testing.T) {
 
 	// given
 	g := gomega.NewGomegaWithT(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// create unique namespace for this test run
 	testNamespace := getTestNamespace()
@@ -813,7 +812,7 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 
 	// given
 	g := gomega.NewGomegaWithT(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// create unique namespace for this test run
 	testNamespace := getTestNamespace()
@@ -935,7 +934,7 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 
 	// given
 	g := gomega.NewGomegaWithT(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// create unique namespace for this test run
 	testNamespace := getTestNamespace()
@@ -1035,7 +1034,7 @@ func Test_APIRuleRecreateAfterManualDelete(t *testing.T) {
 
 	// given
 	g := gomega.NewGomegaWithT(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// create unique namespace for this test run
 	testNamespace := getTestNamespace()
@@ -1087,7 +1086,7 @@ func Test_EventMeshSubRecreateAfterManualDelete(t *testing.T) {
 
 	// given
 	g := gomega.NewGomegaWithT(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// create unique namespace for this test run
 	testNamespace := getTestNamespace()
@@ -1242,7 +1241,7 @@ func TestWithEventMeshServerErrors(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			g := gomega.NewGomegaWithT(t)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			// create unique namespace for this test run
 			testNamespace := getTestNamespace()

@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/object"
 
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct" //nolint:stylecheck // using '.' import for convenience
+	. "github.com/onsi/gomega/gstruct" //nolint:staticcheck // using '.' import for convenience
 )
 
 //
@@ -39,7 +39,7 @@ func HaveAPIRuleSpecRules(ruleMethods []string, accessStrategy, certsURL, path s
 	handler := apigatewayv1beta1.Handler{
 		Name: accessStrategy,
 		Config: &kruntime.RawExtension{
-			Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, certsURL)),
+			Raw: fmt.Appendf(nil, object.JWKSURLFormat, certsURL),
 		},
 	}
 	authenticator := &apigatewayv1beta1.Authenticator{
@@ -148,7 +148,7 @@ func HaveSubscriptionName(name string) gomegatypes.GomegaMatcher {
 func HaveSubscriptionFinalizer(finalizer string) gomegatypes.GomegaMatcher {
 	return WithTransform(
 		func(s *eventingv1alpha2.Subscription) []string {
-			return s.ObjectMeta.Finalizers
+			return s.Finalizers
 		}, ContainElement(finalizer))
 }
 

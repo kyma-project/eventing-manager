@@ -634,7 +634,7 @@ func Test_DeleteInvalidConsumers(t *testing.T) {
 				for con := range cons {
 					actualConsumers = append(actualConsumers, con)
 				}
-				assert.Equal(t, len(testcase.wantConsumers), len(actualConsumers))
+				assert.Len(t, actualConsumers, len(testcase.wantConsumers))
 				assert.Equal(t, testcase.wantConsumers, actualConsumers)
 			}
 		})

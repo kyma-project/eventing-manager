@@ -1,7 +1,6 @@
 package eventing
 
 import (
-	"context"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -15,7 +14,7 @@ import (
 
 func Test_readDomainFromConfigMap(t *testing.T) {
 	// given
-	ctx := context.TODO()
+	ctx := t.Context()
 
 	cm := &kcorev1.ConfigMap{
 		Data: map[string]string{

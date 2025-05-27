@@ -164,7 +164,7 @@ func Test_GetNATSConfig(t *testing.T) {
 			t.Cleanup(func() {
 				for _, e := range env {
 					s := strings.Split(e, "=")
-					if err := os.Setenv(s[0], s[1]); err != nil {
+					if err := os.Setenv(s[0], s[1]); err != nil { //nolint:usetesting
 						t.Log(err)
 					}
 				}

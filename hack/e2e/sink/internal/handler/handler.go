@@ -5,11 +5,10 @@ import (
 	"net/http"
 
 	"github.com/cloudevents/sdk-go/v2/binding"
-	"github.com/gorilla/mux"
-	"go.uber.org/zap"
-
 	cev2event "github.com/cloudevents/sdk-go/v2/event"
 	cev2http "github.com/cloudevents/sdk-go/v2/protocol/http"
+	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 )
 
 const (

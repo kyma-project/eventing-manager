@@ -142,7 +142,7 @@ func (r *Reconciler) syncEventingStatus(ctx context.Context,
 
 	// Fetch the latest Eventing object, to avoid k8s conflict errors.
 	actualEventing := &operatorv1alpha1.Eventing{}
-	if err := r.Client.Get(ctx, *namespacedName, actualEventing); err != nil {
+	if err := r.Get(ctx, *namespacedName, actualEventing); err != nil {
 		return err
 	}
 

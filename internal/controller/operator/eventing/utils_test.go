@@ -1,7 +1,6 @@
 package eventing
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -55,7 +54,7 @@ func Test_addFinalizer(t *testing.T) {
 	reconciler := testEnv.Reconciler
 
 	// when
-	_, err := reconciler.addFinalizer(context.Background(), givenEventing)
+	_, err := reconciler.addFinalizer(t.Context(), givenEventing)
 
 	// then
 	require.NoError(t, err)
@@ -72,7 +71,7 @@ func Test_removeFinalizer(t *testing.T) {
 	reconciler := testEnv.Reconciler
 
 	// when
-	_, err := reconciler.removeFinalizer(context.Background(), givenEventing)
+	_, err := reconciler.removeFinalizer(t.Context(), givenEventing)
 
 	// then
 	require.NoError(t, err)

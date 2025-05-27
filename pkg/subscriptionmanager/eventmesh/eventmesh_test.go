@@ -1,7 +1,6 @@
 package eventmesh
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -44,7 +43,7 @@ func (c *bebSubMgrMock) Stop(_ bool) error {
 func Test_cleanupEventMesh(t *testing.T) {
 	// given
 	bebSubMgr := bebSubMgrMock{}
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// create a Kyma subscription
 	subscription := eventingtesting.NewSubscription("test", "test",
@@ -164,7 +163,7 @@ func Test_cleanupEventMesh(t *testing.T) {
 
 func Test_markAllV1Alpha2SubscriptionsAsNotReady(t *testing.T) {
 	// given
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// create a Kyma subscription
 	subscription := eventingtesting.NewSubscription("test", "test",

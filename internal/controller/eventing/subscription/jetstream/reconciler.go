@@ -108,7 +108,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 
 	// fetch current subscription object and ensure the object was not deleted in the meantime
 	currentSubscription := &eventingv1alpha2.Subscription{}
-	if err := r.Client.Get(ctx, req.NamespacedName, currentSubscription); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, currentSubscription); err != nil {
 		return kctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -219,7 +219,7 @@ func (r *Reconciler) updateSubscriptionMetrics(current, desired *eventingv1alpha
 func (r *Reconciler) HandleNatsConnClose(_ *nats.Conn) {
 	r.namedLogger().Info("JetStream connection is closed and reconnect attempts are exceeded!")
 	var subs eventingv1alpha2.SubscriptionList
-	if err := r.Client.List(context.Background(), &subs); err != nil {
+	if err := r.List(context.Background(), &subs); err != nil {
 		// NATS reconnect attempts are exceeded, and we cannot reconcile subscriptions! If we ignore this,
 		// there will be no future chance to retry connecting to NATS!
 		panic(err)
@@ -241,7 +241,7 @@ func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
 	subscription *eventingv1alpha2.Subscription, log *zap.SugaredLogger,
 ) (kctrl.Result, error) { //nolint:unparam // used as needed.
 	// delete the JetStream subscription/consumer
-	if !utils.ContainsString(subscription.ObjectMeta.Finalizers, eventingv1alpha2.Finalizer) {
+	if !utils.ContainsString(subscription.Finalizers, eventingv1alpha2.Finalizer) {
 		return kctrl.Result{}, nil
 	}
 
@@ -257,7 +257,7 @@ func (r *Reconciler) handleSubscriptionDeletion(ctx context.Context,
 
 	types := subscription.Status.Backend.Types
 	// remove the eventing finalizer from the list and update the subscription.
-	subscription.ObjectMeta.Finalizers = utils.RemoveString(subscription.ObjectMeta.Finalizers,
+	subscription.Finalizers = utils.RemoveString(subscription.Finalizers,
 		eventingv1alpha2.Finalizer)
 
 	// update the subscription's finalizers in k8s
@@ -303,7 +303,7 @@ func (r *Reconciler) updateSubscriptionStatus(ctx context.Context,
 
 	// fetch the latest subscription object, to avoid k8s conflict errors
 	actualSubscription := &eventingv1alpha2.Subscription{}
-	if err := r.Client.Get(ctx, *namespacedName, actualSubscription); err != nil {
+	if err := r.Get(ctx, *namespacedName, actualSubscription); err != nil {
 		return err
 	}
 
@@ -345,7 +345,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, oldSubscription,
 
 // addFinalizer appends the eventing finalizer to the subscription and updates it in k8s.
 func (r *Reconciler) addFinalizer(ctx context.Context, sub *eventingv1alpha2.Subscription) (kctrl.Result, error) { //nolint:unparam // used as needed.
-	sub.ObjectMeta.Finalizers = append(sub.ObjectMeta.Finalizers, eventingv1alpha2.Finalizer)
+	sub.Finalizers = append(sub.Finalizers, eventingv1alpha2.Finalizer)
 
 	// update the subscription's finalizers in k8s
 	if err := r.Update(ctx, sub); err != nil {

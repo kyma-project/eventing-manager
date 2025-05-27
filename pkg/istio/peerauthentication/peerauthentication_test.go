@@ -1,7 +1,6 @@
 package peerauthentication
 
 import (
-	"context"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -62,7 +61,7 @@ func Test_SyncPeerAuthentications(t *testing.T) {
 			// given
 			logger, err := test.NewEventingLogger()
 			require.NoError(t, err)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			// define mocks.
 			kubeClient := new(k8smocks.Client)

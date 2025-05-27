@@ -1,7 +1,6 @@
 package validator
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestSinkValidator(t *testing.T) {
 		serviceName   = "test-service"
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 	validator := newSinkValidator(fakeClient)
 

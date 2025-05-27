@@ -8,15 +8,16 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	istiosecv1beta1 "istio.io/api/security/v1beta1"
 	istio "istio.io/client-go/pkg/apis/security/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
+
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common"
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
-	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
-	"github.com/stretchr/testify/require"
 )
 
 var testEnv *testenvironment.TestEnvironment

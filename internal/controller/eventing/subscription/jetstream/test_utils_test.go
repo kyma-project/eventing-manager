@@ -456,7 +456,7 @@ func EnsureNamespaceCreatedForSub(t *testing.T, ens *Ensemble, subscription *eve
 	if subscription.Namespace != "default " {
 		// create testing namespace
 		namespace := fixtureNamespace(subscription.Namespace)
-		err := ens.K8sClient.Create(context.Background(), namespace)
+		err := ens.K8sClient.Create(t.Context(), namespace)
 		if !kerrors.IsAlreadyExists(err) {
 			require.NoError(t, err)
 		}
@@ -475,7 +475,7 @@ func ensureSubscriptionCreated(ens *Ensemble, subscription *eventingv1alpha2.Sub
 // EnsureK8sResourceNotCreated ensures that the obj creation in K8s fails.
 func EnsureK8sResourceNotCreated(t *testing.T, ens *Ensemble, obj client.Object, err error) {
 	t.Helper()
-	require.Equal(t, ens.K8sClient.Create(context.Background(), obj), err)
+	require.Equal(t, ens.K8sClient.Create(t.Context(), obj), err)
 }
 
 func fixtureNamespace(name string) *kcorev1.Namespace {

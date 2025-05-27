@@ -15,15 +15,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
-
 	"github.com/pkg/errors"
-
-	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
-	"github.com/kyma-project/eventing-manager/pkg/eventing"
-
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	eventingv1alpha1 "github.com/kyma-project/eventing-manager/api/operator/v1alpha1"
+	"github.com/kyma-project/eventing-manager/hack/e2e/common/testenvironment"
+	"github.com/kyma-project/eventing-manager/pkg/eventing"
 
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common"
 	. "github.com/kyma-project/eventing-manager/hack/e2e/common/fixtures"
@@ -230,7 +228,8 @@ func Test_PublisherProxyPods(t *testing.T) {
 
 		// RetryGet the Pods via labels.
 		pods, err := testEnvironment.K8sClientset.CoreV1().Pods(NamespaceName).List(ctx, metav1.ListOptions{
-			LabelSelector: ConvertSelectorLabelsToString(gotDeployment.Spec.Selector.MatchLabels)})
+			LabelSelector: ConvertSelectorLabelsToString(gotDeployment.Spec.Selector.MatchLabels),
+		})
 		if err != nil {
 			return err
 		}

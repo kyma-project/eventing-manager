@@ -323,7 +323,7 @@ func WithStatus(status bool) SubscriptionOpt {
 
 func WithFinalizers(finalizers []string) SubscriptionOpt {
 	return func(sub *eventingv1alpha2.Subscription) {
-		sub.ObjectMeta.Finalizers = finalizers
+		sub.Finalizers = finalizers
 	}
 }
 
@@ -555,7 +555,7 @@ func ToSubscription(unstructuredSub *kunstructured.Unstructured) (*eventingv1alp
 }
 
 // ToUnstructuredAPIRule converts an APIRule object into a unstructured APIRule.
-func ToUnstructuredAPIRule(obj interface{}) (*kunstructured.Unstructured, error) {
+func ToUnstructuredAPIRule(obj any) (*kunstructured.Unstructured, error) {
 	unstrct := &kunstructured.Unstructured{}
 	unstructuredObj, err := kruntime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	if err != nil {

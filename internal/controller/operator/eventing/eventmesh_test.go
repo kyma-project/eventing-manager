@@ -1,7 +1,6 @@
 package eventing
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -57,7 +56,7 @@ func Test_reconcileEventMeshSubManager(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// define test cases
 	testCases := []struct {
@@ -332,7 +331,7 @@ func Test_reconcileEventMeshSubManager_ReadClusterDomain(t *testing.T) {
 		namespace = "test-namespace"
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	givenOauthSecret := utils.NewOAuthSecret("eventing-webhook-auth", namespace)
 
@@ -770,7 +769,7 @@ func Test_getOAuth2ClientCredentials(t *testing.T) {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 
 			kubeClient := new(k8smocks.Client)
 
@@ -933,7 +932,7 @@ func Test_SyncPublisherProxySecret(t *testing.T) {
 			}
 
 			// when
-			_, err := r.SyncPublisherProxySecret(context.Background(), "eventingns", testcase.givenSecret)
+			_, err := r.SyncPublisherProxySecret(t.Context(), "eventingns", testcase.givenSecret)
 
 			// then
 			if testcase.wantErr {
@@ -1073,7 +1072,7 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	for _, tc := range testCases {
 		testcase := tc
@@ -1091,7 +1090,7 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 			testEnv.Reconciler.isEventMeshSubManagerStarted = true
 
 			if testcase.givenSecret != nil {
-				require.NoError(t, testEnv.Reconciler.Client.Create(ctx, testcase.givenSecret))
+				require.NoError(t, testEnv.Reconciler.Create(ctx, testcase.givenSecret))
 			}
 
 			if testcase.givenCredentials != nil {

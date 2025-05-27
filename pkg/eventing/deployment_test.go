@@ -79,8 +79,8 @@ func TestNewDeployment(t *testing.T) {
 			}
 
 			// the right backendType should be set
-			assert.Equal(t, deployment.ObjectMeta.Labels[label.KeyBackend], string(getECBackendType(testcase.givenBackendType)))
-			assert.Equal(t, deployment.ObjectMeta.Labels[label.KeyName], publisherName)
+			assert.Equal(t, deployment.Labels[label.KeyBackend], string(getECBackendType(testcase.givenBackendType)))
+			assert.Equal(t, deployment.Labels[label.KeyName], publisherName)
 
 			// check the container properties were set properly
 			container := findPublisherContainer(publisherName, *deployment)

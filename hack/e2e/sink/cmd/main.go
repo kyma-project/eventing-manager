@@ -3,8 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/kyma-project/eventing-manager/sink/internal/handler"
 	"go.uber.org/zap"
+
+	"github.com/kyma-project/eventing-manager/sink/internal/handler"
 )
 
 func main() {

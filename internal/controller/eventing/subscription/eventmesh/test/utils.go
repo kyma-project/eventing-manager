@@ -420,7 +420,7 @@ func getEventMeshKeyForMock(name string) string {
 // ensureK8sEventReceived checks if a certain event have triggered for the given namespace.
 func ensureK8sEventReceived(t *testing.T, event kcorev1.Event, namespace string) {
 	t.Helper()
-	ctx := context.TODO()
+	ctx := t.Context()
 	require.Eventually(t, func() bool {
 		// get all events from k8s for namespace
 		eventList := &kcorev1.EventList{}

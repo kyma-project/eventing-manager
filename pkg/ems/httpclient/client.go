@@ -17,8 +17,8 @@ var _ BaseURLAwareClient = Client{}
 // BaseURLAwareClient is a http client that can build requests not from a full URL, but from a path relative to a configured base url
 // this is useful for REST-APIs that always connect to the same host, but on different paths.
 type BaseURLAwareClient interface {
-	NewRequest(method, path string, body interface{}) (*http.Request, error)
-	Do(req *http.Request, result interface{}) (Status, []byte, error)
+	NewRequest(method, path string, body any) (*http.Request, error)
+	Do(req *http.Request, result any) (Status, []byte, error)
 }
 
 type Client struct {
@@ -49,11 +49,11 @@ func NewHTTPClient(baseURL string, client *http.Client) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) GetHTTPClient() *http.Client {
+func (c Client) GetHTTPClient() *http.Client {
 	return c.httpClient
 }
 
-func (c Client) NewRequest(method, path string, body interface{}) (*http.Request, error) {
+func (c Client) NewRequest(method, path string, body any) (*http.Request, error) {
 	var jsonBody io.ReadWriter
 	if body != nil {
 		jsonBody = new(bytes.Buffer)
@@ -85,7 +85,7 @@ func resolveReferenceAsRelative(base, ref *url.URL) *url.URL {
 	return base.ResolveReference(&url.URL{Path: strings.TrimPrefix(ref.Path, "/")})
 }
 
-func (c Client) Do(req *http.Request, result interface{}) (Status, []byte, error) {
+func (c Client) Do(req *http.Request, result any) (Status, []byte, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		if resp == nil {

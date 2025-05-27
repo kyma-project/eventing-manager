@@ -1,7 +1,6 @@
 package validation_test
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -718,8 +717,8 @@ func Test_Validate_CreateEventing(t *testing.T) {
 				require.NoError(t, err, "Expected error message to be empty but got error instead."+
 					" Check the validation rule of the eventing CR.")
 			} else {
-				require.Error(t, err, fmt.Sprintf("Expected the following error message: \n \" %s \" \n"+
-					" but got no error. Check the validation rules of the eventing CR.", testcase.wantErrMsg))
+				require.Error(t, err, "Expected the following error message: \n \" %s \" \n"+
+					" but got no error. Check the validation rules of the eventing CR.", testcase.wantErrMsg)
 
 				require.Contains(t, err.Error(), testcase.wantErrMsg, "Expected a specific error message"+
 					" but messages do not match. Check the validation rules of the eventing CR.")
@@ -805,8 +804,8 @@ func Test_Validate_UpdateEventing(t *testing.T) {
 				require.NoError(t, err, "Expected error message to be empty but got error instead."+
 					" Check the validation rule of the eventing CR.")
 			} else {
-				require.Error(t, err, fmt.Sprintf("Expected the following error message: \n \" %s \" \n"+
-					" but got no error. Check the validation rules of the eventing CR.", testcase.wantErrMsg))
+				require.Error(t, err, "Expected the following error message: \n \" %s \" \n"+
+					" but got no error. Check the validation rules of the eventing CR.", testcase.wantErrMsg)
 
 				require.Contains(t, err.Error(), testcase.wantErrMsg, "Expected a specific error message"+
 					" but messages do not match. Check the validation rules of the eventing CR.")

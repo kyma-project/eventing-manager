@@ -3,6 +3,7 @@ package eventmesh
 import (
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 
 	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
@@ -23,17 +24,12 @@ func isInDeletion(subscription *eventingv1alpha2.Subscription) bool {
 // isFinalizerSet checks if a finalizer is set on the Subscription which belongs to this controller.
 func isFinalizerSet(sub *eventingv1alpha2.Subscription) bool {
 	// Check if finalizer is already set
-	for _, finalizer := range sub.ObjectMeta.Finalizers {
-		if finalizer == eventingv1alpha2.Finalizer {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(sub.Finalizers, eventingv1alpha2.Finalizer)
 }
 
 // addFinalizer adds eventingv1alpha2 finalizer to the Subscription.
 func addFinalizer(sub *eventingv1alpha2.Subscription, logger *zap.SugaredLogger) error {
-	sub.ObjectMeta.Finalizers = append(sub.ObjectMeta.Finalizers, eventingv1alpha2.Finalizer)
+	sub.Finalizers = append(sub.Finalizers, eventingv1alpha2.Finalizer)
 	logger.Debug("Added finalizer to subscription")
 	return nil
 }
@@ -43,14 +39,14 @@ func removeFinalizer(sub *eventingv1alpha2.Subscription) {
 	var finalizers []string
 
 	// Build finalizer list without the one the controller owns
-	for _, finalizer := range sub.ObjectMeta.Finalizers {
+	for _, finalizer := range sub.Finalizers {
 		if finalizer == eventingv1alpha2.Finalizer {
 			continue
 		}
 		finalizers = append(finalizers, finalizer)
 	}
 
-	sub.ObjectMeta.Finalizers = finalizers
+	sub.Finalizers = finalizers
 }
 
 // getSvcNsAndName returns namespace and name of the svc from the URL.

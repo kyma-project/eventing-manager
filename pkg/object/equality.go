@@ -40,7 +40,7 @@ func serviceAccountEqual(a, b *kcorev1.ServiceAccount) bool {
 		return false
 	}
 
-	if !mapDeepEqual(a.ObjectMeta.Labels, b.ObjectMeta.Labels) {
+	if !mapDeepEqual(a.Labels, b.Labels) {
 		return false
 	}
 

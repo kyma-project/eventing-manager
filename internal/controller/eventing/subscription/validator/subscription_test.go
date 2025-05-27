@@ -11,7 +11,7 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	ctx := context.TODO()
+	ctx := t.Context()
 
 	const (
 		subName             = "sub"

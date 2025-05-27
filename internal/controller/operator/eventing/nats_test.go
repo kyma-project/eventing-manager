@@ -1,7 +1,6 @@
 package eventing
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -433,7 +432,7 @@ func Test_GetNatsConfig(t *testing.T) {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			kubeClient := new(k8smocks.Client)
 			kubeClient.On("GetNATSResources", ctx, testcase.eventing.Namespace).Return(&natsv1alpha1.NATSList{
 				Items: testcase.givenNatsResources,
@@ -498,7 +497,7 @@ func Test_getNATSUrl(t *testing.T) {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			kubeClient := new(k8smocks.Client)
 			kubeClient.On("GetNATSResources", ctx, testcase.givenNamespace).Return(&natsv1alpha1.NATSList{
 				Items: testcase.givenNatsResources,
@@ -564,7 +563,7 @@ func Test_UpdateNatsConfig(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			kubeClient := new(k8smocks.Client)
 			kubeClient.On("GetNATSResources", ctx, testcase.eventing.Namespace).Return(&natsv1alpha1.NATSList{
 				Items: testcase.givenNatsResources,

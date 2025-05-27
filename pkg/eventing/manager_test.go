@@ -1,7 +1,6 @@
 package eventing
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -91,7 +90,7 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
@@ -125,8 +124,8 @@ func Test_ApplyPublisherProxyDeployment(t *testing.T) {
 			require.ErrorIs(t, err, testcase.wantErr)
 			if testcase.wantedDeployment != nil {
 				require.NotNil(t, deployment)
-				require.Equal(t, testcase.wantedDeployment.Spec.Template.ObjectMeta.Annotations,
-					deployment.Spec.Template.ObjectMeta.Annotations)
+				require.Equal(t, testcase.wantedDeployment.Spec.Template.Annotations,
+					deployment.Spec.Template.Annotations)
 			}
 		})
 	}
@@ -201,7 +200,7 @@ func Test_migratePublisherDeploymentFromEC(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	for _, tc := range testCases {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
@@ -298,7 +297,7 @@ func Test_IsNATSAvailable(t *testing.T) {
 		testcase := tc
 		t.Run(testcase.name, func(t *testing.T) {
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			kubeClient := new(k8smocks.Client)
 			kubeClient.On("GetNATSResources", ctx, testcase.givenNamespace).Return(&natsv1alpha1.NATSList{
 				Items: testcase.givenNATSResources,
@@ -362,7 +361,7 @@ func Test_DeployPublisherProxyResources(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
 			kubeClient := new(k8smocks.Client)
 
@@ -478,7 +477,7 @@ func Test_DeletePublisherProxyResources(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			mockClient := fake.NewClientBuilder().WithScheme(newScheme).WithObjects().Build()
 			kubeClient := new(k8smocks.Client)
 
@@ -568,7 +567,7 @@ func Test_SubscriptionExists(t *testing.T) {
 		}
 
 		// Call the SubscriptionExists method
-		result, err := em.SubscriptionExists(context.Background())
+		result, err := em.SubscriptionExists(t.Context())
 
 		// Assert the result of the method
 		require.Equal(t, testcase.wantResult, result, testcase.name)

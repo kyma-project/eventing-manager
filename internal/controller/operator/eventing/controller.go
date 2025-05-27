@@ -337,7 +337,7 @@ func (r *Reconciler) watchResource(kind client.Object, eventing *operatorv1alpha
 	}
 
 	return r.controller.Watch(
-		source.Kind[client.Object](
+		source.Kind(
 			r.ctrlManager.GetCache(),
 			kind,
 			resourceHandler,
@@ -369,7 +369,7 @@ func (r *Reconciler) startNATSCRWatch(eventing *operatorv1alpha1.Eventing) error
 		},
 	)
 
-	src := source.Channel[client.Object](
+	src := source.Channel(
 		natsWatcher.GetEventsChannel(),
 		resourceHandler,
 		source.WithPredicates[client.Object, kctrl.Request](predicate.ResourceVersionChangedPredicate{}),

@@ -1,7 +1,6 @@
 package eventing
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -80,7 +79,7 @@ func Test_handleEventingCRAllowedCheck(t *testing.T) {
 			logger := testEnv.Reconciler.logger.WithContext().Named(ControllerName)
 
 			// when
-			result, err := testEnv.Reconciler.handleEventingCRAllowedCheck(context.Background(), testcase.givenEventing, logger)
+			result, err := testEnv.Reconciler.handleEventingCRAllowedCheck(t.Context(), testcase.givenEventing, logger)
 
 			// then
 			require.NoError(t, err)
@@ -315,7 +314,7 @@ func Test_handleBackendSwitching(t *testing.T) {
 			testEnv.Reconciler.eventingManager = givenEventingManagerMock
 
 			// when
-			err := testEnv.Reconciler.handleBackendSwitching(context.TODO(), testcase.givenEventing, logger)
+			err := testEnv.Reconciler.handleBackendSwitching(t.Context(), testcase.givenEventing, logger)
 
 			// then
 			if testcase.wantError != nil {

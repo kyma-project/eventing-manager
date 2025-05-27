@@ -75,7 +75,8 @@ func Test_BinaryCloudEvents(t *testing.T) {
 func testEventDelivery(t *testing.T,
 	testCase EventTestCase,
 	subsToTest []eventing.TestSubscriptionInfo,
-	encoding binding.Encoding) {
+	encoding binding.Encoding,
+) {
 	// In each subscription, we need to run the tests for each event type.
 	// loop over each subscription.
 	for _, subToTest := range subsToTest {

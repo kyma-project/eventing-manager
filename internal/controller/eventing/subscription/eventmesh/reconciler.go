@@ -106,7 +106,7 @@ func NewReconciler(client client.Client, logger *logger.Logger, recorder record.
 func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Result, error) {
 	// fetch current subscription object and ensure the object was not deleted in the meantime
 	currentSubscription := &eventingv1alpha2.Subscription{}
-	if err := r.Client.Get(ctx, req.NamespacedName, currentSubscription); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, currentSubscription); err != nil {
 		return kctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -185,6 +185,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req kctrl.Request) (kctrl.Re
 	return result, nil
 }
 
+// SetCredentials sets the WebhookAuth credentials.
+// WARNING: This functions should be used for testing purposes only.
+func (r *Reconciler) SetCredentials(credentials *eventmesh.OAuth2ClientCredentials) {
+	r.namedLogger().Warn("This logic should be used for testing purposes only")
+	r.oauth2credentials = credentials
+}
+
 func (r *Reconciler) validateSubscription(ctx context.Context, subscription *eventingv1alpha2.Subscription) error {
 	var err error
 	if err = r.subscriptionValidator.Validate(ctx, *subscription); err != nil {
@@ -203,14 +210,14 @@ func (r *Reconciler) updateSubscription(ctx context.Context, sub *eventingv1alph
 
 	// fetch the latest subscription object, to avoid k8s conflict errors
 	latestSubscription := &eventingv1alpha2.Subscription{}
-	if err := r.Client.Get(ctx, *namespacedName, latestSubscription); err != nil {
+	if err := r.Get(ctx, *namespacedName, latestSubscription); err != nil {
 		return err
 	}
 
 	// copy new changes to the latest object
 	newSubscription := latestSubscription.DeepCopy()
 	newSubscription.Status = sub.Status
-	newSubscription.ObjectMeta.Finalizers = sub.ObjectMeta.Finalizers
+	newSubscription.Finalizers = sub.Finalizers
 
 	// emit the condition events if needed
 	r.emitConditionEvents(latestSubscription, newSubscription, logger)
@@ -221,11 +228,11 @@ func (r *Reconciler) updateSubscription(ctx context.Context, sub *eventingv1alph
 	}
 
 	// update the subscription object in k8s
-	if !reflect.DeepEqual(latestSubscription.ObjectMeta.Finalizers, newSubscription.ObjectMeta.Finalizers) {
+	if !reflect.DeepEqual(latestSubscription.Finalizers, newSubscription.Finalizers) {
 		if err := r.Update(ctx, newSubscription); err != nil {
 			return xerrors.Errorf("failed to remove finalizer name '%s': %v", eventingv1alpha2.Finalizer, err)
 		}
-		logger.Debugw("Updated subscription meta for finalizers", "oldFinalizers", latestSubscription.ObjectMeta.Finalizers, "newFinalizers", newSubscription.ObjectMeta.Finalizers)
+		logger.Debugw("Updated subscription meta for finalizers", "oldFinalizers", latestSubscription.Finalizers, "newFinalizers", newSubscription.Finalizers)
 	}
 
 	return nil
@@ -442,7 +449,7 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 	filteredSubscriptions := r.filterSubscriptionsOnPort(subscriptions, svcPort)
 
 	desiredAPIRule := r.makeAPIRule(svcNs, svcName, labels, filteredSubscriptions, svcPort)
-	if err != nil {
+	if err != nil { // FIX: this err cannot become nil, because it will not be changed since the last nil check.
 		return nil, xerrors.Errorf("failed to make APIRule: %v", err)
 	}
 
@@ -453,7 +460,7 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 
 	// no APIRule to reuse, create a new one
 	if reusableAPIRule == nil {
-		if err := r.Client.Create(ctx, desiredAPIRule, &client.CreateOptions{}); err != nil {
+		if err := r.Create(ctx, desiredAPIRule, &client.CreateOptions{}); err != nil {
 			events.Warn(r.recorder, subscription, events.ReasonCreateFailed, "Create APIRule failed %s", desiredAPIRule.Name)
 			return nil, xerrors.Errorf("failed to create APIRule: %v", err)
 		}
@@ -467,7 +474,7 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 	if object.Semantic.DeepEqual(reusableAPIRule, desiredAPIRule) {
 		return reusableAPIRule, nil
 	}
-	err = r.Client.Update(ctx, desiredAPIRule, &client.UpdateOptions{})
+	err = r.Update(ctx, desiredAPIRule, &client.UpdateOptions{})
 	if err != nil {
 		events.Warn(r.recorder, subscription, events.ReasonUpdateFailed, "Update APIRule failed %s", desiredAPIRule.Name)
 		return nil, xerrors.Errorf("failed to update APIRule: %v", err)
@@ -496,7 +503,7 @@ func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *ev
 	// get the previous APIRule
 	previousAPIRule := &apigatewayv1beta1.APIRule{}
 	key := ktypes.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Status.Backend.APIRuleName}
-	if err := r.Client.Get(ctx, key, previousAPIRule); err != nil {
+	if err := r.Get(ctx, key, previousAPIRule); err != nil {
 		if !kerrors.IsNotFound(err) {
 			return err
 		}
@@ -513,7 +520,7 @@ func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *ev
 
 	// delete the APIRule if the new OwnerReference list is empty
 	if len(ownerReferences) == 0 {
-		if err := r.Client.Delete(ctx, previousAPIRule); err != nil {
+		if err := r.Delete(ctx, previousAPIRule); err != nil {
 			return err
 		}
 		return nil
@@ -523,7 +530,7 @@ func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *ev
 	if len(ownerReferences) < len(previousAPIRule.OwnerReferences) {
 		// list all subscriptions in the APIRule namespace
 		namespaceSubscriptions := &eventingv1alpha2.SubscriptionList{}
-		if err := r.Client.List(ctx, namespaceSubscriptions, &client.ListOptions{Namespace: previousAPIRule.Namespace}); err != nil {
+		if err := r.List(ctx, namespaceSubscriptions, &client.ListOptions{Namespace: previousAPIRule.Namespace}); err != nil {
 			return err
 		}
 
@@ -553,7 +560,7 @@ func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *ev
 			http.MethodOptions,
 		)(previousAPIRule)
 
-		if err := r.Client.Update(ctx, previousAPIRule); err != nil {
+		if err := r.Update(ctx, previousAPIRule); err != nil {
 			return err
 		}
 	}
@@ -565,7 +572,7 @@ func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *ev
 func (r *Reconciler) getSubscriptionsForASvc(ctx context.Context, svcNs, svcName string) ([]eventingv1alpha2.Subscription, error) {
 	subscriptions := &eventingv1alpha2.SubscriptionList{}
 	relevantSubs := make([]eventingv1alpha2.Subscription, 0)
-	err := r.Client.List(ctx, subscriptions, &client.ListOptions{
+	err := r.List(ctx, subscriptions, &client.ListOptions{
 		Namespace: svcNs,
 	})
 	if err != nil {
@@ -635,7 +642,7 @@ func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string
 
 func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]string, svcNs string) ([]apigatewayv1beta1.APIRule, error) {
 	existingAPIRules := &apigatewayv1beta1.APIRuleList{}
-	err := r.Client.List(ctx, existingAPIRules, &client.ListOptions{
+	err := r.List(ctx, existingAPIRules, &client.ListOptions{
 		LabelSelector: klabels.SelectorFromSet(labels),
 		Namespace:     svcNs,
 	})
@@ -847,11 +854,4 @@ func checkLastFailedDelivery(subscription *eventingv1alpha2.Subscription) (bool,
 
 func (r *Reconciler) namedLogger() *zap.SugaredLogger {
 	return r.logger.WithContext().Named(reconcilerName)
-}
-
-// SetCredentials sets the WebhookAuth credentials.
-// WARNING: This functions should be used for testing purposes only.
-func (r *Reconciler) SetCredentials(credentials *eventmesh.OAuth2ClientCredentials) {
-	r.namedLogger().Warn("This logic should be used for testing purposes only")
-	r.oauth2credentials = credentials
 }

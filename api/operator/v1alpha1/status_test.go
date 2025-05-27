@@ -425,8 +425,8 @@ func TestSetEventMeshAvailableConditionToTrue(t *testing.T) {
 func assertConditionsEqual(t *testing.T, expected, actual []kmetav1.Condition) {
 	t.Helper()
 
-	assert.Equal(t, len(expected), len(actual))
-	for i := range len(expected) {
+	assert.Len(t, actual, len(expected))
+	for i := range expected {
 		assertConditionEqual(t, expected[i], actual[i])
 	}
 }

@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -50,7 +49,7 @@ func Test_UpdateDeployment(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			fakeClient := fake.NewClientBuilder().Build()
 			kubeClient := &KubeClient{
 				client: fakeClient,
@@ -116,7 +115,7 @@ func Test_DeleteResource(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			var givenObjs []client.Object
 			if testcase.givenDeploymentExists {
 				givenObjs = append(givenObjs, testcase.givenDeployment)
@@ -166,7 +165,7 @@ func Test_DeleteDeployment(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			fakeClient := fake.NewClientBuilder().Build()
 			kubeClient := &KubeClient{
 				client: fakeClient,
@@ -220,7 +219,7 @@ func Test_DeleteClusterRole(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			fakeClient := fake.NewClientBuilder().Build()
 			kubeClient := &KubeClient{
 				client: fakeClient,
@@ -274,7 +273,7 @@ func Test_DeleteClusterRoleBinding(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			fakeClient := fake.NewClientBuilder().Build()
 			kubeClient := &KubeClient{
 				client: fakeClient,
@@ -351,7 +350,7 @@ func Test_GetSecret(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			fakeClient := fake.NewClientBuilder().Build()
 			kubeClient := &KubeClient{
 				client: fakeClient,
@@ -363,7 +362,7 @@ func Test_GetSecret(t *testing.T) {
 			}
 
 			// Call the GetSecret function with the test case's givenNamespacedName.
-			secret, err := kubeClient.GetSecret(context.Background(), testcase.givenNamespacedName)
+			secret, err := kubeClient.GetSecret(t.Context(), testcase.givenNamespacedName)
 
 			// Assert that the function returned the expected secret and error.
 			if testcase.wantNotFoundError {
@@ -414,7 +413,7 @@ func Test_GetCRD(t *testing.T) {
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
-			gotCRD, err := kubeClient.GetCRD(context.Background(), testcase.givenCRDName)
+			gotCRD, err := kubeClient.GetCRD(t.Context(), testcase.givenCRDName)
 
 			// then
 			if testcase.wantNotFoundError {
@@ -463,7 +462,7 @@ func Test_ApplicationCRDExists(t *testing.T) {
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
-			gotResult, err := kubeClient.ApplicationCRDExists(context.Background())
+			gotResult, err := kubeClient.ApplicationCRDExists(t.Context())
 
 			// then
 			require.NoError(t, err)
@@ -508,7 +507,7 @@ func Test_PeerAuthenticationCRDExists(t *testing.T) {
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
-			gotResult, err := kubeClient.PeerAuthenticationCRDExists(context.Background())
+			gotResult, err := kubeClient.PeerAuthenticationCRDExists(t.Context())
 
 			// then
 			require.NoError(t, err)
@@ -557,7 +556,7 @@ func TestGetSubscriptions(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			scheme := runtime.NewScheme()
 			err := eventingv1alpha2.AddToScheme(scheme)
 			require.NoError(t, err)
@@ -574,7 +573,7 @@ func TestGetSubscriptions(t *testing.T) {
 			}
 
 			// Call the GetSubscriptions method
-			result, _ := kubeClient.GetSubscriptions(context.Background())
+			result, _ := kubeClient.GetSubscriptions(t.Context())
 
 			// Assert the result of the method
 			if testcase.wantSubscriptionList != nil && len(testcase.wantSubscriptionList.Items) > 0 {
@@ -615,7 +614,7 @@ func Test_GetConfigMap(t *testing.T) {
 			t.Parallel()
 
 			// given
-			ctx := context.Background()
+			ctx := t.Context()
 			kubeClient := &KubeClient{client: fake.NewClientBuilder().Build()}
 			givenCM := testutils.NewConfigMap(testcase.givenName, testcase.givenNamespace)
 			if !testcase.wantNotFoundError {
@@ -623,7 +622,7 @@ func Test_GetConfigMap(t *testing.T) {
 			}
 
 			// when
-			gotCM, err := kubeClient.GetConfigMap(context.Background(), testcase.givenName, testcase.givenNamespace)
+			gotCM, err := kubeClient.GetConfigMap(t.Context(), testcase.givenName, testcase.givenNamespace)
 
 			// then
 			if testcase.wantNotFoundError {
@@ -672,7 +671,7 @@ func Test_APIRuleCRDExists(t *testing.T) {
 			kubeClient := NewKubeClient(nil, fakeClientSet, testFieldManager, nil)
 
 			// when
-			gotResult, err := kubeClient.APIRuleCRDExists(context.Background())
+			gotResult, err := kubeClient.APIRuleCRDExists(t.Context())
 
 			// then
 			require.NoError(t, err)

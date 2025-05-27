@@ -1,7 +1,6 @@
 package testwebhookauth
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -25,7 +24,7 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	// setup
 	ensemble, err := setupSuite()
 	require.NoError(t, err)
-	ctx := context.Background()
+	ctx := t.Context()
 	g := gomega.NewGomegaWithT(t)
 
 	// ensure namespace created

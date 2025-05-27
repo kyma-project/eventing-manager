@@ -342,7 +342,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 
 	// Ensure reconciling the same Eventing CR multiple times does not update the EPP deployment.
 	const runs = 3
-	resourceVersionBefore := eppDeployment.ObjectMeta.ResourceVersion
+	resourceVersionBefore := eppDeployment.ResourceVersion
 	for r := range runs {
 		// when
 		runID := fmt.Sprintf("run-%d", r)
@@ -352,13 +352,13 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 		require.NotNil(t, eventingCR)
 
 		eventingCR = eventingCR.DeepCopy()
-		eventingCR.ObjectMeta.Labels = map[string]string{"reconcile": runID} // force new reconciliation
+		eventingCR.Labels = map[string]string{"reconcile": runID} // force new reconciliation
 		testEnvironment.EnsureK8sResourceUpdated(t, eventingCR)
 
 		eventingCR, err = testEnvironment.GetEventingFromK8s(eventingCR.Name, namespace)
 		require.NoError(t, err)
 		require.NotNil(t, eventingCR)
-		require.Equal(t, eventingCR.ObjectMeta.Labels["reconcile"], runID)
+		require.Equal(t, eventingCR.Labels["reconcile"], runID)
 
 		// then
 		testEnvironment.EnsureEventingSpecPublisherReflected(t, eventingCR)
@@ -369,7 +369,7 @@ func Test_ReconcileSameEventingCR(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eppDeployment)
 
-		resourceVersionAfter := eppDeployment.ObjectMeta.ResourceVersion
+		resourceVersionAfter := eppDeployment.ResourceVersion
 		require.Equal(t, resourceVersionBefore, resourceVersionAfter)
 
 		// check the publisher service in the Eventing CR status
