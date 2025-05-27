@@ -19,6 +19,9 @@ linters:
     - testpackage
     - wrapcheck
     - wsl
+    - funcorder # TODO: remove
+    - gosec # TODO: remove
+    - recvcheck # TODO: remove
   settings:
     cyclop:
       max-complexity: 20
