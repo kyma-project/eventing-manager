@@ -34,8 +34,8 @@ func CloudEventMode(encoding binding.Encoding) string {
 	return fmt.Sprintf("ce-%s", encoding.String())
 }
 
-func CloudEventData(source, eventType string, encoding binding.Encoding) map[string]interface{} {
-	return map[string]interface{}{keyApp: source, keyMode: CloudEventMode(encoding), keyType: eventType}
+func CloudEventData(source, eventType string, encoding binding.Encoding) map[string]any {
+	return map[string]any{keyApp: source, keyMode: CloudEventMode(encoding), keyType: eventType}
 }
 
 func ExtractLegacyTypeFromSubscriptionV1Alpha2Type(eventVersion, eventType string, typeMatching eventingv1alpha2.TypeMatching) string {

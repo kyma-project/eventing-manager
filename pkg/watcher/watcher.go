@@ -102,16 +102,16 @@ func (w *ResourceWatcher) GetEventsChannel() <-chan event.GenericEvent {
 	return w.eventsCh
 }
 
-func (w *ResourceWatcher) addFunc(o interface{}) {
+func (w *ResourceWatcher) addFunc(o any) {
 	w.eventsCh <- event.GenericEvent{}
 }
 
-func (w *ResourceWatcher) updateFunc(o, n interface{}) {
+func (w *ResourceWatcher) updateFunc(o, n any) {
 	if !reflect.DeepEqual(o, n) {
 		w.eventsCh <- event.GenericEvent{}
 	}
 }
 
-func (w *ResourceWatcher) deleteFunc(o interface{}) {
+func (w *ResourceWatcher) deleteFunc(o any) {
 	w.eventsCh <- event.GenericEvent{}
 }

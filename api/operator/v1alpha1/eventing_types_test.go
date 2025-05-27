@@ -100,7 +100,7 @@ func TestIsSpecBackendTypeChanged(t *testing.T) {
 }
 
 func Test_getSupportedConditionsTypes(t *testing.T) {
-	want := map[ConditionType]interface{}{
+	want := map[ConditionType]any{
 		ConditionBackendAvailable:         nil,
 		ConditionPublisherProxyReady:      nil,
 		ConditionSubscriptionManagerReady: nil,

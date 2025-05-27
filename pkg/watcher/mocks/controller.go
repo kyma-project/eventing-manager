@@ -104,7 +104,7 @@ type Controller_Reconcile_Call struct {
 // Reconcile is a helper method to define mock.On call
 //   - _a0 context.Context
 //   - _a1 reconcile.Request
-func (_e *Controller_Expecter) Reconcile(_a0 interface{}, _a1 interface{}) *Controller_Reconcile_Call {
+func (_e *Controller_Expecter) Reconcile(_a0 any, _a1 any) *Controller_Reconcile_Call {
 	return &Controller_Reconcile_Call{Call: _e.mock.On("Reconcile", _a0, _a1)}
 }
 
@@ -146,7 +146,7 @@ type Controller_Start_Call struct {
 
 // Start is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Controller_Expecter) Start(ctx interface{}) *Controller_Start_Call {
+func (_e *Controller_Expecter) Start(ctx any) *Controller_Start_Call {
 	return &Controller_Start_Call{Call: _e.mock.On("Start", ctx)}
 }
 
@@ -169,11 +169,11 @@ func (_c *Controller_Start_Call) RunAndReturn(run func(context.Context) error) *
 
 // Watch provides a mock function with given fields: src, eventhandler, predicates
 func (_m *Controller) Watch(src source.Source, eventhandler handler.EventHandler, predicates ...predicate.Predicate) error {
-	_va := make([]interface{}, len(predicates))
+	_va := make([]any, len(predicates))
 	for _i := range predicates {
 		_va[_i] = predicates[_i]
 	}
-	var _ca []interface{}
+	var _ca []any
 	_ca = append(_ca, src, eventhandler)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
@@ -197,9 +197,9 @@ type Controller_Watch_Call struct {
 //   - src source.Source
 //   - eventhandler handler.EventHandler
 //   - predicates ...predicate.Predicate
-func (_e *Controller_Expecter) Watch(src interface{}, eventhandler interface{}, predicates ...interface{}) *Controller_Watch_Call {
+func (_e *Controller_Expecter) Watch(src any, eventhandler any, predicates ...any) *Controller_Watch_Call {
 	return &Controller_Watch_Call{Call: _e.mock.On("Watch",
-		append([]interface{}{src, eventhandler}, predicates...)...)}
+		append([]any{src, eventhandler}, predicates...)...)}
 }
 
 func (_c *Controller_Watch_Call) Run(run func(src source.Source, eventhandler handler.EventHandler, predicates ...predicate.Predicate)) *Controller_Watch_Call {
@@ -230,7 +230,8 @@ func (_c *Controller_Watch_Call) RunAndReturn(run func(source.Source, handler.Ev
 func NewController(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Controller {
+},
+) *Controller {
 	mock := &Controller{}
 	mock.Mock.Test(t)
 

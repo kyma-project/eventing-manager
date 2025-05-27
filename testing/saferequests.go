@@ -10,14 +10,14 @@ import (
 // SafeRequests encapsulates Requests to provide mutual exclusion.
 type SafeRequests struct {
 	sync.RWMutex
-	requests map[*http.Request]interface{}
+	requests map[*http.Request]any
 }
 
 // NewSafeRequests returns a new instance of SafeRequests.
 func NewSafeRequests() *SafeRequests {
 	return &SafeRequests{
 		sync.RWMutex{},
-		make(map[*http.Request]interface{}),
+		make(map[*http.Request]any),
 	}
 }
 
@@ -43,7 +43,7 @@ func (r *SafeRequests) Len() int {
 }
 
 // ReadEach iterates over requests and executes a given func f with each iteration's request and payload.
-func (r *SafeRequests) ReadEach(f func(request *http.Request, payload interface{})) {
+func (r *SafeRequests) ReadEach(f func(request *http.Request, payload any)) {
 	r.RLock()
 	defer r.RUnlock()
 	for req, payload := range r.requests {

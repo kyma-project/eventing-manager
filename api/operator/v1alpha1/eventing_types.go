@@ -69,8 +69,8 @@ const (
 )
 
 // getSupportedConditionsTypes returns a map of supported condition types.
-func getSupportedConditionsTypes() map[ConditionType]interface{} {
-	return map[ConditionType]interface{}{
+func getSupportedConditionsTypes() map[ConditionType]any {
+	return map[ConditionType]any{
 		ConditionBackendAvailable:         nil,
 		ConditionPublisherProxyReady:      nil,
 		ConditionSubscriptionManagerReady: nil,
