@@ -59,7 +59,7 @@ type SubscriptionStatus struct {
 	Types []EventType `json:"types"`
 
 	// Backend-specific status which is applicable to the active backend only.
-	Backend Backend `json:"backend,omitempty"`
+	Backend Backend `json:"backend"`
 }
 
 // +kubebuilder:storageversion
@@ -72,10 +72,10 @@ type SubscriptionStatus struct {
 // Subscription is the Schema for the subscriptions API.
 type Subscription struct {
 	kmetav1.TypeMeta   `json:",inline"`
-	kmetav1.ObjectMeta `json:"metadata,omitempty"`
+	kmetav1.ObjectMeta `json:"metadata"`
 
-	Spec   SubscriptionSpec   `json:"spec,omitempty"`
-	Status SubscriptionStatus `json:"status,omitempty"`
+	Spec   SubscriptionSpec   `json:"spec"`
+	Status SubscriptionStatus `json:"status"`
 }
 
 // MarshalJSON implements the json.Marshaler interface.
@@ -136,7 +136,7 @@ func (s *Subscription) ToUnstructuredSub() (*kunstructured.Unstructured, error) 
 // SubscriptionList contains a list of Subscription.
 type SubscriptionList struct {
 	kmetav1.TypeMeta `json:",inline"`
-	kmetav1.ListMeta `json:"metadata,omitempty"`
+	kmetav1.ListMeta `json:"metadata"`
 	Items            []Subscription `json:"items"`
 }
 
