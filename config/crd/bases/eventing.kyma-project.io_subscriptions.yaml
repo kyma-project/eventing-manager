@@ -221,9 +221,14 @@ spec:
                   type: object
                 type: array
             required:
+            - backend
             - ready
             - types
             type: object
+        required:
+        - metadata
+        - spec
+        - status
         type: object
     served: true
     storage: true
