@@ -179,7 +179,7 @@ func cleanupv2(backend backendjetstream.Backend, dynamicClient dynamic.Interface
 		desiredSub := sub.DuplicateWithStatusDefaults()
 		if updateErr := backendutils.UpdateSubscriptionStatus(ctx, dynamicClient, desiredSub); updateErr != nil {
 			isCleanupSuccessful = false
-			log.Errorw("Failed to update JetStream v2 subscription status", "error", err)
+			log.Errorw("Failed to update JetStream v2 subscription status", "error", updateErr)
 		}
 
 		// clean subscriptions from JetStream.

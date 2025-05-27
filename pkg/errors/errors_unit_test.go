@@ -1,4 +1,4 @@
-//nolint:goerr113 // no need to wrap errors in the test for the error package
+//nolint:err113 // no need to wrap errors in the test for the error package
 package errors_test
 
 import (

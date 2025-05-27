@@ -1121,7 +1121,7 @@ func Test_syncOauth2ClientIDAndSecret(t *testing.T) {
 // Test_IsMalfromattedSecret verifies that the function IsMalformattedSecretErr asses correctly
 // if a given error is a malformatted secret error or not.
 
-//nolint:goerr113 // test for error checking function
+//nolint:err113 // Test for error checking function.
 func Test_IsMalfromattedSecret(t *testing.T) {
 	testCases := []struct {
 		name       string

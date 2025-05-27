@@ -44,7 +44,7 @@ func Test_makeSubscriptionSpecValidCondition(t *testing.T) {
 		},
 		{
 			name:                               "error",
-			givenError:                         errors.New("some error"), //nolint: goerr113 // used for testing only
+			givenError:                         errors.New("some error"), //nolint: err113 // used for testing only
 			wantSubscriptionSpecValidCondition: subscriptionSpecValidFalseCondition,
 		},
 	}

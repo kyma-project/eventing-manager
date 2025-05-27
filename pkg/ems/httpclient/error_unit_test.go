@@ -8,6 +8,7 @@ import (
 	"testing"
 )
 
+//nolint:err113 // This is used for testing only.
 func TestErrorDescription(t *testing.T) {
 	tableTests := []struct {
 		name            string
