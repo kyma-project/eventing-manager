@@ -143,7 +143,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 	recorder := mgr.GetEventRecorderFor("eventing-manager")
 	ctx := context.Background()
 
-	// get backend configs.
+	// Get the backend configs.
 	backendConfig := env.GetBackendConfig()
 
 	// create eventing manager instance.
