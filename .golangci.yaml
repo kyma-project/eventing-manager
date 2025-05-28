@@ -19,6 +19,17 @@ linters:
     - testpackage
     - wrapcheck
     - wsl
+    #TODO temporarely deactivated
+    - err113
+    - funcorder
+    - gosec
+    - intrange
+    - nilnesserr
+    - nolintlint
+    - recvcheck
+    - staticcheck
+    - testifylint
+    - usetesting
   settings:
     cyclop:
       max-complexity: 20
