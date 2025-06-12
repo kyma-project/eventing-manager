@@ -755,7 +755,7 @@ func (r *Reconciler) emitConditionEvent(subscription *eventingv1alpha2.Subscript
 // SetupUnmanaged creates a controller under the client control.
 func (r *Reconciler) SetupUnmanaged(ctx context.Context, mgr kctrl.Manager) error {
 	opts := controller.Options{Reconciler: r, SkipNameValidation: ptr.To(true)}
-	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, opts)
+	ctru, err := controller.NewUnmanaged(reconcilerName, opts)
 	if err != nil {
 		return fmt.Errorf("failed to create unmanaged controller: %w", err)
 	}
