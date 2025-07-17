@@ -3,9 +3,9 @@
 # Remove the rc-tag field after a successful release.
 module-name: eventing
 kind: kyma
-rc-tag: 1.3.1
+rc-tag: 1.3.2
 bdba:
-  - europe-docker.pkg.dev/kyma-project/prod/eventing-manager:1.3.1
+  - europe-docker.pkg.dev/kyma-project/prod/eventing-manager:1.3.2
   - europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.1.1
 mend:
   language: golang-mod
