@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	istiosecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -14,6 +13,7 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -476,7 +476,7 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 	}
 	events.Normal(r.recorder, subscription, events.ReasonUpdate, "Update APIRule succeeded %s", desiredAPIRule.Name)
 
-	existingAuthorizationPolicy := &istiosecurityv1beta1.AuthorizationPolicy{}
+	existingAuthorizationPolicy := &istiopkgsecurityv1beta1.AuthorizationPolicy{}
 	authorizationPolicyName := desiredAPIRule.Name
 	err = r.Client.Get(ctx, ktypes.NamespacedName{Namespace: svcNs, Name: authorizationPolicyName}, existingAuthorizationPolicy)
 	if err != nil {
@@ -887,7 +887,7 @@ func (r *Reconciler) SetCredentials(credentials *eventmesh.OAuth2ClientCredentia
 	r.oauth2credentials = credentials
 }
 
-func (r *Reconciler) makeAuthorizationPolicy(namespace, policyName string, labels map[string]string) *istiosecurityv1beta1.AuthorizationPolicy {
+func (r *Reconciler) makeAuthorizationPolicy(namespace, policyName string, labels map[string]string) *istiopkgsecurityv1beta1.AuthorizationPolicy {
 	authorizationPolicy := object.NewAuthorizationPolicy(namespace, policyName,
 		object.WithAllowAction(),
 		object.WithSelector(labels),

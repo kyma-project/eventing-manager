@@ -3,7 +3,6 @@ package test
 import (
 	"context"
 	"fmt"
-	istiosecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,7 +110,7 @@ func setupSuite() error {
 		return err
 	}
 
-	if err = istiosecurityv1beta1.AddToScheme(scheme.Scheme); err != nil {
+	if err = istiopkgsecurityv1beta1.AddToScheme(scheme.Scheme); err != nil {
 		return err
 	}
 	// +kubebuilder:scaffold:scheme
@@ -371,7 +371,7 @@ func getAPIRule(ctx context.Context, apiRule *apigatewayv2.APIRule) (*apigateway
 	return apiRule, err
 }
 
-func getAuthorizationPolicy(ctx context.Context, authorizationPolicy *istiosecurityv1beta1.AuthorizationPolicy) (*istiosecurityv1beta1.AuthorizationPolicy, error) {
+func getAuthorizationPolicy(ctx context.Context, authorizationPolicy *istiopkgsecurityv1beta1.AuthorizationPolicy) (*istiopkgsecurityv1beta1.AuthorizationPolicy, error) {
 	lookUpKey := types.NamespacedName{
 		Namespace: authorizationPolicy.Namespace,
 		Name:      authorizationPolicy.Name,

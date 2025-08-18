@@ -2,11 +2,11 @@ package test
 
 import (
 	"context"
-	istiosecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	"log"
 
 	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	"github.com/onsi/gomega"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -54,13 +54,13 @@ func getAPIRuleAssert(ctx context.Context, g *gomega.GomegaWithT,
 }
 
 func getAuthorizationPolicyAssert(ctx context.Context, g *gomega.GomegaWithT,
-	authPolicy *istiosecurityv1beta1.AuthorizationPolicy,
+	authPolicy *istiopkgsecurityv1beta1.AuthorizationPolicy,
 ) gomega.AsyncAssertion {
-	return g.Eventually(func() *istiosecurityv1beta1.AuthorizationPolicy {
+	return g.Eventually(func() *istiopkgsecurityv1beta1.AuthorizationPolicy {
 		fetchedPolicy, err := getAuthorizationPolicy(ctx, authPolicy)
 		if err != nil {
 			log.Printf("fetch authPolicy %s/%s failed: %v", authPolicy.Namespace, authPolicy.Name, err)
-			return &istiosecurityv1beta1.AuthorizationPolicy{}
+			return &istiopkgsecurityv1beta1.AuthorizationPolicy{}
 		}
 		return fetchedPolicy
 	}, twoMinTimeOut, bigPollingInterval)

@@ -1,10 +1,11 @@
 package object
 
 import (
-	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
-	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/url"
 	"strings"
+
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"

@@ -35,6 +35,7 @@ linters:
       max-complexity: 20
     funlen:
       lines: 80
+      statements: 80
     importas:
       alias:
         - pkg: k8s.io/api/core/v1

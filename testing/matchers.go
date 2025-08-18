@@ -1,13 +1,13 @@
 package testing
 
 import (
-	istiosecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	"maps"
 	"reflect"
 	"strconv"
 
 	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	gomegatypes "github.com/onsi/gomega/types"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kcorev1 "k8s.io/api/core/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
 
@@ -281,7 +281,7 @@ func HaveNonZeroWebhookAuthHash() gomegatypes.GomegaMatcher {
 }
 
 func HaveMatchingSelector(selector kcorev1.Service) gomegatypes.GomegaMatcher {
-	return WithTransform(func(a *istiosecurityv1beta1.AuthorizationPolicy) bool {
-		return maps.Equal(a.Spec.Selector.MatchLabels, selector.Spec.Selector)
+	return WithTransform(func(a *istiopkgsecurityv1beta1.AuthorizationPolicy) bool {
+		return maps.Equal(a.Spec.GetSelector().GetMatchLabels(), selector.Spec.Selector)
 	}, BeTrue())
 }

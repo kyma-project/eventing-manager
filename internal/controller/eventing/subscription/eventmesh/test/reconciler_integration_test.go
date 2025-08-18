@@ -3,23 +3,25 @@ package test
 import (
 	"context"
 	"fmt"
-	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
-	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-	eventmeshsubmatchers "github.com/kyma-project/eventing-manager/testing/eventmeshsub"
-	"github.com/onsi/gomega"
-	gomegatypes "github.com/onsi/gomega/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	istiosecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
-	kcorev1 "k8s.io/api/core/v1"
-	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/json"
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
+	"github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	kcorev1 "k8s.io/api/core/v1"
+	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/json"
+
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
+	eventmeshsubmatchers "github.com/kyma-project/eventing-manager/testing/eventmeshsub"
 )
 
 const (
@@ -993,7 +995,7 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 	))
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule1)
 
-	authorizationPolicy := istiosecurityv1beta1.AuthorizationPolicy{
+	authorizationPolicy := istiopkgsecurityv1beta1.AuthorizationPolicy{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      apiRule1.Name,
