@@ -9,10 +9,11 @@ import (
 	"reflect"
 	"time"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	pkgerrors "github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kcorev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -297,7 +298,7 @@ func (r *Reconciler) handleDeleteSubscription(ctx context.Context, subscription 
 }
 
 // syncEventMeshSubscription delegates the subscription synchronization to the backend client. It returns true if the subscription is ready.
-func (r *Reconciler) syncEventMeshSubscription(subscription *eventingv1alpha2.Subscription, apiRule *apigatewayv1beta1.APIRule, logger *zap.SugaredLogger) (bool, error) {
+func (r *Reconciler) syncEventMeshSubscription(subscription *eventingv1alpha2.Subscription, apiRule *apigatewayv2.APIRule, logger *zap.SugaredLogger) (bool, error) {
 	logger.Debug("Syncing subscription with EventMesh")
 
 	if apiRule == nil {
@@ -376,7 +377,7 @@ func syncConditionWebhookCallStatus(subscription *eventingv1alpha2.Subscription)
 // syncAPIRule validate the given subscription sink URL and sync its APIRule.
 func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
 	logger *zap.SugaredLogger,
-) (*apigatewayv1beta1.APIRule, error) {
+) (*apigatewayv2.APIRule, error) {
 	sURL, err := url.ParseRequestURI(subscription.Spec.Sink)
 	if err != nil {
 		events.Warn(r.recorder, subscription, events.ReasonValidationFailed,
@@ -411,7 +412,7 @@ func (r *Reconciler) syncAPIRule(ctx context.Context, subscription *eventingv1al
 // createOrUpdateAPIRule create new or update existing APIRule for the given subscription.
 func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
 	sink url.URL, logger *zap.SugaredLogger,
-) (*apigatewayv1beta1.APIRule, error) {
+) (*apigatewayv2.APIRule, error) {
 	svcNs, svcName, err := getSvcNsAndName(sink.Host)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to parse svc name and ns in create or update APIRule: %v", err)
@@ -425,7 +426,7 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 	if err != nil {
 		return nil, xerrors.Errorf("failed to convert URL port to APIRule port: %v", err)
 	}
-	var reusableAPIRule *apigatewayv1beta1.APIRule
+	var reusableAPIRule *apigatewayv2.APIRule
 	existingAPIRules, err := r.getAPIRulesForASvc(ctx, labels, svcNs)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to fetch APIRule for labels=%v : %v", labels, err)
@@ -461,6 +462,7 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 		events.Normal(r.recorder, subscription, events.ReasonCreate, "Create APIRule succeeded %s", desiredAPIRule.Name)
 		return desiredAPIRule, nil
 	}
+
 	logger.Debugw("Reusing APIRule", "namespace", svcNs, "name", reusableAPIRule.Name, "service", svcName)
 
 	object.ApplyExistingAPIRuleAttributes(reusableAPIRule, desiredAPIRule)
@@ -474,27 +476,55 @@ func (r *Reconciler) createOrUpdateAPIRule(ctx context.Context, subscription *ev
 	}
 	events.Normal(r.recorder, subscription, events.ReasonUpdate, "Update APIRule succeeded %s", desiredAPIRule.Name)
 
+	existingAuthorizationPolicy := &istiopkgsecurityv1beta1.AuthorizationPolicy{}
+	authorizationPolicyName := desiredAPIRule.Name
+	err = r.Client.Get(ctx, ktypes.NamespacedName{Namespace: svcNs, Name: authorizationPolicyName}, existingAuthorizationPolicy)
+	if err != nil {
+		if kerrors.IsNotFound(err) {
+			err := r.createAuthorizationPolicy(ctx, subscription, svcNs, svcName, desiredAPIRule.Name)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
 	return desiredAPIRule, nil
+}
+
+func (r *Reconciler) createAuthorizationPolicy(ctx context.Context, subscription *eventingv1alpha2.Subscription, svcNs string, svcName string, policyName string) error {
+	existingService := &kcorev1.Service{}
+	if err := r.Client.Get(ctx, ktypes.NamespacedName{Namespace: svcNs, Name: svcName}, existingService); err != nil {
+		events.Warn(r.recorder, subscription, events.ReasonCreateFailed, "Get Service failed %s", svcName)
+		return xerrors.Errorf("failed to get Service: %v", err)
+	}
+
+	newAuthorizationPolicy := r.makeAuthorizationPolicy(svcNs, policyName, existingService.Spec.Selector)
+	if err := r.Client.Create(ctx, newAuthorizationPolicy, &client.CreateOptions{}); err != nil {
+		events.Warn(r.recorder, subscription, events.ReasonCreateFailed, "Create AuthorizationPolicy failed %s", newAuthorizationPolicy.Name)
+		return xerrors.Errorf("failed to create AuthorizationPolicy: %v", err)
+	}
+	return nil
 }
 
 // handlePreviousAPIRule computes the OwnerReferences list for the previous subscription APIRule (if any)
 // if the OwnerReferences list is empty, then the APIRule will be deleted
 // else if the OwnerReferences list length was decreased, then the APIRule will be updated.
 func (r *Reconciler) handlePreviousAPIRule(ctx context.Context, subscription *eventingv1alpha2.Subscription,
-	reusableAPIRule *apigatewayv1beta1.APIRule,
+	reusableAPIRule *apigatewayv2.APIRule,
 ) error {
 	// subscription does not have a previous APIRule
 	if len(subscription.Status.Backend.APIRuleName) == 0 {
 		return nil
 	}
-
 	// the previous APIRule for the subscription is the current one no need to update it
 	if reusableAPIRule != nil && subscription.Status.Backend.APIRuleName == reusableAPIRule.Name {
 		return nil
 	}
 
 	// get the previous APIRule
-	previousAPIRule := &apigatewayv1beta1.APIRule{}
+	previousAPIRule := &apigatewayv2.APIRule{}
 	key := ktypes.NamespacedName{Namespace: subscription.Namespace, Name: subscription.Status.Backend.APIRuleName}
 	if err := r.Client.Get(ctx, key, previousAPIRule); err != nil {
 		if !kerrors.IsNotFound(err) {
@@ -620,9 +650,10 @@ func (r *Reconciler) filterSubscriptionsOnPort(subList []eventingv1alpha2.Subscr
 	return filteredSubs
 }
 
-func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string, subs []eventingv1alpha2.Subscription, port uint32) *apigatewayv1beta1.APIRule {
+func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string, subs []eventingv1alpha2.Subscription, port uint32) *apigatewayv2.APIRule {
 	randomSuffix := utils.GetRandString(suffixLength)
-	hostName := fmt.Sprintf("%s-%s.%s", externalHostPrefix, randomSuffix, r.Domain)
+	h := apigatewayv2.Host(fmt.Sprintf("%s-%s.%s", externalHostPrefix, randomSuffix, r.Domain))
+	hostName := []*apigatewayv2.Host{&h}
 	svc := object.GetService(svcName, port)
 	apiRule := object.NewAPIRule(svcNs, apiRuleNamePrefix,
 		object.WithLabels(labels),
@@ -633,8 +664,8 @@ func (r *Reconciler) makeAPIRule(svcNs, svcName string, labels map[string]string
 	return apiRule
 }
 
-func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]string, svcNs string) ([]apigatewayv1beta1.APIRule, error) {
-	existingAPIRules := &apigatewayv1beta1.APIRuleList{}
+func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]string, svcNs string) ([]apigatewayv2.APIRule, error) {
+	existingAPIRules := &apigatewayv2.APIRuleList{}
 	err := r.Client.List(ctx, existingAPIRules, &client.ListOptions{
 		LabelSelector: klabels.SelectorFromSet(labels),
 		Namespace:     svcNs,
@@ -645,7 +676,7 @@ func (r *Reconciler) getAPIRulesForASvc(ctx context.Context, labels map[string]s
 	return existingAPIRules.Items, nil
 }
 
-func (r *Reconciler) filterAPIRulesOnPort(existingAPIRules []apigatewayv1beta1.APIRule, port uint32) *apigatewayv1beta1.APIRule {
+func (r *Reconciler) filterAPIRulesOnPort(existingAPIRules []apigatewayv2.APIRule, port uint32) *apigatewayv2.APIRule {
 	// Assumption: there will be one APIRule for an svc with the labels injected by the controller hence trusting the first match
 	for _, apiRule := range existingAPIRules {
 		if *apiRule.Spec.Service.Port == port {
@@ -755,7 +786,7 @@ func (r *Reconciler) emitConditionEvent(subscription *eventingv1alpha2.Subscript
 // SetupUnmanaged creates a controller under the client control.
 func (r *Reconciler) SetupUnmanaged(ctx context.Context, mgr kctrl.Manager) error {
 	opts := controller.Options{Reconciler: r, SkipNameValidation: ptr.To(true)}
-	ctru, err := controller.NewUnmanaged(reconcilerName, mgr, opts)
+	ctru, err := controller.NewUnmanaged(reconcilerName, opts)
 	if err != nil {
 		return fmt.Errorf("failed to create unmanaged controller: %w", err)
 	}
@@ -765,12 +796,12 @@ func (r *Reconciler) SetupUnmanaged(ctx context.Context, mgr kctrl.Manager) erro
 		return fmt.Errorf("failed to watch subscriptions: %w", err)
 	}
 
-	apiRuleEventHandler := handler.TypedEnqueueRequestForOwner[*apigatewayv1beta1.APIRule](
+	apiRuleEventHandler := handler.TypedEnqueueRequestForOwner[*apigatewayv2.APIRule](
 		r.Scheme(),
 		mgr.GetRESTMapper(),
 		&eventingv1alpha2.Subscription{},
 	)
-	if err := ctru.Watch(source.Kind(mgr.GetCache(), &apigatewayv1beta1.APIRule{}, apiRuleEventHandler)); err != nil {
+	if err := ctru.Watch(source.Kind(mgr.GetCache(), &apigatewayv2.APIRule{}, apiRuleEventHandler)); err != nil {
 		return fmt.Errorf("failed to watch APIRule: %w", err)
 	}
 
@@ -854,4 +885,12 @@ func (r *Reconciler) namedLogger() *zap.SugaredLogger {
 func (r *Reconciler) SetCredentials(credentials *eventmesh.OAuth2ClientCredentials) {
 	r.namedLogger().Warn("This logic should be used for testing purposes only")
 	r.oauth2credentials = credentials
+}
+
+func (r *Reconciler) makeAuthorizationPolicy(namespace, policyName string, labels map[string]string) *istiopkgsecurityv1beta1.AuthorizationPolicy {
+	authorizationPolicy := object.NewAuthorizationPolicy(namespace, policyName,
+		object.WithAllowAction(),
+		object.WithSelector(labels),
+	)
+	return authorizationPolicy
 }

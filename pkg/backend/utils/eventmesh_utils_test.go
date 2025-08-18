@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	"github.com/stretchr/testify/require"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -59,6 +59,8 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 	defaultNamespace := eventingtesting.EventMeshNamespace
 	svcName := "foo-svc"
 	host := "foo-host"
+	h := apigatewayv2.Host(host)
+	hosts := []*apigatewayv2.Host{&h}
 	scheme := "https"
 	expectedWebhookURL := fmt.Sprintf("%s://%s", scheme, host)
 
@@ -66,7 +68,7 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 	testCases := []struct {
 		name                          string
 		givenSubscription             *eventingv1alpha2.Subscription
-		givenAPIRuleFunc              func(subscription *eventingv1alpha2.Subscription) *apigatewayv1beta1.APIRule
+		givenAPIRuleFunc              func(subscription *eventingv1alpha2.Subscription) *apigatewayv2.APIRule
 		wantError                     bool
 		wantEventMeshSubscriptionFunc func(subscription *eventingv1alpha2.Subscription) *types.Subscription
 	}{
@@ -78,10 +80,10 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 				eventingtesting.WithValidSink("ns", svcName),
 				eventingtesting.WithWebhookAuthForEventMesh(),
 			),
-			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigatewayv1beta1.APIRule {
+			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigatewayv2.APIRule {
 				return eventingtesting.NewAPIRule(subscription,
 					eventingtesting.WithPath(),
-					eventingtesting.WithService(svcName, host),
+					eventingtesting.WithService(svcName, hosts),
 				)
 			},
 			wantEventMeshSubscriptionFunc: func(subscription *eventingv1alpha2.Subscription) *types.Subscription {
@@ -108,10 +110,10 @@ func TestConvertKymaSubToEventMeshSub(t *testing.T) {
 				eventingtesting.WithOrderCreatedFilter(),
 				eventingtesting.WithValidSink("ns", svcName),
 			),
-			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigatewayv1beta1.APIRule {
+			givenAPIRuleFunc: func(subscription *eventingv1alpha2.Subscription) *apigatewayv2.APIRule {
 				return eventingtesting.NewAPIRule(subscription,
 					eventingtesting.WithPath(),
-					eventingtesting.WithService(svcName, host),
+					eventingtesting.WithService(svcName, hosts),
 				)
 			},
 			wantEventMeshSubscriptionFunc: func(subscription *eventingv1alpha2.Subscription) *types.Subscription {

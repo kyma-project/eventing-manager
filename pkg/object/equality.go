@@ -3,7 +3,7 @@ package object
 import (
 	"reflect"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	kappsv1 "k8s.io/api/apps/v1"
 	kautoscalingv2 "k8s.io/api/autoscaling/v2"
 	kcorev1 "k8s.io/api/core/v1"
@@ -153,7 +153,7 @@ func clusterRoleBindingEqual(a, b *krbacv1.ClusterRoleBinding) bool {
 }
 
 // apiRuleEqual asserts the equality of two APIRule objects.
-func apiRuleEqual(rule1, rule2 *apigatewayv1beta1.APIRule) bool {
+func apiRuleEqual(rule1, rule2 *apigatewayv2.APIRule) bool {
 	if rule1 == rule2 {
 		return true
 	}

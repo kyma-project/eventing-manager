@@ -35,6 +35,7 @@ linters:
       max-complexity: 20
     funlen:
       lines: 80
+      statements: 80
     importas:
       alias:
         - pkg: k8s.io/api/core/v1
@@ -61,8 +62,8 @@ linters:
           alias: eventingv1alpha2
         - pkg: github.com/kyma-project/eventing-manager/api/operator/v1alpha1
           alias: operatorv1alpha1
-        - pkg: github.com/kyma-project/api-gateway/apis/gateway/v1beta1
-          alias: apigatewayv1beta1
+        - pkg: github.com/kyma-project/api-gateway/apis/gateway/v2
+          alias: apigatewayv2
         - pkg: k8s.io/client-go/dynamic/fake
           alias: kdynamicfake
         - pkg: k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset

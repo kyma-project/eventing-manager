@@ -1,5 +1,5 @@
 //go:generate go run github.com/vektra/mockery/v2 --name Backend
-//go:generate go run github.com/vektra/mockery/v2 --dir ../../../vendor/github.com/nats-io/nats.go --name JetStreamContext
+//go:generate go run github.com/vektra/mockery/v2 --srcpkg github.com/nats-io/nats.go --name JetStreamContext
 package jetstream
 
 import (
