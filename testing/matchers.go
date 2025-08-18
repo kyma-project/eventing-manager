@@ -1,14 +1,14 @@
 package testing
 
 import (
-	"fmt"
+	istiosecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	"maps"
 	"reflect"
 	"strconv"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	gomegatypes "github.com/onsi/gomega/types"
 	kcorev1 "k8s.io/api/core/v1"
-	kruntime "k8s.io/apimachinery/pkg/runtime"
 	ktypes "k8s.io/apimachinery/pkg/types"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
@@ -24,66 +24,52 @@ import (
 //
 
 func HaveNotEmptyAPIRule() gomegatypes.GomegaMatcher {
-	return WithTransform(func(a apigatewayv1beta1.APIRule) ktypes.UID {
+	return WithTransform(func(a apigatewayv2.APIRule) ktypes.UID {
 		return a.UID
 	}, Not(BeEmpty()))
 }
 
+func HaveEmptyAPIRule() gomegatypes.GomegaMatcher {
+	return WithTransform(func(a apigatewayv2.APIRule) ktypes.UID {
+		return a.UID
+	}, BeEmpty())
+}
+
 func HaveNotEmptyHost() gomegatypes.GomegaMatcher {
-	return WithTransform(func(a apigatewayv1beta1.APIRule) bool {
-		return a.Spec.Service != nil && a.Spec.Host != nil
+	return WithTransform(func(a apigatewayv2.APIRule) bool {
+		return a.Spec.Service != nil && a.Spec.Hosts != nil
 	}, BeTrue())
 }
 
-func HaveAPIRuleSpecRules(ruleMethods []string, accessStrategy, certsURL, path string) gomegatypes.GomegaMatcher {
-	handler := apigatewayv1beta1.Handler{
-		Name: accessStrategy,
-		Config: &kruntime.RawExtension{
-			Raw: []byte(fmt.Sprintf(object.JWKSURLFormat, certsURL)),
+func HaveAPIRuleSpecRules(ruleMethods []string, certsURL, path, issuerURL string) gomegatypes.GomegaMatcher {
+	jwt := apigatewayv2.JwtConfig{
+		Authentications: []*apigatewayv2.JwtAuthentication{
+			{
+				JwksUri: certsURL,
+				Issuer:  issuerURL,
+			},
 		},
 	}
-	authenticator := &apigatewayv1beta1.Authenticator{
-		Handler: &handler,
-	}
-	return WithTransform(func(a apigatewayv1beta1.APIRule) []apigatewayv1beta1.Rule {
+	return WithTransform(func(a apigatewayv2.APIRule) []apigatewayv2.Rule {
 		return a.Spec.Rules
 	}, ContainElement(
 		MatchFields(IgnoreExtras|IgnoreMissing, Fields{
-			"Methods":          ConsistOf(object.StringsToMethods(ruleMethods)),
-			"AccessStrategies": ConsistOf(haveAPIRuleAccessStrategies(authenticator)),
-			"Gateway":          Equal(constants.ClusterLocalAPIGateway),
-			"Path":             Equal(path),
+			"Methods": ConsistOf(object.StringsToMethods(ruleMethods)),
+			"Jwt":     haveAPIRuleAccessStrategies(&jwt),
+			"Gateway": Equal(constants.ClusterLocalAPIGateway),
+			"Path":    Equal(path),
 		}),
 	))
 }
 
-func haveAPIRuleAccessStrategies(authenticator *apigatewayv1beta1.Authenticator) gomegatypes.GomegaMatcher {
-	return WithTransform(func(a *apigatewayv1beta1.Authenticator) *apigatewayv1beta1.Authenticator {
+func haveAPIRuleAccessStrategies(authenticator *apigatewayv2.JwtConfig) gomegatypes.GomegaMatcher {
+	return WithTransform(func(a *apigatewayv2.JwtConfig) *apigatewayv2.JwtConfig {
 		return a
 	}, Equal(authenticator))
 }
 
-func HaveAPIRuleSpecRulesWithOry(ruleMethods []string, accessStrategy, path string) gomegatypes.GomegaMatcher {
-	return WithTransform(func(a apigatewayv1beta1.APIRule) []apigatewayv1beta1.Rule {
-		return a.Spec.Rules
-	}, ContainElement(
-		MatchFields(IgnoreExtras|IgnoreMissing, Fields{
-			"Methods":          ConsistOf(object.StringsToMethods(ruleMethods)),
-			"AccessStrategies": ConsistOf(haveAPIRuleAccessStrategiesWithOry(accessStrategy)),
-			"Gateway":          Equal(constants.ClusterLocalAPIGateway),
-			"Path":             Equal(path),
-		}),
-	))
-}
-
-func haveAPIRuleAccessStrategiesWithOry(accessStrategy string) gomegatypes.GomegaMatcher {
-	return WithTransform(func(a *apigatewayv1beta1.Authenticator) string {
-		return a.Name
-	}, Equal(accessStrategy))
-}
-
 func HaveAPIRuleOwnersRefs(uids ...ktypes.UID) gomegatypes.GomegaMatcher {
-	return WithTransform(func(a apigatewayv1beta1.APIRule) []ktypes.UID {
+	return WithTransform(func(a apigatewayv2.APIRule) []ktypes.UID {
 		ownerRefUIDs := make([]ktypes.UID, 0, len(a.OwnerReferences))
 		for _, ownerRef := range a.OwnerReferences {
 			ownerRefUIDs = append(ownerRefUIDs, ownerRef.UID)
@@ -292,4 +278,10 @@ func HaveNonZeroWebhookAuthHash() gomegatypes.GomegaMatcher {
 	return WithTransform(func(s *eventingv1alpha2.Subscription) int64 {
 		return s.Status.Backend.WebhookAuthHash
 	}, Not(BeZero()))
+}
+
+func HaveMatchingSelector(selector kcorev1.Service) gomegatypes.GomegaMatcher {
+	return WithTransform(func(a *istiosecurityv1beta1.AuthorizationPolicy) bool {
+		return maps.Equal(a.Spec.Selector.MatchLabels, selector.Spec.Selector)
+	}, BeTrue())
 }

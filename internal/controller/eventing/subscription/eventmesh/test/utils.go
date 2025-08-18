@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	istiosecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -12,7 +13,7 @@ import (
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
@@ -70,6 +71,7 @@ const (
 	maxReconnects            = 10
 	eventMeshMockKeyPrefix   = "/messaging/events/subscriptions"
 	certsURL                 = "https://domain.com/oauth2/certs"
+	issuerURL                = "https://domain.com"
 )
 
 //nolint:gochecknoglobals // only used in tests
@@ -104,7 +106,11 @@ func setupSuite() error {
 		return err
 	}
 
-	if err = apigatewayv1beta1.AddToScheme(scheme.Scheme); err != nil {
+	if err = apigatewayv2.AddToScheme(scheme.Scheme); err != nil {
+		return err
+	}
+
+	if err = istiosecurityv1beta1.AddToScheme(scheme.Scheme); err != nil {
 		return err
 	}
 	// +kubebuilder:scaffold:scheme
@@ -310,7 +316,7 @@ func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, subscriptio
 }
 
 // ensureAPIRuleStatusUpdatedWithStatusReady updates the status fof the APIRule (mocking APIGateway controller).
-func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
+func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, apiRule *apigatewayv2.APIRule) {
 	t.Helper()
 	require.Eventually(t, func() bool {
 		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
@@ -329,7 +335,7 @@ func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T
 }
 
 // ensureAPIRuleNotFound ensures that a APIRule does not exists (or deleted).
-func ensureAPIRuleNotFound(ctx context.Context, t *testing.T, apiRule *apigatewayv1beta1.APIRule) {
+func ensureAPIRuleNotFound(ctx context.Context, t *testing.T, apiRule *apigatewayv2.APIRule) {
 	t.Helper()
 	require.Eventually(t, func() bool {
 		apiRuleKey := client.ObjectKey{
@@ -337,18 +343,18 @@ func ensureAPIRuleNotFound(ctx context.Context, t *testing.T, apiRule *apigatewa
 			Name:      apiRule.Name,
 		}
 
-		apiRule2 := new(apigatewayv1beta1.APIRule)
+		apiRule2 := new(apigatewayv2.APIRule)
 		err := emTestEnsemble.k8sClient.Get(ctx, apiRuleKey, apiRule2)
 		return kerrors.IsNotFound(err)
 	}, bigTimeOut, bigPollingInterval)
 }
 
-func getAPIRulesList(ctx context.Context, svc *kcorev1.Service) (*apigatewayv1beta1.APIRuleList, error) {
+func getAPIRulesList(ctx context.Context, svc *kcorev1.Service) (*apigatewayv2.APIRuleList, error) {
 	labels := map[string]string{
 		constants.ControllerServiceLabelKey:  svc.Name,
 		constants.ControllerIdentityLabelKey: constants.ControllerIdentityLabelValue,
 	}
-	apiRules := &apigatewayv1beta1.APIRuleList{}
+	apiRules := &apigatewayv2.APIRuleList{}
 	err := emTestEnsemble.k8sClient.List(ctx, apiRules, &client.ListOptions{
 		LabelSelector: klabels.SelectorFromSet(labels),
 		Namespace:     svc.Namespace,
@@ -356,7 +362,7 @@ func getAPIRulesList(ctx context.Context, svc *kcorev1.Service) (*apigatewayv1be
 	return apiRules, err
 }
 
-func getAPIRule(ctx context.Context, apiRule *apigatewayv1beta1.APIRule) (*apigatewayv1beta1.APIRule, error) {
+func getAPIRule(ctx context.Context, apiRule *apigatewayv2.APIRule) (*apigatewayv2.APIRule, error) {
 	lookUpKey := types.NamespacedName{
 		Namespace: apiRule.Namespace,
 		Name:      apiRule.Name,
@@ -365,11 +371,20 @@ func getAPIRule(ctx context.Context, apiRule *apigatewayv1beta1.APIRule) (*apiga
 	return apiRule, err
 }
 
-func filterAPIRulesForASvc(apiRules *apigatewayv1beta1.APIRuleList, svc *kcorev1.Service) apigatewayv1beta1.APIRule {
+func getAuthorizationPolicy(ctx context.Context, authorizationPolicy *istiosecurityv1beta1.AuthorizationPolicy) (*istiosecurityv1beta1.AuthorizationPolicy, error) {
+	lookUpKey := types.NamespacedName{
+		Namespace: authorizationPolicy.Namespace,
+		Name:      authorizationPolicy.Name,
+	}
+	err := emTestEnsemble.k8sClient.Get(ctx, lookUpKey, authorizationPolicy)
+	return authorizationPolicy, err
+}
+
+func filterAPIRulesForASvc(apiRules *apigatewayv2.APIRuleList, svc *kcorev1.Service) apigatewayv2.APIRule {
 	if len(apiRules.Items) == 1 && *apiRules.Items[0].Spec.Service.Name == svc.Name {
 		return apiRules.Items[0]
 	}
-	return apigatewayv1beta1.APIRule{}
+	return apigatewayv2.APIRule{}
 }
 
 // countEventMeshRequests returns how many requests for a given subscription are sent for each HTTP method

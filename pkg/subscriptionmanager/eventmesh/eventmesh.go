@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
@@ -44,7 +44,7 @@ func AddToScheme(scheme *runtime.Scheme) error {
 	if err := kkubernetesscheme.AddToScheme(scheme); err != nil {
 		return err
 	}
-	if err := apigatewayv1beta1.AddToScheme(scheme); err != nil {
+	if err := apigatewayv2.AddToScheme(scheme); err != nil {
 		return err
 	}
 	return nil

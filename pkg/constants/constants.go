@@ -2,7 +2,7 @@ package constants
 
 const (
 	// ClusterLocalAPIGateway local cluster gateway for Kyma.
-	ClusterLocalAPIGateway = "kyma-gateway.kyma-system.svc.cluster.local"
+	ClusterLocalAPIGateway = "kyma-system/kyma-gateway"
 	// ControllerServiceLabelKey controller service label.
 	ControllerServiceLabelKey = "service"
 	// ControllerIdentityLabelKey controller identity label key.

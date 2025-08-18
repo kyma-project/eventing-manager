@@ -2,26 +2,24 @@ package test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"os"
-	"testing"
-	"time"
-
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
+	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
+	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
+	eventingtesting "github.com/kyma-project/eventing-manager/testing"
+	eventmeshsubmatchers "github.com/kyma-project/eventing-manager/testing/eventmeshsub"
 	"github.com/onsi/gomega"
 	gomegatypes "github.com/onsi/gomega/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	istiosecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
-	emstypes "github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
-	"github.com/kyma-project/eventing-manager/pkg/object"
-	eventingtesting "github.com/kyma-project/eventing-manager/testing"
-	eventmeshsubmatchers "github.com/kyma-project/eventing-manager/testing/eventmeshsub"
+	"k8s.io/apimachinery/pkg/util/json"
+	"net/http"
+	"os"
+	"testing"
+	"time"
 )
 
 const (
@@ -580,7 +578,7 @@ func Test_DeleteSubscription(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
+	apiRule := &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
@@ -708,9 +706,9 @@ func Test_FixingSinkAndApiRule(t *testing.T) {
 				eventingtesting.HaveNotEmptyAPIRule(),
 				eventingtesting.HaveAPIRuleSpecRules(
 					acceptableMethods,
-					object.OAuthHandlerNameJWT,
 					certsURL,
 					sinkPath,
+					issuerURL,
 				),
 				eventingtesting.HaveAPIRuleOwnersRefs(givenSubscription.UID),
 			))
@@ -768,7 +766,7 @@ func Test_SinkChangeAndAPIRule(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
+	apiRule := &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
@@ -777,7 +775,7 @@ func Test_SinkChangeAndAPIRule(t *testing.T) {
 	// check if the EventMesh Subscription has the correct webhook URL
 	emSub := getEventMeshSubFromMock(givenSubscription.Name, givenSubscription.Namespace)
 	g.Expect(emSub).ShouldNot(gomega.BeNil())
-	g.Expect(emSub).Should(eventmeshsubmatchers.HaveWebhookURL(fmt.Sprintf("https://%s/", *apiRule.Spec.Host)))
+	g.Expect(emSub).Should(eventmeshsubmatchers.HaveWebhookURL(fmt.Sprintf("https://%s/", string(*apiRule.Spec.Hosts[0]))))
 
 	// phase 2: Update the Subscription sink and check if new APIRule is created.
 	// create a subscriber service
@@ -794,7 +792,7 @@ func Test_SinkChangeAndAPIRule(t *testing.T) {
 
 	// fetch the new APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule = &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
+	apiRule = &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: updatedSubscription.Status.Backend.APIRuleName, Namespace: updatedSubscription.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
@@ -803,7 +801,7 @@ func Test_SinkChangeAndAPIRule(t *testing.T) {
 	// check if the EventMesh Subscription has the correct webhook URL
 	emSub = getEventMeshSubFromMock(givenSubscription.Name, givenSubscription.Namespace)
 	g.Expect(emSub).ShouldNot(gomega.BeNil())
-	g.Expect(emSub).Should(eventmeshsubmatchers.HaveWebhookURL(fmt.Sprintf("https://%s/", *apiRule.Spec.Host)))
+	g.Expect(emSub).Should(eventmeshsubmatchers.HaveWebhookURL(fmt.Sprintf("https://%s/", string(*apiRule.Spec.Hosts[0]))))
 }
 
 // Test_APIRuleReUseAfterUpdatingSink tests two Subscriptions using different sinks
@@ -841,7 +839,7 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule1 := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
+	apiRule1 := &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule1).Should(eventingtesting.HaveNotEmptyAPIRule())
@@ -850,7 +848,7 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 	// check if the EventMesh Subscription has the correct webhook URL
 	emSub := getEventMeshSubFromMock(givenSubscription1.Name, givenSubscription1.Namespace)
 	g.Expect(emSub).ShouldNot(gomega.BeNil())
-	g.Expect(emSub).Should(eventmeshsubmatchers.HaveWebhookURL(fmt.Sprintf("https://%s/path1", *apiRule1.Spec.Host)))
+	g.Expect(emSub).Should(eventmeshsubmatchers.HaveWebhookURL(fmt.Sprintf("https://%s/path1", string(*apiRule1.Spec.Hosts[0]))))
 
 	// phase 2: Create the second Subscription (different sink) with ready APIRule and ready status.
 	// create a subscriber service
@@ -877,7 +875,7 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule2 := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
+	apiRule2 := &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription2.Status.Backend.APIRuleName, Namespace: createdSubscription2.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule2).Should(eventingtesting.HaveNotEmptyAPIRule())
@@ -886,7 +884,7 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 	// check if the EventMesh Subscription has the correct webhook URL
 	emSub = getEventMeshSubFromMock(givenSubscription2.Name, givenSubscription2.Namespace)
 	g.Expect(emSub).ShouldNot(gomega.BeNil())
-	g.Expect(emSub).Should(eventmeshsubmatchers.HaveWebhookURL(fmt.Sprintf("https://%s/path2", *apiRule2.Spec.Host)))
+	g.Expect(emSub).Should(eventmeshsubmatchers.HaveWebhookURL(fmt.Sprintf("https://%s/path2", string(*apiRule2.Spec.Hosts[0]))))
 
 	// phase 3: Update the Subscription 2 to use same sink as in Subscription 1. The subscription 2 should then
 	// re-use APIRule from Subscription 1.
@@ -904,7 +902,7 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 	// check if the EventMesh Subscription has the correct webhook URL
 	emSub = getEventMeshSubFromMock(givenSubscription2.Name, givenSubscription2.Namespace)
 	g.Expect(emSub).ShouldNot(gomega.BeNil())
-	g.Expect(emSub).Should(eventmeshsubmatchers.HaveWebhookURL(fmt.Sprintf("https://%s/path2", *apiRule1.Spec.Host)))
+	g.Expect(emSub).Should(eventmeshsubmatchers.HaveWebhookURL(fmt.Sprintf("https://%s/path2", string(*apiRule1.Spec.Hosts[0]))))
 
 	// fetch the re-used APIRule
 	getAPIRuleAssert(ctx, g, apiRule1).Should(gomega.And(
@@ -912,15 +910,15 @@ func Test_APIRuleReUseAfterUpdatingSink(t *testing.T) {
 		eventingtesting.HaveAPIRuleOwnersRefs(createdSubscription1.UID, createdSubscription2.UID),
 		eventingtesting.HaveAPIRuleSpecRules(
 			acceptableMethods,
-			object.OAuthHandlerNameJWT,
 			certsURL,
 			"/path1",
+			issuerURL,
 		),
 		eventingtesting.HaveAPIRuleSpecRules(
 			acceptableMethods,
-			object.OAuthHandlerNameJWT,
 			certsURL,
 			"/path2",
+			issuerURL,
 		),
 	))
 
@@ -974,7 +972,7 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule1 := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
+	apiRule1 := &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule1).Should(gomega.And(
@@ -982,18 +980,28 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 		eventingtesting.HaveAPIRuleOwnersRefs(createdSubscription1.UID, createdSubscription2.UID),
 		eventingtesting.HaveAPIRuleSpecRules(
 			acceptableMethods,
-			object.OAuthHandlerNameJWT,
 			certsURL,
 			"/path1",
+			issuerURL,
 		),
 		eventingtesting.HaveAPIRuleSpecRules(
 			acceptableMethods,
-			object.OAuthHandlerNameJWT,
 			certsURL,
 			"/path2",
+			issuerURL,
 		),
 	))
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule1)
+
+	authorizationPolicy := istiosecurityv1beta1.AuthorizationPolicy{
+		ObjectMeta: kmetav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      apiRule1.Name,
+		},
+	}
+	getAuthorizationPolicyAssert(ctx, g, &authorizationPolicy).Should(gomega.And(
+		eventingtesting.HaveMatchingSelector(*subscriberSvc),
+	))
 
 	// phase 2: Delete the second Subscription and verify that the shared APIRule is not deleted.
 	// delete the subscription and wait until deleted
@@ -1001,7 +1009,7 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 	getSubscriptionAssert(ctx, g, createdSubscription2).Should(eventingtesting.IsAnEmptySubscription())
 
 	// fetch the APIRule again and check
-	apiRule1 = &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
+	apiRule1 = &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription1.Status.Backend.APIRuleName, Namespace: createdSubscription1.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule1).Should(gomega.And(
@@ -1011,9 +1019,9 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 		eventingtesting.HaveAPIRuleOwnersRefs(createdSubscription1.UID),
 		eventingtesting.HaveAPIRuleSpecRules(
 			acceptableMethods,
-			object.OAuthHandlerNameJWT,
 			certsURL,
 			"/path1",
+			issuerURL,
 		),
 	))
 	// ensure that the deleted Subscription is removed as Owner from the APIRule
@@ -1021,9 +1029,9 @@ func Test_APIRuleExistsAfterDeletingSub(t *testing.T) {
 		eventingtesting.HaveAPIRuleOwnersRefs(createdSubscription1.UID),
 		eventingtesting.HaveAPIRuleSpecRules(
 			acceptableMethods,
-			object.OAuthHandlerNameJWT,
 			certsURL,
 			"/path2",
+			issuerURL,
 		),
 	))
 }
@@ -1061,7 +1069,7 @@ func Test_APIRuleRecreateAfterManualDelete(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
+	apiRule := &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
@@ -1074,7 +1082,7 @@ func Test_APIRuleRecreateAfterManualDelete(t *testing.T) {
 
 	// phase 3: Check if APIRule is re-created by the reconciler
 	getSubscriptionAssert(ctx, g, createdSubscription).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
-	apiRule = &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
+	apiRule = &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
@@ -1113,7 +1121,7 @@ func Test_EventMeshSubRecreateAfterManualDelete(t *testing.T) {
 
 	// fetch the APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
 	// and wait until the created Subscription becomes ready
-	apiRule := &apigatewayv1beta1.APIRule{ObjectMeta: kmetav1.ObjectMeta{
+	apiRule := &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
