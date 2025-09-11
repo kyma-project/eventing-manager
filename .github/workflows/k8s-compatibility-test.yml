@@ -49,7 +49,18 @@ jobs:
           # setup Gardener kubeconfig.
           mkdir -p "${HOME}/.gardener"
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-          echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_KUBECONFIG}
+          # Strip trailing newlines
+          SECRET=$(printf '%s' "$GARDENER_KYMATUNAS")
+          # Check if it looks like base64 (valid chars only, ignore newlines)
+          if [ -z "$(echo "$SECRET" | tr -d 'A-Za-z0-9+/=')" ]; then
+            # Likely base64, decode it
+            printf '%s' "$SECRET" | base64 --decode > "$GARDENER_KUBECONFIG"
+            echo "Secret decoded from base64"
+          else
+            # Plain text, write as-is
+            printf '%s' "$SECRET" > "$GARDENER_KUBECONFIG"
+            echo "Secret written as plain text"
+          fi
           # generate cluster name and export it to Github env for cleanup step to access it.
           export CLUSTER_NAME="${CLUSTER_PREFIX}$(openssl rand -hex 2)"
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
