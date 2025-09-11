@@ -26,7 +26,7 @@ jobs:
       MANAGER_IMAGE: ${{ inputs.eventing-manager-image }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Go via go.mod
         uses: actions/setup-go@v5
