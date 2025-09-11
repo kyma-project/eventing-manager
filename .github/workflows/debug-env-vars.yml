@@ -1,0 +1,31 @@
+name: Debug Secret Injection with Environment Check
+on:
+  workflow_dispatch:
+
+jobs:
+  secret-debug:
+    runs-on: ubuntu-latest
+    environment: production   # specify the environment used in your workflow
+    env:
+      GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
+    steps:
+      - name: Check if secret is injected
+        run: |
+          if [ -z "GARDENER_KYMATUNAS" ]; then
+            echo "❌ Secret NOT injected"
+            echo "This may be due to environment protection requiring approval."
+            exit 1
+          else
+            echo "✅ Secret is injected"
+            echo "Secret length: ${#GARDENER_KYMATUNAS}"
+          fi
+
+      - name: Create kubeconfig file (optional)
+        run: |
+          echo "GARDENER_KYMATUNAS" | base64 --decode > "$HOME/kubeconfig_test"
+          echo "✅ kubeconfig file created at $HOME/kubeconfig_test"
+
+      - name: Show environment protection info
+        run: |
+          echo "Environment used: $GITHUB_ENVIRONMENT"
+          echo "If this job is waiting for approval, secrets will be blocked until approval."
