@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production   # specify the environment used in your workflow
     env:
-      GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
+      GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS_KC }}
     steps:
       - name: Check if secret is injected
         run: |
