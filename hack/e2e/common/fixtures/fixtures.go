@@ -179,9 +179,14 @@ func V1Alpha2SubscriptionsToTest() []eventing.TestSubscriptionInfo {
 }
 
 func Namespace(name string) *kcorev1.Namespace {
+	labels := map[string]string{
+		"istio-injection": "enabled",
+	}
+
 	return &kcorev1.Namespace{
 		ObjectMeta: kmetav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: labels,
 		},
 	}
 }
