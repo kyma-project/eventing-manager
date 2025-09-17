@@ -34,7 +34,7 @@ install-istio-module:
 	kubectl label namespace kyma-system istio-injection=enabled --overwrite
 	kubectl apply -f https://github.com/kyma-project/istio/releases/latest/download/istio-manager.yaml
 	kubectl apply -f https://github.com/kyma-project/istio/releases/latest/download/istio-default-cr.yaml
-    kubectl wait --for=create MutatingWebhookConfiguration/istio-sidecar-injector
+	kubectl wait --for=create MutatingWebhookConfiguration/istio-sidecar-injector
 
 .PHONY: install-api-gateway-module
 install-api-gateway-module:
