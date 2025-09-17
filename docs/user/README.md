@@ -8,15 +8,13 @@ The Eventing module enables event-driven communication between applications in y
 
 This decouples your services, as publishers and subscribers do not need to know about each other. They can communicate asynchronously and evolve independently.
 
-You create a subscriber by defining a `Subscription` custom resource (see [Subscription CR](./resources/evnt-cr-subscription.md)). All events follow the [CloudEvents](https://cloudevents.io/) specification.
-
 ## Features
 
 The Eventing module provides the following features:
 
 - Publish-subscribe (pub/sub) messaging: Decouples applications so you can build resilient and scalable event-driven systems.
 - Flexible backend support: Use the default in-cluster NATS backend or configure SAP Event Mesh for enterprise messaging.
-- Standardized event format: Adheres to the [CloudEvents](https://cloudevents.io/) specification, ensuring a consistent and portable format.
+- Standardized event format: All events follow the [CloudEvents](https://cloudevents.io/) specification, ensuring a consistent and portable format.
 - Automatic legacy event conversion: Converts older, non-standard Kyma event formats into valid CloudEvents automatically.
 - At-least-once delivery: Ensures that each event is delivered at least one time when you use the NATS backend, preventing message loss during temporary failures.
 - Declarative subscriptions: Manage event subscriptions with a simple [Subscription](./resources/evnt-cr-subscription.md) custom resource (CR).
@@ -59,9 +57,9 @@ By default, the Eventing module uses NATS as its in-cluster eventing backend. It
 
 You configure the Eventing module by creating and applying Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions.
 
-To understand and configure the module's global settings, see the [Eventing Manager CRD](02-configuration.md).
+To understand and configure the module's global settings, see the [Eventing CRD](02-configuration.md).
 
-To configure event subscriptions, use a [Subscription CRD](./resources/evnt-cr-subscription.md).
+To create a subscriber, define a [Subscription CRD](./resources/evnt-cr-subscription.md).
 
 
 ## Resource Consumption
