@@ -55,6 +55,19 @@ IS THIS THE [Eventing Publisher Proxy](https://github.com/kyma-project/eventing-
 
 By default, the Eventing module uses NATS as its in-cluster eventing backend. It uses the [NATS JetStream](https://docs.nats.io/) feature to provide persistence and guarantee at-least-once delivery. The NATS backend receives events from the Publisher Proxy and delivers them directly to the target subscribers, such as your microservices or Functions.
 
+## API/Custom Resource Definitions
+
+You configure the Eventing module by creating and applying Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions.
+
+To understand and configure the module's global settings, see the [Eventing Manager CRD](02-configuration.md).
+
+To configure event subscriptions, use a [Subscription CRD](./resources/evnt-cr-subscription.md).
+
+
+## Resource Consumption
+
+To learn more about the resources used by the Eventing module, see [Kyma Modules' Sizing](https://help.sap.com/docs/btp/sap-business-technology-platform/kyma-modules-sizing?locale=en-US&version=Cloud).
+
 <!-- ## Kyma Eventing Flow
 
 Kyma Eventing follows the PubSub messaging pattern: Kyma publishes messages to a messaging backend, which filters these messages and sends them to interested subscribers. Kyma does not send messages directly to the subscribers as shown below:
