@@ -168,7 +168,11 @@ jobs:
         if: failure()
         run: |
           kubectl get apigateways.operator.kyma-project.io -n kyma-system -o yaml
-
+           
+      - name: Sleep for 1 hour
+        if: ${{ always() }}
+        run: sleep 3600
+        
       - name: Cleanup modules
         if: ${{ always() }}
         run: |
