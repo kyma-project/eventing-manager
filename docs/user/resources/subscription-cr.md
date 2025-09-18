@@ -1,6 +1,8 @@
 # Subscription CR
 
-Use the Subscription custom resource (CR) to describe the kind of data and the format used to subscribe to events. To see the current CRD in YAML format, run:
+Use the Subscription custom resource (CR) to describe the kind of data and the format used to subscribe to events. You specify the event types and the target endpoint for event delivery.
+
+To see the current CRD in YAML format, run:
 
 `kubectl get crd subscriptions.eventing.kyma-project.io -o yaml`
 
@@ -9,13 +11,11 @@ The following components use the Subscription CR:
 - [Eventing Manager](../evnt-architecture.md#eventing-manager): Reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend.
 - [Eventing Publisher Proxy](../evnt-architecture.md#eventing-publisher-proxy): Reads the Subscriptions to find out how events are used for each Application.
 
+You must delete all Subscription CRs before you can delete the Eventing module.
+
 ## Sample Custom Resource
 
-This sample Subscription custom resource (CR) subscribes to an event called `order.created.v1`.
-
-> **WARNING:** Prohibited characters in event names under the **spec.types** property, are not supported in some backends. If any are detected, Eventing will remove them. Read [Event names](../evnt-event-names.md#event-name-cleanup) for more information.
-> [!NOTE]
-> Both, the subscriber and the Subscription, should exist in the same namespace.
+This sample Subscription CR subscribes to an event called `order.created.v1`.
 
 ```yaml
 apiVersion: eventing.kyma-project.io/v1alpha2
@@ -35,11 +35,14 @@ spec:
 
 ## Subscription Status
 
-The `status.ready` field shows the overall readiness of the Subscription. If `false`, check the `status.conditions` array for details. The most important condition is of type Ready.
+The `status.ready` field shows the overall readiness of the Subscription. If `false`, check the `status.conditions` array for details.
 
 ## Custom Resource Parameters
 
-The following table lists all the possible parameters of the Subscription CR:
+> **NOTE:** 
+> If the Subscription CR and the target subscriber aren't the same namespace, you must specify the **sink.ref.namespace**.
+> 
+> Eventing backends might not support certain characters in event names defined under **spec.type**. If you use unsupported characters, the Eventing module removes them. For details, see [Event Name Cleanup](../evnt-event-names.md#event-name-cleanup).
 
 <!-- TABLE-START -->
 ### Subscription.eventing.kyma-project.io/v1alpha2
@@ -91,12 +94,3 @@ The following table lists all the possible parameters of the Subscription CR:
 | **types.&#x200b;originalType** (required) | string | Event type as specified in the Subscription spec. |
 
 <!-- TABLE-END -->
-
-## Related Resources and Components
-
-The following components use this CR:
-
-| Component   |   Description |
-|-------------|---------------|
-| [Eventing Manager](../evnt-architecture.md#eventing-manager) | The Eventing Manager reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend. |
-| [Eventing Publisher Proxy](../evnt-architecture.md#eventing-publisher-proxy) | The Eventing Publisher Proxy reads the Subscriptions to find out how events are used for each Application. |
