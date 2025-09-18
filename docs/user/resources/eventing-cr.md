@@ -1,47 +1,41 @@
-# Configuration
+# Eventing CR
 
-The CustomResourceDefinition (CRD) `eventings.operator.kyma-project.io` describes the Eventing custom resource (CR) in detail. To show the current CRD, run the following command:
+Use the Eventing custom resource (CR) to configure global settings for the Eventing module, such as the backend type, logging level, and resource allocations for the Publisher Proxy.
 
-   ```shell
-   kubectl get crd eventings.operator.kyma-project.io -o yaml
-   ```
+You can have only one Eventing CR in your cluster, which must be in the `kyma-system` namespace.
 
-View the complete [Eventing CRD](https://github.com/kyma-project/eventing-manager/blob/main/config/crd/bases/operator.kyma-project.io_eventings.yaml) including detailed descriptions for each field.
+Many fields have default values, so you only have to specify the parameters you want to override. Built-in validation rules guide you when you edit the CR and prevent invalid configurations. For example, you're not allowed to delete an existing backend.
 
-The CRD is equipped with validation rules and defaulting, so the CR is automatically filled with default values.
+To see the current CRD in YAML format, run:
 
-The validation rules provide guidance when you edit the CR. For example, you are not allowed to delete an existing backend.
+`kubectl get crd eventings.operator.kyma-project.io -o yaml`
 
-You can override the defaults. However, you must make sure that a backend is set; otherwise the Eventing Manager does not create any resources and goes into warning state.
-
-## Impact of the Backend to the Eventing CR State and Event Flow
-
-The following table provides more details on the overall state of the Eventing CR:
-
-- The <b>Backend State</b> column describes the state of the NATS backend or EventMesh Secret existence.
-- The <b>Backend Config</b> describes whether the Eventing CR that has been specified by a user or is not available.
-- The <b>Eventing State</b> describes the overall state of the Eventing CR.
-
-Warnings indicate that user action is required, that is, the user must install the NATS module or create an EventMesh Secret.
-
-| Backend Type   | Backend Config | Backend State                                                                                                                               | Eventing State | Impact on Event Flow                     |
-|----------------|----------------|---------------------------------------------------------------------------------------------------------------------------------------------|----------------|------------------------------------------|
-| NATS/EventMesh | missing        | n/a                                                                                                                                         | Warning        | No events will be accepted or dispatched |
-| NATS/EventMesh | exists         | Processing (mainly happens during initialization and backend switching)                                                                     | Processing     | No events will be accepted or dispatched |
-| NATS           | exists         | Warning (NATS deletion blocked)                                                                                                             | Ready          | Events will be accepted or dispatched    |
-| NATS           | exists         | Error (NATS ist unavailable or cannot be connected)                                                                                         | Warning        | No events will be accepted or dispatched |
-| NATS           | exists         | Missing                                                                                                                                     | Warning        | No events will be accepted or dispatched |
-| EventMesh      | exists         | Error (Secret for EventMesh missing)                                                                                                        | Warning        | No events will be accepted or dispatched |
-| NATS/EventMesh | exists         | Error (cases not caused by a user, such as cannot create EPP deployment or cannot start subscription manager although backend is available) | Error          | No events will be accepted or dispatched |
-
-## Examples
+## Sample Custom Resource
 
 Use the following sample CRs as guidance. Each can be applied immediately when you [install](../contributor/installation.md) Eventing Manager.
 
 - [Default CR - NATS backend](https://github.com/kyma-project/eventing-manager/blob/main/config/samples/default_nats.yaml)
 - [Default CR - EventMesh backend](https://github.com/kyma-project/eventing-manager/blob/main/config/samples/default_eventmesh.yaml)
 
-## Reference
+## Eventing Module Status and Event Flow
+
+Understand how the Eventing module's status and event processing change based on your backend configuration and the backend infrastructure's operational state.
+
+The Eventing module reports its overall status in the `status.state` field of the Eventing CR's status. This status, combined with the backend configuration and the backend infrastructure's health, determines how the module processes events. 
+
+| **Specified Backend** | **Backend Infrastructure Status**                                                                         | **Eventing Module Status** | **Event Flow** | **Recommended User Action**                                                                    |
+|-----------------------|-----------------------------------------------------------------------------------------------------------|----------------------------|----------------|------------------------------------------------------------------------------------------------|
+| None                  | Not applicable                                                                                            | Warning                    | Blocked        | Specify a backend (NATS or EventMesh) in the Eventing CR.                                      |
+| NATS/EventMesh        | Processing (while initializing or switching backends)                                                     | Processing                 | Blocked        | Wait for the Eventing module to complete initialization or backend switch.                     |
+| NATS                  | Warning (NATS module deletion is blocked)                                                                 | Ready                      | Active         | Investigate and resolve why NATS module can't be deleted.                                      |
+| NATS                  | Error (NATS is unavailable or Eventing cannot connect to it)                                              | Warning                    | Blocked        | Ensure the NATS module is added and operational. Check connectivity between Eventing and NATS. |
+| NATS                  | Missing (NATS module is not installed)                                                                    | Warning                    | Blocked        | Add the NATS module to your cluster.                                                           |
+| EventMesh             | Error (EventMesh Secret is missing or invalid)                                                            | Warning                    | Blocked        | Create or update the EventMesh Secret.                                                         |
+| NATS/EventMesh        | Error (backend available but error with, for example, Publisher Proxy deployment or subscription manager) | Error                      | Blocked        | Review Eventing logs and contact support if the issue persists.                                |
+
+## Custom Resource Parameters
+
+For details, see [operator.kyma-project.io_eventings.yaml](https://github.com/kyma-project/eventing-manager/blob/main/config/crd/bases/operator.kyma-project.io_eventings.yaml).
 
 <!-- The table below was generated automatically -->
 <!-- Some special tags (html comments) are at the end of lines due to markdown requirements. -->
