@@ -21,7 +21,7 @@ jobs:
       latest_release_tag: ${{ steps.get-latest-release-tag.outputs.latest_release_tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Get latest release tag
         id: get-latest-release-tag

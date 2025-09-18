@@ -34,7 +34,7 @@ jobs:
         working-directory: ${{ env.E2E_SINK_DIR }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5

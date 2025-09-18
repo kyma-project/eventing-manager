@@ -21,7 +21,7 @@ jobs:
       KYMA: "./hack/kyma"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Go via go.mod
         uses: actions/setup-go@v5
@@ -44,12 +44,18 @@ jobs:
           SCALER_MIN: "1"
           SCALER_MAX: "2"
           RETRY_ATTEMPTS: "1"
-          GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS }}
+          GARDENER_KYMATUNAS: ${{ secrets.GARDENER_KYMATUNAS_KC }}
         run: |
           # setup Gardener kubeconfig.
           mkdir -p "${HOME}/.gardener"
           export GARDENER_KUBECONFIG="${HOME}/.gardener/kubeconfig"
-          echo ${GARDENER_KYMATUNAS} | base64 --decode > ${GARDENER_KUBECONFIG}
+          if echo "$GARDENER_KYMATUNAS" | base64 -d >/tmp/secret 2>/dev/null; then
+            echo "$GARDENER_KYMATUNAS" | base64 --decode > "$GARDENER_KUBECONFIG"
+            echo "Secret decoded from base64"
+          else
+            echo "$GARDENER_KYMATUNAS" > "$GARDENER_KUBECONFIG"
+            echo "Secret written as plain text"
+          fi
           # generate cluster name and export it to Github env for cleanup step to access it.
           export CLUSTER_NAME="${CLUSTER_PREFIX}$(openssl rand -hex 2)"
           echo "CLUSTER_NAME=${CLUSTER_NAME}" >> $GITHUB_ENV
