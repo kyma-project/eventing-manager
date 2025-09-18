@@ -1,8 +1,13 @@
-# Subscription
+# Subscription CR
 
-The `subscriptions.eventing.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to subscribe to events. To get the up-to-date CRD and show the output in the YAML format, run this command:
+Use the Subscription custom resource (CR) to describe the kind of data and the format used to subscribe to events. To see the current CRD in YAML format, run:
 
 `kubectl get crd subscriptions.eventing.kyma-project.io -o yaml`
+
+The following components use the Subscription CR:
+
+- [Eventing Manager](../evnt-architecture.md#eventing-manager): Reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend.
+- [Eventing Publisher Proxy](../evnt-architecture.md#eventing-publisher-proxy): Reads the Subscriptions to find out how events are used for each Application.
 
 ## Sample Custom Resource
 
@@ -28,9 +33,13 @@ spec:
     maxInFlightMessages: "10"
 ```
 
+## Subscription Status
+
+The `status.ready` field shows the overall readiness of the Subscription. If `false`, check the `status.conditions` array for details. The most important condition is of type Ready.
+
 ## Custom Resource Parameters
 
-This table lists all the possible parameters of a given resource together with their descriptions:
+The following table lists all the possible parameters of the Subscription CR:
 
 <!-- TABLE-START -->
 ### Subscription.eventing.kyma-project.io/v1alpha2
@@ -85,7 +94,7 @@ This table lists all the possible parameters of a given resource together with t
 
 ## Related Resources and Components
 
-These components use this CR:
+The following components use this CR:
 
 | Component   |   Description |
 |-------------|---------------|
