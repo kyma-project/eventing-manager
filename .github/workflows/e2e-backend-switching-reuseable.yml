@@ -118,7 +118,7 @@ jobs:
         run: |
           # create API Rules for EPP and Sink.
           export DOMAIN_TO_EXPOSE_WORKLOADS="$(kubectl get cm -n kube-system shoot-info -o=jsonpath='{.data.domain}')"
-          ./hack/e2e/scripts/expose_epp_and_sink.sh
+          
           # define URLs.
           export SINK_PORT_FORWARDED_URL=https://sink-e2e-tests.${DOMAIN_TO_EXPOSE_WORKLOADS}
           export PUBLISHER_URL=https://epp-e2e-tests.${DOMAIN_TO_EXPOSE_WORKLOADS}
@@ -127,6 +127,7 @@ jobs:
           echo "PUBLISHER_URL=${PUBLISHER_URL}" >> $GITHUB_ENV
           # setup e2e tests.
           make e2e-eventing-setup
+          ./hack/e2e/scripts/expose_epp_and_sink.sh
 
       - name: Test eventing with NATS
         run: |
