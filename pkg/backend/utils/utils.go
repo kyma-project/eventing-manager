@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	ceevent "github.com/cloudevents/sdk-go/v2/event"
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -33,8 +33,8 @@ type NameMapper interface {
 
 func APIRuleGroupVersionResource() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
-		Version:  apigatewayv1beta1.GroupVersion.Version,
-		Group:    apigatewayv1beta1.GroupVersion.Group,
+		Version:  apigatewayv2.GroupVersion.Version,
+		Group:    apigatewayv2.GroupVersion.Group,
 		Resource: "apirules",
 	}
 }
@@ -51,7 +51,7 @@ func ConvertMsgToCE(msg *nats.Msg) (*ceevent.Event, error) {
 	return &event, nil
 }
 
-func GetExposedURLFromAPIRule(apiRule *apigatewayv1beta1.APIRule, targetURL string) (string, error) {
+func GetExposedURLFromAPIRule(apiRule *apigatewayv2.APIRule, targetURL string) (string, error) {
 	// @TODO: Move this method to backend/eventmesh/utils.go once old BEB backend is depreciated
 	scheme := "https://"
 	path := ""
@@ -70,7 +70,11 @@ func GetExposedURLFromAPIRule(apiRule *apigatewayv1beta1.APIRule, targetURL stri
 			break
 		}
 	}
-	return fmt.Sprintf("%s%s%s", scheme, *apiRule.Spec.Host, path), nil
+	host := ""
+	if apiRule.Spec.Hosts != nil && len(apiRule.Spec.Hosts) > 0 && apiRule.Spec.Hosts[0] != nil {
+		host = string(*apiRule.Spec.Hosts[0])
+	}
+	return fmt.Sprintf("%s%s%s", scheme, host, path), nil
 }
 
 // UpdateSubscriptionStatus updates the status of all Kyma subscriptions on k8s.

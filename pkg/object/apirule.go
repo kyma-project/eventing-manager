@@ -1,12 +1,11 @@
 package object
 
 import (
-	"fmt"
 	"net/url"
+	"strings"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/featureflags"
@@ -24,8 +23,8 @@ const (
 )
 
 // NewAPIRule creates a APIRule object.
-func NewAPIRule(ns, namePrefix string, opts ...Option) *apigatewayv1beta1.APIRule {
-	rule := &apigatewayv1beta1.APIRule{
+func NewAPIRule(ns, namePrefix string, opts ...Option) *apigatewayv2.APIRule {
+	rule := &apigatewayv2.APIRule{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Namespace:    ns,
 			GenerateName: namePrefix,
@@ -41,21 +40,21 @@ func NewAPIRule(ns, namePrefix string, opts ...Option) *apigatewayv1beta1.APIRul
 
 // ApplyExistingAPIRuleAttributes copies some important attributes from a given
 // source APIRule to a destination APIRule.
-func ApplyExistingAPIRuleAttributes(src, dst *apigatewayv1beta1.APIRule) {
+func ApplyExistingAPIRuleAttributes(src, dst *apigatewayv2.APIRule) {
 	// resourceVersion must be returned to the API server
 	// unmodified for optimistic concurrency, as per Kubernetes API
 	// conventions
 	dst.Name = src.Name
 	dst.GenerateName = ""
 	dst.ResourceVersion = src.ResourceVersion
-	dst.Spec.Host = src.Spec.Host
+	dst.Spec.Hosts = src.Spec.Hosts
 	// preserve status to avoid resetting conditions
 	dst.Status = src.Status
 }
 
-func GetService(svcName string, port uint32) apigatewayv1beta1.Service {
+func GetService(svcName string, port uint32) apigatewayv2.Service {
 	isExternal := true
-	return apigatewayv1beta1.Service{
+	return apigatewayv2.Service{
 		Name:       &svcName,
 		Port:       &port,
 		IsExternal: &isExternal,
@@ -63,17 +62,17 @@ func GetService(svcName string, port uint32) apigatewayv1beta1.Service {
 }
 
 // WithService sets the Service of an APIRule.
-func WithService(host, svcName string, port uint32) Option {
-	return func(r *apigatewayv1beta1.APIRule) {
+func WithService(hosts []*apigatewayv2.Host, svcName string, port uint32) Option {
+	return func(r *apigatewayv2.APIRule) {
 		apiService := GetService(svcName, port)
 		r.Spec.Service = &apiService
-		r.Spec.Host = &host
+		r.Spec.Hosts = hosts
 	}
 }
 
 // WithGateway sets the gateway of an APIRule.
 func WithGateway(gw string) Option {
-	return func(r *apigatewayv1beta1.APIRule) {
+	return func(r *apigatewayv2.APIRule) {
 		r.Spec.Gateway = &gw
 	}
 }
@@ -95,14 +94,14 @@ func RemoveDuplicateValues(values []string) []string {
 
 // WithLabels sets the labels for an APIRule.
 func WithLabels(labels map[string]string) Option {
-	return func(r *apigatewayv1beta1.APIRule) {
+	return func(r *apigatewayv2.APIRule) {
 		r.SetLabels(labels)
 	}
 }
 
 // WithOwnerReference sets the OwnerReferences of an APIRule.
 func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
-	return func(rule *apigatewayv1beta1.APIRule) {
+	return func(rule *apigatewayv2.APIRule) {
 		ownerRefs := make([]kmetav1.OwnerReference, 0)
 		for _, sub := range subs {
 			blockOwnerDeletion := true
@@ -120,26 +119,11 @@ func WithOwnerReference(subs []eventingv1alpha2.Subscription) Option {
 }
 
 // WithRules sets the rules of an APIRule for all Subscriptions for a subscriber.
-func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigatewayv1beta1.Service,
+func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigatewayv2.Service,
 	methods ...string,
 ) Option {
-	return func(rule *apigatewayv1beta1.APIRule) {
-		var handler apigatewayv1beta1.Handler
-		if featureflags.IsEventingWebhookAuthEnabled() {
-			handler.Name = OAuthHandlerNameJWT
-			handler.Config = &runtime.RawExtension{
-				Raw: []byte(fmt.Sprintf(JWKSURLFormat, certsURL)),
-			}
-		} else {
-			handler.Name = OAuthHandlerNameOAuth2Introspection
-		}
-		authenticator := &apigatewayv1beta1.Authenticator{
-			Handler: &handler,
-		}
-		accessStrategies := []*apigatewayv1beta1.Authenticator{
-			authenticator,
-		}
-		rules := make([]apigatewayv1beta1.Rule, 0)
+	return func(rule *apigatewayv2.APIRule) {
+		rules := make([]apigatewayv2.Rule, 0)
 		paths := make([]string, 0)
 		for _, sub := range subs {
 			hostURL, err := url.ParseRequestURI(sub.Spec.Sink)
@@ -155,11 +139,22 @@ func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigat
 		}
 		uniquePaths := RemoveDuplicateValues(paths)
 		for _, path := range uniquePaths {
-			rule := apigatewayv1beta1.Rule{
-				Path:             path,
-				Methods:          StringsToMethods(methods),
-				AccessStrategies: accessStrategies,
-				Service:          &svc,
+			rule := apigatewayv2.Rule{
+				Path:    path,
+				Methods: StringsToMethods(methods),
+				Service: &svc,
+			}
+			if featureflags.IsEventingWebhookAuthEnabled() {
+				rule.Jwt = &apigatewayv2.JwtConfig{
+					Authentications: []*apigatewayv2.JwtAuthentication{
+						{
+							JwksUri: certsURL,
+							Issuer:  strings.Replace(certsURL, "/oauth2/certs", "", 1),
+						},
+					},
+				}
+			} else {
+				rule.ExtAuth = &apigatewayv2.ExtAuth{}
 			}
 			rules = append(rules, rule)
 		}
@@ -168,10 +163,10 @@ func WithRules(certsURL string, subs []eventingv1alpha2.Subscription, svc apigat
 }
 
 // StringsToMethods converts a slice of strings into a slice of HttpMethod as defined by api-gateway.
-func StringsToMethods(methods []string) []apigatewayv1beta1.HttpMethod {
-	httpMethodes := []apigatewayv1beta1.HttpMethod{}
+func StringsToMethods(methods []string) []apigatewayv2.HttpMethod {
+	httpMethodes := []apigatewayv2.HttpMethod{}
 	for _, m := range methods {
-		httpMethodes = append(httpMethodes, apigatewayv1beta1.HttpMethod(m))
+		httpMethodes = append(httpMethodes, apigatewayv2.HttpMethod(m))
 	}
 	return httpMethodes
 }

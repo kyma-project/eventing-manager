@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	"github.com/stretchr/testify/require"
 	kautoscalingv2 "k8s.io/api/autoscaling/v2"
 	kcorev1 "k8s.io/api/core/v1"
@@ -22,56 +22,50 @@ import (
 func TestApiRuleEqual(t *testing.T) {
 	svc := "svc"
 	port := uint32(9999)
-	host := "host"
+	h := apigatewayv2.Host("host")
+	hosts := []*apigatewayv2.Host{&h}
 	isExternal := true
 	gateway := "foo.gateway"
 	labels := map[string]string{
 		"foo": "bar",
 	}
-	handler := &apigatewayv1beta1.Handler{
-		Name: "handler",
-	}
-	rule := apigatewayv1beta1.Rule{
+	rule := apigatewayv2.Rule{
 		Path: "path",
-		Methods: []apigatewayv1beta1.HttpMethod{
-			apigatewayv1beta1.HttpMethod(http.MethodPost),
+		Methods: []apigatewayv2.HttpMethod{
+			apigatewayv2.HttpMethod(http.MethodPost),
 		},
-		AccessStrategies: []*apigatewayv1beta1.Authenticator{
-			{
-				Handler: handler,
-			},
-		},
+		NoAuth: ptr.To(false),
 	}
-	apiRule := apigatewayv1beta1.APIRule{
+	apiRule := apigatewayv2.APIRule{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "bar",
 			Labels:    labels,
 		},
-		Spec: apigatewayv1beta1.APIRuleSpec{
-			Service: &apigatewayv1beta1.Service{
+		Spec: apigatewayv2.APIRuleSpec{
+			Service: &apigatewayv2.Service{
 				Name:       &svc,
 				Port:       &port,
 				IsExternal: &isExternal,
 			},
-			Host:    &host,
+			Hosts:   hosts,
 			Gateway: &gateway,
-			Rules:   []apigatewayv1beta1.Rule{rule},
+			Rules:   []apigatewayv2.Rule{rule},
 		},
 	}
 	testCases := map[string]struct {
-		prep   func() *apigatewayv1beta1.APIRule
+		prep   func() *apigatewayv2.APIRule
 		expect bool
 	}{
 		"should be equal when svc, gateway, owner ref, rules are same": {
-			prep: func() *apigatewayv1beta1.APIRule {
+			prep: func() *apigatewayv2.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				return apiRuleCopy
 			},
 			expect: true,
 		},
 		"should be unequal when svc name is diff": {
-			prep: func() *apigatewayv1beta1.APIRule {
+			prep: func() *apigatewayv2.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				newSvcName := "new"
 				apiRuleCopy.Spec.Service.Name = &newSvcName
@@ -80,7 +74,7 @@ func TestApiRuleEqual(t *testing.T) {
 			expect: false,
 		},
 		"should be unequal when svc port is diff": {
-			prep: func() *apigatewayv1beta1.APIRule {
+			prep: func() *apigatewayv2.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				newSvcPort := uint32(8080)
 				apiRuleCopy.Spec.Service.Port = &newSvcPort
@@ -89,7 +83,7 @@ func TestApiRuleEqual(t *testing.T) {
 			expect: false,
 		},
 		"should be unequal when isExternal is diff": {
-			prep: func() *apigatewayv1beta1.APIRule {
+			prep: func() *apigatewayv2.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				newIsExternal := false
 				apiRuleCopy.Spec.Service.IsExternal = &newIsExternal
@@ -98,7 +92,7 @@ func TestApiRuleEqual(t *testing.T) {
 			expect: false,
 		},
 		"should be unequal when gateway is diff": {
-			prep: func() *apigatewayv1beta1.APIRule {
+			prep: func() *apigatewayv2.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				newGateway := "new-gw"
 				apiRuleCopy.Spec.Gateway = &newGateway
@@ -107,7 +101,7 @@ func TestApiRuleEqual(t *testing.T) {
 			expect: false,
 		},
 		"should be unequal when labels are diff": {
-			prep: func() *apigatewayv1beta1.APIRule {
+			prep: func() *apigatewayv2.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				newLabels := map[string]string{
 					"new-foo": "new-bar",
@@ -118,46 +112,39 @@ func TestApiRuleEqual(t *testing.T) {
 			expect: false,
 		},
 		"should be unequal when path is diff": {
-			prep: func() *apigatewayv1beta1.APIRule {
+			prep: func() *apigatewayv2.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				newRule := rule.DeepCopy()
 				newRule.Path = "new-path"
-				apiRuleCopy.Spec.Rules = []apigatewayv1beta1.Rule{*newRule}
+				apiRuleCopy.Spec.Rules = []apigatewayv2.Rule{*newRule}
 				return apiRuleCopy
 			},
 			expect: false,
 		},
 		"should be unequal when methods are diff": {
-			prep: func() *apigatewayv1beta1.APIRule {
+			prep: func() *apigatewayv2.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				newRule := rule.DeepCopy()
-				newRule.Methods = []apigatewayv1beta1.HttpMethod{
-					apigatewayv1beta1.HttpMethod(http.MethodOptions),
+				newRule.Methods = []apigatewayv2.HttpMethod{
+					apigatewayv2.HttpMethod(http.MethodOptions),
 				}
-				apiRuleCopy.Spec.Rules = []apigatewayv1beta1.Rule{*newRule}
+				apiRuleCopy.Spec.Rules = []apigatewayv2.Rule{*newRule}
 				return apiRuleCopy
 			},
 			expect: false,
 		},
 		"should be unequal when handlers are diff": {
-			prep: func() *apigatewayv1beta1.APIRule {
+			prep: func() *apigatewayv2.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				newRule := rule.DeepCopy()
-				newHandler := &apigatewayv1beta1.Handler{
-					Name: "foo",
-				}
-				newRule.AccessStrategies = []*apigatewayv1beta1.Authenticator{
-					{
-						Handler: newHandler,
-					},
-				}
-				apiRuleCopy.Spec.Rules = []apigatewayv1beta1.Rule{*newRule}
+				newRule.NoAuth = ptr.To(true)
+				apiRuleCopy.Spec.Rules = []apigatewayv2.Rule{*newRule}
 				return apiRuleCopy
 			},
 			expect: false,
 		},
 		"should be unequal when OwnerReferences are diff": {
-			prep: func() *apigatewayv1beta1.APIRule {
+			prep: func() *apigatewayv2.APIRule {
 				apiRuleCopy := apiRule.DeepCopy()
 				newOwnerRef := kmetav1.OwnerReference{
 					APIVersion: "foo",

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 
@@ -613,9 +614,11 @@ func Test_SyncSubscription(t *testing.T) {
 	subscription.Status.Backend.EventMeshHash = 0
 	subscription.Status.Backend.Ev2hash = 0
 
+	h := apigatewayv2.Host("foo-host")
+	hosts := []*apigatewayv2.Host{&h}
 	apiRule := eventingtesting.NewAPIRule(subscription,
 		eventingtesting.WithPath(),
-		eventingtesting.WithService("foo-svc", "foo-host"),
+		eventingtesting.WithService("foo-svc", hosts),
 	)
 
 	// cases - reconcile same subscription multiple times
@@ -704,10 +707,12 @@ func Test_handleWebhookAuthChange(t *testing.T) {
 			typesInfo, err := eventMesh.getProcessedEventTypes(kymaSub, cleaner.NewEventMeshCleaner(defaultLogger))
 			require.NoError(t, err)
 			require.NotNil(t, typesInfo)
+			h := apigatewayv2.Host("http://localhost")
+			hosts := []*apigatewayv2.Host{&h}
 			apiRule := eventingtesting.NewAPIRule(
 				kymaSub,
 				eventingtesting.WithPath(),
-				eventingtesting.WithService("test-service", "http://localhost"),
+				eventingtesting.WithService("test-service", hosts),
 			)
 
 			// convert Kyma Subscription to EventMesh Subscription
