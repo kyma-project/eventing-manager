@@ -81,7 +81,7 @@ This is an alpha field and requires enabling the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers. |
-| **publisher.&#x200b;resources.&#x200b;claims.&#x200b;name** (required) | string | Name must match the name of one entry in pod.spec.resourceClaims of
+| **publisher.&#x200b;resources.&#x200b;claims.&#x200b;name** (required) | string | Name must match the name of one entry in `pod.spec.resourceClaims` of
 the Pod where this field is used. It makes that resource available
 inside a container. |
 | **publisher.&#x200b;resources.&#x200b;claims.&#x200b;request**  | string | Request is the name chosen for a request in the referenced claim.
