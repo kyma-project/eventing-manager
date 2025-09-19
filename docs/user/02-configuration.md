@@ -113,7 +113,7 @@ and whether the values are considered a guaranteed API.
 The value should be a CamelCase string.
 This field may not be empty. |
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of `True`, `False`, `Unknown`. |
-| **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
+| **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in `foo.example.com/CamelCase`. |
 | **publisherService**  | string |  |
 | **specHash** (required) | integer |  |
 | **state** (required) | string | Defines the overall state of the Eventing custom resource.<br/>
