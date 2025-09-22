@@ -30,7 +30,7 @@ The Eventing module uses an operator-based architecture to manage the components
 
 [Diagram: Eventing flow]
 
-The architecture consists of a control plane (Eventing Manager) that configures a data plane (Publisher Proxy and NATS backend) based on the Subscription custom resources you create.
+The architecture consists of a control plane (Eventing Manager) that configures a data plane (Eventing Publisher Proxy and NATS backend) based on the Subscription custom resources you create.
 
 ### Eventing Manager
 
@@ -39,19 +39,24 @@ The Eventing Manager is the module's controller. It watches for Subscription cus
 - Configures the NATS backend with the necessary streams and consumers.
 - Ensures events are routed from the correct publisher to the specified subscriber (the "sink").
 
-### Publisher Proxy
+### Eventing Publisher Proxy
 
-The Publisher Proxy provides a single, stable endpoint where your applications can publish events using a standard [HTTP POST](https://www.w3schools.com/tags/ref_httpmethods.asp) request. This simplifies integration, as you can use common tools like curl or any standard HTTP client. The proxy is responsible for:
+The Eventing Publisher Proxy provides a single, stable endpoint where your applications publish events using a standard [HTTP POST](https://www.w3schools.com/tags/ref_httpmethods.asp) request. This simplifies integration, as you can use common tools like curl or any standard HTTP client. 
+
+The proxy is responsible for:
 
 - Receiving inbound events from your applications.
 - Converting events from legacy formats into the standard CloudEvents format.
-- Forwarding the validated CloudEvents to the NATS backend for delivery.
+- Forwarding the validated CloudEvents to the configured eventing backend for delivery.
 
-IS THIS THE [Eventing Publisher Proxy](https://github.com/kyma-project/eventing-publisher-proxy/blob/main/README.md) ?
+The Eventing Publisher Proxy's forwarding behavior adapts to the backend you configure for the Eventing module:
+
+- If you use the default NATS backend, the proxy forwards events directly to the NATS server.
+- If you configure SAP Event Mesh, the proxy redirects events to the Enterprise Messaging Service Cloud Event Gateway.
 
 ### NATS Backend
 
-By default, the Eventing module uses NATS as its in-cluster eventing backend. It uses the [NATS JetStream](https://docs.nats.io/) feature to provide persistence and guarantee at-least-once delivery. The NATS backend receives events from the Publisher Proxy and delivers them directly to the target subscribers, such as your microservices or Functions.
+By default, the Eventing module uses NATS as its in-cluster eventing backend. It uses the [NATS JetStream](https://docs.nats.io/) feature to provide persistence and guarantee at-least-once delivery. The NATS backend receives events from the Eventing Publisher Proxy and delivers them directly to the target subscribers, such as your microservices or Functions.
 
 ## API/Custom Resource Definitions
 

@@ -1,6 +1,6 @@
 # Eventing CR
 
-Use the Eventing custom resource (CR) to configure global settings for the Eventing module, such as the backend type, logging level, and resource allocations for the Publisher Proxy.
+Use the Eventing custom resource (CR) to configure global settings for the Eventing module, such as the backend type, logging level, and resource allocations for the Eventing Publisher Proxy.
 
 You can have only one Eventing CR in your cluster, which must be in the `kyma-system` namespace.
 
@@ -31,7 +31,7 @@ The Eventing module reports its overall status in the `status.state` field of th
 | NATS                  | Error (NATS is unavailable or Eventing cannot connect to it)                                              | Warning                    | Blocked        | Ensure the NATS module is added and operational. Check connectivity between Eventing and NATS. |
 | NATS                  | Missing (NATS module is not installed)                                                                    | Warning                    | Blocked        | Add the NATS module to your cluster.                                                           |
 | EventMesh             | Error (EventMesh Secret is missing or invalid)                                                            | Warning                    | Blocked        | Create or update the EventMesh Secret.                                                         |
-| NATS/EventMesh        | Error (backend available but error with, for example, Publisher Proxy deployment or subscription manager) | Error                      | Blocked        | Review Eventing logs and contact support if the issue persists.                                |
+| NATS/EventMesh        | Error (backend available but error with, for example, Eventing Publisher Proxy deployment or subscription manager) | Error                      | Blocked        | Review Eventing logs and contact support if the issue persists.                                |
 
 ## Custom Resource Parameters
 
