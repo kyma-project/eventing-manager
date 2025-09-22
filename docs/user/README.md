@@ -26,7 +26,7 @@ The Eventing module focuses on in-cluster, asynchronous communication using the 
 
 ## Architecture
 
-The Eventing module uses an operator-based architecture to manage the components that process and deliver events within the Kyma cluster.
+The Eventing module uses an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)-based architecture to manage the components that process and deliver events within the Kyma cluster.
 
 [Diagram: Eventing flow]
 
@@ -34,10 +34,13 @@ The architecture consists of a control plane (Eventing Manager) that configures 
 
 ### Eventing Manager
 
-The Eventing Manager is the module's controller. It watches for Subscription custom resources and configures the underlying eventing infrastructure. When you create or update a Subscription, the Eventing Manager:
+The Eventing Manager is the module's controller. It watches for Subscription custom resources and configures the underlying eventing infrastructure. 
+
+When you create or update a Subscription, the Eventing Manager takes over the following tasks:
 
 - Configures the NATS backend with the necessary streams and consumers.
 - Ensures events are routed from the correct publisher to the specified subscriber (the "sink").
+- Creates and manages Kubernetes resources, such as ConfigMaps, Secrets, Services, StatefulSets, DestinationRules, and Pod Disruption Budgets, adapting them to the desired state.
 
 ### Eventing Publisher Proxy
 
@@ -48,11 +51,6 @@ The proxy is responsible for:
 - Receiving inbound events from your applications.
 - Converting events from legacy formats into the standard CloudEvents format.
 - Forwarding the validated CloudEvents to the configured eventing backend for delivery.
-
-The Eventing Publisher Proxy's forwarding behavior adapts to the backend you configure for the Eventing module:
-
-- If you use the default NATS backend, the proxy forwards events directly to the NATS server.
-- If you configure SAP Event Mesh, the proxy redirects events to the Enterprise Messaging Service Cloud Event Gateway.
 
 ### NATS Backend
 
