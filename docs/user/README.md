@@ -17,7 +17,7 @@ The Eventing module provides the following features:
 - Standardized event format: All events follow the [CloudEvents](https://cloudevents.io/) specification, ensuring a consistent and portable format.
 - Automatic legacy event conversion: Converts older, non-standard Kyma event formats into valid CloudEvents automatically.
 - At-least-once delivery: Ensures that each event is delivered at least one time when you use the NATS backend, preventing message loss during temporary failures.
-- Declarative subscriptions: Manage event subscriptions with a simple [Subscription](./resources/evnt-cr-subscription.md) custom resource (CR).
+- Declarative subscriptions: Manage event subscriptions with a simple [Subscription](./resources/subscription-cr.md) custom resource (CR).
 - Built-in observability: Exposes key health and performance metrics in Prometheus format. You use the [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) to collect, process, and forward these metrics to your preferred observability backend.
 
 ## Scope
@@ -57,7 +57,7 @@ By default, the Eventing module uses NATS as its in-cluster eventing backend. It
 
 You configure the Eventing module by creating and applying Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions:
 
-- To understand and configure the module's global settings, see the [Eventing CRD](.resources/eventing-cr.md).
+- To understand and configure the module's global settings, see the [Eventing CRD](./resources/eventing-cr.md).
 - To create a subscriber, define a [Subscription CRD](./resources/subscription-cr.md).
 
 
