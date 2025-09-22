@@ -126,7 +126,6 @@ jobs:
           echo "PUBLISHER_URL=${PUBLISHER_URL}" >> $GITHUB_ENV
           # setup e2e tests.
           make e2e-eventing-setup
-          # expose the sink and EPP.
           ./hack/e2e/scripts/expose_epp_and_sink.sh
 
       - name: Test eventing with NATS
