@@ -34,11 +34,11 @@ The architecture consists of a control plane (Eventing Manager) that configures 
 
 ### Eventing Manager
 
-The Eventing Manager is the module's controller. It watches for Subscription custom resources and configures the underlying eventing infrastructure. 
+The Eventing Manager is the module's controller. It watches for Subscription custom resources and configures the underlying eventing infrastructure.
 
 When you create or update a Subscription, the Eventing Manager takes over the following tasks:
 
-- Configures the NATS backend with the necessary streams and consumers.
+- Configures the selected eventing backend (NATS or SAP Event Mesh) to manage event streams and consumers for subscriptions.
 - Ensures events are routed from the correct publisher to the specified subscriber (the "sink").
 - Creates and manages Kubernetes resources, such as ConfigMaps, Secrets, Services, StatefulSets, DestinationRules, and Pod Disruption Budgets, adapting them to the desired state.
 
