@@ -1,7 +1,6 @@
 <!-- markdown-link-check-disable -->
 * [Back to Kyma Home](/)
 * [Eventing Module](/eventing-manager/user/README.md)
-  * [Eventing Architecture](/eventing-manager/user/evnt-architecture.md)
   * [Event Names](/eventing-manager/user/evnt-event-names.md)
   * [Eventing Metrics](/eventing-manager/user/evnt-eventing-metrics.md)
   * [Tutorials](/eventing-manager/user/tutorials/evnt-01-prerequisites.md)

@@ -13,7 +13,7 @@ This decouples your services, as publishers and subscribers do not need to know 
 The Eventing module provides the following features:
 
 - Publish-subscribe (pub/sub) messaging: Decouples applications so you can build resilient and scalable event-driven systems.
-- Flexible backend support: Use the default in-cluster NATS backend or configure SAP Event Mesh for enterprise messaging.
+- Flexible backend support: Use the default in-cluster NATS backend (see [NATS module](https://kyma-project.io/#/nats-manager/user/README)) or configure SAP Event Mesh (see [SAP Event Mesh](https://help.sap.com/docs/event-mesh/event-mesh/what-is-sap-event-mesh?version=Cloud&locale=en-US)) for enterprise messaging.
 - Standardized event format: All events follow the [CloudEvents](https://cloudevents.io/) specification, ensuring a consistent and portable format.
 - Automatic legacy event conversion: Converts older, non-standard Kyma event formats into valid CloudEvents automatically.
 - At-least-once delivery: Ensures that each event is delivered at least one time when you use the NATS backend, preventing message loss during temporary failures.
@@ -26,17 +26,40 @@ The Eventing module focuses on in-cluster, asynchronous communication using the 
 
 ## Architecture
 
-The Eventing module uses an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)-based architecture to manage the components that process and deliver events within the Kyma cluster.
+The Eventing module uses an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)-based architecture to manage the components that process and deliver events within the Kyma cluster. It consists of a control plane and a data plane.
 
-[Diagram: Eventing flow]
+- Control Plane: The Eventing Manager watches for Subscription custom resources and configures the eventing infrastructure.
+- Data Plane: The Eventing Publisher Proxy receives events, and the configured backend (NATS or SAP Event Mesh) delivers them.
 
-The architecture consists of a control plane (Eventing Manager) that configures a data plane (Eventing Publisher Proxy and NATS backend) based on the Subscription custom resources you create.
+**DIAGRAM TO BE UPDATED!**
+![Eventing flow](../assets/evnt-architecture.svg)
+
+<!-- 
+1. The Eventing Manager watches the Subscription custom resource. It detects if there are any new incoming events.
+
+2. The Eventing Manager creates an infrastructure for the NATS server.
+
+3. An event source publishes events to the Eventing Publisher Proxy.
+
+4. The Eventing Publisher Proxy sends events to the NATS server.
+
+5. The NATS server dispatches events to the Eventing Manager.
+
+6. The Eventing Manager dispatches events to subscribers (microservices or Functions).-->
+
+The Eventing module processes events through a series of steps:
+
+1. Application publishes event: Your application sends an event to the Eventing Publisher Proxy.
+2. Proxy processes and forwards: The Eventing Publisher Proxy receives, validates, converts the event to CloudEvents format, and forwards it to the configured eventing backend.
+3. Backend processes event: The selected backend (NATS or SAP Event Mesh) processes the event.
+4. Backend dispatches to Eventing Manager: The backend dispatches the event to the Eventing Manager.
+5. Eventing Manager delivers to subscriber: The Eventing Manager delivers the event to the appropriate subscriber (microservice or Function) based on your Subscription configuration.
 
 ### Eventing Manager
 
 The Eventing Manager is the module's controller. It watches for Subscription custom resources and configures the underlying eventing infrastructure.
 
-When you create or update a Subscription, the Eventing Manager takes over the following tasks:
+When you create or update a Subscription, the Eventing Manager performs the following tasks:
 
 - Configures the selected eventing backend to manage event streams and consumers for subscriptions.
 - Ensures events are routed from the correct publisher to the specified subscriber (the "sink").
@@ -44,45 +67,26 @@ When you create or update a Subscription, the Eventing Manager takes over the fo
 
 ### Eventing Publisher Proxy
 
-The Eventing Publisher Proxy provides a single, stable endpoint where your applications publish events using a standard [HTTP POST](https://www.w3schools.com/tags/ref_httpmethods.asp) request. This simplifies integration, as you can use common tools like curl or any standard HTTP client. 
+The [Eventing Publisher Proxy](https://github.com/kyma-project/eventing-publisher-proxy) provides a single, stable endpoint where your applications publish events using a standard [HTTP POST](https://www.w3schools.com/tags/ref_httpmethods.asp) request (endpoint: `/publish` for CloudEvents and `<application_name>/v1/events` for legacy events). This simplifies integration, as you can use common tools like curl or any standard HTTP client. 
 
-The proxy is responsible for:
+The proxy performs the following tasks:
 
-- Receiving inbound events from your applications.
-- Converting events from legacy formats into the standard CloudEvents format.
-- Forwarding the validated CloudEvents to the configured eventing backend for delivery.
-
-### NATS Backend
-
-By default, the Eventing module uses NATS as its in-cluster eventing backend. It uses the [NATS JetStream](https://docs.nats.io/) feature to provide persistence and guarantee at-least-once delivery. The NATS backend receives events from the Eventing Publisher Proxy and delivers them directly to the target subscribers, such as your microservices or Functions. For details, see [NATS module](https://kyma-project.io/#/nats-manager/user/README).
+- Receives inbound events from your applications.
+- Converts events from legacy formats into the standard CloudEvents format.
+- Forwards validated CloudEvents to the configured eventing backend for delivery.
 
 ## API/Custom Resource Definitions
 
 You configure the Eventing module by creating and applying Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions:
 
 - To understand and configure the module's global settings, see the [Eventing CRD](./resources/eventing-cr.md).
-- To create a subscriber, define a [Subscription CRD](./resources/subscription-cr.md). Note that you cannot delete the Eventing module as long as Subscription CRs exist.
+- To create a subscriber, define a [Subscription CRD](./resources/subscription-cr.md). You cannot delete the Eventing module as long as Subscription CRs exist.
 
 ## Resource Consumption
 
 To learn more about the resources used by the Eventing module, see [Kyma Modules' Sizing](https://help.sap.com/docs/btp/sap-business-technology-platform/kyma-modules-sizing?locale=en-US&version=Cloud).
 
-<!-- ## Kyma Eventing Flow
-
-Kyma Eventing follows the PubSub messaging pattern: Kyma publishes messages to a messaging backend, which filters these messages and sends them to interested subscribers. Kyma does not send messages directly to the subscribers as shown below:
-
-![PubSub](../assets/evnt-pubsub.svg)
-
-Eventing in Kyma from a user’s perspective works as follows:
-
-- Offer an HTTP end point, for example a Function to receive the events.
-- Specify the events the user is interested in using the Kyma [Subscription CR](./resources/evnt-cr-subscription.md).
-- Send [CloudEvents](https://cloudevents.io/) or legacy events (deprecated) to the following HTTP end points on our [Eventing Publisher Proxy](https://github.com/kyma-project/eventing-publisher-proxy/blob/main/README.md) service.
-  - `/publish` for CloudEvents.
-  - `<application_name>/v1/events` for legacy events.
-
-For more information, read [Eventing architecture](evnt-architecture.md).
-
+<!-- 
 ## Glossary
 
 - **Event Types**
