@@ -88,12 +88,6 @@ To learn more about the resources used by the Eventing module, see [Kyma Modules
 
 <!-- 
 ## Glossary
-
-- **Event Types**
-  - `CloudEvents`: Events that conform to the [CloudEvents specification](https://cloudevents.io/) - a common specification for describing event data. The specification is currently under [CNCF](https://www.cncf.io/).
-    <= explain this in **Event Naming and Formats**
-  - `Legacy events` (deprecated): Events or messages published to Kyma that do not conform to the CloudEvents specification. All legacy events published to Kyma are converted to CloudEvents.
-    <= explain this in **Event Naming and Formats**
 - **Streams and Consumers**
   - `Streams`: A stream stores messages for the published events. Kyma uses only one stream, with _**file**_ storage, for all the events. You can configure the retention and delivery policies for the stream, depending on the use case.
     <= These terms describe the inner workings of the NATS backend. We should update the NATS Backend description in the Architecture topic to explain that a Kyma Subscription maps to a NATS Consumer, and that all events are stored in a single NATS Stream. This connects the user's declarative Subscription to the underlying system behavior.

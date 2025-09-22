@@ -1,31 +1,40 @@
+# Event Naming and Cleanup
 
-# Event Names
+Understand how the Eventing module names events, the supported event types, and how the system handles event names with prohibited characters.
+
+The Eventing module uses event names to identify and route events to subscribers. The event name format ensures compatibility with CloudEvents specifications and underlying messaging backends.
+
+## Event Types
 
 Event names depend on the type of event. Eventing supports the following event types:
 
-- [CloudEvents](https://cloudevents.io/) - they use a specification for describing event data in a common way.
-- legacy events - they are converted to CloudEvents by [Eventing Publisher Proxy](evnt-architecture.md#eventing-publisher-proxy).
+- [CloudEvents](https://cloudevents.io/): Events that conform to the [CloudEvents specification](https://cloudevents.io/). This is the recommended standard for describing event data in a common way. The specification is currently under the [CNCF](https://www.cncf.io/).
+
+- Legacy events: Events or messages published to Kyma that do not conform to the CloudEvents specification. The [Eventing Publisher Proxy](evnt-architecture.md#eventing-publisher-proxy) converts all legacy events into CloudEvents before processing them.
 
 ## Event Name Format
 
-For a Subscription custom resource (CR), the fully qualified event name takes the sample form of `order.created.v1` or `Account.Root.Created.v1`.
+For a Subscription custom resource (CR), the fully qualified event name follows a structure like `order.created.v1` or `Account.Root.Created.v1`.
 
-The event type is composed of the following components:
+An event type consists of the following components:
 
-- Event: can have two or more segments separated by `.`; for example, `order.created` or `Account.Root.Created`
-- Version: `v1`
+- Event: Two or more segments separated by a dot (`.`); for example, `order.created` or `Account.Root.Created`
+- Version: A version identifier, typically `v1`
 
-For publishers, the event type takes this sample form:
+For publishers, the event type takes these sample forms:
 
 - `order.created` or `Account.Root.Created` for legacy events coming from the `commerce` application
 - `order.created.v1` or `Account.Root.Created.v1` for CloudEvents
 
 ## Event Name Cleanup
 
-To conform to Cloud Event specifications, sometimes Eventing must modify the event name before dispatching an event.
+The Eventing Publisher Proxy modifies event names to filter out prohibited characters. This ensures compliance with CloudEvents specifications and the underlying messaging backend (such as [NATS JetStream specifications](https://docs.nats.io/running-a-nats-service/nats_admin/jetstream_admin/naming)).
 
-### Special Characters
+If an event name contains prohibited characters, the Eventing Publisher Proxy removes these characters and uses the cleaned name for internal processing and routing. For example, if an event type is `order.payment*success.v1`, the Eventing module cleans it to `order.paymentsuccess.v1`.
 
-If the event name contains any prohibited characters as per [NATS JetStream specifications](https://docs.nats.io/running-a-nats-service/nats_admin/jetstream_admin/naming), the underlying Eventing services use a clean name with allowed characters only; for example, `system>prod*` becomes `systemprod`.
+This cleanup modification is an abstract process. You can publish events and create subscriptions using the original event names (with prohibited characters). However, the Eventing module processes the cleaned version. 
 
-This can lead to a naming collision. For example, both `system>prod` and `systemprod` become `systemprod`. While this doesn't result in an error, it can cause Eventing to not work as expected. Take a look into this [troubleshooting guide](./troubleshooting/evnt-03-type-collision.md) for more information.
+> [!WARNING]
+> This can lead to a naming collision if two different original event names clean up to the same internal name. For example, both `system>prod` and `systemprod` become `systemprod`. While this does not result in an error, a naming collision can cause subscribers to receive irrelevant events or miss expected events. For details, see [Troubleshooting: Subscriber receives irrelevant events](./troubleshooting/evnt-03-type-collision.md).
+
+When you verify event delivery in your Function logs, the received event type reflects the cleaned name, not the original name you defined in the Subscription or published with.
