@@ -38,7 +38,7 @@ The Eventing Manager is the module's controller. It watches for Subscription cus
 
 When you create or update a Subscription, the Eventing Manager takes over the following tasks:
 
-- Configures the selected eventing backend (NATS or SAP Event Mesh) to manage event streams and consumers for subscriptions.
+- Configures the selected eventing backend to manage event streams and consumers for subscriptions.
 - Ensures events are routed from the correct publisher to the specified subscriber (the "sink").
 - Creates and manages Kubernetes resources, such as ConfigMaps, Secrets, Services, StatefulSets, DestinationRules, and Pod Disruption Budgets, adapting them to the desired state.
 
@@ -54,15 +54,14 @@ The proxy is responsible for:
 
 ### NATS Backend
 
-By default, the Eventing module uses NATS as its in-cluster eventing backend. It uses the [NATS JetStream](https://docs.nats.io/) feature to provide persistence and guarantee at-least-once delivery. The NATS backend receives events from the Eventing Publisher Proxy and delivers them directly to the target subscribers, such as your microservices or Functions.
+By default, the Eventing module uses NATS as its in-cluster eventing backend. It uses the [NATS JetStream](https://docs.nats.io/) feature to provide persistence and guarantee at-least-once delivery. The NATS backend receives events from the Eventing Publisher Proxy and delivers them directly to the target subscribers, such as your microservices or Functions. For details, see [NATS module](https://kyma-project.io/#/nats-manager/user/README).
 
 ## API/Custom Resource Definitions
 
 You configure the Eventing module by creating and applying Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions:
 
 - To understand and configure the module's global settings, see the [Eventing CRD](./resources/eventing-cr.md).
-- To create a subscriber, define a [Subscription CRD](./resources/subscription-cr.md).
-
+- To create a subscriber, define a [Subscription CRD](./resources/subscription-cr.md). Note that you cannot delete the Eventing module as long as Subscription CRs exist.
 
 ## Resource Consumption
 
