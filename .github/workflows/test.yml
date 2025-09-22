@@ -5,6 +5,8 @@ env:
   KYMA: "./hack/kyma"
 
 on:
+  workflow_dispatch:
+
   push:
     branches:
       - main
