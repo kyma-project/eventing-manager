@@ -1,7 +1,7 @@
 <!-- markdown-link-check-disable -->
 * [Back to Kyma Home](/)
 * [Eventing Module](/eventing-manager/user/README.md)
-  * [Event Names](/eventing-manager/user/evnt-event-names.md)
+  * [Event Naming and Cleanup](/eventing-manager/user/evnt-event-names.md)
   * [Eventing Metrics](/eventing-manager/user/evnt-eventing-metrics.md)
   * [Tutorials](/eventing-manager/user/tutorials/evnt-01-prerequisites.md)
     * [Create Subscription Subscribing to Multiple Event Types](/eventing-manager/user/tutorials/evnt-02-subs-with-multiple-filters.md)
