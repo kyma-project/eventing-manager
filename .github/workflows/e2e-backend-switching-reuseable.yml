@@ -24,6 +24,7 @@ jobs:
       KYMA_STABILITY: "unstable"
       KYMA: "./hack/kyma"
       MANAGER_IMAGE: ${{ inputs.eventing-manager-image }}
+      E2E_LOG_LEVEL: debug
 
     steps:
       - uses: actions/checkout@v5
