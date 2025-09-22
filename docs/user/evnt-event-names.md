@@ -10,7 +10,7 @@ Event names depend on the type of event. Eventing supports the following event t
 
 - [CloudEvents](https://cloudevents.io/): Events that conform to the [CloudEvents specification](https://cloudevents.io/). This is the recommended standard for describing event data in a common way. The specification is currently under the [CNCF](https://www.cncf.io/).
 
-- Legacy events: Events or messages published to Kyma that do not conform to the CloudEvents specification. The [Eventing Publisher Proxy](evnt-architecture.md#eventing-publisher-proxy) converts all legacy events into CloudEvents before processing them.
+- Legacy events: Events or messages published to Kyma that do not conform to the CloudEvents specification. The [Eventing Publisher Proxy](README.md#eventing-publisher-proxy) converts all legacy events into CloudEvents before processing them.
 
 ## Event Name Format
 
