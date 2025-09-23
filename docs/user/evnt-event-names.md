@@ -1,8 +1,6 @@
 # Event Naming and Cleanup
 
-Understand how the Eventing module names events, the supported event types, and how the system handles event names with prohibited characters.
-
-The Eventing module uses event names to identify and route events to subscribers. The event name format ensures compatibility with CloudEvents specifications and underlying messaging backends.
+The Eventing module uses event names to identify and route events to subscribers. Learn about the supported event types, the naming conventions, and how the Eventing module handles event names with prohibited characters.
 
 ## Event Types
 
@@ -13,6 +11,8 @@ Event names depend on the type of event. Eventing supports the following event t
 - Legacy events: Events or messages published to Kyma that do not conform to the CloudEvents specification. The [Eventing Publisher Proxy](README.md#eventing-publisher-proxy) converts all legacy events into CloudEvents before processing them.
 
 ## Event Name Format
+
+The event name format ensures compatibility with CloudEvents specifications and underlying messaging backends.
 
 For a Subscription custom resource (CR), the fully qualified event name follows a structure like `order.created.v1` or `Account.Root.Created.v1`.
 
