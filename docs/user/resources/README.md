@@ -1,3 +1,8 @@
-# Resources - Eventing
+# Eventing Resources
 
-A custom resource (CR) is an extension to the Kubernetes API, which allows you to cover use cases that are not directly covered by core Kubernetes. Check out the CRs developed by Kyma to support its Eventing module.
+You configure the Eventing module by creating and applying Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions.
+
+- To understand and configure the module's global settings, see the [Eventing CRD](eventing-cr.md).
+- To create a subscriber, define a [Subscription CRD](subscription-cr.md).
+
+
