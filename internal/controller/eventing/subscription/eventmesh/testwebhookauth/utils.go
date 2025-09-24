@@ -11,7 +11,7 @@ import (
 
 	"github.com/avast/retry-go/v3"
 	"github.com/go-logr/zapr"
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 	kcorev1 "k8s.io/api/core/v1"
@@ -106,7 +106,7 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 		return nil, err
 	}
 
-	if err = apigatewayv1beta1.AddToScheme(scheme.Scheme); err != nil {
+	if err = apigatewayv2.AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
 	// +kubebuilder:scaffold:scheme
@@ -290,7 +290,7 @@ func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, ensemble *e
 }
 
 // ensureAPIRuleStatusUpdatedWithStatusReady updates the status fof the APIRule (mocking APIGateway controller).
-func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, ensemble *eventMeshTestEnsemble, apiRule *apigatewayv1beta1.APIRule) {
+func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T, ensemble *eventMeshTestEnsemble, apiRule *apigatewayv2.APIRule) {
 	t.Helper()
 	require.Eventually(t, func() bool {
 		fetchedAPIRule, err := getAPIRule(ctx, ensemble, apiRule)
@@ -308,7 +308,7 @@ func ensureAPIRuleStatusUpdatedWithStatusReady(ctx context.Context, t *testing.T
 	}, bigTimeOut, bigPollingInterval)
 }
 
-func getAPIRule(ctx context.Context, ensemble *eventMeshTestEnsemble, apiRule *apigatewayv1beta1.APIRule) (*apigatewayv1beta1.APIRule, error) {
+func getAPIRule(ctx context.Context, ensemble *eventMeshTestEnsemble, apiRule *apigatewayv2.APIRule) (*apigatewayv2.APIRule, error) {
 	lookUpKey := types.NamespacedName{
 		Namespace: apiRule.Namespace,
 		Name:      apiRule.Name,

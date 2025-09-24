@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -31,14 +31,14 @@ func getSubscriptionAssert(ctx context.Context, g *gomega.GomegaWithT,
 
 // getAPIRuleAssert fetches an apiRule and allows making assertions on it.
 func getAPIRuleAssert(ctx context.Context, g *gomega.GomegaWithT,
-	apiRule *apigatewayv1beta1.APIRule,
+	apiRule *apigatewayv2.APIRule,
 	ensemble *eventMeshTestEnsemble,
 ) gomega.AsyncAssertion {
-	return g.Eventually(func() apigatewayv1beta1.APIRule {
+	return g.Eventually(func() apigatewayv2.APIRule {
 		fetchedAPIRule, err := getAPIRule(ctx, ensemble, apiRule)
 		if err != nil {
 			log.Printf("fetch APIRule %s/%s failed: %v", apiRule.Namespace, apiRule.Name, err)
-			return apigatewayv1beta1.APIRule{}
+			return apigatewayv2.APIRule{}
 		}
 		return *fetchedAPIRule
 	}, twoMinTimeOut, bigPollingInterval)
