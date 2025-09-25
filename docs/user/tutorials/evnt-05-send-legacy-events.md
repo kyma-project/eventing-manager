@@ -1,9 +1,8 @@
 # Publish Legacy Events Using Kyma Eventing
 
-While the Eventing module still supports sending and receiving of legacy events, it's recommended to use [CloudEvents specification](https://cloudevents.io/) instead.
-
 <!-- I SUGGEST DELETING THIS TUTORIAL, IT ADDS LITTLE VALUE BEYOND STATING THAT LEGACY EVENTS ARE STILL SUPPORTED -->
 
+While the Eventing module still supports sending and receiving of legacy events, it's recommended to use [CloudEvents](https://cloudevents.io/) instead.
 
 ## Prerequisites
 
