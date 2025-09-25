@@ -76,7 +76,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: test-sink
+      name: test-sink
   action: ALLOW
   rules:
   - from:
