@@ -1,194 +1,119 @@
-# Changing Events Max-In-Flight in Subscriptions
+# Manage Subscriber Workload with Max-In-Flight
 
-In this tutorial, you learn how to set idle "in-flight messages" limit in Kyma Subscriptions.
-The "in-flight messages" config defines the number of events that Kyma Eventing forwards in parallel to the sink, without waiting for a response.
+Manage your subscriber's workload by configuring the max-in-flight limit to control concurrent event delivery.
 
 ## Prerequisites
 
-> [!NOTE]
-> Read about the [Purpose and Benefits of Istio Sidecar Proxies](https://kyma-project.io/#/istio/user/00-00-istio-sidecar-proxies?id=purpose-and-benefits-of-istio-sidecar-proxies). Then, check how to [Enable Istio Sidecar Proxy Injection](https://kyma-project.io/#/istio/user/tutorials/01-40-enable-sidecar-injection). For more details, see [Default Istio Configuration](https://kyma-project.io/#/istio/user/00-15-overview-istio-setup) in Kyma.
+- You have the Eventing module in your Kyma cluster.
+- You have access to Kyma dashboard. Alternatively, if you prefer CLI, you need `kubectl` and `curl`.
+- Optionally, you have the [CloudEvents Conformance Tool](https://github.com/cloudevents/conformance) for publishing events.
+- You have an inline Function as event sink (see [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function)).
+  Replace the default code sample with the following code. To simulate prolonged event processing, the Function waits for 5 seconds before returning the response.
+  ```js
+  module.exports = {
+    main: async function (event, context) {
+      console.log("Processing event:", event.data);
+      // sleep/wait for 5 seconds
+      await new Promise(r => setTimeout(r, 5 * 1000));
+      console.log("Completely processed event:", event.data);
+      return;
+    } 
+  }
+  ```
 
-1. Follow the [Prerequisites steps](evnt-01-prerequisites.md) for the Eventing tutorials.
-2. [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function).
-3. For this tutorial, instead of the default code sample, replace the Function source with the following code. To simulate prolonged event processing, the Function waits for 5 seconds before returning the response.
+> **TIP:** Use Istio sidecar proxies for reliability, observability, and security (see [Istio Service Mesh](https://kyma-project.io/#/istio/user/00-00-istio-sidecar-proxies)).
 
-<!-- tabs:start -->
+## Context
 
-#### **Kyma Dashboard**
+Your subscriber applications, such as Functions or microservices, have finite resources. To prevent overload,  configure the `maxInFlightMessages` limit on your Subscription CRD. This limit controls the maximum number of events delivered to your subscriber without waiting for a response. The Eventing module resumes delivery after the subscriber acknowledges processing some of the existing in-flight events.
 
-```js
-module.exports = {
-  main: async function (event, context) {
-    console.log("Processing event:", event.data);
-    // sleep/wait for 5 seconds
-    await new Promise(r => setTimeout(r, 5 * 1000));
-    console.log("Completely processed event:", event.data);
-    return;
-  } 
-}
-```
+## Procedure
 
-#### **kubectl**
+1. Create a subscription that forwards a maximum of 5 events in parallel to the sink without waiting for a response.
+   - In Kyma dashboard, find the default namespace, go to **Configuration** and create a subscription with the following parameters:
+         - **Subscription name**: `lastorder-sub`
+         - **Types**: `order.received.v1` and `order.changed.v1`
+         - **Service**: `lastorder` (the sink is populated automatically)
+         - **Type matching:**: `standard`
+         - **Source**: `myapp`
 
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: serverless.kyma-project.io/v1alpha2
-kind: Function
-metadata:
-  name: lastorder
-  namespace: default
-spec:
-  replicas: 1
-  resourceConfiguration:
-    function:
-      profile: S
-    build:
-      profile: local-dev
-  runtime: nodejs18
-  source:
-    inline:
-      source: |-
-        module.exports = {
-          main: async function (event, context) {
-            console.log("Processing event:", event.data);
-            // sleep/wait for 5 seconds
-            await new Promise(r => setTimeout(r, 5 * 1000));
-            console.log("Completely processed event:", event.data);
-            return;
-          }
-        }
- EOF
- ```
+   - With kubectl, run:
+     ```bash
+     cat <<EOF | kubectl apply -f -
+       apiVersion: eventing.kyma-project.io/v1alpha2
+       kind: Subscription
+       metadata:
+         name: lastorder-sub
+         namespace: default
+       spec:
+         config:
+           maxInFlightMessages: "5"
+         sink: 'http://lastorder.default.svc.cluster.local'
+         source: myapp
+         types:
+           - order.received.v1
+     EOF
+     ```
 
-<!-- tabs:end -->
+2. Verify that the subscription is ready.
+   - In Kyma dashboard, the status must be `READY`.
+   - Alternatively, run `kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"` with the response `true`.
 
-## Create a Subscription With Max-In-Flight Config
-
-Create a [Subscription](../resources/evnt-cr-subscription.md) custom resource (CR). Subscribe for events of the type: `order.received.v1` and set the `maxInFlightMessages` to `5`, so that Kyma Eventing forwards maximum 5 events in parallel to the sink without waiting for a response.
-
-<!-- tabs:start -->
-
-#### **Kyma Dashboard**
-
-1. Go to **Namespaces** and select the default namespace.
-2. Go to **Configuration** > **Subscriptions** and click **Create Subscription+**.
-3. Switch to the **Advanced** tab, and provide the following parameters:
-   - **Subscription name**: `lastorder-sub`
-   - **Config**: `maxInFlightMessages: 5`
-   - **Types**: `order.received.v1`
-   - **Service**: `lastorder` (The sink field will be populated automatically.)
-   - **Type matching:**: `standard`
-   - **Source**: `myapp`
-
-4. Click **Create**.
-5. Wait a few seconds for the Subscription to have status `READY`.
-
-#### **kubectl**
-
-Run:
-
-```bash
-cat <<EOF | kubectl apply -f -
-   apiVersion: eventing.kyma-project.io/v1alpha2
-   kind: Subscription
-   metadata:
-     name: lastorder-sub
-     namespace: default
-   spec:
-     config:
-       maxInFlightMessages: "5"
-     sink: 'http://lastorder.default.svc.cluster.local'
-     source: myapp
-     types:
-       - order.received.v1
-EOF
-```
-
-To check that the Subscription was created and is ready, run:
-
-```bash
-kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"
-```
-
-The operation was successful if the returned status says `true`.
-
-<!-- tabs:end -->
-
-## Trigger the Workload With Multiple Events
-
-You created the `lastorder` Function, and subscribed to the `order.received.v1` events by creating a Subscription CR.
-Next, publish 15 events at once and see how Kyma Eventing triggers the workload.
-
-1. Port-forward the [Eventing Publisher Proxy](../evnt-architecture.md) Service to localhost, using port `3000`. Run:
-
+3. Port-forward the [Eventing Publisher Proxy](../README.md#eventing-publisher-proxy) to localhost, using port `3000`:
    ```bash
    kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
    ```
+   
+4. Publish 15 events at once and see how the Eventing module triggers the workload. In another terminal window, run:
+   - With the CloudEvents Conformance Tool:
 
-2. Now publish 15 events to the Eventing Publisher Proxy Service. In another terminal window, run:
+     ```bash
+     for i in {1..15}
+     do
+       cloudevents send http://localhost:3000/publish \
+         --type order.received.v1 \
+         --id e4bcc616-c3a9-4840-9321-763aa23851f${i} \
+         --source myapp \
+         --datacontenttype application/json \
+         --data "{\"orderCode\":\"$i\"}" \
+         --yaml
+     done
+     ```
 
-<!-- tabs:start -->
+   - With `curl`:
 
-#### **CloudEvents Conformance Tool**
+     ```bash
+     for i in {1..15}
+     do
+       curl -v -X POST \
+         -H "ce-specversion: 1.0" \
+         -H "ce-type: order.received.v1" \
+         -H "ce-source: myapp" \
+         -H "ce-eventtypeversion: v1" \
+         -H "ce-id: e4bcc616-c3a9-4840-9321-763aa23851f${i}" \
+         -H "content-type: application/json" \
+         -d "{\"orderCode\":\"$i\"}" \
+         http://localhost:3000/publish
+     done
+     ```
 
-```bash
-for i in {1..15}
-do
-  cloudevents send http://localhost:3000/publish \
-    --type order.received.v1 \
-    --id e4bcc616-c3a9-4840-9321-763aa23851f${i} \
-    --source myapp \
-    --datacontenttype application/json \
-    --data "{\"orderCode\":\"$i\"}" \
-    --yaml
-done
-```
+5. To verify that the event was delivered, check the logs of the Function.
+   - In Kyma dashboard, return to the view of your `lastorder` Function and under **Code**, find **Replicas of the Function**. Select your replica and under **Containers**, view the logs.
 
-#### **curl**
+   - With `kubectl`, run:
+    
+     ```bash
+     kubectl logs \
+       -n default \
+       -l serverless.kyma-project.io/function-name=lastorder,serverless.kyma-project.io/resource=deployment \
+       -c function
+     ```
 
-```bash
-for i in {1..15}
-do
-  curl -v -X POST \
-    -H "ce-specversion: 1.0" \
-    -H "ce-type: order.received.v1" \
-    -H "ce-source: myapp" \
-    -H "ce-eventtypeversion: v1" \
-    -H "ce-id: e4bcc616-c3a9-4840-9321-763aa23851f${i}" \
-    -H "content-type: application/json" \
-    -d "{\"orderCode\":\"$i\"}" \
-    http://localhost:3000/publish
-done
-```
-<!-- tabs:end -->
+## Result
 
-## Verify the Event Delivery
+In the logs, you see that only 5 events were delivered to the Function in parallel. As soon as the Function completed the processing of the event and returns the response, the Eventing module delivers the next in-line event to the Function.
 
-To verify that the event was properly delivered, check the logs of the Function:
-
-<!-- tabs:start -->
-
-#### **Kyma Dashboard**
-
-1. In Kyma Dashboard, return to the view of your `lastorder` Function.
-2. In the **Code** view, find the **Replicas of the Function** section.
-3. Click the name of your replica.
-4. Locate the **Containers** section and click on **View Logs**.
-
-#### **kubectl**
-
-Run:
-
-```bash
-kubectl logs \
-  -n default \
-  -l serverless.kyma-project.io/function-name=lastorder,serverless.kyma-project.io/resource=deployment \
-  -c function
-```
-
-<!-- tabs:end -->
-
-You will see the received events in the logs as:
+See the following example:
 
 ```sh
 Processing event: { orderCode: '1' }
@@ -222,5 +147,3 @@ Completely processed event: { orderCode: '13' }
 Completely processed event: { orderCode: '14' }
 Completely processed event: { orderCode: '15' }
 ```
-
-You can see that only 5 events at maximum were delivered to the Function in parallel and as soon as the Function completes the processing of the event and returns the response, Kyma Eventing delivers the next in-line event to the Function.
