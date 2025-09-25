@@ -203,8 +203,8 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.0
-CONTROLLER_TOOLS_VERSION ?= v0.16.1
-GOLANG_CI_LINT_VERSION ?= v2.1.6 ## Keep this the same as in .github/workflows/lint-go.yml
+CONTROLLER_TOOLS_VERSION ?= v0.19.0
+GOLANG_CI_LINT_VERSION ?= v2.4 ## Keep this the same as in .github/workflows/lint-go.yml
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize

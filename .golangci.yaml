@@ -30,6 +30,11 @@ linters:
     - staticcheck
     - testifylint
     - usetesting
+    #TODO: analyze due to breaking change in v 2.4.0
+    - embeddedstructfieldcheck
+    - noinlineerr
+    - wsl_v5
+    - noctx
   settings:
     cyclop:
       max-complexity: 20
