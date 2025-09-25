@@ -15,10 +15,10 @@ The Eventing module provides the following features:
 - Publish-subscribe (pub/sub) messaging: Decouples applications so you can build resilient and scalable event-driven systems.
 - Flexible backend support: Use the default in-cluster NATS backend (see [NATS module](https://kyma-project.io/#/nats-manager/user/README)) or configure SAP Event Mesh (see [SAP Event Mesh](https://help.sap.com/docs/event-mesh/event-mesh/what-is-sap-event-mesh?version=Cloud&locale=en-US)) for enterprise messaging.
 - Standardized event format: All events follow the [CloudEvents](https://cloudevents.io/) specification, ensuring a consistent and portable format.
-- Automatic legacy event conversion: Converts older, non-standard Kyma event formats into valid CloudEvents automatically.
+- Automatic legacy event conversion: Converts older, non-standard Kyma event formats into valid CloudEvents automatically. For details, see [Event Name Cleanup](evnt-event-names.md#event-name-cleanup).
 - At-least-once delivery: Ensures that each event is delivered at least one time when you use the NATS backend, preventing message loss during temporary failures.
 - Declarative subscriptions: Manage event subscriptions with a simple [Subscription](./resources/subscription-cr.md) custom resource (CR).
-- Built-in observability: Exposes key health and performance metrics in Prometheus format. You use the [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) to collect, process, and forward these metrics to your preferred observability backend.
+- Built-in observability: Exposes key health and performance metrics in Prometheus format (see [Eventing Metrics](evnt-eventing-metrics.md)). Use the [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) to collect, process, and forward these metrics to your observability backend.
 
 ## Scope
 
@@ -26,7 +26,7 @@ The Eventing module focuses on in-cluster, asynchronous communication using the 
 
 ## Architecture
 
-The Eventing module uses an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)-based architecture to manage the components that process and deliver events within the Kyma cluster. It consists of a control plane and a data plane.
+The Eventing module uses an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)-based architecture to manage the components that process and deliver events within your cluster. It consists of a control plane and a data plane.
 
 - Control Plane: The Eventing Manager watches for Subscription custom resources and configures the eventing infrastructure.
 - Data Plane: The Eventing Publisher Proxy receives events, and the configured backend (NATS or SAP Event Mesh) delivers them.

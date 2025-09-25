@@ -1,4 +1,4 @@
-# Kyma Eventing Metrics
+# Eventing Metrics
 
 The Eventing module provides metrics that offer insights into its operational health, performance, and the flow of events within your Kyma cluster. The metrics follow [Prometheus naming convention](https://prometheus.io/docs/practices/naming/), and you can collect them with the Telemetry module's MetricPipeline.
 
