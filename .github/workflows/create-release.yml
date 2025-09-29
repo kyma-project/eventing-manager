@@ -1,5 +1,6 @@
 name: "Create release"
 
+permissions: write-all
 on:
   workflow_dispatch:
 jobs:
