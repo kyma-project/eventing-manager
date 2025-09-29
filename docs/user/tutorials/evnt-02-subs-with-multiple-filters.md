@@ -1,6 +1,6 @@
 # Subscribe to Multiple Event Types
 
-Configure a single [Subscription](../resources/evnt-cr-subscription.md) to receive events of multiple types.
+Configure a single Subscription to receive events of multiple types.
 
 ## Prerequisites
 
@@ -20,7 +20,7 @@ If you want to subscribe to more event types, add more types to your subscriptio
 ## Procedure
 
 1. Create a subscription with multiple event types.
-   - In Kyma dashboard, find the default namespace, go to **Configuration** and create a subscription with the following parameters:
+   - In Kyma dashboard, find the default namespace, go to **Configuration** and create a Subscription with the following parameters:
       - **Subscription name**: `lastorder-sub`
       - **Types**: `order.received.v1` and `order.changed.v1`
       - **Service**: `lastorder` (the sink is populated automatically)
@@ -30,31 +30,31 @@ If you want to subscribe to more event types, add more types to your subscriptio
    - With kubectl, run: 
      ```bash
      cat <<EOF | kubectl apply -f -
-    apiVersion: eventing.kyma-project.io/v1alpha2
-    kind: Subscription
-    metadata:
-      name: lastorder-sub
-      namespace: default
-    spec:
-      sink: 'http://lastorder.default.svc.cluster.local'
-      source: myapp
-      types:
-       - order.received.v1
-       - order.changed.v1
+      apiVersion: eventing.kyma-project.io/v1alpha2
+      kind: Subscription
+      metadata:
+       name: lastorder-sub
+       namespace: default
+      spec:
+       sink: 'http://lastorder.default.svc.cluster.local'
+       source: myapp
+       types:
+         - order.received.v1
+         - order.changed.v1
      EOF
      ```
 
 2. Verify that the subscription is ready.
    - In Kyma dashboard, the status must be `READY`.
-   - Alternatively, run `kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"` with the response `true`.
+   - Alternatively, run `kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"` and see if the response is `true`.
 
 3. Port-forward the [Eventing Publisher Proxy](../README.md#eventing-publisher-proxy) to localhost, using port `3000`:
    ```bash
    kubectl -n kyma-system port-forward service/eventing-publisher-proxy 3000:80
    ```
 
-4. To publish the first event (type `order.received.v1`) to trigger your Function, open another terminal window and run:
-   - With the CloudEvents Conformance Tool:
+4. To publish the first event (type `order.received.v1`) to trigger your Function, open another terminal window:
+   - With the CloudEvents Conformance Tool, run:
      ```bash
      cloudevents send http://localhost:3000/publish \
         --type order.received.v1 \
@@ -65,7 +65,7 @@ If you want to subscribe to more event types, add more types to your subscriptio
         --yaml
      ```
 
-   - With `curl`:
+   - With `curl`, run:
      ```bash
      curl -v -X POST \
         -H "ce-specversion: 1.0" \
@@ -79,7 +79,7 @@ If you want to subscribe to more event types, add more types to your subscriptio
      ```
 
 5. Publish the second event (type `order.changed.v1`) to trigger your Function.
-   - With the CloudEvents Conformance Tool:
+   - With the CloudEvents Conformance Tool, run:
      ```bash
      cloudevents send http://localhost:3000/publish \
         --type order.changed.v1 \
@@ -90,7 +90,7 @@ If you want to subscribe to more event types, add more types to your subscriptio
         --yaml
      ```
 
-   - With `curl`:
+   - With `curl`, run:
      ```bash
      curl -v -X POST \
         -H "ce-specversion: 1.0" \
@@ -104,7 +104,7 @@ If you want to subscribe to more event types, add more types to your subscriptio
      ```
 
 6. To verify that the event was delivered, check the logs of the Function.
-   - In Kyma dashboard, return to the view of your `lastorder` Function and under **Code**, find **Replicas of the Function**. Select your replica and under **Containers**, view the logs.
+   - In Kyma dashboard, return to the view of your `lastorder` Function and go to **Code** > **Replicas of the Function**. Select your replica and under **Containers**, view the logs.
 
    - With `kubectl`, run:
      ```bash

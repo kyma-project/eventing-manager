@@ -1,5 +1,5 @@
-# Troubleshooting - Eventing
+# Troubleshooting for the Eventing Module
 
-Learn more about solutions to the most common recurring problems that may occur with Kyma Eventing.
+Troubleshoot problems related to the Eventing module.
 
-If you can't find a solution, don't hesitate to create a [GitHub](https://github.com/kyma-project/kyma/issues) issue or reach out to our [Slack channel](https://kyma-community.slack.com/) to get direct support from the community.
+If you can't find a solution, don't hesitate to create a [GitHub issue](https://github.com/kyma-project/kyma/issues).

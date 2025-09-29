@@ -2,16 +2,16 @@
 
 Use the Subscription custom resource (CR) to describe the kind of data and the format used to subscribe to events. You specify the event types and the target endpoint for event delivery.
 
-To see the current CRD in YAML format, run:
-
-`kubectl get crd subscriptions.eventing.kyma-project.io -o yaml`
-
 The following components use the Subscription CR:
 
 - [Eventing Manager](../evnt-architecture.md#eventing-manager): Reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend.
 - [Eventing Publisher Proxy](../evnt-architecture.md#eventing-publisher-proxy): Reads the Subscriptions to find out how events are used for each Application.
 
 You must delete all Subscription CRs before you can delete the Eventing module.
+
+To see the current CRD in YAML format, run:
+
+`kubectl get crd subscriptions.eventing.kyma-project.io -o yaml`
 
 ## Sample Custom Resource
 

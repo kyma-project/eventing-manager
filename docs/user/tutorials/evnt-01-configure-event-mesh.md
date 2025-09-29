@@ -4,7 +4,7 @@ If you want to use SAP Event Mesh as backend for Kyma Eventing, you must first s
 
 ## Prerequisites
 
-- You have the Eventing module and the SAP BTP Operator module in your Kyma cluster (see [Adding and Deleting a Kyma Module](https://kyma-project.io/#/02-get-started/01-quick-install))..
+- You have the Eventing module and the SAP BTP Operator module in your Kyma cluster (see [Adding and Deleting a Kyma Module](https://kyma-project.io/#/02-get-started/01-quick-install)).
 - You are using an enterprise account.
 
 ## Procedure
@@ -59,4 +59,4 @@ You have set up SAP Event Mesh for Kyma Eventing.
 
 ## Next Steps
 
-Choose SAP Event Mesh as your backend for the Eventing module (see [Choose an Eventing Backend](evnt-01-choose-backend.md).)
+Choose SAP Event Mesh as your backend for the Eventing module (see [Choose an Eventing Backend](evnt-01-choose-backend.md)).

@@ -31,11 +31,11 @@ Your subscriber applications, such as Functions or microservices, have finite re
 
 1. Create a subscription that forwards a maximum of 5 events in parallel to the sink without waiting for a response.
    - In Kyma dashboard, find the default namespace, go to **Configuration** and create a subscription with the following parameters:
-         - **Subscription name**: `lastorder-sub`
-         - **Types**: `order.received.v1` and `order.changed.v1`
-         - **Service**: `lastorder` (the sink is populated automatically)
-         - **Type matching:**: `standard`
-         - **Source**: `myapp`
+     - **Subscription name**: `lastorder-sub`
+     - **Types**: `order.received.v1` and `order.changed.v1`
+     - **Service**: `lastorder` (the sink is populated automatically)
+     - **Type matching:**: `standard`
+     - **Source**: `myapp`
 
    - With kubectl, run:
      ```bash
@@ -57,7 +57,7 @@ Your subscriber applications, such as Functions or microservices, have finite re
 
 2. Verify that the subscription is ready.
    - In Kyma dashboard, the status must be `READY`.
-   - Alternatively, run `kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"` with the response `true`.
+   - Alternatively, run `kubectl get subscriptions lastorder-sub -o=jsonpath="{.status.ready}"` and see if the response is `true`.
 
 3. Port-forward the [Eventing Publisher Proxy](../README.md#eventing-publisher-proxy) to localhost, using port `3000`:
    ```bash
@@ -98,7 +98,7 @@ Your subscriber applications, such as Functions or microservices, have finite re
      ```
 
 5. To verify that the event was delivered, check the logs of the Function.
-   - In Kyma dashboard, return to the view of your `lastorder` Function and under **Code**, find **Replicas of the Function**. Select your replica and under **Containers**, view the logs.
+   - In Kyma dashboard, return to the view of your `lastorder` Function and go to **Code** > **Replicas of the Function**. Select your replica and under **Containers**, view the logs.
 
    - With `kubectl`, run:
     
@@ -111,7 +111,7 @@ Your subscriber applications, such as Functions or microservices, have finite re
 
 ## Result
 
-In the logs, you see that only 5 events were delivered to the Function in parallel. As soon as the Function completed the processing of the event and returns the response, the Eventing module delivers the next in-line event to the Function.
+In the logs, you see that only 5 events were delivered to the Function in parallel. As soon as the Function completed the processing of the event and returns a response, the Eventing module delivers the next in-line event to the Function.
 
 See the following example:
 
