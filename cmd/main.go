@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	natsio "github.com/nats-io/nats.go"
 	kapiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kapixclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -58,7 +58,7 @@ import (
 func registerSchemas(scheme *runtime.Scheme) {
 	kutilruntime.Must(kkubernetesscheme.AddToScheme(scheme))
 	kutilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
-	kutilruntime.Must(apigatewayv1beta1.AddToScheme(scheme))
+	kutilruntime.Must(apigatewayv2.AddToScheme(scheme))
 	kutilruntime.Must(kapiextensionsv1.AddToScheme(scheme))
 	kutilruntime.Must(jetstream.AddToScheme(scheme))
 	kutilruntime.Must(jetstream.AddV1Alpha2ToScheme(scheme))

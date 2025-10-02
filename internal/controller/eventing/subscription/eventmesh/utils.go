@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
@@ -64,23 +64,21 @@ func getSvcNsAndName(url string) (string, string, error) {
 }
 
 // computeAPIRuleReadyStatus returns true if all APIRule statuses is ok, otherwise returns false.
-func computeAPIRuleReadyStatus(apiRule *apigatewayv1beta1.APIRule) bool {
-	if apiRule == nil || apiRule.Status.APIRuleStatus == nil || apiRule.Status.AccessRuleStatus == nil || apiRule.Status.VirtualServiceStatus == nil {
+func computeAPIRuleReadyStatus(apiRule *apigatewayv2.APIRule) bool {
+	if apiRule == nil || apiRule.Status.State == "" {
 		return false
 	}
-	apiRuleStatus := apiRule.Status.APIRuleStatus.Code == apigatewayv1beta1.StatusOK
-	accessRuleStatus := apiRule.Status.AccessRuleStatus.Code == apigatewayv1beta1.StatusOK
-	virtualServiceStatus := apiRule.Status.VirtualServiceStatus.Code == apigatewayv1beta1.StatusOK
-	return apiRuleStatus && accessRuleStatus && virtualServiceStatus
+	apiRuleStatus := apiRule.Status.State == apigatewayv2.Ready
+	return apiRuleStatus
 }
 
 // setSubscriptionStatusExternalSink sets the subscription external sink based on the given APIRule service host.
-func setSubscriptionStatusExternalSink(subscription *eventingv1alpha2.Subscription, apiRule *apigatewayv1beta1.APIRule) error {
+func setSubscriptionStatusExternalSink(subscription *eventingv1alpha2.Subscription, apiRule *apigatewayv2.APIRule) error {
 	if apiRule.Spec.Service == nil {
 		return errors.Errorf("APIRule has nil service")
 	}
 
-	if apiRule.Spec.Host == nil {
+	if apiRule.Spec.Hosts == nil {
 		return errors.Errorf("APIRule has nil host")
 	}
 
@@ -93,8 +91,11 @@ func setSubscriptionStatusExternalSink(subscription *eventingv1alpha2.Subscripti
 	if uri.Path == "" {
 		path = "/"
 	}
-
-	subscription.Status.Backend.ExternalSink = fmt.Sprintf("%s://%s%s", externalSinkScheme, *apiRule.Spec.Host, path)
+	host := ""
+	if apiRule.Spec.Hosts != nil && len(apiRule.Spec.Hosts) > 0 && apiRule.Spec.Hosts[0] != nil {
+		host = string(*apiRule.Spec.Hosts[0])
+	}
+	subscription.Status.Backend.ExternalSink = fmt.Sprintf("%s://%s%s", externalSinkScheme, host, path)
 
 	return nil
 }

@@ -16,19 +16,7 @@ on:
       - go.mod
       - Dockerfile
 jobs:
-  is-pr-approved:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check if PR approved
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_URL: https://github.com/kyma-project/eventing-manager/pull/${{ github.event.number }}
-        run: |
-          ./scripts/is_pr_approved.sh
-
   wait-until-build-succeeds:
-    needs: is-pr-approved
     uses: "kyma-project/eventing-tools/.github/workflows/wait-build-reusable.yml@main"
     with:
       repository: ${{ github.repository_owner }}/eventing-manager

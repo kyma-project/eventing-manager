@@ -4,8 +4,9 @@ import (
 	"context"
 	"log"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	"github.com/onsi/gomega"
+	istiopkgsecurityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	kcorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -31,7 +32,7 @@ func getSubscriptionAssert(ctx context.Context, g *gomega.GomegaWithT,
 
 // getAPIRuleForASvcAssert fetches an apiRule for a given service and allows making assertions on it.
 func getAPIRuleForASvcAssert(ctx context.Context, g *gomega.GomegaWithT, svc *kcorev1.Service) gomega.AsyncAssertion {
-	return g.Eventually(func() apigatewayv1beta1.APIRule {
+	return g.Eventually(func() apigatewayv2.APIRule {
 		apiRules, err := getAPIRulesList(ctx, svc)
 		g.Expect(err).ShouldNot(gomega.HaveOccurred())
 		return filterAPIRulesForASvc(apiRules, svc)
@@ -40,14 +41,27 @@ func getAPIRuleForASvcAssert(ctx context.Context, g *gomega.GomegaWithT, svc *kc
 
 // getAPIRuleAssert fetches an apiRule and allows making assertions on it.
 func getAPIRuleAssert(ctx context.Context, g *gomega.GomegaWithT,
-	apiRule *apigatewayv1beta1.APIRule,
+	apiRule *apigatewayv2.APIRule,
 ) gomega.AsyncAssertion {
-	return g.Eventually(func() apigatewayv1beta1.APIRule {
+	return g.Eventually(func() apigatewayv2.APIRule {
 		fetchedAPIRule, err := getAPIRule(ctx, apiRule)
 		if err != nil {
 			log.Printf("fetch APIRule %s/%s failed: %v", apiRule.Namespace, apiRule.Name, err)
-			return apigatewayv1beta1.APIRule{}
+			return apigatewayv2.APIRule{}
 		}
 		return *fetchedAPIRule
+	}, twoMinTimeOut, bigPollingInterval)
+}
+
+func getAuthorizationPolicyAssert(ctx context.Context, g *gomega.GomegaWithT,
+	authPolicy *istiopkgsecurityv1beta1.AuthorizationPolicy,
+) gomega.AsyncAssertion {
+	return g.Eventually(func() *istiopkgsecurityv1beta1.AuthorizationPolicy {
+		fetchedPolicy, err := getAuthorizationPolicy(ctx, authPolicy)
+		if err != nil {
+			log.Printf("fetch authPolicy %s/%s failed: %v", authPolicy.Namespace, authPolicy.Name, err)
+			return &istiopkgsecurityv1beta1.AuthorizationPolicy{}
+		}
+		return fetchedPolicy
 	}, twoMinTimeOut, bigPollingInterval)
 }
