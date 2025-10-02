@@ -37,6 +37,6 @@ To check the Subscription's cleaned event type, run: `kubectl get subscriptions 
 This cleanup happens internally; you can still publish and subscribe using the original event names (with prohibited characters). However, the Eventing module processes the cleaned version. 
 
 > [!WARNING]
-> This can lead to a naming collision if two different original event names clean up to the same internal name. For example, both `system>prod` and `systemprod` become `systemprod`. While this does not result in an error, a naming collision can cause subscribers to receive irrelevant events or miss expected events. For details, see [Troubleshooting: Subscriber receives irrelevant events](./troubleshooting/evnt-03-type-collision.md).
+> This can lead to a naming collision if two different original event names clean up to the same internal name. For example, both `system>prod` and `systemprod` become `systemprod`. While this does not result in an error, a naming collision can cause subscribers to receive irrelevant events or miss expected events. For details, see [Troubleshooting: Subscriber receives irrelevant events](./troubleshooting/evnt-02-subscriber-irrelevant-events.md).
 
 When you verify event delivery in your Function logs, the received event type reflects the cleaned name, not the original name you defined in the Subscription or published with.
