@@ -26,7 +26,7 @@ The Eventing module focuses on in-cluster, asynchronous communication using the 
 
 ## Architecture
 
-The Eventing module uses an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)-based architecture to manage the components that process and deliver events within your cluster. It consists of a control plane and a data plane.
+The Eventing module uses a [Kubernetes operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)-based architecture to manage the components that process and deliver events within your cluster. It consists of a control plane and a data plane.
 
 - Control Plane: The Eventing Manager watches for Subscription custom resources and configures the eventing infrastructure.
 - Data Plane: The Eventing Publisher Proxy receives events, and the configured backend (NATS or SAP Event Mesh) delivers them.
