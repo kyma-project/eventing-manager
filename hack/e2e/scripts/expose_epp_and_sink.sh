@@ -66,6 +66,25 @@ spec:
 EOF
 }
 
+create_authorization_policy_for_sink() {
+  cat <<EOF | kubectl apply -f -
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-internal-sink
+  namespace: eventing-tests
+spec:
+  selector:
+    matchLabels:
+      name: test-sink
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        notPrincipals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+EOF
+}
+
 wait_for_endpoint_status() {
   local endpoint="$1"
   local expected_status="$2"
@@ -123,5 +142,7 @@ validate_and_default
 create_api_rule_for_epp
 
 create_api_rule_for_sink
+
+create_authorization_policy_for_sink
 
 wait_for_api_rules_readiness
