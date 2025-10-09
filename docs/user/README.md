@@ -13,7 +13,7 @@ This decouples your services, as publishers and subscribers do not need to know 
 The Eventing module provides the following features:
 
 - Publish-subscribe (pub/sub) messaging: Decouples applications so you can build resilient and scalable event-driven systems.
-- Flexible backend support: Use the default in-cluster NATS backend (see [NATS module](https://kyma-project.io/#/nats-manager/user/README)) or configure SAP Event Mesh (see [SAP Event Mesh](https://help.sap.com/docs/event-mesh/event-mesh/what-is-sap-event-mesh?version=Cloud&locale=en-US)) for enterprise messaging.
+- Flexible backend support: Use the in-cluster NATS backend (see [NATS module](https://kyma-project.io/#/nats-manager/user/README)) or configure SAP Event Mesh (see [SAP Event Mesh](https://help.sap.com/docs/event-mesh/event-mesh/what-is-sap-event-mesh?version=Cloud&locale=en-US)) for enterprise messaging.
 - Standardized event format: All events follow the [CloudEvents](https://cloudevents.io/) specification, ensuring a consistent and portable format.
 - Automatic legacy event conversion: Converts older, non-standard Kyma event formats into valid CloudEvents automatically. For details, see [Event Name Cleanup](evnt-event-names.md#event-name-cleanup).
 - At-least-once delivery: Ensures that each event is delivered at least one time when you use the NATS backend, preventing message loss during temporary failures.
@@ -22,7 +22,9 @@ The Eventing module provides the following features:
 
 ## Scope
 
-The Eventing module focuses on in-cluster, asynchronous communication using the CloudEvents standard. It does not provide exactly-once delivery or long-term event storage. For cross-cluster or hybrid scenarios, you can configure SAP Event Mesh as the backend.
+The Eventing module focuses on in-cluster, asynchronous communication using the CloudEvents standard. It uses only one stream, with `file` storage, for all the events.
+
+For cross-cluster or hybrid scenarios, configure SAP Event Mesh as the backend.
 
 ## Architecture
 
@@ -67,7 +69,7 @@ When you create or update a Subscription, the Eventing Manager performs the foll
 
 ### Eventing Publisher Proxy
 
-The [Eventing Publisher Proxy](https://github.com/kyma-project/eventing-publisher-proxy) provides a single, stable endpoint where your applications publish events using a standard [HTTP POST](https://www.w3schools.com/tags/ref_httpmethods.asp) request (endpoint: `/publish` for CloudEvents and `<application_name>/v1/events` for legacy events). This simplifies integration, as you can use common tools like curl or any standard HTTP client. 
+The [Eventing Publisher Proxy](https://github.com/kyma-project/eventing-publisher-proxy) provides a single, stable endpoint where your applications publish events using a standard HTTP POST request (endpoint: `/publish` for CloudEvents and `<application_name>/v1/events` for legacy events). This simplifies integration, as you can use common tools like curl or any standard HTTP client. 
 
 The proxy performs the following tasks:
 

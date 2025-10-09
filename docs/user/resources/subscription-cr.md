@@ -2,6 +2,8 @@
 
 Use the Subscription custom resource (CR) to describe the kind of data and the format used to subscribe to events. You specify the event types and the target endpoint for event delivery.
 
+When you define a Subscription, the Eventing Manager configures a dedicated consumer in the chosen backend for each event type you specify. These consumers are push-based, meaning the backend delivers events to your subscriber's sink as soon as they become available.
+
 The following components use the Subscription CR:
 
 - [Eventing Manager](../evnt-architecture.md#eventing-manager): Reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend.
