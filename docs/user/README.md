@@ -28,34 +28,21 @@ For cross-cluster or hybrid scenarios, configure SAP Event Mesh as the backend.
 
 ## Architecture
 
-The Eventing module uses a [Kubernetes operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)-based architecture to manage the components that process and deliver events within your cluster. It consists of a control plane and a data plane.
+The Eventing module uses the Eventing Manager, a [Kubernetes operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/), to manage the components that process and deliver events within your cluster. 
 
-- Control Plane: The Eventing Manager watches for Subscription custom resources and configures the eventing infrastructure.
-- Data Plane: The Eventing Publisher Proxy receives events, and the configured backend (NATS or SAP Event Mesh) delivers them.
+The architecture involves the following flows:
+- Subscription: The Eventing Manager watches for Subscription custom resources and configures the eventing infrastructure.
+- Delivery: The Eventing Publisher Proxy receives events, and the configured backend (NATS or SAP Event Mesh) delivers them.
 
-**DIAGRAM TO BE UPDATED!**
 ![Eventing flow](../assets/evnt-architecture.svg)
 
-<!-- 
-1. The Eventing Manager watches the Subscription custom resource. It detects if there are any new incoming events.
-
-2. The Eventing Manager creates an infrastructure for the NATS server.
-
-3. An event source publishes events to the Eventing Publisher Proxy.
-
-4. The Eventing Publisher Proxy sends events to the NATS server.
-
-5. The NATS server dispatches events to the Eventing Manager.
-
-6. The Eventing Manager dispatches events to subscribers (microservices or Functions).-->
-
-The Eventing module processes events through a series of steps:
-
-1. Application publishes event: Your application sends an event to the Eventing Publisher Proxy.
-2. Proxy processes and forwards: The Eventing Publisher Proxy receives, validates, converts the event to CloudEvents format, and forwards it to the configured eventing backend.
-3. Backend processes event: The selected backend (NATS or SAP Event Mesh) processes the event.
-4. Backend dispatches to Eventing Manager: The backend dispatches the event to the Eventing Manager.
-5. Eventing Manager delivers to subscriber: The Eventing Manager delivers the event to the appropriate subscriber (microservice or Function) based on your Subscription configuration.
+1. You create a Subscription CR. In the resource manifest, you specify the type of event you want to receive and the sink where to send it.
+2. The Eventing Manager, continuously watching for Subscription resources, detects your Subscription CR.
+3. Based on the backend configured in the Eventing CR, the Eventing Manager connects to the backend (NATS or SAP Event Mesh) and creates a subscription mechanism (a consumer or webhook).
+4. A publisher app sends an event to the Eventing Publisher Proxy.
+5. The Eventing Publisher Proxy forwards the event in CloudEvents format to your eventing backend.
+6. The eventing backend processes the event and pushes it to the Eventing Manager.
+7. The Eventing Manager receives the event, looks up the sink from the Subscription CR, and sends the event to your subscriber app. Your application can now process the event payload.
 
 ### Eventing Manager
 
@@ -69,7 +56,7 @@ When you create or update a Subscription, the Eventing Manager performs the foll
 
 ### Eventing Publisher Proxy
 
-The [Eventing Publisher Proxy](https://github.com/kyma-project/eventing-publisher-proxy) provides a single, stable endpoint where your applications publish events using a standard HTTP POST request (endpoint: `/publish` for CloudEvents and `<application_name>/v1/events` for legacy events). This simplifies integration, as you can use common tools like curl or any standard HTTP client. 
+The [Eventing Publisher Proxy](https://github.com/kyma-project/eventing-publisher-proxy) provides a single, stable endpoint for your applications to publish events using a standard HTTP POST request (endpoint: `/publish` for CloudEvents and `<application_name>/v1/events` for legacy events). This simplifies integration, as you can use common tools like curl or any standard HTTP client. 
 
 The proxy performs the following tasks:
 
