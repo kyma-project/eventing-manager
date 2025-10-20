@@ -19,9 +19,19 @@ Use the following sample CRs as guidance. Each can be applied immediately when y
 
 ## Eventing Module Status and Event Flow
 
-Understand how the Eventing module's status and event processing change based on your backend configuration and the backend infrastructure's operational state.
+The Eventing module reports its overall status in the `status.state` field of the Eventing CR. This status, combined with your backend configuration, determines how the module processes events.
 
-The Eventing module reports its overall status in the `status.state` field of the Eventing CR's status. This status, combined with the backend configuration and the backend infrastructure's health, determines how the module processes events. 
+The `status.state` field can have one of the following values:
+
+- **Ready**: All resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.
+- **Processing**: The resources managed by the Eventing manager are being created or updated.
+- **Warning**: There is a user input misconfiguration. For example:
+    - No backend is configured.
+    - The backend is NATS, but the NATS module is not installed.
+    - The backend is EventMesh, but the EventMesh Secret is missing or invalid.
+- **Error**: An error occurred while reconciling the Eventing CR.
+
+The following table describes how the event flow is affected by the backend configuration and infrastructure health.
 
 | **Specified Backend** | **Backend Infrastructure Status**                                                                         | **Eventing Module Status** | **Event Flow** | **Recommended User Action**                                                                    |
 |-----------------------|-----------------------------------------------------------------------------------------------------------|----------------------------|----------------|------------------------------------------------------------------------------------------------|
