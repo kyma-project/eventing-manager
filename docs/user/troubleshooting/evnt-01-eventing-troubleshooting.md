@@ -104,4 +104,4 @@ If the response code is not 2xx, the problem is with your subscriber application
 
 ### 6. Check the NATS Backend
 
-If all previous steps show no errors, the issue may be within the NATS backend itself. Continue with [Troubleshooting the NATS Module](./nats-01-module-troubleshooting).
+If all previous steps show no errors, the issue may be within the NATS backend itself. Continue with [Troubleshooting the NATS Module](https://kyma-project.io/#/nats-manager/user/nats-01-module-troubleshooting.md).
