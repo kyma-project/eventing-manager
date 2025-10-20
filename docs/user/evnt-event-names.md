@@ -18,7 +18,7 @@ For a Subscription custom resource (CR), the fully qualified event name follows 
 
 An event type consists of the following components:
 
-- Event: Two or more segments separated by a dot (`.`); for example, `order.created` or `Account.Root.Created`
+- Event: Typically, has two or three segments separated by a dot (`.`); for example, `order.created` or `Account.Root.Created`
 - Version: A version identifier, typically `v1`
 
 For publishers, the event type takes these sample forms:
