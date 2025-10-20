@@ -75,7 +75,7 @@ This is an alpha field and requires enabling the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers. |
-| **publisher.&#x200b;resources.&#x200b;claims.&#x200b;name** (required) | string | Name must match the name of one entry in `pod.spec.resourceClaims` of
+| **publisher.&#x200b;resources.&#x200b;claims.&#x200b;name** (required) | string | Name must match the name of one entry in pod.spec.resourceClaims of
 the Pod where this field is used. It makes that resource available
 inside a container. |
 | **publisher.&#x200b;resources.&#x200b;claims.&#x200b;request**  | string | Request is the name chosen for a request in the referenced claim.
@@ -106,8 +106,8 @@ Producers of specific condition types may define expected values and meanings fo
 and whether the values are considered a guaranteed API.
 The value should be a CamelCase string.
 This field may not be empty. |
-| **conditions.&#x200b;status** (required) | string | status of the condition, one of `True`, `False`, `Unknown`. |
-| **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in `foo.example.com/CamelCase`. |
+| **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
+| **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
 | **publisherService**  | string |  |
 | **specHash** (required) | integer |  |
 | **state** (required) | string | Defines the overall state of the Eventing custom resource.<br/>
