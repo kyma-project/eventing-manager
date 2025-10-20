@@ -28,7 +28,7 @@ Issues with the NATS module can stem from misconfigurations in the NATS custom r
 
 3. Review the `status.conditions` to understand the root cause.
 
-## 2. Check the NATS Pods
+### 2. Check the NATS Pods
 
 1. Ensure all NATS Pods are running correctly.
 
@@ -38,7 +38,7 @@ Issues with the NATS module can stem from misconfigurations in the NATS custom r
 
 2. If any Pods are not in the `Running` state, use `kubectl describe pod` and `kubectl logs` to investigate further.
 
-## 3. Check the Persistent Volume Claims (PVCs)
+### 3. Check the Persistent Volume Claims (PVCs)
 
 1. If you use file storage, a common issue is a problem with the PVCs.
 
