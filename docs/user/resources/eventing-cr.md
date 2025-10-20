@@ -61,10 +61,9 @@ For details, see [operator.kyma-project.io_eventings.yaml](https://github.com/ky
 | **annotations**  | map\[string\]string | Annotations allows to add annotations to resources. |
 | **backend**  | object | Backend defines the active backend used by Eventing. |
 | **backend.&#x200b;config**  | object | Config defines configuration for the Eventing backend. |
-| **backend.&#x200b;config.&#x200b;domain**  | string | Domain defines the cluster public domain used to configure the EventMesh Subscriptions
-and their corresponding ApiRules. |
+| **backend.&#x200b;config.&#x200b;domain**  | string | Domain defines the cluster public domain used to configure the EventMesh Subscriptions and their corresponding ApiRules. |
 | **backend.&#x200b;config.&#x200b;eventMeshSecret**  | string | EventMeshSecret defines the namespaced name of the Kubernetes Secret containing EventMesh credentials. The format of name is "namespace/name". |
-| **backend.&#x200b;config.&#x200b;eventTypePrefix**  | string |  |
+| **backend.&#x200b;config.&#x200b;eventTypePrefix**  | string | EventTypePrefix defines the prefix for all event types. |
 | **backend.&#x200b;config.&#x200b;natsMaxMsgsPerTopic**  | integer | NATSMaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject. |
 | **backend.&#x200b;config.&#x200b;natsStreamMaxSize**  | \{integer or string\} | NATSStreamMaxSize defines the maximum storage size for stream data. |
 | **backend.&#x200b;config.&#x200b;natsStreamReplicas**  | integer | NATSStreamReplicas defines the number of replicas for the stream. |
@@ -102,8 +101,8 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
-| **activeBackend** (required) | string |  |
-| **conditions**  | \[\]object | Condition contains details for one aspect of the current state of this API Resource. |
+| **activeBackend** (required) | string | ActiveBackend shows the backend currently used by the Eventing module. |
+| **conditions**  | \[\]object | Conditions contains the list of status conditions for this resource. |
 | **conditions.&#x200b;lastTransitionTime** (required) | string | lastTransitionTime is the last time the condition transitioned from one status to another.
 This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable. |
 | **conditions.&#x200b;message** (required) | string | message is a human readable message indicating details about the transition.
@@ -118,15 +117,8 @@ The value should be a CamelCase string.
 This field may not be empty. |
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
-| **publisherService**  | string |  |
+| **publisherService**  | string | PublisherService is the Kubernetes Service for the Eventing Publisher Proxy. |
 | **specHash** (required) | integer |  |
-| **state** (required) | string | Defines the overall state of the Eventing custom resource.<br/>
-- `Ready` when all the resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.<br/>
-- `Warning` if there is a user input misconfiguration. The following are examples of user input misconfigurations:<br/>
-&nbsp;&nbsp;- There is no backend configured.<br/>
-&nbsp;&nbsp;- The backend is configured to NATS but there is no NATS module installed.<br/>
-&nbsp;&nbsp;- The backend is configured to EventMesh but there is no valid EventMesh Secret configured.<br/>
-- `Processing` if the resources managed by the Eventing manager are being created or updated.<br/>
-- `Error` if an error occurred while reconciling the Eventing custom resource. |
+| **state** (required) | string | State defines the overall status of the Eventing custom resource. It can be `Ready`, `Processing`, `Error`, or `Warning`. |
 
 <!-- TABLE-END -->
