@@ -103,11 +103,11 @@ type EventingStatus struct {
 	ActiveBackend     BackendType `json:"activeBackend"`
 	BackendConfigHash int64       `json:"specHash"`
 	// State defines the overall status of the Eventing custom resource. It can be `Ready`, `Processing`, `Error`, or `Warning`.
-	State            string              `json:"state"`
+	State string `json:"state"`
 	// PublisherService is the Kubernetes Service for the Eventing Publisher Proxy.
-	PublisherService string              `json:"publisherService,omitempty"`
+	PublisherService string `json:"publisherService,omitempty"`
 	// Conditions contains the list of status conditions for this resource.
-	Conditions       []kmetav1.Condition `json:"conditions,omitempty"`
+	Conditions []kmetav1.Condition `json:"conditions,omitempty"`
 }
 
 // EventingSpec defines the desired state of Eventing.
