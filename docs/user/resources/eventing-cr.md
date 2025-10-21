@@ -94,7 +94,7 @@ For details, see [operator.kyma-project.io_eventings.yaml](https://github.com/ky
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
 | **publisherService**  | string | PublisherService is the Kubernetes Service for the Eventing Publisher Proxy. |
-| **specHash** (required) | integer |  |
+| **specHash** (required) | integer | BackendConfigHash is a hash of the spec.backend configuration, used internally to detect changes. |
 | **state** (required) | string | State defines the overall status of the Eventing custom resource. It can be `Ready`, `Processing`, `Error`, or `Warning`. |
 
 <!-- TABLE-END -->

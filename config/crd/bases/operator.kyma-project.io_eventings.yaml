@@ -340,6 +340,8 @@ spec:
                   Publisher Proxy.
                 type: string
               specHash:
+                description: BackendConfigHash is a hash of the spec.backend configuration,
+                  used internally to detect changes.
                 format: int64
                 type: integer
               state:
