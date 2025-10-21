@@ -86,9 +86,9 @@ spec:
                     description: Config defines configuration for the Eventing backend.
                     properties:
                       domain:
-                        description: |-
-                          Domain defines the cluster public domain used to configure the EventMesh Subscriptions
-                          and their corresponding ApiRules.
+                        description: Domain defines the cluster public domain used
+                          to configure the EventMesh Subscriptions and their corresponding
+                          ApiRules.
                         pattern: ^(?:([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*)?$
                         type: string
                       eventMeshSecret:
@@ -99,6 +99,8 @@ spec:
                         type: string
                       eventTypePrefix:
                         default: sap.kyma.custom
+                        description: EventTypePrefix defines the prefix for all event
+                          types.
                         type: string
                         x-kubernetes-validations:
                         - message: eventTypePrefix cannot be empty
@@ -272,8 +274,12 @@ spec:
             description: EventingStatus defines the observed state of Eventing.
             properties:
               activeBackend:
+                description: ActiveBackend shows the backend currently used by the
+                  Eventing module.
                 type: string
               conditions:
+                description: Conditions contains the list of status conditions for
+                  this resource.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -330,20 +336,17 @@ spec:
                   type: object
                 type: array
               publisherService:
+                description: PublisherService is the Kubernetes Service for the Eventing
+                  Publisher Proxy.
                 type: string
               specHash:
+                description: BackendConfigHash is a hash of the spec.backend configuration,
+                  used internally to detect changes.
                 format: int64
                 type: integer
               state:
-                description: |-
-                  Defines the overall state of the Eventing custom resource.<br/>
-                  - `Ready` when all the resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.<br/>
-                  - `Warning` if there is a user input misconfiguration. The following are examples of user input misconfigurations:<br/>
-                  &nbsp;&nbsp;- There is no backend configured.<br/>
-                  &nbsp;&nbsp;- The backend is configured to NATS but there is no NATS module installed.<br/>
-                  &nbsp;&nbsp;- The backend is configured to EventMesh but there is no valid EventMesh Secret configured.<br/>
-                  - `Processing` if the resources managed by the Eventing manager are being created or updated.<br/>
-                  - `Error` if an error occurred while reconciling the Eventing custom resource.
+                description: State defines the overall status of the Eventing custom
+                  resource. It can be `Ready`, `Processing`, `Error`, or `Warning`.
                 type: string
             required:
             - activeBackend

@@ -99,20 +99,16 @@ type Eventing struct {
 
 // EventingStatus defines the observed state of Eventing.
 type EventingStatus struct {
-	ActiveBackend     BackendType `json:"activeBackend"`
-	BackendConfigHash int64       `json:"specHash"`
-
-	// Defines the overall state of the Eventing custom resource.<br/>
-	// - `Ready` when all the resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.<br/>
-	// - `Warning` if there is a user input misconfiguration. The following are examples of user input misconfigurations:<br/>
-	// &nbsp;&nbsp;- There is no backend configured.<br/>
-	// &nbsp;&nbsp;- The backend is configured to NATS but there is no NATS module installed.<br/>
-	// &nbsp;&nbsp;- The backend is configured to EventMesh but there is no valid EventMesh Secret configured.<br/>
-	// - `Processing` if the resources managed by the Eventing manager are being created or updated.<br/>
-	// - `Error` if an error occurred while reconciling the Eventing custom resource.
-	State            string              `json:"state"`
-	PublisherService string              `json:"publisherService,omitempty"`
-	Conditions       []kmetav1.Condition `json:"conditions,omitempty"`
+	// ActiveBackend shows the backend currently used by the Eventing module.
+	ActiveBackend BackendType `json:"activeBackend"`
+	// BackendConfigHash is a hash of the spec.backend configuration, used internally to detect changes.
+	BackendConfigHash int64 `json:"specHash"`
+	// State defines the overall status of the Eventing custom resource. It can be `Ready`, `Processing`, `Error`, or `Warning`.
+	State string `json:"state"`
+	// PublisherService is the Kubernetes Service for the Eventing Publisher Proxy.
+	PublisherService string `json:"publisherService,omitempty"`
+	// Conditions contains the list of status conditions for this resource.
+	Conditions []kmetav1.Condition `json:"conditions,omitempty"`
 }
 
 // EventingSpec defines the desired state of Eventing.
@@ -187,12 +183,12 @@ type BackendConfig struct {
 	// +kubebuilder:validation:Pattern:="^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$"
 	EventMeshSecret string `json:"eventMeshSecret,omitempty"`
 
+	// EventTypePrefix defines the prefix for all event types.
 	// +kubebuilder:default:="sap.kyma.custom"
 	// +kubebuilder:validation:XValidation:rule="self!=''", message="eventTypePrefix cannot be empty"
 	EventTypePrefix string `json:"eventTypePrefix,omitempty"`
 
-	// Domain defines the cluster public domain used to configure the EventMesh Subscriptions
-	// and their corresponding ApiRules.
+	// Domain defines the cluster public domain used to configure the EventMesh Subscriptions and their corresponding ApiRules.
 	// +kubebuilder:validation:Pattern:="^(?:([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*)?$"
 	Domain string `json:"domain,omitempty"`
 }
