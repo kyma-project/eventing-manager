@@ -12,7 +12,7 @@ To see the current CRD in YAML format, run:
 
 ## Sample Custom Resource
 
-Use the following sample CRs as guidance. Each can be applied immediately when you [install](../contributor/installation.md) Eventing Manager.
+Use the following sample CRs as guidance. Each can be applied immediately when you [install](../../contributor/installation.md) Eventing Manager.
 
 - [Default CR - NATS backend](https://github.com/kyma-project/eventing-manager/blob/main/config/samples/default_nats.yaml)
 - [Default CR - EventMesh backend](https://github.com/kyma-project/eventing-manager/blob/main/config/samples/default_eventmesh.yaml)
