@@ -100,9 +100,9 @@ type Eventing struct {
 // EventingStatus defines the observed state of Eventing.
 type EventingStatus struct {
 	// ActiveBackend shows the backend currently used by the Eventing module.
-	ActiveBackend     BackendType `json:"activeBackend"`
+	ActiveBackend BackendType `json:"activeBackend"`
 	// BackendConfigHash is a hash of the spec.backend configuration, used internally to detect changes.
-	BackendConfigHash int64       `json:"specHash"`
+	BackendConfigHash int64 `json:"specHash"`
 	// State defines the overall status of the Eventing custom resource. It can be `Ready`, `Processing`, `Error`, or `Warning`.
 	State string `json:"state"`
 	// PublisherService is the Kubernetes Service for the Eventing Publisher Proxy.
