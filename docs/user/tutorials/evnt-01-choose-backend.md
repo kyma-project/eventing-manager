@@ -14,7 +14,7 @@ You can send and receive events in Kyma with Eventing module. By default, Kyma c
 
 ## Procedure
 
-1. Log in to Kyma dashboard. The URL is in the **Overview** section of your subaccount.
+1. Log in to Kyma dashboard. Find the URL in the **Overview** section of your subaccount.
 2. Go to the `kyma-system` namespace.
 3. Go to **Kyma** > **Eventing**, open the `eventing` resource, and choose **Edit**.
 4. Under **Backend Type**, select your preferred backend.

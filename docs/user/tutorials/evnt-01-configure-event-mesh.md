@@ -9,7 +9,7 @@ If you want to use SAP Event Mesh as backend for Kyma Eventing, you must first s
 
 ## Procedure
 
-1. Log in to Kyma dashboard. The URL is in the **Overview** section of your subaccount.
+1. Log in to Kyma dashboard. Find the URL in the **Overview** section of your subaccount.
 2. To generate an SAP Event Mesh Secret, select a namespace and go to **Service Management** > **Service Instances**.
 3. Choose **Create**, and enter the following information:
    - **Name** - enter the name of your instance.
