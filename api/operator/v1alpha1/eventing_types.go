@@ -101,6 +101,7 @@ type Eventing struct {
 type EventingStatus struct {
 	// ActiveBackend shows the backend currently used by the Eventing module.
 	ActiveBackend     BackendType `json:"activeBackend"`
+	// BackendConfigHash is a hash of the spec.backend configuration, used internally to detect changes.
 	BackendConfigHash int64       `json:"specHash"`
 	// State defines the overall status of the Eventing custom resource. It can be `Ready`, `Processing`, `Error`, or `Warning`.
 	State string `json:"state"`
