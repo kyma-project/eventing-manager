@@ -74,17 +74,3 @@ You configure the Eventing module by creating and applying Kubernetes Custom Res
 ## Resource Consumption
 
 To learn more about the resources used by the Eventing module, see [Kyma Modules' Sizing](https://help.sap.com/docs/btp/sap-business-technology-platform/kyma-modules-sizing?locale=en-US&version=Cloud).
-
-<!-- 
-## Glossary
-- **Streams and Consumers**
-  - `Streams`: A stream stores messages for the published events. Kyma uses only one stream, with _**file**_ storage, for all the events. You can configure the retention and delivery policies for the stream, depending on the use case.
-    <= These terms describe the inner workings of the NATS backend. We should update the NATS Backend description in the Architecture topic to explain that a Kyma Subscription maps to a NATS Consumer, and that all events are stored in a single NATS Stream. This connects the user's declarative Subscription to the underlying system behavior.
-  - `Consumers`: A consumer reads or consumes the messages from the stream. Kyma Subscription creates one consumer for each specified filter. Kyma uses push-based consumers.
-      <= These terms describe the inner workings of the NATS backend. We should update the NATS Backend description in the Architecture topic to explain that a Kyma Subscription maps to a NATS Consumer, and that all events are stored in a single NATS Stream. This connects the user's declarative Subscription to the underlying system behavior.
-- **Delivery Guarantees**
-  - `at least once` delivery: With NATS JetStream, Kyma ensures that for each event published, all the subscribers subscribed to that event receive the event at least once.
-    <= Mentioned in Features
-  - `max bytes and discard policy`: NATS JetStream uses these configurations to ensure that no messages are lost when the storage is almost full. By default, Kyma ensures that no new messages are accepted when the storage reaches 90% capacity.
-    <= should be mentioned in [Resource Consumption](https://help.sap.com/docs/btp/sap-business-technology-platform/kyma-modules-sizing?locale=en-US&version=Cloud).
-     -->

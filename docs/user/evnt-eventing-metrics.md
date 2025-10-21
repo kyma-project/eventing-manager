@@ -1,7 +1,5 @@
 # Eventing Metrics
 
-<!-- I'D KEEP THIS IN GITHUB ONLY, NO TRANSFER TO DITA -->
-
 The Eventing module provides metrics that offer insights into its operational health, performance, and the flow of events within your Kyma cluster. The metrics follow [Prometheus naming convention](https://prometheus.io/docs/practices/naming/), and you can collect them with the Telemetry module's MetricPipeline.
 
 > **TIP:** If you're using NATS as eventing backend, you might also want to monitor the eventing system's health. For details on the metrics emitted by the [Prometheus NATS Exporter](https://github.com/nats-io/prometheus-nats-exporter), see [NATS Monitoring](https://docs.nats.io/running-a-nats-service/configuration/monitoring#jetstream-information).
