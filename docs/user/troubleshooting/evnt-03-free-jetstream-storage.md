@@ -22,7 +22,9 @@ To free up storage and resume event flow, choose one of the following solutions:
 
 - If the subscriber is no longer needed, delete its Subscription resource. This action removes the NATS consumer and discards all pending messages for that subscription, freeing up space. The `Interest` retention policy specifies that events published to the subject are not kept in the stream if they don't match any consumer filter. 
 
-- If a subscriber is unhealthy or slow, fix the underlying issue. When the subscriber comes back online and starts acknowledging messages, the stream will begin to clear. See Check the [NATS JetStream backend status](evnt-01-eventing-troubleshooting.md#step-6-check-nats-jetstream-status) and if [the sink is reachable and can accept the events](evnt-01-eventing-troubleshooting.md#step-5-check-if-the-subscription-sink-is-healthy).
+- If a subscriber is unhealthy or slow, fix the underlying issue in the subscriber's application. When the subscriber is healthy and starts acknowledging messages, the NATS stream begins to clear.
+
+To diagnose the problem, inspect the NATS JetStream status and verify that the subscriber's sink is healthy and reachable. For details, see [NATS Troubleshooting: Inspect the NATS JetStream](https://kyma-project.io/#/nats-manager/user/troubleshooting/03-05-nats-troubleshooting.md#4-inspect-the-nats-jetstream) and [Eventing Troubleshooting: Check the Subscriber's Health](evnt-01-eventing-troubleshooting.md#5-check-the-subscribers-health).
 
 - If the events' publish rate is very high (more than 1.5k events per second), the subscriber may not be able to keep up. Speed up the event dispatching by increasing the `maxInFlightMessages` configuration of the Subscription (default is set to 10).
 

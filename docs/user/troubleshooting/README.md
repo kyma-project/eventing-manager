@@ -7,8 +7,8 @@ Troubleshoot problems related to the Eventing module:
 - [NATS Backend Storage Is Full](evnt-03-free-jetstream-storage.md): Follow these steps if the Eventing Publisher Proxy returns a 507 Insufficient Storage error.
 
 For issues with the NATS cluster, see the NATS troubleshooting guides:
- <!-- replace these links after moving the docs to NATS repo -->
-- [Troubleshooting the NATS Module](https://kyma-project.io/#/nats-manager/user/nats-01-module-troubleshooting.md): Refer to this guide for issues related to the NATS module itself, such as Pod health or stream configuration.
+
+- [Troubleshooting the NATS Module](https://kyma-project.io/#/nats-manager/user/troubleshooting/README.md): Refer to this guide for issues related to the NATS module itself, such as Pod health or stream configuration.
 - [Events Are Pending in the NATS Stream](https://kyma-project.io/#/nats-manager/user/nats-02-fix-pending-messages.md): Use this guide if events are stuck in the NATS stream and are not being delivered.
 
 
