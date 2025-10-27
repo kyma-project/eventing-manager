@@ -3,7 +3,7 @@
 ## Symptom
 
 - You publish an event, but the subscriber does not receive it.
-- A Subscription custom resource is not in the `Ready` state.
+- A Subscription custom resource (CR) is not in the `Ready` state.
 - You cannot publish events, and the publisher receives an error.
 
 ## Cause
@@ -22,7 +22,7 @@ Follow these steps to detect the source of the problem:
    kubectl get eventing -n kyma-system
    ```
 
-2. In the output, look for `STATE: Ready`. If the state is not `Ready` (for example, Warning or Error), inspect the CR's status for detailed error messages:
+2. In the output, look for `STATE: Ready`. If the state is not `Ready` (for example, `Warning` or `Error`), inspect the CR's status for detailed error messages:
 
    ```bash
    kubectl get eventing eventing -n kyma-system -o yaml
@@ -32,7 +32,7 @@ Follow these steps to detect the source of the problem:
 
 ### 2. Check the Subscription Status
 
-If the Eventing CR is ready, check the status of your Subscription
+If the Eventing CR is ready, check the status of your Subscription.
 
 1. Check if the Subscription is ready. Replace the placeholders with your values.
 

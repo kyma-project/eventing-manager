@@ -52,7 +52,7 @@ When you create or update a Subscription, the Eventing Manager performs the foll
 
 - Configures the selected eventing backend to manage event streams and consumers for subscriptions.
 - Ensures events are routed from the correct publisher to the specified subscriber (the "sink").
-- Creates and manages Kubernetes resources, such as ConfigMap, Services and DestinationRules, adapting them to the desired state.
+- Creates and manages Kubernetes resources, such as ConfigMap, Services, and DestinationRules, adapting them to the desired state.
 
 ### Eventing Publisher Proxy
 

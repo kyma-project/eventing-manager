@@ -42,7 +42,7 @@ The `status.ready` field shows the overall readiness of the Subscription. If `fa
 ## Custom Resource Parameters
 
 > **NOTE:** 
-> If the Subscription CR and the target subscriber aren't the same namespace, you must specify the **sink.ref.namespace**.
+> If the Subscription CR and the target subscriber aren't in the same namespace, you must specify the **sink.ref.namespace**.
 > 
 > Eventing backends might not support certain characters in event names defined under **spec.type**. If you use unsupported characters, the Eventing module removes them. For details, see [Event Name Cleanup](../evnt-event-names.md#event-name-cleanup).
 
