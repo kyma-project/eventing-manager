@@ -21,7 +21,8 @@ Manage your subscriber's workload by configuring the max-in-flight limit to cont
   }
   ```
 
-> **TIP:** Use Istio sidecar proxies for reliability, observability, and security (see [Istio Service Mesh](https://kyma-project.io/#/istio/user/00-00-istio-sidecar-proxies)).
+> [!TIP]
+> Use Istio sidecar proxies for reliability, observability, and security (see [Istio Service Mesh](https://kyma-project.io/#/istio/user/00-00-istio-sidecar-proxies)).
 
 ## Context
 

@@ -49,7 +49,8 @@ If you want to use SAP Event Mesh as backend for Kyma Eventing, you must first s
     }
     ```
 5.  Replace `{EVENT_MESH_NAME}` and `{EVENT_MESH_NAMESPACE}` with the values you want your SAP Event Mesh instance to have.
-    > **Note:** The `{EVENT_MESH_NAMESPACE}` must follow the [SAP Event Specification](https://help.sap.com/viewer/bf82e6b26456494cbdd197057c09979f/Cloud/en-US/00d56d697c7549408cfacc8cb6a46b11.html); for example, it cannot exceed 64 characters, or begin or end with a dot or hyphen.
+    > [!NOTE]
+    > The `{EVENT_MESH_NAMESPACE}` must follow the [SAP Event Specification](https://help.sap.com/viewer/bf82e6b26456494cbdd197057c09979f/Cloud/en-US/00d56d697c7549408cfacc8cb6a46b11.html); for example, it cannot exceed 64 characters, or begin or end with a dot or hyphen.
 6.  Go to **Service Management** > **Service Bindings** and choose **Create**.
 7.  Provide the name of your binding, select the name of your instance from the list, and choose **Create**.
 

@@ -9,7 +9,8 @@ Configure a single Subscription to receive events of multiple types.
 - Optionally, you have the [CloudEvents Conformance Tool](https://github.com/cloudevents/conformance) for publishing events.
 - You have an inline Function as event sink (see [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function)).
 
-> **TIP:** Use Istio sidecar proxies for reliability, observability, and security (see [Istio Service Mesh](https://kyma-project.io/#/istio/user/00-00-istio-sidecar-proxies)).
+> [!TIP]
+> Use Istio sidecar proxies for reliability, observability, and security (see [Istio Service Mesh](https://kyma-project.io/#/istio/user/00-00-istio-sidecar-proxies)).
 
 ## Context
 

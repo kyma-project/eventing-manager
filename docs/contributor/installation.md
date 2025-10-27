@@ -104,7 +104,8 @@ This step depends on your desired backend: NATS or EventMesh.
    kubectl get <resourceName> -n <namespace> -o yaml
    ```
 
-   >**Note:** Usually, the default values are as follows:
+   > [!NOTE]
+   > Usually, the default values are as follows:
    >
    >  ```shell
    >  kubectl get eventings.operator.kyma-project.io -n kyma-system -o yaml
