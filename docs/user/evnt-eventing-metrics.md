@@ -1,9 +1,13 @@
-# Kyma Eventing Metrics
+# Eventing Metrics
 
-Kyma Eventing provides various metrics, so you can monitor statistics and other information in real time.
-The metrics follow the [Prometheus naming convention](https://prometheus.io/docs/practices/naming/).
+The Eventing module provides metrics that offer insights into its operational health, performance, and the flow of events within your Kyma cluster. The metrics follow [Prometheus naming convention](https://prometheus.io/docs/practices/naming/), and you can collect them with the Telemetry module's MetricPipeline.
+
+> [!TIP]
+> If you're using NATS as eventing backend, you might also want to monitor the eventing system's health. For details on the metrics emitted by the [Prometheus NATS Exporter](https://github.com/nats-io/prometheus-nats-exporter), see [NATS Monitoring](https://docs.nats.io/running-a-nats-service/configuration/monitoring#jetstream-information).
 
 ## Metrics Emitted by Eventing Publisher Proxy
+
+The Eventing Publisher Proxy handles incoming events from your applications. Its metrics provide insights into event reception and forwarding.
 
 | Metric                                         | Description                                                                      |
 | ---------------------------------------------- | :------------------------------------------------------------------------------- |
@@ -15,6 +19,8 @@ The metrics follow the [Prometheus naming convention](https://prometheus.io/docs
 
 ## Metrics Emitted by Eventing Manager
 
+The Eventing Manager configures event routing and delivers events to subscribers. Its metrics provide insights into subscription status and event dispatch.
+
 | Metric                                                    | Description                                                                                                                 |
 | --------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
 | **eventing_ec_event_type_subscribed_total**               | The total number of eventTypes subscribed using the Subscription CRD                                                        |
@@ -22,7 +28,3 @@ The metrics follow the [Prometheus naming convention](https://prometheus.io/docs
 | **eventing_ec_nats_delivery_per_subscription_total**      | The total number of dispatched events per subscription                                                                      |
 | **eventing_ec_nats_subscriber_dispatch_duration_seconds** | The duration of sending an incoming NATS message to the subscriber (not including processing the message in the dispatcher) |
 | **eventing_ec_subscription_status**                       | The status of a subscription. `1` indicates the subscription is marked as ready                                             |
-
-### Metrics Emitted by NATS Exporter
-
-The [Prometheus NATS Exporter](https://github.com/nats-io/prometheus-nats-exporter) also emits metrics that you can monitor. Learn more about [NATS Monitoring](https://docs.nats.io/running-a-nats-service/configuration/monitoring#jetstream-information).
