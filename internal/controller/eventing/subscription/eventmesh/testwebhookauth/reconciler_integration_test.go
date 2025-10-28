@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,7 +49,7 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	getSubscriptionAssert(ctx, g, kymaSubscription, ensemble).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
 
 	// ensure APIRule is created
-	apiRule := &apigatewayv1beta1.APIRule{
+	apiRule := &apigatewayv2.APIRule{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      kymaSubscription.Status.Backend.APIRuleName,
 			Namespace: kymaSubscription.Namespace,

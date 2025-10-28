@@ -168,7 +168,7 @@ jobs:
         if: failure()
         run: |
           kubectl get apigateways.operator.kyma-project.io -n kyma-system -o yaml
-
+        
       - name: Cleanup modules
         if: ${{ always() }}
         run: |

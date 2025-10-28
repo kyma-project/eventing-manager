@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	kymalogger "github.com/kyma-project/kyma/common/logging/logger"
 	"github.com/stretchr/testify/require"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,9 +56,11 @@ func Test_cleanupEventMesh(t *testing.T) {
 	subscription.Spec.Sink = "https://bla.test.svc.cluster.local"
 
 	// create an APIRule
+	h := apigatewayv2.Host("host-test")
+	hosts := []*apigatewayv2.Host{&h}
 	apiRule := eventingtesting.NewAPIRule(subscription,
 		eventingtesting.WithPath(),
-		eventingtesting.WithService("svc-test", "host-test"),
+		eventingtesting.WithService("svc-test", hosts),
 	)
 	subscription.Status.Backend.APIRuleName = apiRule.Name
 

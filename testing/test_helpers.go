@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	kcorev1 "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kunstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -18,7 +18,6 @@ import (
 
 	eventingv1alpha2 "github.com/kyma-project/eventing-manager/api/eventing/v1alpha2"
 	"github.com/kyma-project/eventing-manager/pkg/ems/api/events/types"
-	"github.com/kyma-project/eventing-manager/pkg/object"
 )
 
 const (
@@ -69,7 +68,7 @@ const (
 	CeSpecVersionHeader = "ce-specversion"
 )
 
-type APIRuleOption func(r *apigatewayv1beta1.APIRule)
+type APIRuleOption func(r *apigatewayv2.APIRule)
 
 // GetFreePort determines a free port on the host. It does so by delegating the job to net.ListenTCP.
 // Then providing a port of 0 to net.ListenTCP, it will automatically choose a port for us.
@@ -163,8 +162,8 @@ func GetBinaryMessageHeaders() http.Header {
 }
 
 // NewAPIRule returns a valid APIRule.
-func NewAPIRule(subscription *eventingv1alpha2.Subscription, opts ...APIRuleOption) *apigatewayv1beta1.APIRule {
-	apiRule := &apigatewayv1beta1.APIRule{
+func NewAPIRule(subscription *eventingv1alpha2.Subscription, opts ...APIRuleOption) *apigatewayv2.APIRule {
+	apiRule := &apigatewayv2.APIRule{
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name: "foo",
 			OwnerReferences: []kmetav1.OwnerReference{
@@ -184,12 +183,12 @@ func NewAPIRule(subscription *eventingv1alpha2.Subscription, opts ...APIRuleOpti
 	return apiRule
 }
 
-func WithService(name, host string) APIRuleOption {
-	return func(r *apigatewayv1beta1.APIRule) {
+func WithService(name string, hosts []*apigatewayv2.Host) APIRuleOption {
+	return func(r *apigatewayv2.APIRule) {
 		port := uint32(443) //nolint:mnd // tests
 		isExternal := true
-		r.Spec.Host = &host
-		r.Spec.Service = &apigatewayv1beta1.Service{
+		r.Spec.Hosts = hosts
+		r.Spec.Service = &apigatewayv2.Service{
 			Name:       &name,
 			Port:       &port,
 			IsExternal: &isExternal,
@@ -198,39 +197,23 @@ func WithService(name, host string) APIRuleOption {
 }
 
 func WithPath() APIRuleOption {
-	return func(rule *apigatewayv1beta1.APIRule) {
-		handlerOAuth := object.OAuthHandlerNameOAuth2Introspection
-		handler := apigatewayv1beta1.Handler{
-			Name: handlerOAuth,
-		}
-		authenticator := &apigatewayv1beta1.Authenticator{
-			Handler: &handler,
-		}
-		rule.Spec.Rules = []apigatewayv1beta1.Rule{
+	return func(rule *apigatewayv2.APIRule) {
+		rule.Spec.Rules = []apigatewayv2.Rule{
 			{
 				Path: "/path",
-				Methods: []apigatewayv1beta1.HttpMethod{
-					apigatewayv1beta1.HttpMethod(http.MethodPost),
-					apigatewayv1beta1.HttpMethod(http.MethodOptions),
+				Methods: []apigatewayv2.HttpMethod{
+					http.MethodPost,
+					http.MethodOptions,
 				},
-				AccessStrategies: []*apigatewayv1beta1.Authenticator{
-					authenticator,
-				},
+				ExtAuth: &apigatewayv2.ExtAuth{},
 			},
 		}
 	}
 }
 
-func MarkReady(rule *apigatewayv1beta1.APIRule) {
-	statusOK := &apigatewayv1beta1.APIRuleResourceStatus{
-		Code:        apigatewayv1beta1.StatusOK,
-		Description: "",
-	}
-
-	rule.Status = apigatewayv1beta1.APIRuleStatus{
-		APIRuleStatus:        statusOK,
-		VirtualServiceStatus: statusOK,
-		AccessRuleStatus:     statusOK,
+func MarkReady(rule *apigatewayv2.APIRule) {
+	rule.Status = apigatewayv2.APIRuleStatus{
+		State: apigatewayv2.Ready,
 	}
 }
 
@@ -250,6 +233,16 @@ func NewSubscription(name, namespace string, opts ...SubscriptionOpt) *eventingv
 		o(newSub)
 	}
 	return newSub
+}
+
+func NewService(name, namespace string) *kcorev1.Service {
+	newService := &kcorev1.Service{
+		ObjectMeta: kmetav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	return newService
 }
 
 func NewEventMeshSubscription(name, contentMode string, webhookURL string, events types.Events,

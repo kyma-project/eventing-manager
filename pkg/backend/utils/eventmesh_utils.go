@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	apigatewayv1beta1 "github.com/kyma-project/api-gateway/apis/gateway/v1beta1"
+	apigatewayv2 "github.com/kyma-project/api-gateway/apis/gateway/v2"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 
@@ -108,7 +108,7 @@ func getEventMeshEvents(typeInfos []EventTypeInfo, typeMatching eventingv1alpha2
 func ConvertKymaSubToEventMeshSub(
 	subscription *eventingv1alpha2.Subscription,
 	typeInfos []EventTypeInfo,
-	apiRule *apigatewayv1beta1.APIRule,
+	apiRule *apigatewayv2.APIRule,
 	defaultWebhookAuth *types.WebhookAuth,
 	defaultProtocolSettings *ProtocolSettings,
 	defaultNamespace string,
