@@ -9,7 +9,7 @@ Troubleshoot problems related to the Eventing module:
 For issues with the NATS cluster, see the NATS troubleshooting guides:
 
 - [Troubleshooting the NATS Module](https://kyma-project.io/#/nats-manager/user/troubleshooting/README.md): Refer to this guide for issues related to the NATS module itself, such as Pod health or stream configuration.
-- [Events Are Pending in the NATS Stream](https://kyma-project.io/#/nats-manager/user/nats-02-fix-pending-messages.md): Use this guide if events are stuck in the NATS stream and are not being delivered.
+- [Published Events are Pending in the Stream](https://github.com/kyma-project/nats-manager/blob/main/docs/user/troubleshooting/03-10-fix-pending-events.md): Use this guide if events are stuck in the NATS stream and are not being delivered.
 
 
 If you can't find a solution, don't hesitate to create a [GitHub issue](https://github.com/kyma-project/eventing-manager/issues/new/choose).

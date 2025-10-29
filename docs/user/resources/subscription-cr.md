@@ -6,8 +6,8 @@ When you define a Subscription, the Eventing Manager configures a dedicated cons
 
 The following components use the Subscription CR:
 
-- [Eventing Manager](../evnt-architecture.md#eventing-manager): Reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend.
-- [Eventing Publisher Proxy](../evnt-architecture.md#eventing-publisher-proxy): Reads the Subscriptions to find out how events are used for each Application.
+- [Eventing Manager](../../user/README.md#eventing-manager): Reconciles on Subscriptions and creates a connection between subscribers and the Eventing backend.
+- [Eventing Publisher Proxy](../../user/README.md#eventing-publisher-proxy): Reads the Subscriptions to find out how events are used for each Application.
 
 You must delete all Subscription CRs before you can delete the Eventing module.
 
