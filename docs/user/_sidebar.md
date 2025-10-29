@@ -13,5 +13,5 @@
     * [NATS Backend Storage Is Full](/eventing-manager/user/troubleshooting/evnt-03-free-jetstream-storage.md)
   * [Resources](/eventing-manager/user/resources/README.md)
     * [Eventing CR](/eventing-manager/user/resources/eventing-cr.md)
-    * [Subscription CR](/eventing-manager/user/resources/substription-cr.md)
+    * [Subscription CR](/eventing-manager/user/resources/subscription-cr.md)
 <!-- markdown-link-check-enable -->
