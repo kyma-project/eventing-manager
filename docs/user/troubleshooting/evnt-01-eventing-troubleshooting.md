@@ -28,7 +28,7 @@ Follow these steps to detect the source of the problem:
    kubectl get eventing eventing -n kyma-system -o yaml
    ```
 
-3. To understand the issue, review the **status.conditions** and **status.state**. For common states and recommended actions, see [Eventing Module Status and Event Flow](../resources/eventing-cr.md#eventing-module-status-and-event-flow).
+3. To understand the issue, review the **status.conditions** and **status.state**. For common states and recommended actions, see [Eventing Module Status and Event Flow](https://github.com/kyma-project/eventing-manager/blob/main/docs/user/resources/eventing-cr.md#eventing-module-status-and-event-flow).
 
 ### 2. Check the Subscription Status
 
@@ -54,7 +54,7 @@ If the Subscription CR is ready, verify that you are publishing the event correc
 
 After sending an event, check the HTTP response code.
 
-- 4xx error: A client-side error indicates a problem with your request. Ensure your event conforms to the CloudEvents specification or the legacy event format. For details, see [Event Name Format](../evnt-event-names.md#event-name-format).
+- 4xx error: A client-side error indicates a problem with your request. Ensure your event conforms to the CloudEvents specification or the legacy event format. For details, see [Event Name Format](https://github.com/kyma-project/eventing-manager/blob/main/docs/user/evnt-event-names.md#event-name-format).
 
 - 5xx error: A server-side error indicates a problem with the Eventing Publisher Proxy. Check its logs for errors:
 
