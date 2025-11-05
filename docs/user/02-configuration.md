@@ -57,8 +57,7 @@ Use the following sample CRs as guidance. Each can be applied immediately when y
 | **annotations**  | map\[string\]string | Annotations allows to add annotations to resources. |
 | **backend**  | object | Backend defines the active backend used by Eventing. |
 | **backend.&#x200b;config**  | object | Config defines configuration for the Eventing backend. |
-| **backend.&#x200b;config.&#x200b;domain**  | string | Domain defines the cluster public domain used to configure the EventMesh Subscriptions
-and their corresponding ApiRules. |
+| **backend.&#x200b;config.&#x200b;domain**  | string | Domain defines the cluster public domain used to configure the EventMesh Subscriptions and their corresponding ApiRules. |
 | **backend.&#x200b;config.&#x200b;eventMeshSecret**  | string | EventMeshSecret defines the namespaced name of the Kubernetes Secret containing EventMesh credentials. The format of name is "namespace/name". |
 | **backend.&#x200b;config.&#x200b;eventTypePrefix**  | string |  |
 | **backend.&#x200b;config.&#x200b;natsMaxMsgsPerTopic**  | integer | NATSMaxMsgsPerTopic limits how many messages in the NATS stream to retain per subject. |
@@ -74,25 +73,11 @@ and their corresponding ApiRules. |
 | **publisher.&#x200b;replicas.&#x200b;max**  | integer | Max defines maximum number of replicas. |
 | **publisher.&#x200b;replicas.&#x200b;min**  | integer | Min defines minimum number of replicas. |
 | **publisher.&#x200b;resources**  | object | Resources defines resources for eventing-publisher-proxy. |
-| **publisher.&#x200b;resources.&#x200b;claims**  | \[\]object | Claims lists the names of resources, defined in spec.resourceClaims,
-that are used by this container.
-
-This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.
-
-This field is immutable. It can only be set for containers. |
-| **publisher.&#x200b;resources.&#x200b;claims.&#x200b;name** (required) | string | Name must match the name of one entry in `pod.spec.resourceClaims` of
-the Pod where this field is used. It makes that resource available
-inside a container. |
-| **publisher.&#x200b;resources.&#x200b;claims.&#x200b;request**  | string | Request is the name chosen for a request in the referenced claim.
-If empty, everything from the claim is made available, otherwise
-only the result of this request. |
-| **publisher.&#x200b;resources.&#x200b;limits**  | map\[string\]\{integer or string\} | Limits describes the maximum amount of compute resources allowed.
-More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |
-| **publisher.&#x200b;resources.&#x200b;requests**  | map\[string\]\{integer or string\} | Requests describes the minimum amount of compute resources required.
-If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-otherwise to an implementation-defined value. Requests cannot exceed Limits.
-More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |
+| **publisher.&#x200b;resources.&#x200b;claims**  | \[\]object | Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.  This field is immutable. It can only be set for containers. |
+| **publisher.&#x200b;resources.&#x200b;claims.&#x200b;name** (required) | string | Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container. |
+| **publisher.&#x200b;resources.&#x200b;claims.&#x200b;request**  | string | Request is the name chosen for a request in the referenced claim. If empty, everything from the claim is made available, otherwise only the result of this request. |
+| **publisher.&#x200b;resources.&#x200b;limits**  | map\[string\]\{integer or string\} | Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |
+| **publisher.&#x200b;resources.&#x200b;requests**  | map\[string\]\{integer or string\} | Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ |
 
 **Status:**
 
@@ -100,29 +85,14 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
 | ---- | ----------- | ---- |
 | **activeBackend** (required) | string |  |
 | **conditions**  | \[\]object | Condition contains details for one aspect of the current state of this API Resource. |
-| **conditions.&#x200b;lastTransitionTime** (required) | string | lastTransitionTime is the last time the condition transitioned from one status to another.
-This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable. |
-| **conditions.&#x200b;message** (required) | string | message is a human readable message indicating details about the transition.
-This may be an empty string. |
-| **conditions.&#x200b;observedGeneration**  | integer | observedGeneration represents the .metadata.generation that the condition was set based upon.
-For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-with respect to the current state of the instance. |
-| **conditions.&#x200b;reason** (required) | string | reason contains a programmatic identifier indicating the reason for the condition's last transition.
-Producers of specific condition types may define expected values and meanings for this field,
-and whether the values are considered a guaranteed API.
-The value should be a CamelCase string.
-This field may not be empty. |
-| **conditions.&#x200b;status** (required) | string | status of the condition, one of `True`, `False`, `Unknown`. |
-| **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in `foo.example.com/CamelCase`. |
+| **conditions.&#x200b;lastTransitionTime** (required) | string | lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable. |
+| **conditions.&#x200b;message** (required) | string | message is a human readable message indicating details about the transition. This may be an empty string. |
+| **conditions.&#x200b;observedGeneration**  | integer | observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance. |
+| **conditions.&#x200b;reason** (required) | string | reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty. |
+| **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
+| **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. |
 | **publisherService**  | string |  |
 | **specHash** (required) | integer |  |
-| **state** (required) | string | Defines the overall state of the Eventing custom resource.<br/>
-- `Ready` when all the resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.<br/>
-- `Warning` if there is a user input misconfiguration. The following are examples of user input misconfigurations:<br/>
-&nbsp;&nbsp;- There is no backend configured.<br/>
-&nbsp;&nbsp;- The backend is configured to NATS but there is no NATS module installed.<br/>
-&nbsp;&nbsp;- The backend is configured to EventMesh but there is no valid EventMesh Secret configured.<br/>
-- `Processing` if the resources managed by the Eventing manager are being created or updated.<br/>
-- `Error` if an error occurred while reconciling the Eventing custom resource. |
+| **state** (required) | string | Defines the overall state of the Eventing custom resource.<br/> - `Ready` when all the resources managed by the Eventing manager are deployed successfully and the Eventing backend is connected.<br/> - `Warning` if there is a user input misconfiguration. The following are examples of user input misconfigurations:<br/> &nbsp;&nbsp;- There is no backend configured.<br/> &nbsp;&nbsp;- The backend is configured to NATS but there is no NATS module installed.<br/> &nbsp;&nbsp;- The backend is configured to EventMesh but there is no valid EventMesh Secret configured.<br/> - `Processing` if the resources managed by the Eventing manager are being created or updated.<br/> - `Error` if an error occurred while reconciling the Eventing custom resource. |
 
 <!-- TABLE-END -->
