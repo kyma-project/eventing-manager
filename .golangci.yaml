@@ -19,6 +19,10 @@ linters:
     - testpackage
     - wrapcheck
     - wsl
+    - wsl_v5
+    - noinlineerr
+    - embeddedstructfieldcheck
+    - noctx
     #TODO temporarely deactivated
     - err113
     - funcorder

@@ -108,6 +108,7 @@ generate-and-test: vendor manifests generate fmt imports vet lint test;
 test: envtest	## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" GOFIPS140=v1.0.0 go test ./... -coverprofile cover.out
 
+
 ##@ Build
 
 .PHONY: build
@@ -206,6 +207,7 @@ KUSTOMIZE_VERSION ?= v5.0.0
 CONTROLLER_TOOLS_VERSION ?= v0.19.0
 GOLANG_CI_LINT_VERSION ?= v2.1.6 ## Keep this the same as in .github/workflows/lint-go.yml
 
+
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
@@ -302,16 +304,17 @@ e2e-eventing-peerauthentications:
 e2e: e2e-setup e2e-eventing-setup e2e-eventing e2e-cleanup
 
 TABLE_GEN ?= $(LOCALBIN)/table-gen
-TABLE_GEN_VERSION ?= v0.0.0-20230523174756-3dae9f177ffd
+TABLE_GEN_VERSION = fb4e2cac1148290e30bc8f294435f9cf9bb18ba8
 
 .PHONY: tablegen
-tablegen: $(TABLE_GEN) ## Download table-gen locally if necessary.
+tablegen: $(TABLE_GEN) ## Download table-gen locally
 $(TABLE_GEN): $(LOCALBIN)
-	test -s $(TABLE_GEN) || GOBIN=$(LOCALBIN) go install github.com/kyma-project/kyma/hack/table-gen@$(TABLE_GEN_VERSION)
+	GOBIN=$(LOCALBIN) go install github.com/kyma-project/kyma/hack/table-gen@$(TABLE_GEN_VERSION)
 
 .PHONY: crd-docs-gen
 crd-docs-gen: tablegen ## Generates CRD spec into docs folder
-	${TABLE_GEN} --crd-filename ./config/crd/bases/operator.kyma-project.io_eventings.yaml --md-filename ./docs/user/02-configuration.md
+	${TABLE_GEN} --crd-filename ./config/crd/bases/operator.kyma-project.io_eventings.yaml --md-filename ./docs/user/resources/eventing-cr.md
+	${TABLE_GEN} --crd-filename ./config/crd/bases/eventing.kyma-project.io_subscriptions.yaml --md-filename ./docs/user/resources/subscription-cr.md
 
 # clean-testcache cleans the go test cache.
 .PHONY: clean-testcache
