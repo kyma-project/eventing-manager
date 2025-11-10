@@ -1,0 +1,32 @@
+name: pull-target-e2e-em-only
+
+## NOTE: This workflow uses the GitHub event `pull_request_target`, which uses the base commit instead of the head.
+# Therefore, the source used for the e2e tests and `make deploy` will be from base, rather than the pull request.
+# Reference(s):
+# - https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target/
+# - https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+
+on:
+  pull_request_target:
+    branches:
+      - main
+      - "release-**"
+    paths:
+      - "**.go"
+      - go.mod
+      - Dockerfile
+jobs:
+  wait-until-build-succeeds:
+    uses: "kyma-project/eventing-tools/.github/workflows/wait-build-reusable.yml@main"
+    with:
+      repository: ${{ github.repository_owner }}/eventing-manager
+      git_ref: ${{ github.event.pull_request.head.sha }}
+      git_check_run_name: "build / Build image"
+
+  e2e-event-mesh-only:
+    needs: wait-until-build-succeeds
+    uses: "./.github/workflows/e2e-backend-event-mesh-only.yml"
+    with:
+      eventing-manager-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
+      cluster-name-prefix: "ghem-"
+    secrets: inherit
