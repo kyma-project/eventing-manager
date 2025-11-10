@@ -2,9 +2,9 @@
 
 ## Symptom
 
-- You publish an event, but the subscriber does not receive it.
+- You publish an event, but the subscriber doesn't receive it.
 - A Subscription custom resource (CR) is not in the `Ready` state.
-- You cannot publish events, and the publisher receives an error.
+- You can't publish events, and the publisher receives an error.
 
 ## Cause
 
@@ -40,7 +40,7 @@ If the Eventing CR is ready, check the status of your Subscription.
    kubectl get subscription {SUBSCRIPTION_NAME} -n {NAMESPACE}
    ```
 
-2. In the output, look for `READY: true`. If it is `false`, inspect the Subscription's status for details:
+2. In the output, look for `READY: true`. If it's `false`, inspect the Subscription's status for details:
 
    ```bash
    kubectl get subscription {SUBSCRIPTION_NAME} -n {NAMESPACE} -o yaml
@@ -54,7 +54,7 @@ If the Subscription CR is ready, verify that you are publishing the event correc
 
 After sending an event, check the HTTP response code.
 
-- 4xx error: A client-side error indicates a problem with your request. Ensure your event conforms to the CloudEvents specification or the legacy event format. For details, see [Event Name Format](https://github.com/kyma-project/eventing-manager/blob/main/docs/user/evnt-event-names.md#event-name-format).
+- 4xx error: A client-side error indicates a problem with your request. Ensure that your event conforms to the CloudEvents specification or the legacy event format. For details, see [Event Name Format](https://github.com/kyma-project/eventing-manager/blob/main/docs/user/evnt-event-names.md#event-name-format).
 
 - 5xx error: A server-side error indicates a problem with the Eventing Publisher Proxy. Check its logs for errors:
 
@@ -75,7 +75,7 @@ The Eventing Manager is responsible for dispatching events from the backend to t
     ```
 
 2. Look for logs related to your subscription. 
-   If you use the NATS backend, a successful dispatch log contains `"message":"event dispatched"`. If this log is missing, it could mean the subscriber is unreachable or the NATS server is unavailable.
+   If you use the NATS backend, a successful dispatch log contains `"message":"event dispatched"`. If this log is missing, it could mean thatthe subscriber is unreachable or the NATS server is unavailable.
 
 ### 5. Check the Subscriber's Health
 
