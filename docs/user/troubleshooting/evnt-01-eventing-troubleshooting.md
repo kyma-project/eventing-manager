@@ -75,7 +75,7 @@ The Eventing Manager is responsible for dispatching events from the backend to t
     ```
 
 2. Look for logs related to your subscription. 
-   If you use the NATS backend, a successful dispatch log contains `"message":"event dispatched"`. If this log is missing, it could mean thatthe subscriber is unreachable or the NATS server is unavailable.
+   If you use the NATS backend, a successful dispatch log contains `"message":"event dispatched"`. If this log is missing, it could mean that the subscriber is unreachable or the NATS server is unavailable.
 
 ### 5. Check the Subscriber's Health
 
