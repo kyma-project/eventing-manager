@@ -8,6 +8,7 @@
 * @kyma-project/eventing
 
 *.md @kyma-project/technical-writers
+/docs/ @kyma-project/technical-writers
 
 *.sh @kyma-project/eventing
 
