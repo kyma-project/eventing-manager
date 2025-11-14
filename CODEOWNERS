@@ -7,6 +7,10 @@
 # These are the default owners for the whole content of the `Eventing tools` repository. The default owners are automatically added as reviewers when you open a pull request unless different owners are specified in the file.
 * @kyma-project/eventing
 
+# All files and subdirectories in /docs
+/docs/ @kyma-project/technical-writers
+
+# All .md files
 *.md @kyma-project/technical-writers
 
 *.sh @kyma-project/eventing
