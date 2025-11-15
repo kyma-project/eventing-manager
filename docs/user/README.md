@@ -4,7 +4,7 @@ Use the Eventing module to set up event-driven communication between application
 
 ## What is Eventing?
 
-The Eventing module enables event-driven communication between applications in your Kyma cluster. One application publishes an event (the "publisher"), and other applications ("subscribers") subscribe to receive it.
+The Eventing module enables event-driven communication between applications in your Kyma cluster. One application publishes an event (the publisher), and other applications (subscribers) subscribe to receive it.
 
 This decouples your services, as publishers and subscribers do not need to know about each other. They can communicate asynchronously and evolve independently.
 
@@ -13,7 +13,7 @@ This decouples your services, as publishers and subscribers do not need to know 
 The Eventing module provides the following features:
 
 - Publish-subscribe (pub/sub) messaging: Decouples applications so you can build resilient and scalable event-driven systems.
-- Flexible backend support: Use the in-cluster NATS backend (see [NATS module](https://kyma-project.io/#/nats-manager/user/README)) or configure SAP Event Mesh (see [SAP Event Mesh](https://help.sap.com/docs/event-mesh/event-mesh/what-is-sap-event-mesh?version=Cloud&locale=en-US)) for enterprise messaging.
+- Flexible backend support: Use the in-cluster NATS backend (see [NATS Module](https://kyma-project.io/#/nats-manager/user/README)) or configure SAP Event Mesh (see [SAP Event Mesh](https://help.sap.com/docs/event-mesh/event-mesh/what-is-sap-event-mesh?version=Cloud&locale=en-US)) for enterprise messaging.
 - Standardized event format: All events follow the [CloudEvents](https://cloudevents.io/) specification, ensuring a consistent and portable format.
 - Automatic legacy event conversion: Converts older, non-standard Kyma event formats into valid CloudEvents automatically. For details, see [Event Name Cleanup](evnt-event-names.md#event-name-cleanup).
 - At-least-once delivery: Ensures that each event is delivered at least one time when you use the NATS backend, preventing message loss during temporary failures.
@@ -51,7 +51,7 @@ The Eventing Manager is the module's controller. It watches for Subscription cus
 When you create or update a Subscription, the Eventing Manager performs the following tasks:
 
 - Configures the selected eventing backend to manage event streams and consumers for subscriptions.
-- Ensures events are routed from the correct publisher to the specified subscriber (the "sink").
+- Ensures events are routed from the correct publisher to the specified subscriber (the sink).
 - Creates and manages Kubernetes resources, such as ConfigMap, Services, and DestinationRules, adapting them to the desired state.
 
 ### Eventing Publisher Proxy

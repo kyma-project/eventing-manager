@@ -25,7 +25,7 @@ If you want to subscribe to more event types, add more types to your subscriptio
       - **Subscription name**: `lastorder-sub`
       - **Types**: `order.received.v1` and `order.changed.v1`
       - **Service**: `lastorder` (the sink is populated automatically)
-      - **Type matching:**: `standard`
+      - **Type matching**: `standard`
       - **Source**: `myapp`
 
    - With kubectl, run: 
@@ -115,7 +115,7 @@ If you want to subscribe to more event types, add more types to your subscriptio
      -c function
      ```
 
-## Result
+## Results
 
 You see the received event in the logs:
 
