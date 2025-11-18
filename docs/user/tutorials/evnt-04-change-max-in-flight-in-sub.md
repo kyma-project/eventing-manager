@@ -7,7 +7,7 @@ Manage your subscriber's workload by configuring the max-in-flight limit to cont
 - You have the Eventing module in your Kyma cluster.
 - You have access to Kyma dashboard. Alternatively, if you prefer CLI, you need `kubectl` and `curl`.
 - Optionally, you have the [CloudEvents Conformance Tool](https://github.com/cloudevents/conformance) for publishing events.
-- You have an inline Function as event sink (see [Create and Modify an Inline Function](https://kyma-project.io/#/serverless-manager/user/tutorials/01-10-create-inline-function)).
+- You have an inline Function as event sink (see [Create and Modify an Inline Function](https://kyma-project.io/external-content/serverless/docs/user/tutorials/01-10-create-inline-function)).
   Replace the default code sample with the following code. To simulate prolonged event processing, the Function waits for 5 seconds before returning the response.
   ```js
   module.exports = {
