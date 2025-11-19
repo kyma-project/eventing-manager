@@ -106,17 +106,18 @@ generate-and-test: vendor manifests generate fmt imports vet lint test;
 
 .PHONY: test
 test: envtest	## Run tests.
-	GOTOOLCHAIN=go1.25.3+auto KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" GOFIPS140=v1.0.0 go test ./... -coverprofile cover.out
+
 
 ##@ Build
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
-	go build -o bin/manager cmd/main.go
+	GOFIPS140=v1.0.0 go build -o bin/manager cmd/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./cmd/main.go
+	GODEBUG=fips140=only,tlsmlkem=0 go run ./cmd/main.go
 
 # If you wish built the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64 ). However, you must enable docker buildKit for it.
@@ -163,6 +164,9 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	if [ -n "${GODEBUG}" ]; then \
+        $(KUSTOMIZE) edit set env controller GODEBUG=${GODEBUG}; \
+    fi
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: render-manifest
@@ -204,7 +208,8 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.0
 CONTROLLER_TOOLS_VERSION ?= v0.19.0
-GOLANG_CI_LINT_VERSION ?= v2.4.0 ## Keep this the same as in .github/workflows/lint-go.yml
+GOLANG_CI_LINT_VERSION ?= v2.1.6 ## Keep this the same as in .github/workflows/lint-go.yml
+
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -270,17 +275,17 @@ $(KYMA):
 # e2e-setup will create an Eventing CR and check if the required resources are provisioned or not.
 .PHONY: e2e-setup
 e2e-setup:
-	go test -v ./hack/e2e/setup/setup_test.go --tags=e2e
+	GOFIPS140=v1.0.0 go test -v ./hack/e2e/setup/setup_test.go --tags=e2e
 
 # e2e-cleanup will delete the Eventing CR and check if the required resources are de-provisioned or not.
 .PHONY: e2e-cleanup
 e2e-cleanup: e2e-eventing-cleanup
-	go test -v ./hack/e2e/cleanup/cleanup_test.go --tags=e2e
+	GOFIPS140=v1.0.0 go test -v ./hack/e2e/cleanup/cleanup_test.go --tags=e2e
 
 # e2e-eventing-setup will setup subscriptions and sink required for tests to check end-to-end delivery of events.
 .PHONY: e2e-eventing-setup
 e2e-eventing-setup:
-	go test -v ./hack/e2e/eventing/setup/setup_test.go --tags=e2e
+	GOFIPS140=v1.0.0 go test -v ./hack/e2e/eventing/setup/setup_test.go --tags=e2e
 
 # e2e-eventing will tests end-to-end delivery of events.
 .PHONY: e2e-eventing
@@ -290,12 +295,12 @@ e2e-eventing:
 # e2e-eventing-cleanup will delete all subscriptions and other resources created for event delivery tests.
 .PHONY: e2e-eventing-cleanup
 e2e-eventing-cleanup:
-	go test -v ./hack/e2e/eventing/cleanup/cleanup_test.go --tags=e2e
+	GOFIPS140=v1.0.0 go test -v ./hack/e2e/eventing/cleanup/cleanup_test.go --tags=e2e
 
 # e2e-eventing-peerauthentications will check if the peerauthentications are created as intended.
 .PHONY: e2e-eventing-peerauthentications
 e2e-eventing-peerauthentications:
-	go test -v ./hack/e2e/eventing/peerauthentications/peerauthentications_test.go --tags=e2e
+	GOFIPS140=v1.0.0 go test -v ./hack/e2e/eventing/peerauthentications/peerauthentications_test.go --tags=e2e
 
 # e2e will run the whole suite of end-to-end tests for eventing-manager.
 .PHONY: e2e
