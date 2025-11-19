@@ -2,7 +2,7 @@
 
 ## Symptom
 
-A subscriber receives events that do not match the types defined in its Subscription custom resource.
+A subscriber receives events that don't match the types defined in its Subscription custom resource.
 
 ## Cause
 
@@ -26,4 +26,4 @@ This issue occurs due to a naming collision after event type cleanup. To conform
 
    If the output shows more than one Subscription with the same **cleanType**, you have a naming collision.
 
-3. To fix the issue, modify the **spec.types** in one of the colliding Subscription resources and update the corresponding publisher to use a unique event type that does not cause a collision.
+3. To fix the issue, modify the **spec.types** in one of the colliding Subscription resources and update the corresponding publisher to use a unique event type that doesn't cause a collision.
