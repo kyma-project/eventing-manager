@@ -94,7 +94,7 @@ jobs:
       - name: Deploy eventing-manager
         run: |
           make install
-          make deploy IMG=$MANAGER_IMAGE
+          make deploy IMG=$MANAGER_IMAGE GODEBUG=fips140=only,tlsmlkem=0
           kubectl apply -f config/samples/default_eventmesh.yaml
       - name: Wait for Installed modules to be ready
         run: |

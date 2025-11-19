@@ -25,7 +25,7 @@ jobs:
 
   backend-switching:
     needs: wait-until-build-succeeds
-    uses: "./.github/workflows/e2e-event-mesh-only-backend.yml"
+    uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
       eventing-manager-image: europe-docker.pkg.dev/kyma-project/dev/eventing-manager:PR-${{ github.event.number }}
       cluster-name-prefix: "ghem-"
