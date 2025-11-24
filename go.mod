@@ -24,7 +24,7 @@ require (
 	github.com/vektra/mockery/v2 v2.52.2
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/oauth2 v0.30.0
+	golang.org/x/oauth2 v0.33.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 	istio.io/api v1.25.3
 	istio.io/client-go v1.25.1
