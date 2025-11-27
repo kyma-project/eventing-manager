@@ -35,7 +35,7 @@ Your subscriber applications, such as Functions or microservices, have finite re
      - **Subscription name**: `lastorder-sub`
      - **Types**: `order.received.v1` and `order.changed.v1`
      - **Service**: `lastorder` (the sink is populated automatically)
-     - **Type matching:**: `standard`
+     - **Type matching**: `standard`
      - **Source**: `myapp`
 
    - With kubectl, run:
@@ -110,7 +110,7 @@ Your subscriber applications, such as Functions or microservices, have finite re
        -c function
      ```
 
-## Result
+## Results
 
 In the logs, you see that only 5 events were delivered to the Function in parallel. As soon as the Function completed the processing of the event and returns a response, the Eventing module delivers the next in-line event to the Function.
 

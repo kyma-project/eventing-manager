@@ -6,9 +6,9 @@ The Eventing module uses event names to identify and route events to subscribers
 
 Event names depend on the type of event. Eventing supports the following event types:
 
-- [CloudEvents](https://cloudevents.io/): Events that conform to the [CloudEvents specification](https://cloudevents.io/). This is the recommended standard for describing event data in a common way. The specification is currently under the [CNCF](https://www.cncf.io/).
+- CloudEvents: Events that conform to the [CloudEvents specification](https://cloudevents.io/). This is the recommended standard for describing event data in a common way. The specification is currently under the [CNCF](https://www.cncf.io/).
 
-- Legacy events: Events or messages published to Kyma that do not conform to the CloudEvents specification. The [Eventing Publisher Proxy](README.md#eventing-publisher-proxy) converts all legacy events into CloudEvents before processing them.
+- Legacy events: Events or messages published to Kyma that do not conform to the CloudEvents specification. The Eventing Publisher Proxy converts all legacy events into CloudEvents before processing them.
 
 ## Event Name Format
 
@@ -37,6 +37,6 @@ To check the Subscription's cleaned event type, run: `kubectl get subscriptions 
 This cleanup happens internally; you can still publish and subscribe using the original event names (with prohibited characters). However, the Eventing module processes the cleaned version. 
 
 > [!WARNING]
-> This can lead to a naming collision if two different original event names clean up to the same internal name. For example, both `system>prod` and `systemprod` become `systemprod`. While this does not result in an error, a naming collision can cause subscribers to receive irrelevant events or miss expected events. For details, see [Troubleshooting: Subscriber receives irrelevant events](./troubleshooting/evnt-02-subscriber-irrelevant-events.md).
+> This can lead to a naming collision if two different original event names clean up to the same internal name. For example, both `system>prod` and `systemprod` become `systemprod`. While this does not result in an error, a naming collision can cause subscribers to receive irrelevant events or miss expected events. For details, see [Subscriber Receives Irrelevant Events](./troubleshooting/evnt-02-subscriber-irrelevant-events.md).
 
 When you verify event delivery in your Function logs, the received event type reflects the cleaned name, not the original name you defined in the Subscription or published with.
