@@ -6,7 +6,7 @@ A subscriber receives events that don't match the types defined in its Subscript
 
 ## Cause
 
-This issue occurs due to a naming collision after event type cleanup. To conform to Cloud Event specifications, Eventing modifies the event names to filter out prohibited characters. For details, see [Event name cleanup](../evnt-event-names.md#event-name-cleanup).
+This issue occurs due to a naming collision after event type cleanup. To conform to Cloud Event specifications, Eventing modifies the event names to filter out prohibited characters. For details, see [Event name cleanup](https://github.com/kyma-project/eventing-manager/blob/main/docs/user/evnt-event-names.md#event-name-cleanup).
 
 ## Solution
 
