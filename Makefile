@@ -106,7 +106,7 @@ generate-and-test: vendor manifests generate fmt imports vet lint test;
 
 .PHONY: test
 test: envtest	## Run tests.
-	GOTOOLCHAIN=go1.25.3+auto KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+	GOTOOLCHAIN=go1.26.0+auto KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
 
