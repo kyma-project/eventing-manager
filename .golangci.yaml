@@ -23,6 +23,7 @@ linters:
     - noinlineerr
     - embeddedstructfieldcheck
     - noctx
+    - godoclint
     #TODO temporarely deactivated
     - err113
     - funcorder
@@ -34,6 +35,7 @@ linters:
     - staticcheck
     - testifylint
     - usetesting
+    - modernize
   settings:
     cyclop:
       max-complexity: 20
