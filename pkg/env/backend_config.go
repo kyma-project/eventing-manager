@@ -25,13 +25,13 @@ type BackendConfig struct {
 }
 
 type PublisherConfig struct {
-	Image             string `default:"eu.gcr.io/kyma-project/event-publisher-proxy:c06eb4fc" envconfig:"PUBLISHER_IMAGE"`
-	ImagePullPolicy   string `default:"IfNotPresent"                                          envconfig:"PUBLISHER_IMAGE_PULL_POLICY"`
-	PortNum           int    `default:"8080"                                                  envconfig:"PUBLISHER_PORT_NUM"`
-	MetricsPortNum    int    `default:"8080"                                                  envconfig:"PUBLISHER_METRICS_PORT_NUM"`
-	ServiceAccount    string `default:"eventing-publisher-proxy"                              envconfig:"PUBLISHER_SERVICE_ACCOUNT"`
-	RequestTimeout    string `default:"5s"                                                    envconfig:"PUBLISHER_REQUEST_TIMEOUT"`
-	PriorityClassName string `default:""                                                      envconfig:"PUBLISHER_PRIORITY_CLASS_NAME"`
+	Image             string `default:"europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.2.0" envconfig:"PUBLISHER_IMAGE"`
+	ImagePullPolicy   string `default:"IfNotPresent"                                                           envconfig:"PUBLISHER_IMAGE_PULL_POLICY"`
+	PortNum           int    `default:"8080"                                                                   envconfig:"PUBLISHER_PORT_NUM"`
+	MetricsPortNum    int    `default:"8080"                                                                   envconfig:"PUBLISHER_METRICS_PORT_NUM"`
+	ServiceAccount    string `default:"eventing-publisher-proxy"                                               envconfig:"PUBLISHER_SERVICE_ACCOUNT"`
+	RequestTimeout    string `default:"5s"                                                                     envconfig:"PUBLISHER_REQUEST_TIMEOUT"`
+	PriorityClassName string `default:""                                                                       envconfig:"PUBLISHER_PRIORITY_CLASS_NAME"`
 	// publisher takes the controller values
 	AppLogFormat          string `default:"json" envconfig:"APP_LOG_FORMAT"`
 	ApplicationCRDEnabled bool

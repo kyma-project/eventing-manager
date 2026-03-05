@@ -6,7 +6,7 @@ kind: kyma
 rc-tag: 1.5.1
 bdba:
   - europe-docker.pkg.dev/kyma-project/prod/eventing-manager:1.5.1
-  - europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.1.2
+  - europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.2.0
 mend:
   language: golang-mod
   exclude:
