@@ -5,7 +5,7 @@ module-name: eventing
 kind: kyma
 bdba:
   - europe-docker.pkg.dev/kyma-project/prod/eventing-manager:main
-  - europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.2.0
+  - europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.2.1
 mend:
   language: golang-mod
   exclude:

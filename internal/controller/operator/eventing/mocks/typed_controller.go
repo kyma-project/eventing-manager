@@ -6,8 +6,11 @@ import (
 	context "context"
 
 	logr "github.com/go-logr/logr"
+
 	mock "github.com/stretchr/testify/mock"
+
 	reconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
+
 	source "sigs.k8s.io/controller-runtime/pkg/source"
 )
 
