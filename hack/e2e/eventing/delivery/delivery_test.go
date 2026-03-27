@@ -47,6 +47,12 @@ func TestMain(m *testing.M) {
 		testEnvironment.Logger.Fatal(err.Error())
 	}
 
+	// Warm up EventMesh if needed. EventMesh webhook subscriptions can take time to become
+	// fully active, causing the first few events to get 404 on the sink.
+	if testEnvironment.TestConfigs.IsEventMeshBackend() {
+		testEnvironment.WarmUpEventMesh(fixtures.V1Alpha2SubscriptionsToTest())
+	}
+
 	// Run the tests and exit.
 	code := m.Run()
 	os.Exit(code)
