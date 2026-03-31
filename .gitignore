@@ -41,3 +41,4 @@ module-config.yaml
 **/.env
 **/.env.dev
 .env.aws
+/copilot-context/
