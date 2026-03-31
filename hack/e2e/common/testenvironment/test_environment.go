@@ -350,6 +350,32 @@ func (te *TestEnvironment) DeleteSubscriptionFromK8s(name, namespace string) err
 	})
 }
 
+// WarmUpEventMesh sends a few throwaway events to EventMesh to prime the webhook subscriptions.
+// EventMesh subscriptions (webhooks) can take some time to become fully active after creation,
+// which causes the first few events to return 404 on the sink. This method sends warm-up events
+// and waits for the pipeline to stabilize before the real tests run.
+func (te *TestEnvironment) WarmUpEventMesh(subsToTest []eventing.TestSubscriptionInfo) {
+	const (
+		warmUpRounds = 3
+		publishPause = 2 * time.Second
+	)
+
+	// Pick the first subscription and its first event type — we just need to push traffic through the pipeline.
+	sub := subsToTest[0]
+
+	te.Logger.Info("starting EventMesh warm-up: sending throwaway events to prime webhook subscriptions")
+
+	for i := 0; i < warmUpRounds; i++ {
+		_, legacySource, legacyType, payload := eventing.NewLegacyEvent(sub.Source, sub.Types[0], sub.TypeMatching)
+		if err := te.EventPublisher.SendLegacyEvent(legacySource, legacyType, payload); err != nil {
+			te.Logger.Debug(fmt.Sprintf("warm-up event %d/%d failed (expected): %s", i+1, warmUpRounds, err.Error()))
+		}
+		time.Sleep(publishPause)
+	}
+
+	te.Logger.Info("EventMesh warm-up complete")
+}
+
 func (te *TestEnvironment) TestDeliveryOfLegacyEvent(eventSource, eventType string, typeMatching eventingv1alpha2.TypeMatching) error {
 	// define the event
 	evntID, legacyEventSource, legacyEventType, payload := eventing.NewLegacyEvent(eventSource, eventType, typeMatching)
