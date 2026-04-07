@@ -12,6 +12,13 @@ updates:
       time: "07:00"
     commit-message:
       prefix: "deps(dependabot)"
+    groups:
+      gomod-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "docker" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
@@ -20,6 +27,13 @@ updates:
       time: "07:00"
     commit-message:
       prefix: "deps(dependabot)"
+    groups:
+      docker-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "github-actions" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
@@ -28,3 +42,10 @@ updates:
       time: "07:00"
     commit-message:
       prefix: "deps(dependabot)"
+    groups:
+      gha-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
