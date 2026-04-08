@@ -71,6 +71,43 @@ You configure the Eventing module by creating and applying Kubernetes Custom Res
 - To understand and configure the module's global settings, see the [Eventing CRD](./resources/eventing-cr.md).
 - To create a subscriber, define a [Subscription CRD](./resources/subscription-cr.md). You cannot delete the Eventing module as long as Subscription CRs exist.
 
+## RBAC Aggregation
+
+The Eventing module provides aggregated Kubernetes RBAC ClusterRoles following the [Kubernetes User-Facing Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles) pattern. These ClusterRoles automatically extend the standard `view` and `edit` roles with permissions for Eventing module resources.
+
+This means that users already bound to the standard Kubernetes `view` or `edit` ClusterRoles can work with Eventing resources (Eventing CR and Subscription CR) without any additional role configuration.
+
+### Provided ClusterRoles
+
+#### kyma-eventing-view
+
+Aggregates into the standard `view` ClusterRole. Grants read-only access to Eventing module resources.
+
+| API Group | Resources | Verbs |
+|---|---|---|
+| `operator.kyma-project.io` | `eventings`, `eventings/status` | `get`, `list`, `watch` |
+| `eventing.kyma-project.io` | `subscriptions`, `subscriptions/status` | `get`, `list`, `watch` |
+
+#### kyma-eventing-edit
+
+Aggregates into the standard `edit` ClusterRole. Grants full read/write access to Eventing module resources.
+
+| API Group | Resources | Verbs |
+|---|---|---|
+| `operator.kyma-project.io` | `eventings` | `get`, `list`, `watch`, `create`, `update`, `patch`, `delete`, `deletecollection` |
+| `operator.kyma-project.io` | `eventings/status` | `get` |
+| `eventing.kyma-project.io` | `subscriptions` | `get`, `list`, `watch`, `create`, `update`, `patch`, `delete`, `deletecollection` |
+| `eventing.kyma-project.io` | `subscriptions/status` | `get` |
+
+### How It Works
+
+Kubernetes supports [RBAC aggregation](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles) through label selectors. The standard `view` and `edit` ClusterRoles aggregate rules from any ClusterRole that carries the matching label:
+
+- `rbac.authorization.k8s.io/aggregate-to-view: "true"` → aggregates into `view`
+- `rbac.authorization.k8s.io/aggregate-to-edit: "true"` → aggregates into `edit`
+
+When the Eventing module is deployed, the `kyma-eventing-view` and `kyma-eventing-edit` ClusterRoles are created with these labels. Kubernetes automatically merges their rules into the standard roles.
+
 ## Resource Consumption
 
 To learn more about the resources used by the Eventing module, see [Kyma Modules' Sizing](https://help.sap.com/docs/btp/sap-business-technology-platform/kyma-modules-sizing?locale=en-US&version=Cloud).
