@@ -71,12 +71,13 @@ You configure the Eventing module by creating and applying Kubernetes Custom Res
 - To understand and configure the module's global settings, see the [Eventing CRD](./resources/eventing-cr.md).
 - To create a subscriber, define a [Subscription CRD](./resources/subscription-cr.md). You cannot delete the Eventing module as long as Subscription CRs exist.
 
-## RBAC Aggregation
+## Authorization
 
-The Eventing module provides aggregated Kubernetes RBAC ClusterRoles following the [Kubernetes User-Facing Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles) pattern. These ClusterRoles automatically extend the standard `view` and `edit` roles with permissions for Eventing module resources.
+To assign access permissions to the Eventing module resources, use the following [aggregated ClusterRoles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles):
 
-This means that users already bound to the standard Kubernetes `view` or `edit` ClusterRoles can work with Eventing resources (Eventing CR and Subscription CR) without any additional role configuration.
-
+- `kyma-eventing-view` - Grants read-only access to all Eventing module resources and their status.
+- `kyma-eventing-edit` - Grants full access to all Eventing module resources and read-only access to their status.
+- 
 ### Provided ClusterRoles
 
 #### kyma-eventing-view
@@ -85,8 +86,10 @@ Aggregates into the standard `view` ClusterRole. Grants read-only access to Even
 
 | API Group | Resources | Verbs |
 |---|---|---|
-| `operator.kyma-project.io` | `eventings`, `eventings/status` | `get`, `list`, `watch` |
-| `eventing.kyma-project.io` | `subscriptions`, `subscriptions/status` | `get`, `list`, `watch` |
+| `operator.kyma-project.io` | `eventings` | `get`, `list`, `watch` |
+| `operator.kyma-project.io` | `eventings/status` | `get` |
+| `eventing.kyma-project.io` | `subscriptions` | `get`, `list`, `watch` |
+| `eventing.kyma-project.io` | `subscriptions/status` | `get` |
 
 #### kyma-eventing-edit
 
