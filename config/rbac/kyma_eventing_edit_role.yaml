@@ -1,0 +1,49 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyma-eventing-edit
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: eventing-manager
+    app.kubernetes.io/part-of: eventing-manager
+    app.kubernetes.io/managed-by: kustomize
+rules:
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - eventings
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - eventings/status
+  verbs:
+  - get
+- apiGroups:
+  - eventing.kyma-project.io
+  resources:
+  - subscriptions
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - eventing.kyma-project.io
+  resources:
+  - subscriptions/status
+  verbs:
+  - get
