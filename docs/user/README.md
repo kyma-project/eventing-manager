@@ -71,6 +71,14 @@ You configure the Eventing module by creating and applying Kubernetes Custom Res
 - To understand and configure the module's global settings, see the [Eventing CRD](./resources/eventing-cr.md).
 - To create a subscriber, define a [Subscription CRD](./resources/subscription-cr.md). You cannot delete the Eventing module as long as Subscription CRs exist.
 
+## Authorization
+
+To assign access permissions to the Eventing module resources, use the following [aggregated ClusterRoles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles):
+
+- `kyma-eventing-view` - Grants read-only access to all Eventing module resources and their status.
+- `kyma-eventing-edit` - Grants full access to all Eventing module resources and read-only access to their status.
+- 
+
 ## Resource Consumption
 
 To learn more about the resources used by the Eventing module, see [Kyma Modules' Sizing](https://help.sap.com/docs/btp/sap-business-technology-platform/kyma-modules-sizing?locale=en-US&version=Cloud).
