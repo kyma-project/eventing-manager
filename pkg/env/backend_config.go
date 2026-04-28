@@ -25,7 +25,7 @@ type BackendConfig struct {
 }
 
 type PublisherConfig struct {
-	Image             string `default:"europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.2.1" envconfig:"PUBLISHER_IMAGE"`
+	Image             string `default:"europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.2.2" envconfig:"PUBLISHER_IMAGE"`
 	ImagePullPolicy   string `default:"IfNotPresent"                                                           envconfig:"PUBLISHER_IMAGE_PULL_POLICY"`
 	PortNum           int    `default:"8080"                                                                   envconfig:"PUBLISHER_PORT_NUM"`
 	MetricsPortNum    int    `default:"8080"                                                                   envconfig:"PUBLISHER_METRICS_PORT_NUM"`
