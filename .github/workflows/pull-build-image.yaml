@@ -7,7 +7,7 @@ on:
 permissions:
   id-token: write # This is required for requesting the JWT token
   contents: read # This is required for actions/checkout
-
+# bump-comment
 jobs:
   build:
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
