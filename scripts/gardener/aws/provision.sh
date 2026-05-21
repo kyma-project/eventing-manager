@@ -89,7 +89,9 @@ spec:
   dns:
     providers:
     - type: aws-route53
-      secretName: aws-route53-secret
+      credentialsRef:
+        name: aws-route53-secret
+        namespace: garden-${GARDENER_PROJECT_NAME}
   region: ${GARDENER_REGION}
   purpose: evaluation
   provider:
@@ -125,9 +127,6 @@ spec:
     version: ${GARDENER_CLUSTER_VERSION}
   hibernation:
     enabled: false
-  addons:
-    nginxIngress:
-      enabled: false
 EOF
 
     echo "waiting fo cluster to be ready..."
