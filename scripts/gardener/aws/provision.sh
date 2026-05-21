@@ -91,7 +91,6 @@ spec:
     - type: aws-route53
       credentialsRef:
         name: aws-route53-secret
-        namespace: garden-${GARDENER_PROJECT_NAME}
   region: ${GARDENER_REGION}
   purpose: evaluation
   provider:
