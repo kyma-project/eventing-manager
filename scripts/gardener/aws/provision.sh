@@ -90,6 +90,8 @@ spec:
     providers:
     - type: aws-route53
       credentialsRef:
+        apiVersion: v1
+        kind: Secret
         name: aws-route53-secret
   region: ${GARDENER_REGION}
   purpose: evaluation
