@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**.md'
-      - 'sec-scanners-config.yaml'
       - CODEOWNERS
       - LICENSE
       - LICENSES
