@@ -23,8 +23,8 @@ jobs:
           # push version to output environment file
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
-  bump-sec-scanners-config:
-    name: Bump sec-scanners-config.yaml
+  bump-kustomize:
+    name: Bump kustomize
     needs: generate-version
     runs-on: ubuntu-latest
     env:
@@ -34,28 +34,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - name: "Setup yq" # Required for rendering the files.
-        shell: bash
-        run: |
-          go install github.com/mikefarah/yq/v4@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-      - name: Render sec-scanners-config.yaml
-        shell: bash
-        run: |
-          yq --version
-          ./hack/ci/render-sec-scanners-config.sh "${VERSION}"
-
       - name: Bump kustomize file
         shell: bash
         run: |
           ./hack/ci/bump-kustomize-file.sh "${VERSION}"
 
-      # Check if there are changes so we can determin if all following steps can be skipped.
+      # Check if there are changes so we can determine if all following steps can be skipped.
       - name: Check for changes
         shell: bash
         run: |
@@ -65,13 +49,6 @@ jobs:
             echo "Changes found. Creating a PR and waiting for it to be merged."
             echo "CREATE_PR=true" >> $GITHUB_ENV 
           fi
-
-      - name: Print out sec-scanners-config.yaml
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          FILE="sec-scanners-config.yaml"
-          [ -f "${FILE}" ] && cat "${FILE}" || echo "${FILE} not found."
 
       - name: Print out kustomize file
         if: ${{ always() }}
@@ -108,7 +85,7 @@ jobs:
           echo "pr date: ${PR_DATE}"
           echo "PR_DATE=${PR_DATE}" >> $GITHUB_ENV
 
-          BRANCH_NAME="sec-scanners-bump-${CURRENT_BRANCH}-${PR_DATE}"
+          BRANCH_NAME="kustomize-bump-${CURRENT_BRANCH}-${PR_DATE}"
           echo "name of the new branch: ${BRANCH_NAME}"
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
 
@@ -125,10 +102,6 @@ jobs:
           # Create a new branch for our changes.
           git checkout -b "${BRANCH_NAME}"
 
-          # Stage the changes to sec-scanner-config.yaml and create a commit.
-          git add sec-scanners-config.yaml
-          git commit -m "auto-bump sec-scanners-config: ${PR_DATE}"
-
           git add "config/manager/kustomization.yaml"
           git commit -m "auto-bump kustomization file: ${PR_DATE}"
 
@@ -136,8 +109,8 @@ jobs:
           git push origin "$BRANCH_NAME"
 
           # Create a PR.
-          BODY="This is an auto-generated PR to bump the sec-scanners-config.yml and kustomization on ${REPO}."
-          PR_URL=$(gh pr create --base "${CURRENT_BRANCH}" --head "${BRANCH_NAME}" --title "Bump sec-scanners-config and kustomization on ${CURRENT_BRANCH}" --body "${BODY}")
+          BODY="This is an auto-generated PR to bump the kustomization on ${REPO}."
+          PR_URL=$(gh pr create --base "${CURRENT_BRANCH}" --head "${BRANCH_NAME}" --title "Bump kustomization on ${CURRENT_BRANCH}" --body "${BODY}")
           echo "PR_URL=${PR_URL}" >> $GITHUB_ENV
 
       - name: USER INTERACTION REQUIRED
@@ -174,7 +147,7 @@ jobs:
 
   create-draft:
     name: Create draft release
-    needs: [generate-version, bump-sec-scanners-config]
+    needs: [generate-version, bump-kustomize]
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.generate-version.outputs.VERSION }}
@@ -186,7 +159,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.ref_name }} # pull new sha to include the code from above sec-scan PR into the new tag below (tag sec-scan values will be used by BlackDuck later)
+          ref: ${{ github.ref_name }}
           token: ${{ secrets.BOT_PAT }} # creating git tag using bot token because GITHUB_TOKEN would not trigger build workflow (https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow).
 
       - name: Create changelog
@@ -228,111 +201,3 @@ jobs:
       git_ref: ${{ needs.generate-version.outputs.VERSION }}
       git_check_run_name: "build-${{ needs.generate-version.outputs.VERSION }} / Build image"
 
-  bump-sec-scanners-config-main:
-    name: Bump sec-scanners-config.yaml on main branch
-    needs: 
-      - create-draft
-      - generate-version
-      - wait-until-build-succeeds
-    runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ needs.generate-version.outputs.VERSION }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-        with:
-          ref: main
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - name: "Setup yq" # Required for rendering the files.
-        shell: bash
-        run: |
-          go install github.com/mikefarah/yq/v4@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-      - name: Render sec-scanners-config.yaml
-        shell: bash
-        run: |
-          yq --version
-          ./hack/ci/render-sec-scanners-config.sh "${VERSION}"
-          FILE="sec-scanners-config.yaml"
-          echo "******* ${FILE} *******"
-          [ -f "${FILE}" ] && cat "${FILE}" || echo "${FILE} not found."
-
-      # Check if there are changes, so we can determine if all following steps can be skipped.
-      - name: Check for changes
-        shell: bash
-        run: |
-          if [ -z "$(git status --porcelain)" ]; then 
-            echo "No changes found. No need to create a PR" 
-          else 
-            echo "Changes found. Creating a PR and waiting for it to be merged."
-            echo "CREATE_PR=true" >> $GITHUB_ENV 
-          fi
-
-      - name: Set up git
-        if: ${{ env.CREATE_PR == 'true' }}
-        env:
-          GH_TOKEN: ${{ secrets.BOT_PAT }}
-          REPO: ${{ github.repository }}
-        shell: bash
-        run: |
-          # set git username 
-          ghusername=$(curl -s -H "Authorization: token ${GH_TOKEN}" https://api.github.com/user | jq '.login')
-          git config user.name "${ghusername}"
-          # set git mail address
-          ghemailaddress="${ghusername}@users.noreply.github.com"
-          git config user.email "${ghemailaddress}"
-          # set remote url
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
-
-      - name: Set all variables
-        if: ${{ env.CREATE_PR == 'true' }}
-        shell: bash
-        run: |
-          PR_DATE="$(date '+%Y-%m-%d-%H-%M-%S')"
-          echo "pr date: ${PR_DATE}"
-          echo "PR_DATE=${PR_DATE}" >> $GITHUB_ENV
-
-          BRANCH_NAME="sec-scanners-bump-main-${PR_DATE}"
-          echo "name of the new branch: ${BRANCH_NAME}"
-          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
-
-      - name: Create a pull request
-        if: ${{ env.CREATE_PR == 'true' }}
-        env:
-          REPO: ${{ github.repository }}
-          PR_DATE: ${{ env.PR_DATE }}
-          BRANCH_NAME: ${{ env.BRANCH_NAME }}
-          GH_TOKEN: ${{ secrets.BOT_PAT }}
-        shell: bash
-        run: |
-          # Create a new branch for our changes.
-          git checkout -b "${BRANCH_NAME}"
-
-          # Stage the changes to sec-scanner-config.yaml and create a commit.
-          git add sec-scanners-config.yaml
-          git commit -m "auto-bump sec-scanners-config: ${PR_DATE}"
-
-          # Push the changes to origin, as defined earlier.
-          git push origin "$BRANCH_NAME"
-
-          # Create a PR.
-          BODY="This is an auto-generated PR to bump the sec-scanners-config.yml on ${REPO}."
-          PR_URL=$(gh pr create --base "main" --head "${BRANCH_NAME}" --title "chore: bump sec-scanners-config on main" --body "${BODY}")
-          echo "PR_URL=${PR_URL}" >> $GITHUB_ENV
-
-      - name: USER INTERACTION REQUIRED
-        if: ${{ env.CREATE_PR == 'true' }}
-        shell: bash
-        timeout-minutes: 60
-        env:
-          PR_URL: ${{ env.PR_URL }}
-          GH_TOKEN: ${{ secrets.BOT_PAT }}
-        run: |
-          echo "please review:  ${PR_URL}"
-          ./hack/ci/await-pr-merge.sh        
