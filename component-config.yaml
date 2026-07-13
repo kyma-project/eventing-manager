@@ -1,0 +1,5 @@
+name: kyma-project.io/module/eventing-manager
+team: kyma/phoenix
+images:
+  - europe-docker.pkg.dev/kyma-project/prod/eventing-manager:main
+  - europe-docker.pkg.dev/kyma-project/prod/eventing-publisher-proxy:1.3.0
