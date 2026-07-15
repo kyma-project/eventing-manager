@@ -201,3 +201,14 @@ jobs:
       git_ref: ${{ needs.generate-version.outputs.VERSION }}
       git_check_run_name: "build-${{ needs.generate-version.outputs.VERSION }} / Build image"
 
+  notify-sbom:
+    needs: [generate-version, wait-until-build-succeeds]
+    permissions:
+      id-token: write
+      contents: read
+    uses: "kyma-project/compliancy/.github/workflows/notify-component-sbom.yml@main"
+    secrets: inherit
+    with:
+      component: kyma-project.io/module/eventing
+      version: ${{ needs.generate-version.outputs.VERSION }}
+
