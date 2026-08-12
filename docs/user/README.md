@@ -77,7 +77,6 @@ To assign access permissions to the Eventing module resources, use the following
 
 - `kyma-eventing-view` - Grants read-only access to all Eventing module resources and their status.
 - `kyma-eventing-edit` - Grants full access to all Eventing module resources and read-only access to their status.
-- 
 
 ## Resource Consumption
 
