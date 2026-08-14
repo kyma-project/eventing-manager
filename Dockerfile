@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM --platform=$BUILDPLATFORM europe-docker.pkg.dev/kyma-project/prod/builders/golang/gobuild:1.26.4.0-alpine3.23 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.5 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
