@@ -25,5 +25,4 @@ If you cannot find your issue described here, take a look at the [Eventing Troub
 If you encounter an issue or want to report a bug, please create a [GitHub issue](https://github.com/kyma-project/nats-manager/issues) with background information and
 steps on how to reproduce.
 
-If you want to contact the eventing team directly, you can reach us in Slack [Eventing channel](https://kyma-community.slack.com/archives/CD1C9GZMK)
-or tag us `@kyma-eventing` in the Slack [Kyma Tech channel](https://sap-ti.slack.com/archives/C0140PCSJ5Q).
+If you want to contact the eventing team directly, you can reach us in the Slack [Eventing channel](https://kyma-community.slack.com/archives/CD1C9GZMK) or tag us `@kyma-eventing` in the Slack [Kyma Tech channel](https://sap-ti.slack.com/archives/C0140PCSJ5Q). <!-- markdown-link-check-disable-line -->
