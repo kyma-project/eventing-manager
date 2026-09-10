@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/object"
 
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct" //nolint:stylecheck // using '.' import for convenience
+	. "github.com/onsi/gomega/gstruct" //nolint:revive // using '.' import for convenience
 )
 
 //

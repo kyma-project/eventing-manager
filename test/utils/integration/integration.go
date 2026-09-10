@@ -209,7 +209,7 @@ func NewTestEnvironment(config TestEnvironmentConfig, connMock *natsconnectionmo
 		natsConnectionBuilder,
 	)
 
-	if err = (eventingReconciler).SetupWithManager(ctrlMgr); err != nil {
+	if err = eventingReconciler.SetupWithManager(ctrlMgr); err != nil {
 		return nil, err
 	}
 

@@ -5,8 +5,10 @@ linters:
     - contextcheck
     - copyloopvar
     - depguard
+    - gomodguard_v2
     - dupl
     - exhaustruct
+    - exhaustruct_v5
     - ireturn
     - lll
     - maintidx
@@ -237,6 +239,7 @@ linters:
       - linters:
           - funlen
           - gochecknoglobals
+          - goconst
           - maintidx
           - wrapcheck
         path: _test\.go

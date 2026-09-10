@@ -26,6 +26,7 @@ import (
 const (
 	charset       = "abcdefghijklmnopqrstuvwxyz0123456789"
 	randomNameLen = 5
+	tcpProtocol   = "TCP"
 
 	Domain               = "domain.com"
 	NameFormat           = "name-%s"
@@ -161,7 +162,7 @@ func IsEPPPublishServiceCorrect(svc kcorev1.Service, eppDeployment kappsv1.Deplo
 		Ports: []kcorev1.ServicePort{
 			{
 				Name:       "http-client",
-				Protocol:   "TCP",
+				Protocol:   tcpProtocol,
 				Port:       80,
 				TargetPort: intstr.FromInt(8080),
 			},
@@ -184,7 +185,7 @@ func IsEPPMetricsServiceCorrect(svc kcorev1.Service, eppDeployment kappsv1.Deplo
 		Ports: []kcorev1.ServicePort{
 			{
 				Name:       "http-metrics",
-				Protocol:   "TCP",
+				Protocol:   tcpProtocol,
 				Port:       80,
 				TargetPort: intstr.FromInt(9090),
 			},
@@ -202,7 +203,7 @@ func IsEPPHealthServiceCorrect(svc kcorev1.Service, eppDeployment kappsv1.Deploy
 		Ports: []kcorev1.ServicePort{
 			{
 				Name:       "http-status",
-				Protocol:   "TCP",
+				Protocol:   tcpProtocol,
 				Port:       15020,
 				TargetPort: intstr.FromInt(15020),
 			},

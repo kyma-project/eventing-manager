@@ -66,6 +66,8 @@ const (
 	CeTypeHeader        = "ce-type"
 	CeSourceHeader      = "ce-source"
 	CeSpecVersionHeader = "ce-specversion"
+
+	APIRuleName = "foo"
 )
 
 type APIRuleOption func(r *apigatewayv2.APIRule)
@@ -165,7 +167,7 @@ func GetBinaryMessageHeaders() http.Header {
 func NewAPIRule(subscription *eventingv1alpha2.Subscription, opts ...APIRuleOption) *apigatewayv2.APIRule {
 	apiRule := &apigatewayv2.APIRule{
 		ObjectMeta: kmetav1.ObjectMeta{
-			Name: "foo",
+			Name: APIRuleName,
 			OwnerReferences: []kmetav1.OwnerReference{
 				{
 					APIVersion: "eventing.kyma-project.io/v1alpha1",
@@ -275,8 +277,8 @@ func WithFakeSubscriptionStatus() SubscriptionOpt {
 	return func(s *eventingv1alpha2.Subscription) {
 		s.Status.Conditions = []eventingv1alpha2.Condition{
 			{
-				Type:    "foo",
-				Status:  "foo",
+				Type:    APIRuleName,
+				Status:  APIRuleName,
 				Reason:  "foo-reason",
 				Message: "foo-message",
 			},

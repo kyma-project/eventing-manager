@@ -15,6 +15,8 @@ import (
 	"github.com/kyma-project/eventing-manager/pkg/k8s"
 )
 
+const appKubernetesNameLabel = "app.kubernetes.io/name"
+
 func SyncPeerAuthentications(ctx context.Context, kubeClient k8s.Client, log *zap.SugaredLogger) error {
 	// Only attempt to create PAs if the corresponding CRD exists on the cluster.
 	crdExists, err := kubeClient.PeerAuthenticationCRDExists(ctx)
@@ -56,7 +58,7 @@ func EventPublisherProxyMetrics(namespace string, ref []kmetav1.OwnerReference) 
 			Name:      "eventing-publisher-proxy-metrics",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":    "eventing-publisher-proxy",
+				appKubernetesNameLabel:      "eventing-publisher-proxy",
 				"app.kubernetes.io/version": "0.1.0",
 			},
 			OwnerReferences: ref,
@@ -64,7 +66,7 @@ func EventPublisherProxyMetrics(namespace string, ref []kmetav1.OwnerReference) 
 		TypeMeta: typeMeta(),
 		Spec: istiosecurityv1beta1.PeerAuthentication{
 			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: map[string]string{
-				"app.kubernetes.io/name": "eventing-publisher-proxy",
+				appKubernetesNameLabel: "eventing-publisher-proxy",
 			}},
 			PortLevelMtls: map[uint32]*istiosecurityv1beta1.PeerAuthentication_MutualTLS{
 				9090: {Mode: istiosecurityv1beta1.PeerAuthentication_MutualTLS_PERMISSIVE},
@@ -88,7 +90,7 @@ func EventingManagerMetrics(namespace string, ref []kmetav1.OwnerReference) *ist
 		TypeMeta: typeMeta(),
 		Spec: istiosecurityv1beta1.PeerAuthentication{
 			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: map[string]string{
-				"app.kubernetes.io/name":     "eventing-manager",
+				appKubernetesNameLabel:       "eventing-manager",
 				"app.kubernetes.io/instance": "eventing-manager",
 			}},
 			PortLevelMtls: map[uint32]*istiosecurityv1beta1.PeerAuthentication_MutualTLS{

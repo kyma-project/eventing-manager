@@ -239,8 +239,8 @@ func (em EventingManager) DeletePublisherProxyResources(ctx context.Context, eve
 	// define list of resources to delete for EPP.
 	publisherDeployment := &kappsv1.Deployment{
 		TypeMeta: kmetav1.TypeMeta{
-			Kind:       "Deployment",
-			APIVersion: "apps/v1",
+			Kind:       deploymentKind,
+			APIVersion: appsV1APIVersion,
 		},
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      GetPublisherDeploymentName(*eventing),

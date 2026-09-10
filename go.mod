@@ -1,6 +1,6 @@
 module github.com/kyma-project/eventing-manager
 
-go 1.26.5
+go 1.27.0
 
 require (
 	github.com/avast/retry-go/v3 v3.1.1
