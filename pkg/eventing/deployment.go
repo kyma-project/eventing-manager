@@ -28,6 +28,9 @@ const (
 	publisherMetricsPortNum  = int32(9090)
 	PublisherName            = "eventing-publisher-proxy"
 
+	deploymentKind   = "Deployment"
+	appsV1APIVersion = "apps/v1"
+
 	PublisherSecretClientIDKey      = "client-id"
 	PublisherSecretClientSecretKey  = "client-secret"
 	PublisherSecretTokenEndpointKey = "token-endpoint"
@@ -79,8 +82,8 @@ func newDeployment(eventing *v1alpha1.Eventing, publisherConfig env.PublisherCon
 	trmGrcPrd := TerminationGracePeriodSeconds
 	newDeployment := &kappsv1.Deployment{
 		TypeMeta: kmetav1.TypeMeta{
-			Kind:       "Deployment",
-			APIVersion: "apps/v1",
+			Kind:       deploymentKind,
+			APIVersion: appsV1APIVersion,
 		},
 		ObjectMeta: kmetav1.ObjectMeta{
 			Name:      GetPublisherDeploymentName(*eventing),

@@ -193,7 +193,7 @@ func main() { //nolint:funlen // main function needs to initialize many object
 		natsConnectionBuilder,
 	)
 
-	if err = (eventingReconciler).SetupWithManager(mgr); err != nil {
+	if err = eventingReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Eventing")
 		os.Exit(1)
 	}

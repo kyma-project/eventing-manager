@@ -114,7 +114,7 @@ func hpaEqual(a, b *kautoscalingv2.HorizontalPodAutoscaler) bool {
 	if !reflect.DeepEqual(a.Spec.ScaleTargetRef, b.Spec.ScaleTargetRef) {
 		return false
 	}
-	if *(a.Spec.MinReplicas) != *(b.Spec.MinReplicas) {
+	if *a.Spec.MinReplicas != *b.Spec.MinReplicas {
 		return false
 	}
 	if a.Spec.MaxReplicas != b.Spec.MaxReplicas {

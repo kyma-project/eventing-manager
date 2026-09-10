@@ -14,6 +14,11 @@ import (
 
 const publisherProxySuffix = "publisher-proxy"
 
+const (
+	serviceKind = "Service"
+	tcpProtocol = "TCP"
+)
+
 func GetPublisherDeploymentName(eventing v1alpha1.Eventing) string {
 	return fmt.Sprintf("%s-%s", eventing.GetName(), publisherProxySuffix)
 }
@@ -57,9 +62,9 @@ func newHorizontalPodAutoscaler(name, namespace string, minReplicas, maxReplicas
 		},
 		Spec: kautoscalingv2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: kautoscalingv2.CrossVersionObjectReference{
-				Kind:       "Deployment",
+				Kind:       deploymentKind,
 				Name:       name,
-				APIVersion: "apps/v1",
+				APIVersion: appsV1APIVersion,
 			},
 			MinReplicas: &minReplicas,
 			MaxReplicas: maxReplicas,
@@ -67,7 +72,7 @@ func newHorizontalPodAutoscaler(name, namespace string, minReplicas, maxReplicas
 				{
 					Type: kautoscalingv2.ResourceMetricSourceType,
 					Resource: &kautoscalingv2.ResourceMetricSource{
-						Name: "cpu",
+						Name: kcorev1.ResourceCPU,
 						Target: kautoscalingv2.MetricTarget{
 							Type:               kautoscalingv2.UtilizationMetricType,
 							AverageUtilization: &cpuUtilization,
@@ -77,7 +82,7 @@ func newHorizontalPodAutoscaler(name, namespace string, minReplicas, maxReplicas
 				{
 					Type: kautoscalingv2.ResourceMetricSourceType,
 					Resource: &kautoscalingv2.ResourceMetricSource{
-						Name: "memory",
+						Name: kcorev1.ResourceMemory,
 						Target: kautoscalingv2.MetricTarget{
 							Type:               kautoscalingv2.UtilizationMetricType,
 							AverageUtilization: &memoryUtilization,
@@ -166,7 +171,7 @@ func newPublisherProxyService(name, namespace string, labels map[string]string, 
 	// setting `TypeMeta` is important for patch apply to work.
 	return &kcorev1.Service{
 		TypeMeta: kmetav1.TypeMeta{
-			Kind:       "Service",
+			Kind:       serviceKind,
 			APIVersion: "v1",
 		},
 		ObjectMeta: kmetav1.ObjectMeta{
@@ -179,7 +184,7 @@ func newPublisherProxyService(name, namespace string, labels map[string]string, 
 			Ports: []kcorev1.ServicePort{
 				{
 					Name:       "http-client",
-					Protocol:   "TCP",
+					Protocol:   tcpProtocol,
 					Port:       srcPort,
 					TargetPort: intstr.FromInt(targetPort),
 				},
@@ -196,7 +201,7 @@ func newPublisherProxyMetricsService(name, namespace string, labels map[string]s
 	// setting `TypeMeta` is important for patch apply to work.
 	return &kcorev1.Service{
 		TypeMeta: kmetav1.TypeMeta{
-			Kind:       "Service",
+			Kind:       serviceKind,
 			APIVersion: "v1",
 		},
 		ObjectMeta: kmetav1.ObjectMeta{
@@ -214,7 +219,7 @@ func newPublisherProxyMetricsService(name, namespace string, labels map[string]s
 			Ports: []kcorev1.ServicePort{
 				{
 					Name:       "http-metrics",
-					Protocol:   "TCP",
+					Protocol:   tcpProtocol,
 					Port:       srcPort,
 					TargetPort: intstr.FromInt(trgtPort),
 				},

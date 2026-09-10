@@ -22,8 +22,8 @@ import (
 	// gcp auth etc.
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	. "github.com/onsi/ginkgo" //nolint:stylecheck // using '.' import for convenience
-	. "github.com/onsi/gomega" //nolint:stylecheck // using '.' import for convenience
+	. "github.com/onsi/ginkgo" //nolint:revive // using '.' import for convenience
+	. "github.com/onsi/gomega" //nolint:revive // using '.' import for convenience
 )
 
 const (

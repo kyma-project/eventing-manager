@@ -106,12 +106,12 @@ func PublisherSpec() operatorv1alpha1.Publisher {
 		},
 		Resources: kcorev1.ResourceRequirements{
 			Limits: kcorev1.ResourceList{
-				"cpu":    resource.MustParse("300m"),
-				"memory": resource.MustParse("312Mi"),
+				kcorev1.ResourceCPU:    resource.MustParse("300m"),
+				kcorev1.ResourceMemory: resource.MustParse("312Mi"),
 			},
 			Requests: kcorev1.ResourceList{
-				"cpu":    resource.MustParse("100m"),
-				"memory": resource.MustParse("156Mi"),
+				kcorev1.ResourceCPU:    resource.MustParse("100m"),
+				kcorev1.ResourceMemory: resource.MustParse("156Mi"),
 			},
 		},
 	}
@@ -294,7 +294,7 @@ func ConvertSelectorLabelsToString(labels map[string]string) string {
 	return strings.Join(result, ",")
 }
 
-//nolint:goerr113 //TODO: this is ERRORHANDLING NOT a LOGGER!!!!
+//nolint:err113 //TODO: this is ERRORHANDLING NOT a LOGGER!!!!
 func AppendMsgToError(err error, msg string) error {
 	return errors.Join(err, fmt.Errorf("\n==> %s", msg))
 }
