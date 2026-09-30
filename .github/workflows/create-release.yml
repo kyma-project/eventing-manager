@@ -23,144 +23,31 @@ jobs:
           # push version to output environment file
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
-  bump-kustomize:
-    name: Bump kustomize
-    needs: generate-version
-    runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ needs.generate-version.outputs.VERSION }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Bump kustomize file
-        shell: bash
-        run: |
-          ./hack/ci/bump-kustomize-file.sh "${VERSION}"
-
-      # Check if there are changes so we can determine if all following steps can be skipped.
-      - name: Check for changes
-        shell: bash
-        run: |
-          if [ -z "$(git status --porcelain)" ]; then 
-            echo "No changes found. No need to create a PR" 
-          else 
-            echo "Changes found. Creating a PR and waiting for it to be merged."
-            echo "CREATE_PR=true" >> $GITHUB_ENV 
-          fi
-
-      - name: Print out kustomize file
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          FILE="config/manager/kustomization.yaml"
-          [ -f "${FILE}" ] && cat "${FILE}" || echo "${FILE} not found."
-
-      - name: Set up git
-        if: ${{ env.CREATE_PR == 'true' }}
-        env:
-          GH_TOKEN: ${{ secrets.BOT_PAT }}
-          REPO: ${{ github.repository }}
-        shell: bash
-        run: |
-          # set git username 
-          ghusername=$(curl -s -H "Authorization: token ${GH_TOKEN}" https://api.github.com/user | jq '.login')
-          git config user.name "${ghusername}"
-          # set git mail address
-          ghemailaddress="${ghusername}@users.noreply.github.com"
-          git config user.email "${ghemailaddress}"
-          # set remote url
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
-
-      - name: Set all variables
-        if: ${{ env.CREATE_PR == 'true' }}
-        shell: bash
-        run: |
-          CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-          echo "current branch: ${CURRENT_BRANCH}"
-          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
-
-          PR_DATE="$(date '+%Y-%m-%d-%H-%M-%S')"
-          echo "pr date: ${PR_DATE}"
-          echo "PR_DATE=${PR_DATE}" >> $GITHUB_ENV
-
-          BRANCH_NAME="kustomize-bump-${CURRENT_BRANCH}-${PR_DATE}"
-          echo "name of the new branch: ${BRANCH_NAME}"
-          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
-
-      - name: Create a pull request
-        if: ${{ env.CREATE_PR == 'true' }}
-        env:
-          REPO: ${{ github.repository }}
-          CURRENT_BRANCH: ${{ env.CURRENT_BRANCH }}
-          PR_DATE: ${{ env.PR_DATE }}
-          BRANCH_NAME: ${{ env.BRANCH_NAME }}
-          GH_TOKEN: ${{ secrets.BOT_PAT }}
-        shell: bash
-        run: |
-          # Create a new branch for our changes.
-          git checkout -b "${BRANCH_NAME}"
-
-          git add "config/manager/kustomization.yaml"
-          git commit -m "auto-bump kustomization file: ${PR_DATE}"
-
-          # Push the changes to origin, as defined earlier.
-          git push origin "$BRANCH_NAME"
-
-          # Create a PR.
-          BODY="This is an auto-generated PR to bump the kustomization on ${REPO}."
-          PR_URL=$(gh pr create --base "${CURRENT_BRANCH}" --head "${BRANCH_NAME}" --title "Bump kustomization on ${CURRENT_BRANCH}" --body "${BODY}")
-          echo "PR_URL=${PR_URL}" >> $GITHUB_ENV
-
-      - name: USER INTERACTION REQUIRED
-        if: ${{ env.CREATE_PR == 'true' }}
-        shell: bash
-        env:
-          PR_URL: ${{ env.PR_URL }}
-        run: |
-          echo "please review  ${PR_URL}"
-
-      - name: Wait for PR to be merged
-        if: ${{ env.CREATE_PR == 'true' }}
-        shell: bash
-        env:
-          PR_URL: ${{ env.PR_URL }}
-          GH_TOKEN: ${{ secrets.BOT_PAT }}
-        run: |
-          end_time=$((SECONDS+3600)) # 1 hour
-
-          while [ $SECONDS -lt $end_time ]; do
-            pr_state=$(gh pr view ${PR_URL} --json state --jq '.state')
-            if [ "$pr_state" == "CLOSED" ]; then 
-              echo "ERROR! PR has been closed!"
-              exit 1
-            elif [ "$pr_state" == "MERGED" ]; then
-              echo "PR has been merged!"
-              exit 0
-            fi
-            sleep 10
-          done
-
-          echo "Timeout reached. PR not merged within the specified time."
-          exit 1
-
   create-draft:
     name: Create draft release
-    needs: [generate-version, bump-kustomize]
+    needs: [generate-version]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       VERSION: ${{ needs.generate-version.outputs.VERSION }}
     outputs:
       release_id: ${{ steps.create-draft.outputs.release_id }}
 
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.EPP_RELEASE_APP_ID }}
+          private-key: ${{ secrets.EPP_RELEASE_APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-          token: ${{ secrets.BOT_PAT }} # creating git tag using bot token because GITHUB_TOKEN would not trigger build workflow (https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow).
+          token: ${{ steps.app-token.outputs.token }} # creating git tag using app token because GITHUB_TOKEN would not trigger build workflow (https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow).
 
       - name: Create changelog
         env:
@@ -177,7 +64,7 @@ jobs:
 
       - name: Add lightweight tag to trigger release build job
         env:
-          GITHUB_TOKEN: ${{ secrets.BOT_PAT }} # creating git tag using bot token because GITHUB_TOKEN would not trigger build workflow (https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow).
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }} # creating git tag using app token because GITHUB_TOKEN would not trigger build workflow (https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow).
         run: |
           # The build job will be triggered by pushing a new tag (format: x.y.z) to the repo.
           git tag $VERSION
