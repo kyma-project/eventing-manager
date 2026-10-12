@@ -244,13 +244,14 @@ func (m *EventMeshMock) Stop() {
 // GetSubscriptionResponse checks if a subscription exists in the mock.
 func GetSubscriptionResponse(m *EventMeshMock) ResponseWithName {
 	return func(w http.ResponseWriter, key string) {
-		subscriptionSaved := m.Subscriptions.GetSubscription(key)
-		if subscriptionSaved != nil {
+		subscriptionSaved, ok := m.Subscriptions.GetSubscriptionCopy(key)
+		if ok {
 			if subscriptionSaved.SubscriptionStatus == "" {
+				m.Subscriptions.SetStatus(key, emstypes.SubscriptionStatusActive)
 				subscriptionSaved.SubscriptionStatus = emstypes.SubscriptionStatusActive
 			}
 			w.WriteHeader(http.StatusOK)
-			err := json.NewEncoder(w).Encode(*subscriptionSaved)
+			err := json.NewEncoder(w).Encode(subscriptionSaved)
 			Expect(err).ShouldNot(HaveOccurred())
 		} else {
 			w.WriteHeader(http.StatusNotFound)
@@ -261,12 +262,10 @@ func GetSubscriptionResponse(m *EventMeshMock) ResponseWithName {
 // UpdateSubscriptionResponse updates the webhook auth of subscription in the mock.
 func UpdateSubscriptionResponse(m *EventMeshMock) ResponseUpdateReq {
 	return func(w http.ResponseWriter, key string, webhookAuth *emstypes.WebhookAuth) {
-		subscriptionSaved := m.Subscriptions.GetSubscription(key)
-		if subscriptionSaved != nil {
-			subscriptionSaved.WebhookAuth = webhookAuth
-			m.Subscriptions.PutSubscription(key, subscriptionSaved)
+		if m.Subscriptions.SetWebhookAuth(key, webhookAuth) {
+			subscriptionSaved, _ := m.Subscriptions.GetSubscriptionCopy(key)
 			w.WriteHeader(http.StatusNoContent)
-			err := json.NewEncoder(w).Encode(*subscriptionSaved)
+			err := json.NewEncoder(w).Encode(subscriptionSaved)
 			Expect(err).ShouldNot(HaveOccurred())
 		} else {
 			w.WriteHeader(http.StatusNotFound)
@@ -277,27 +276,22 @@ func UpdateSubscriptionResponse(m *EventMeshMock) ResponseUpdateReq {
 // UpdateSubscriptionStateResponse updates the EventMesh subscription status in the mock.
 func UpdateSubscriptionStateResponse(mock *EventMeshMock) ResponseUpdateStateReq {
 	return func(w http.ResponseWriter, key string, state emstypes.State) error {
-		if subscription := mock.Subscriptions.GetSubscription(key); subscription != nil {
-			switch state.Action {
-			case emstypes.StateActionPause:
-				{
-					subscription.SubscriptionStatus = emstypes.SubscriptionStatusPaused
-				}
-			case emstypes.StateActionResume:
-				{
-					subscription.SubscriptionStatus = emstypes.SubscriptionStatusActive
-				}
-			default:
-				{
-					errEventMeshStatusNotSupported := errors.New("EventMesh subscription status is not supported")
-					return fmt.Errorf("%w: %#v", errEventMeshStatusNotSupported, state)
-				}
-			}
+		var newStatus emstypes.SubscriptionStatus
+		switch state.Action {
+		case emstypes.StateActionPause:
+			newStatus = emstypes.SubscriptionStatusPaused
+		case emstypes.StateActionResume:
+			newStatus = emstypes.SubscriptionStatusActive
+		default:
+			errEventMeshStatusNotSupported := errors.New("EventMesh subscription status is not supported")
+			return fmt.Errorf("%w: %#v", errEventMeshStatusNotSupported, state)
+		}
 
-			mock.Subscriptions.PutSubscription(key, subscription)
+		if mock.Subscriptions.SetStatus(key, newStatus) {
+			subscription, _ := mock.Subscriptions.GetSubscriptionCopy(key)
 			w.WriteHeader(http.StatusAccepted)
 
-			err := json.NewEncoder(w).Encode(*subscription)
+			err := json.NewEncoder(w).Encode(subscription)
 			Expect(err).ShouldNot(HaveOccurred())
 			return nil
 		}

@@ -52,3 +52,41 @@ func (s *SafeSubscriptions) PutSubscription(key string, subscription *emstypes.S
 	defer s.Unlock()
 	s.subscriptions[key] = subscription
 }
+
+// SetStatus sets the SubscriptionStatus of the stored Subscription under lock.
+// It reports whether a Subscription existed for the key.
+func (s *SafeSubscriptions) SetStatus(key string, status emstypes.SubscriptionStatus) bool {
+	s.Lock()
+	defer s.Unlock()
+	subscription, ok := s.subscriptions[key]
+	if !ok {
+		return false
+	}
+	subscription.SubscriptionStatus = status
+	return true
+}
+
+// SetWebhookAuth sets the WebhookAuth of the stored Subscription under lock.
+// It reports whether a Subscription existed for the key.
+func (s *SafeSubscriptions) SetWebhookAuth(key string, webhookAuth *emstypes.WebhookAuth) bool {
+	s.Lock()
+	defer s.Unlock()
+	subscription, ok := s.subscriptions[key]
+	if !ok {
+		return false
+	}
+	subscription.WebhookAuth = webhookAuth
+	return true
+}
+
+// GetSubscriptionCopy returns a copy of a stored Subscription under lock,
+// so callers can read it without racing concurrent mutations.
+func (s *SafeSubscriptions) GetSubscriptionCopy(key string) (emstypes.Subscription, bool) {
+	s.RLock()
+	defer s.RUnlock()
+	subscription, ok := s.subscriptions[key]
+	if !ok {
+		return emstypes.Subscription{}, false
+	}
+	return *subscription, true
+}
