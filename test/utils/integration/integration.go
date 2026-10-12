@@ -214,19 +214,17 @@ func NewTestEnvironment(config TestEnvironmentConfig, connMock *natsconnectionmo
 	}
 
 	// start manager
-	var cancelCtx context.CancelFunc
+	mgrCtx, cancelCtx := context.WithCancel(context.Background())
 	go func() {
-		var mgrCtx context.Context
-		mgrCtx, cancelCtx = context.WithCancel(context.Background())
-		err = ctrlMgr.Start(mgrCtx)
-		if err != nil {
-			panic(err)
+		if startErr := ctrlMgr.Start(mgrCtx); startErr != nil {
+			panic(startErr)
 		}
 	}()
 
 	// create namespace
 	ns := natstestutils.NewNamespace(getTestBackendConfig().Namespace)
 	if err = client.IgnoreAlreadyExists(k8sClient.Create(ctx, ns)); err != nil {
+		cancelCtx()
 		return nil, err
 	}
 

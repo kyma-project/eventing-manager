@@ -149,12 +149,11 @@ func setupSuite() (*eventMeshTestEnsemble, error) {
 	}
 
 	// start k8s client
+	var k8sCtx context.Context
+	k8sCtx, k8sCancelFn = context.WithCancel(kctrl.SetupSignalHandler())
 	go func() {
-		var ctx context.Context
-		ctx, k8sCancelFn = context.WithCancel(kctrl.SetupSignalHandler())
-		err = k8sManager.Start(ctx)
-		if err != nil {
-			panic(err)
+		if startErr := k8sManager.Start(k8sCtx); startErr != nil {
+			panic(startErr)
 		}
 	}()
 
@@ -326,7 +325,11 @@ func getAPIRule(ctx context.Context, ensemble *eventMeshTestEnsemble, apiRule *a
 
 func getEventMeshSubFromMock(subscriptionName, subscriptionNamespace string, ensemble *eventMeshTestEnsemble) *emstypes.Subscription {
 	key := getEventMeshSubKeyForMock(subscriptionName, subscriptionNamespace, ensemble)
-	return ensemble.eventMeshMock.Subscriptions.GetSubscription(key)
+	subscription, ok := ensemble.eventMeshMock.Subscriptions.GetSubscriptionCopy(key)
+	if !ok {
+		return nil
+	}
+	return &subscription
 }
 
 func getEventMeshSubKeyForMock(subscriptionName, subscriptionNamespace string, ensemble *eventMeshTestEnsemble) string {
