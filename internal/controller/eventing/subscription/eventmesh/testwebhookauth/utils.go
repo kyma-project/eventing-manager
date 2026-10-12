@@ -284,7 +284,14 @@ func ensureK8sSubscriptionUpdated(ctx context.Context, t *testing.T, ensemble *e
 		require.NotEmpty(t, latestSubscription.Name)
 		latestSubscription.Spec = subscription.Spec
 		latestSubscription.Labels = subscription.Labels
-		require.NoError(t, ensemble.k8sClient.Update(ctx, latestSubscription))
+		if err := ensemble.k8sClient.Update(ctx, latestSubscription); err != nil {
+			// the reconciler may have mutated the subscription between Get and Update;
+			// retry on conflict instead of aborting the test.
+			if kerrors.IsConflict(err) {
+				return false
+			}
+			require.NoError(t, err)
+		}
 		return true
 	}, bigTimeOut, bigPollingInterval)
 }
