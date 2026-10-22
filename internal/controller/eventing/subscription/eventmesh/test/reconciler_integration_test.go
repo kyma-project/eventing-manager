@@ -788,17 +788,24 @@ func Test_SinkChangeAndAPIRule(t *testing.T) {
 	updatedSubscription := createdSubscription.DeepCopy()
 	eventingtesting.SetSink(subscriberSvcNew.Namespace, subscriberSvcNew.Name, updatedSubscription)
 	ensureK8sSubscriptionUpdated(ctx, t, updatedSubscription)
-	// wait until the APIRule details are updated in Subscription.
-	getSubscriptionAssert(ctx, g, updatedSubscription).Should(eventingtesting.HaveSubscriptionReady())
-	getSubscriptionAssert(ctx, g, updatedSubscription).ShouldNot(eventingtesting.HaveAPIRuleName(apiRule.Name))
 
-	// fetch the new APIRule and update the status of the APIRule to ready (mocking APIGateway controller)
-	// and wait until the created Subscription becomes ready
+	// the sink change targets a new service, so the reconciler creates a new (not-yet-ready)
+	// APIRule. Wait until the Subscription status points to a different APIRule name before
+	// reading it; the Subscription cannot be ready until this new APIRule is marked ready.
+	getSubscriptionAssert(ctx, g, updatedSubscription).Should(gomega.And(
+		eventingtesting.HaveNoneEmptyAPIRuleName(),
+		gomega.Not(eventingtesting.HaveAPIRuleName(apiRule.Name)),
+	))
+
+	// fetch the new APIRule and update its status to ready (mocking APIGateway controller)
 	apiRule = &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: updatedSubscription.Status.Backend.APIRuleName, Namespace: updatedSubscription.Namespace,
 	}}
 	getAPIRuleAssert(ctx, g, apiRule).Should(eventingtesting.HaveNotEmptyAPIRule())
 	ensureAPIRuleStatusUpdatedWithStatusReady(ctx, t, apiRule)
+
+	// now that the new APIRule is ready, the Subscription should become ready
+	getSubscriptionAssert(ctx, g, updatedSubscription).Should(eventingtesting.HaveSubscriptionReady())
 
 	// check if the EventMesh Subscription has the correct webhook URL
 	emSub = getEventMeshSubFromMock(givenSubscription.Name, givenSubscription.Namespace)
@@ -1079,11 +1086,18 @@ func Test_APIRuleRecreateAfterManualDelete(t *testing.T) {
 
 	// phase 2: Delete the APIRule from k8s
 	// delete the APIRule and wait until its deleted.
+	deletedAPIRuleName := apiRule.Name
 	ensureK8sResourceDeleted(ctx, t, apiRule)
 	ensureAPIRuleNotFound(ctx, t, apiRule)
 
-	// phase 3: Check if APIRule is re-created by the reconciler
-	getSubscriptionAssert(ctx, g, createdSubscription).Should(eventingtesting.HaveNoneEmptyAPIRuleName())
+	// phase 3: Check if APIRule is re-created by the reconciler.
+	// The reconciler creates a new APIRule with a freshly generated name, so wait until
+	// the Subscription status points to a different (non-empty) APIRule name before
+	// reading it; otherwise we may capture the stale name of the deleted APIRule.
+	getSubscriptionAssert(ctx, g, createdSubscription).Should(gomega.And(
+		eventingtesting.HaveNoneEmptyAPIRuleName(),
+		gomega.Not(eventingtesting.HaveAPIRuleName(deletedAPIRuleName)),
+	))
 	apiRule = &apigatewayv2.APIRule{ObjectMeta: kmetav1.ObjectMeta{
 		Name: createdSubscription.Status.Backend.APIRuleName, Namespace: createdSubscription.Namespace,
 	}}
