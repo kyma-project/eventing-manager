@@ -5,6 +5,7 @@ linters:
     - contextcheck
     - copyloopvar
     - depguard
+    - gomodguard
     - gomodguard_v2
     - dupl
     - exhaustruct
