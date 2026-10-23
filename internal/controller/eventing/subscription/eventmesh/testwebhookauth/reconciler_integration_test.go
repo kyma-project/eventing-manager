@@ -97,7 +97,7 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 	kymaSubscription.Labels = map[string]string{"reconcile": "true"}
 	ensureK8sSubscriptionUpdated(ctx, t, ensemble, kymaSubscription)
 
-	// ensure hashes are computed
+	// ensure hashes are computed and the WebhookAuth hash reflects the updated credentials
 	getSubscriptionAssert(ctx, g, kymaSubscription, ensemble).Should(
 		gomega.And(
 			eventingtesting.HaveSubscriptionReady(),
@@ -105,6 +105,7 @@ func Test_UpdateWebhookAuthConfig(t *testing.T) {
 			eventingtesting.HaveNonZeroEventMeshHash(),
 			eventingtesting.HaveNonZeroEventMeshLocalHash(),
 			eventingtesting.HaveNonZeroWebhookAuthHash(),
+			eventingtesting.HaveWebhookAuthHashNotEqualTo(webhookAuthHashBefore),
 		),
 	)
 	webhookAuthHashAfter := kymaSubscription.Status.Backend.WebhookAuthHash

@@ -280,6 +280,12 @@ func HaveNonZeroWebhookAuthHash() gomegatypes.GomegaMatcher {
 	}, Not(BeZero()))
 }
 
+func HaveWebhookAuthHashNotEqualTo(hash int64) gomegatypes.GomegaMatcher {
+	return WithTransform(func(s *eventingv1alpha2.Subscription) int64 {
+		return s.Status.Backend.WebhookAuthHash
+	}, Not(Equal(hash)))
+}
+
 func HaveMatchingSelector(selector kcorev1.Service) gomegatypes.GomegaMatcher {
 	return WithTransform(func(a *istiopkgsecurityv1beta1.AuthorizationPolicy) bool {
 		return maps.Equal(a.Spec.GetSelector().GetMatchLabels(), selector.Spec.Selector)
