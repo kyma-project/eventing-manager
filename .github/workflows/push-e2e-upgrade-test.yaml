@@ -13,9 +13,14 @@ on:
       - OWNERS_ALIASES
       - PROJECT
 
+permissions:
+  contents: read
+
 jobs:
   get-latest-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       latest_release_tag: ${{ steps.get-latest-release-tag.outputs.latest_release_tag }}
     steps:

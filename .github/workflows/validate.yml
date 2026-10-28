@@ -20,6 +20,9 @@ on:
       - "api/**"
       - "config/crd/**"
 
+permissions:
+  contents: read
+
 jobs:
   crd:
     runs-on: ubuntu-latest

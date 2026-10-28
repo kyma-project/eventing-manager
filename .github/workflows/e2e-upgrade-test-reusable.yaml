@@ -30,6 +30,8 @@ on:
 jobs:
   e2e-upgrade: # This job tests the upgrade of Eventing module from the latest image of the main branch to the current commit.
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       BACKEND_TYPE: NATS
     steps:
