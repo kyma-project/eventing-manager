@@ -27,6 +27,8 @@ on:
       - go.mod
       - Dockerfile"
 
+permissions: {}
+
 jobs:
   export-info:
     runs-on: ubuntu-latest
@@ -63,6 +65,8 @@ jobs:
 
   wait-until-build-succeeds:
     needs: export-info
+    permissions:
+      contents: read
     uses: "kyma-project/eventing-tools/.github/workflows/wait-build-reusable.yml@main"
     with:
       repository: ${{ github.repository_owner }}/eventing-manager
@@ -72,6 +76,8 @@ jobs:
   nats:
     runs-on: ubuntu-latest
     needs: [export-info, wait-until-build-succeeds]
+    permissions:
+      contents: read
     env:
       MANAGER_IMAGE: ${{ needs.export-info.outputs.image-name }}
 
@@ -138,6 +144,8 @@ jobs:
   PeerAuthentication:
     runs-on: ubuntu-latest
     needs: [export-info, wait-until-build-succeeds]
+    permissions:
+      contents: read
     env:
       MANAGER_IMAGE: ${{ needs.export-info.outputs.image-name }}
 
@@ -187,6 +195,8 @@ jobs:
   backend-switching:
     needs: [export-info, wait-until-build-succeeds]
     if: github.event_name == 'push'
+    permissions:
+      contents: read
     uses: "./.github/workflows/e2e-backend-switching-reuseable.yml"
     with:
       eventing-manager-image: ${{ needs.export-info.outputs.image-name }}

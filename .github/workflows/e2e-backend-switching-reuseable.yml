@@ -20,6 +20,8 @@ on:
 jobs:
   backend-switching:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       KYMA_STABILITY: "unstable"
       KYMA: "./hack/kyma"

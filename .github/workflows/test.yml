@@ -31,6 +31,10 @@ on:
       - OWNERS
       - OWNERS_ALIASES
       - PROJECT
+
+permissions:
+  contents: read
+
 jobs:
   unit-test:
     uses: kyma-project/eventing-tools/.github/workflows/unit-test-reusable.yml@main

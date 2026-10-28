@@ -7,6 +7,10 @@ on:
       - "**.go"
       - go.mod
       - Dockerfile"
+
+permissions:
+  contents: read
+
 jobs:
   wait-until-build-succeeds:
     uses: "kyma-project/eventing-tools/.github/workflows/wait-build-reusable.yml@main"
